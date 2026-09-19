@@ -44,6 +44,13 @@ _PARSER_SOURCES = {
 _BINARY_PARSER_SOURCES = {
     0: "fn calc() -> i64:\n    return 1 + 2\n",
     1: "fn compute() -> i64:\n    return 40 + 2\n",
+    4: "fn calc() -> i64:\n    return 1 + 2 * 3\n",
+    5: "fn calc() -> i64:\n    return 8 * 3 + 2\n",
+    6: "fn calc() -> i64:\n    return 10 + 20 + 30\n",
+    7: "fn calc() -> i64:\n    return (1 + 2) * 3\n",
+    8: "fn calc() -> i64:\n    return 8 * (3 + 2)\n",
+    9: "fn calc() -> i64:\n    return ((1 + 2) * 3)\n",
+    14: "fn calc() -> i64:\n    return 1 * 2 * 3\n",
 }
 
 
@@ -145,21 +152,30 @@ def _independent_binary_parser_digest(source: str) -> int:
     return_node = next(
         node for _, node in arena.nodes.items() if node.kind is NodeKind.RETURN
     )
-    binary = next(
-        node for _, node in arena.nodes.items() if node.kind is NodeKind.BINARY
+    def tree_digest(node_id: int) -> int:
+        node = arena.node(node_id)
+        payload = arena.payload(node)
+        operator = payload.operator_id + 1 if isinstance(payload, OperatorPayload) else 0
+        digest = (
+            (2 if node.kind is NodeKind.BINARY else 1) * 97
+            + operator * 101
+            + node.span.start * 103
+            + node.span.end * 107
+        )
+        if node.kind is NodeKind.INTEGER_LITERAL:
+            assert isinstance(payload, IntegerPayload)
+            return digest + payload.value * 109
+        assert node.kind is NodeKind.BINARY
+        children = arena.child_ids(node.id)
+        assert len(children) == 2
+        return digest + tree_digest(children[0]) * 113 + tree_digest(children[1]) * 127
+
+    expression = next(
+        child
+        for child_id in arena.child_ids(return_node.id)
+        for child in (arena.node(child_id),)
+        if child.kind in {NodeKind.BINARY, NodeKind.INTEGER_LITERAL}
     )
-    binary_payload = arena.payload(binary)
-    assert isinstance(binary_payload, OperatorPayload)
-    children = arena.child_ids(binary.id)
-    assert len(children) == 2
-    left = arena.node(children[0])
-    right = arena.node(children[1])
-    assert left.kind is NodeKind.INTEGER_LITERAL
-    assert right.kind is NodeKind.INTEGER_LITERAL
-    left_payload = arena.payload(left)
-    right_payload = arena.payload(right)
-    assert isinstance(left_payload, IntegerPayload)
-    assert isinstance(right_payload, IntegerPayload)
     tokens = TokenArena.from_source_independent(source, mode=SyntaxMode.V0_6)
     name_token = next(
         token
@@ -173,24 +189,68 @@ def _independent_binary_parser_digest(source: str) -> int:
         token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
         for _, token in tokens.tokens.items()
     ) + 1
-    digest = name_digest * 11
+    digest = tree_digest(expression.id)
+    digest += name_digest * 11
     digest += name_token.span.start * 13
     digest += name_token.span.end * 17
     digest += return_node.span.start * 19
-    digest += left.span.start * 23
-    digest += left.span.end * 29
-    digest += left_payload.value * 31
     digest += native_token_count * 37
-    digest += (binary_payload.operator_id + 1) * 41
-    digest += binary.span.start * 43
-    digest += left.span.start * 47
-    digest += left.span.end * 53
-    digest += left_payload.value * 59
-    digest += right.span.start * 61
-    digest += right.span.end * 67
-    digest += right_payload.value * 71
     assert function.span.start == 0
     return digest
+
+
+def _binary_expression_node(source: str):
+    parsed = parse_source_to_syntax_independent(source)
+    arena = parsed.syntax_arena
+    return_node = next(
+        node for _, node in arena.nodes.items() if node.kind is NodeKind.RETURN
+    )
+    expression = next(
+        arena.node(child_id)
+        for child_id in arena.child_ids(return_node.id)
+        if arena.node(child_id).kind is NodeKind.BINARY
+    )
+    return arena, expression
+
+
+@pytest.mark.parametrize(
+    "case_id,root_operator,left_operator,right_operator",
+    (
+        (4, 0, None, 2),
+        (5, 0, 2, None),
+        (6, 0, 0, None),
+        (7, 2, 0, None),
+        (8, 2, None, 0),
+        (9, 2, 0, None),
+        (14, 2, 2, None),
+    ),
+)
+def test_independent_expression_oracle_proves_precedence_and_grouping_shape(
+    case_id: int,
+    root_operator: int,
+    left_operator: int | None,
+    right_operator: int | None,
+) -> None:
+    arena, root = _binary_expression_node(_BINARY_PARSER_SOURCES[case_id])
+    root_payload = arena.payload(root)
+    assert isinstance(root_payload, OperatorPayload)
+    assert root_payload.operator_id == root_operator
+    children = arena.child_ids(root.id)
+    assert len(children) == 2
+    if left_operator is not None:
+        left_payload = arena.payload(arena.node(children[0]))
+        assert isinstance(left_payload, OperatorPayload)
+        assert left_payload.operator_id == left_operator
+    if right_operator is not None:
+        right_payload = arena.payload(arena.node(children[1]))
+        assert isinstance(right_payload, OperatorPayload)
+        assert right_payload.operator_id == right_operator
+
+
+def test_native_binary_expression_mutation_changes_structural_digest() -> None:
+    assert run_source(_candidate_binary_parser_source(4)) != run_source(
+        _candidate_binary_parser_source(14)
+    )
 
 
 @pytest.mark.parametrize(
@@ -257,7 +317,7 @@ def test_native_parser_minimal_function_rejects_malformed_input(case_id: int) ->
 
 @pytest.mark.parametrize(
     "case_id,expected_digest",
-    ((0, 33517221), (1, 1002593000003)),
+    tuple((case_id, _independent_binary_parser_digest(source)) for case_id, source in _BINARY_PARSER_SOURCES.items()),
 )
 def test_native_binary_expression_matches_independent_syntax_oracle(
     case_id: int,
@@ -268,7 +328,7 @@ def test_native_binary_expression_matches_independent_syntax_oracle(
     assert run_source(_candidate_binary_parser_source(case_id)) == expected
 
 
-@pytest.mark.parametrize("case_id", (2, 3))
+@pytest.mark.parametrize("case_id", (2, 3, 10, 11, 12, 13))
 def test_native_binary_expression_rejects_malformed_input(case_id: int) -> None:
     assert run_source(_candidate_binary_parser_source(case_id)) == -1
 
@@ -324,7 +384,7 @@ def test_native_parser_minimal_function_qualifies_on_linux_x86_64(
         assert completed.stdout == "program returned: -1\n"
         assert completed.stderr == ""
 
-    for case_id in (0, 1):
+    for case_id in _BINARY_PARSER_SOURCES:
         compilation = compile_source(_candidate_binary_parser_source(case_id))
         executable = toolchain.build(
             generate_native_assembly(compilation.assembly),
@@ -338,7 +398,7 @@ def test_native_parser_minimal_function_qualifies_on_linux_x86_64(
         )
         assert completed.stderr == ""
 
-    for case_id in (2, 3):
+    for case_id in (2, 3, 10, 11, 12, 13):
         compilation = compile_source(_candidate_binary_parser_source(case_id))
         executable = toolchain.build(
             generate_native_assembly(compilation.assembly),

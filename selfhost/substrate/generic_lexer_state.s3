@@ -487,22 +487,285 @@ fn generic_native_parser_integer_value(source: &vector<i64>, start: i64, end: i6
         cursor = cursor + 1
     return value
 
+fn generic_native_parser_pack(cursor: i64, node: i64) -> i64:
+    return cursor * 64 + node + 1
+
+fn generic_native_parser_packed_cursor(packed: i64) -> i64:
+    mut cursor: i64 = 0
+    mut remainder: i64 = packed
+    while remainder >= 64:
+        remainder = remainder - 64
+        cursor = cursor + 1
+    return cursor
+
+fn generic_native_parser_packed_node(packed: i64) -> i64:
+    mut remainder: i64 = packed
+    while remainder >= 64:
+        remainder = remainder - 64
+    return remainder - 1
+
+fn generic_native_parser_add_node(
+    node_kinds: &mut vector<i64>,
+    node_operators: &mut vector<i64>,
+    node_left: &mut vector<i64>,
+    node_right: &mut vector<i64>,
+    node_starts: &mut vector<i64>,
+    node_ends: &mut vector<i64>,
+    node_values: &mut vector<i64>,
+    kind: i64,
+    operator: i64,
+    left: i64,
+    right: i64,
+    start: i64,
+    end: i64,
+    value: i64
+) -> i64:
+    mut node_id: i64 = vector_len<i64>(&*node_kinds)
+    discard vector_push<i64>(node_kinds, kind)
+    discard vector_push<i64>(node_operators, operator)
+    discard vector_push<i64>(node_left, left)
+    discard vector_push<i64>(node_right, right)
+    discard vector_push<i64>(node_starts, start)
+    discard vector_push<i64>(node_ends, end)
+    discard vector_push<i64>(node_values, value)
+    return node_id
+
+fn generic_native_parser_expression(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64,
+    minimum_precedence: i64,
+    node_kinds: &mut vector<i64>,
+    node_operators: &mut vector<i64>,
+    node_left: &mut vector<i64>,
+    node_right: &mut vector<i64>,
+    node_starts: &mut vector<i64>,
+    node_ends: &mut vector<i64>,
+    node_values: &mut vector<i64>
+) -> i64:
+    mut expression_cursor: i64 = cursor
+    mut left_result: i64 = -1
+    match generic_native_parser_kind(kinds, expression_cursor) == 5:
+        -1:
+            mut integer_start: i64 = vector_get<i64>(starts, expression_cursor)
+            mut integer_end: i64 = vector_get<i64>(ends, expression_cursor)
+            mut integer_value: i64 = generic_native_parser_integer_value(source, integer_start, integer_end)
+            mut integer_node: i64 = generic_native_parser_add_node(
+                node_kinds,
+                node_operators,
+                node_left,
+                node_right,
+                node_starts,
+                node_ends,
+                node_values,
+                1,
+                0,
+                -1,
+                -1,
+                integer_start,
+                integer_end,
+                integer_value
+            )
+            left_result = generic_native_parser_pack(expression_cursor + 1, integer_node)
+        0:
+            match generic_native_parser_kind(kinds, expression_cursor) == 7:
+                -1:
+                    mut grouped_result: i64 = generic_native_parser_expression(
+                        source,
+                        kinds,
+                        starts,
+                        ends,
+                        expression_cursor + 1,
+                        0,
+                        node_kinds,
+                        node_operators,
+                        node_left,
+                        node_right,
+                        node_starts,
+                        node_ends,
+                        node_values
+                    )
+                    mut grouped_cursor: i64 = generic_native_parser_packed_cursor(grouped_result)
+                    match grouped_result == -1:
+                        -1:
+                            return -1
+                        0:
+                            discard 0
+                        1:
+                            discard 0
+                    match generic_native_parser_kind(kinds, grouped_cursor) == 8:
+                        -1:
+                            left_result = generic_native_parser_pack(
+                                grouped_cursor + 1,
+                                generic_native_parser_packed_node(grouped_result)
+                            )
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+    mut scanning: i64 = 1
+    while scanning == 1:
+        mut operator: i64 = 0
+        mut precedence: i64 = 0
+        match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 143:
+            -1:
+                operator = 1
+                precedence = 1
+            0:
+                match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 142:
+                    -1:
+                        operator = 3
+                        precedence = 2
+                    0:
+                        scanning = 0
+                    1:
+                        scanning = 0
+            1:
+                scanning = 0
+        match scanning == 1:
+            -1:
+                match precedence < minimum_precedence:
+                    -1:
+                        scanning = 0
+                    0:
+                        mut operator_cursor: i64 = generic_native_parser_packed_cursor(left_result)
+                        mut right_result: i64 = generic_native_parser_expression(
+                            source,
+                            kinds,
+                            starts,
+                            ends,
+                            operator_cursor + 1,
+                            precedence + 1,
+                            node_kinds,
+                            node_operators,
+                            node_left,
+                            node_right,
+                            node_starts,
+                            node_ends,
+                            node_values
+                        )
+                        match right_result == -1:
+                            -1:
+                                return -1
+                            0:
+                                discard 0
+                            1:
+                                discard 0
+                        mut left_node: i64 = generic_native_parser_packed_node(left_result)
+                        mut right_node: i64 = generic_native_parser_packed_node(right_result)
+                        mut binary_start: i64 = vector_get<i64>(starts, operator_cursor)
+                        mut binary_end: i64 = vector_get<i64>(&*node_ends, right_node)
+                        mut binary_node: i64 = generic_native_parser_add_node(
+                            node_kinds,
+                            node_operators,
+                            node_left,
+                            node_right,
+                            node_starts,
+                            node_ends,
+                            node_values,
+                            2,
+                            operator,
+                            left_node,
+                            right_node,
+                            binary_start,
+                            binary_end,
+                            0
+                        )
+                        left_result = generic_native_parser_pack(
+                            generic_native_parser_packed_cursor(right_result),
+                            binary_node
+                        )
+                    1:
+                        scanning = 0
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    return left_result
+
+fn generic_native_parser_tree_digest(
+    node: i64,
+    node_kinds: &vector<i64>,
+    node_operators: &vector<i64>,
+    node_left: &vector<i64>,
+    node_right: &vector<i64>,
+    node_starts: &vector<i64>,
+    node_ends: &vector<i64>,
+    node_values: &vector<i64>
+) -> i64:
+    mut kind: i64 = vector_get<i64>(node_kinds, node)
+    mut operator: i64 = vector_get<i64>(node_operators, node)
+    mut start: i64 = vector_get<i64>(node_starts, node)
+    mut end: i64 = vector_get<i64>(node_ends, node)
+    mut digest: i64 = kind * 97 + operator * 101 + start * 103 + end * 107
+    match kind == 1:
+        -1:
+            digest = digest + vector_get<i64>(node_values, node) * 109
+        0:
+            mut left_digest: i64 = generic_native_parser_tree_digest(
+                vector_get<i64>(node_left, node),
+                node_kinds,
+                node_operators,
+                node_left,
+                node_right,
+                node_starts,
+                node_ends,
+                node_values
+            )
+            mut right_digest: i64 = generic_native_parser_tree_digest(
+                vector_get<i64>(node_right, node),
+                        node_kinds,
+                        node_operators,
+                        node_left,
+                        node_right,
+                        node_starts,
+                        node_ends,
+                        node_values
+            )
+            digest = digest + left_digest * 113 + right_digest * 127
+        1:
+            mut left_digest: i64 = generic_native_parser_tree_digest(
+                vector_get<i64>(node_left, node),
+                            node_kinds,
+                            node_operators,
+                            node_left,
+                            node_right,
+                            node_starts,
+                            node_ends,
+                            node_values
+            )
+            mut right_digest: i64 = generic_native_parser_tree_digest(
+                vector_get<i64>(node_right, node),
+                node_kinds,
+                node_operators,
+                node_left,
+                node_right,
+                node_starts,
+                node_ends,
+                node_values
+            )
+            digest = digest + left_digest * 113 + right_digest * 127
+    return digest
+
 export fn generic_native_parser_digest(source: &vector<i64>) -> i64:
-    mut ids: vector<i64> = vector_new<i64>(32)
-    mut kinds: vector<i64> = vector_new<i64>(32)
-    mut starts: vector<i64> = vector_new<i64>(32)
-    mut ends: vector<i64> = vector_new<i64>(32)
+    mut ids: vector<i64> = vector_new<i64>(64)
+    mut kinds: vector<i64> = vector_new<i64>(64)
+    mut starts: vector<i64> = vector_new<i64>(64)
+    mut ends: vector<i64> = vector_new<i64>(64)
     mut token_count: i64 = generic_lexer_scan_tokens(source, &mut ids, &mut kinds, &mut starts, &mut ends)
     mut cursor: i64 = 0
     mut name_start: i64 = -1
     mut name_end: i64 = -1
     mut return_start: i64 = -1
-    mut integer_start: i64 = -1
-    mut integer_end: i64 = -1
-    mut operator_start: i64 = -1
-    mut operator_code: i64 = -1
-    mut right_integer_start: i64 = -1
-    mut right_integer_end: i64 = -1
 
     match generic_native_parser_take(&kinds, cursor, 2):
         -1:
@@ -585,33 +848,36 @@ export fn generic_native_parser_digest(source: &vector<i64>) -> i64:
             return -1
         1:
             return -1
-    match generic_native_parser_take(&kinds, cursor, 5):
+
+    mut node_kinds: vector<i64> = vector_new<i64>(64)
+    mut node_operators: vector<i64> = vector_new<i64>(64)
+    mut node_left: vector<i64> = vector_new<i64>(64)
+    mut node_right: vector<i64> = vector_new<i64>(64)
+    mut node_starts: vector<i64> = vector_new<i64>(64)
+    mut node_ends: vector<i64> = vector_new<i64>(64)
+    mut node_values: vector<i64> = vector_new<i64>(64)
+    mut expression_result: i64 = generic_native_parser_expression(
+        source,
+        &kinds,
+        &starts,
+        &ends,
+        cursor,
+        0,
+        &mut node_kinds,
+        &mut node_operators,
+        &mut node_left,
+        &mut node_right,
+        &mut node_starts,
+        &mut node_ends,
+        &mut node_values
+    )
+    match expression_result == -1:
         -1:
-            integer_start = vector_get<i64>(&starts, cursor)
-            integer_end = vector_get<i64>(&ends, cursor)
-            cursor = cursor + 1
-        0:
             return -1
-        1:
-            return -1
-    match generic_native_parser_kind(&kinds, cursor) == 143:
-        -1:
-            operator_start = vector_get<i64>(&starts, cursor)
-            operator_code = 1
-            cursor = cursor + 1
-            match generic_native_parser_take(&kinds, cursor, 5):
-                -1:
-                    right_integer_start = vector_get<i64>(&starts, cursor)
-                    right_integer_end = vector_get<i64>(&ends, cursor)
-                    cursor = cursor + 1
-                0:
-                    return -1
-                1:
-                    return -1
         0:
-            discard 0
+            cursor = generic_native_parser_packed_cursor(expression_result)
         1:
-            discard 0
+            cursor = generic_native_parser_packed_cursor(expression_result)
     match generic_native_parser_take(&kinds, cursor, 6):
         -1:
             cursor = cursor + 1
@@ -628,41 +894,37 @@ export fn generic_native_parser_digest(source: &vector<i64>) -> i64:
             return -1
     match cursor == token_count:
         -1:
-            mut name_digest: i64 = generic_native_parser_name_digest(source, name_start, name_end)
-            mut integer_value: i64 = generic_native_parser_integer_value(source, integer_start, integer_end)
-            mut digest: i64 = 0
-            digest = digest + name_digest * 11
-            digest = digest + name_start * 13
-            digest = digest + name_end * 17
-            digest = digest + return_start * 19
-            digest = digest + integer_start * 23
-            digest = digest + integer_end * 29
-            digest = digest + integer_value * 31
-            digest = digest + token_count * 37
-            match operator_start == -1:
+            mut root: i64 = generic_native_parser_packed_node(expression_result)
+            match vector_len<i64>(&node_kinds) == 1:
                 -1:
-                    discard 0
+                    mut name_digest: i64 = generic_native_parser_name_digest(source, name_start, name_end)
+                    mut integer_start: i64 = vector_get<i64>(&node_starts, root)
+                    mut integer_end: i64 = vector_get<i64>(&node_ends, root)
+                    mut integer_value: i64 = vector_get<i64>(&node_values, root)
+                    mut digest: i64 = 0
+                    digest = digest + name_digest * 11
+                    digest = digest + name_start * 13
+                    digest = digest + name_end * 17
+                    digest = digest + return_start * 19
+                    digest = digest + integer_start * 23
+                    digest = digest + integer_end * 29
+                    digest = digest + integer_value * 31
+                    digest = digest + token_count * 37
+                    return digest
                 0:
-                    mut right_integer_value: i64 = generic_native_parser_integer_value(source, right_integer_start, right_integer_end)
-                    digest = digest + operator_code * 41
-                    digest = digest + operator_start * 43
-                    digest = digest + integer_start * 47
-                    digest = digest + integer_end * 53
-                    digest = digest + integer_value * 59
-                    digest = digest + right_integer_start * 61
-                    digest = digest + right_integer_end * 67
-                    digest = digest + right_integer_value * 71
+                    discard 0
                 1:
-                    mut right_integer_value: i64 = generic_native_parser_integer_value(source, right_integer_start, right_integer_end)
-                    digest = digest + operator_code * 41
-                    digest = digest + operator_start * 43
-                    digest = digest + integer_start * 47
-                    digest = digest + integer_end * 53
-                    digest = digest + integer_value * 59
-                    digest = digest + right_integer_start * 61
-                    digest = digest + right_integer_end * 67
-                    digest = digest + right_integer_value * 71
-            return digest
+                    discard 0
+            return generic_native_parser_tree_digest(
+                root,
+                &node_kinds,
+                &node_operators,
+                &node_left,
+                &node_right,
+                &node_starts,
+                &node_ends,
+                &node_values
+            ) + generic_native_parser_name_digest(source, name_start, name_end) * 11 + name_start * 13 + name_end * 17 + return_start * 19 + token_count * 37
         0:
             return -1
         1:
@@ -802,36 +1064,162 @@ export fn generic_native_parser_binary_case(case_id: i64) -> i64:
     discard vector_push<i64>(&mut source, 114)
     discard vector_push<i64>(&mut source, 110)
     discard vector_push<i64>(&mut source, 32)
-    match case_id == 3:
-        -1:
-            discard 0
-        0:
-            match case_id == 1:
-                -1:
-                    discard vector_push<i64>(&mut source, 52)
-                    discard vector_push<i64>(&mut source, 48)
-                0:
-                    discard vector_push<i64>(&mut source, 49)
-                1:
-                    discard vector_push<i64>(&mut source, 49)
-        1:
-            match case_id == 1:
-                -1:
-                    discard vector_push<i64>(&mut source, 52)
-                    discard vector_push<i64>(&mut source, 48)
-                0:
-                    discard vector_push<i64>(&mut source, 49)
-                1:
-                    discard vector_push<i64>(&mut source, 49)
-    discard vector_push<i64>(&mut source, 32)
-    discard vector_push<i64>(&mut source, 43)
-    discard vector_push<i64>(&mut source, 32)
-    match case_id == 2:
-        -1:
-            discard 0
-        0:
-            discard vector_push<i64>(&mut source, 50)
-        1:
-            discard vector_push<i64>(&mut source, 50)
+
+    mut canonical_expression_bytes: vector<i64> = vector_new<i64>(128)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 49)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 52)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 48)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 49)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 49)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 42)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 51)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 56)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 42)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 51)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 49)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 48)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 48)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 51)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 48)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 40)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 49)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 41)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 42)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 51)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 56)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 42)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 40)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 51)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 41)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 40)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 40)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 49)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 41)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 42)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 51)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 41)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 49)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 42)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 49)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 42)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 40)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 49)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 49)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 43)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 41)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 49)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 42)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 50)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 42)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 32)
+    discard vector_push<i64>(&mut canonical_expression_bytes, 51)
+    mut canonical_offsets: vector<i64> = vector_new<i64>(16)
+    discard vector_push<i64>(&mut canonical_offsets, 0)
+    discard vector_push<i64>(&mut canonical_offsets, 5)
+    discard vector_push<i64>(&mut canonical_offsets, 11)
+    discard vector_push<i64>(&mut canonical_offsets, 14)
+    discard vector_push<i64>(&mut canonical_offsets, 17)
+    discard vector_push<i64>(&mut canonical_offsets, 26)
+    discard vector_push<i64>(&mut canonical_offsets, 35)
+    discard vector_push<i64>(&mut canonical_offsets, 47)
+    discard vector_push<i64>(&mut canonical_offsets, 58)
+    discard vector_push<i64>(&mut canonical_offsets, 69)
+    discard vector_push<i64>(&mut canonical_offsets, 82)
+    discard vector_push<i64>(&mut canonical_offsets, 89)
+    discard vector_push<i64>(&mut canonical_offsets, 96)
+    discard vector_push<i64>(&mut canonical_offsets, 102)
+    discard vector_push<i64>(&mut canonical_offsets, 108)
+    mut canonical_lengths: vector<i64> = vector_new<i64>(16)
+    discard vector_push<i64>(&mut canonical_lengths, 5)
+    discard vector_push<i64>(&mut canonical_lengths, 6)
+    discard vector_push<i64>(&mut canonical_lengths, 3)
+    discard vector_push<i64>(&mut canonical_lengths, 3)
+    discard vector_push<i64>(&mut canonical_lengths, 9)
+    discard vector_push<i64>(&mut canonical_lengths, 9)
+    discard vector_push<i64>(&mut canonical_lengths, 12)
+    discard vector_push<i64>(&mut canonical_lengths, 11)
+    discard vector_push<i64>(&mut canonical_lengths, 11)
+    discard vector_push<i64>(&mut canonical_lengths, 13)
+    discard vector_push<i64>(&mut canonical_lengths, 7)
+    discard vector_push<i64>(&mut canonical_lengths, 7)
+    discard vector_push<i64>(&mut canonical_lengths, 6)
+    discard vector_push<i64>(&mut canonical_lengths, 6)
+    discard vector_push<i64>(&mut canonical_lengths, 9)
+    mut expression_offset: i64 = vector_get<i64>(&canonical_offsets, case_id)
+    mut expression_length: i64 = vector_get<i64>(&canonical_lengths, case_id)
+    mut expression_index: i64 = 0
+    while expression_index < expression_length:
+        discard vector_push<i64>(&mut source, vector_get<i64>(&canonical_expression_bytes, expression_offset + expression_index))
+        expression_index = expression_index + 1
     discard vector_push<i64>(&mut source, 10)
     return generic_native_parser_digest(&source)
