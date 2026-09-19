@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .diagnostics import S3Error
+from .compiler_substrate import SubstrateError
 from .frontend_registration import (
     FrontendRegistrationError,
     FrontendRegistrationPlan,
@@ -22,6 +23,7 @@ from .source_frontend import (
     parse_source_bundle_independent,
 )
 from .whole_program import (
+    CompositionError,
     DiagnosticRecord,
     ModuleRecord,
     PhaseKind,
@@ -119,6 +121,8 @@ def ingest_source_frontend(
     except (
         S3Error,
         FrontendRegistrationError,
+        CompositionError,
+        SubstrateError,
         ValueError,
         KeyError,
     ) as error:
