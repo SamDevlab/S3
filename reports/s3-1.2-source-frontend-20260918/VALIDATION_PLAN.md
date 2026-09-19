@@ -7,7 +7,7 @@ in this file is evidence until its actual output is captured.
 
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
-IMPLEMENTATION_SOURCE_HEAD=d2d2e93d243cae688ede4882897d06f7d3ab1b9f
+IMPLEMENTATION_SOURCE_HEAD=e6b9122eb446d0f543e1d701b11219e22ecb85bb
 SOURCE_CHANGED_AFTER_IMPLEMENTATION_HEAD=NO
 PR=301
 ```
@@ -57,7 +57,7 @@ This tier is expected to exercise:
 - per-nominal field/variant ranges;
 - frontend phase ingestion through REGISTRATION;
 - `compile_program` real-source ingestion and fail-closed TYPE boundary;
-- import visibility and module-cycle validation in ProgramRegistry;
+- import visibility, module-cycle validation, and type-import-alias rejection in ProgramRegistry;
 - function generic-arity and unresolved nominal type-syntax retention;
 - existing whole-program transaction/orchestration regressions.
 
