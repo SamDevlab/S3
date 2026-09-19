@@ -570,6 +570,7 @@ class TypeSpec:
     owner_id: int = -1
     parameter_ordinal: int = -1
     name: str = ""
+    owner_kind: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -585,6 +586,7 @@ class TypeInfo:
     owner_id: int | None = None
     parameter_ordinal: int | None = None
     name: str = ""
+    owner_kind: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -623,7 +625,7 @@ class TypeArena:
         return (
             spec.kind.value, spec.element_type_id, spec.array_length, bool(spec.mutable),
             spec.module_id, spec.nominal_declaration_id, tuple(spec.type_arguments),
-            spec.owner_id, spec.parameter_ordinal, spec.name,
+            spec.owner_id, spec.parameter_ordinal, spec.name, spec.owner_kind,
         )
 
     @staticmethod
@@ -636,7 +638,7 @@ class TypeArena:
             tuple(int(item) for item in info.type_arguments),
             info.owner_id if info.owner_id is not None else -1,
             info.parameter_ordinal if info.parameter_ordinal is not None else -1,
-            info.name,
+            info.name, info.owner_kind,
         )
 
     def _intern(self, spec: TypeSpec) -> TypeId:
@@ -650,8 +652,11 @@ class TypeArena:
             raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: invalid array size")
         if spec.kind in {TypeKind.RECORD, TypeKind.ENUM, TypeKind.INSTANTIATED} and (spec.module_id < 0 or spec.nominal_declaration_id < 0):
             raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: nominal type lacks identity")
-        if spec.kind is TypeKind.TYPE_PARAMETER and (spec.owner_id < 0 or spec.parameter_ordinal < 0):
-            raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: type parameter lacks owner")
+        if spec.kind is TypeKind.TYPE_PARAMETER:
+            if spec.owner_id < 0 or spec.parameter_ordinal < 0:
+                raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: type parameter lacks owner")
+            if spec.owner_kind not in {"function", "nominal"}:
+                raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: type parameter owner kind is invalid")
         element = TypeId(spec.element_type_id) if spec.element_type_id >= 0 else None
         info = TypeInfo(
             TypeId(self.types.checkpoint()), spec.kind, element,
@@ -663,6 +668,7 @@ class TypeArena:
             spec.owner_id if spec.owner_id >= 0 else None,
             spec.parameter_ordinal if spec.parameter_ordinal >= 0 else None,
             spec.name,
+            spec.owner_kind,
         )
         type_id = self.types.append(info)
         self._keys[key] = type_id
