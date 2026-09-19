@@ -33,12 +33,15 @@ SourceBundle
     -> SyntaxArena
     -> registration view
     -> ProgramRegistry
-    -> TYPE:FAILED(S3E_TYPE_PHASE_UNAVAILABLE)
+    -> frontend type resolver
+    -> TypeArena + function signatures/node type associations
+    -> SEMANTIC:FAILED(S3E_SEMANTIC_PHASE_UNAVAILABLE)
 ```
 
-The real-source path commits `INPUT`, `SYNTAX`, and `REGISTRATION`, then
-fails closed at `TYPE`. It does not synthesize type resolution, expression
-semantics, IR, verification, emission, or output. The independent hosted
+The real-source path commits `INPUT`, `SYNTAX`, `REGISTRATION`, and
+`TYPE`, then fails closed at `SEMANTIC`. TYPE resolution is real and
+canonical; expression/declaration semantic analysis, IR, verification,
+emission, and output are not synthesized. The independent hosted
 frontend is an architecture candidate; the default production Python compiler
 and parser remain unchanged.
 
@@ -66,8 +69,8 @@ function bodies are not analyzed. Import targets must be registered and
 exported, duplicate import aliases are rejected, type import aliases remain
 unsupported per the existing module contract, direct/indirect module import
 cycles fail closed, nominal field/variant ranges are scoped to each owner, and
-unresolved source type syntax identities are retained for the later TYPE
-phase.
+unresolved source type syntax identities are retained by registration and
+consumed by the TYPE phase.
 
 ## TypeArena
 
@@ -86,6 +89,14 @@ does not recompute prior IDs.
 
 Existing layout authority remains authoritative. V1 stores type identity and
 metadata only; it does not introduce a second layout algorithm.
+
+For real-source ingestion, TYPE resolves registered generic syntax into
+canonical `TypeId` values for primitives, closed collections, arrays,
+references/slices, local/imported nominals, owner-sensitive type parameters,
+and instantiated nominal generics. Function parameter/result signatures and
+record/enum member type metadata are produced from those identities. The phase
+uses TypeArena and SemanticState checkpoints; a failure removes post-checkpoint
+type/signature/node-type changes while preserving committed registration.
 
 ## SemanticState
 
@@ -114,9 +125,10 @@ INPUT -> SYNTAX -> REGISTRATION -> TYPE -> SEMANTIC -> LOWERING
 ```
 
 `LOWERING` and `EMITTER` are explicitly skipped for prepared-artifact tests.
-They are never reported as executed. In the real-source path, INPUT, SYNTAX, and
-REGISTRATION commit, TYPE fails with the current unavailable-phase diagnostic,
-and every dependent phase is marked `SKIPPED`.
+They are never reported as executed. In the real-source path, INPUT, SYNTAX,
+REGISTRATION, and TYPE commit. SEMANTIC then fails with the current unavailable
+expression/declaration-semantic diagnostic, and every dependent phase is marked
+`SKIPPED`.
 
 A phase can be `RUNNING`, `COMMITTED`, `FAILED`, or `SKIPPED`. Invalid
 order, duplicate begin, and commit without a running phase are rejected. A
@@ -153,7 +165,7 @@ projections for registration, type canonicalization, phases, diagnostics,
 frontend state, and context state. They do not constitute a Stage1 candidate
 and do not prove native lexer/parser execution.
 
-Not implemented by V1: real TYPE/semantic resolution from generic syntax,
-expression semantic passes, generic lowering, optimizer integration for this
+Not implemented by V1: expression/declaration semantic passes beyond canonical
+declaration TYPE resolution, generic lowering, optimizer integration for this
 pipeline, emitter, source-to-output compilation, ordinary-S3/native complete
 frontend execution, Stage1 V4, Stage2, Stage3, release, or self-host re-entry.
