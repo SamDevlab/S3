@@ -17,8 +17,10 @@ LINE_ENDING_AUTHORITY=NORMALIZED_LF
 
 The Python reference lexer continues to expose its historical code-point
 `position` for compatibility. `TokenArena` stores that compatibility value
-only so a direct-ID token can be reconstructed for the reference parser without
-rescanning source. It is not the generic span authority.
+so reference tokens can be reconstructed without source rescans. The
+independent generic lexer publishes the same compatibility position while
+computing generic spans from the normalized UTF-8 byte-offset table. The
+compatibility position is not the generic span authority.
 
 ## TokenArena
 
@@ -36,9 +38,11 @@ IDs are allocated once and are never reconstructed from source text. The
 structural digest excludes host object identity, wall clock, filesystem paths,
 and randomized hashes.
 
-The ordinary-S3 projection is
-`selfhost/substrate/token_arena.s3`. It demonstrates the flat parallel-vector
-shape and direct-ID ordering without claiming to implement lexing.
+The ordinary-S3 projections are
+`selfhost/substrate/token_arena.s3` and
+`selfhost/substrate/generic_lexer_state.s3`. They demonstrate the flat
+parallel-vector token/state representation and deterministic cursor/classifier
+shape. They do not yet claim an ordinary-S3 complete lexer implementation.
 
 ## Parser boundary
 
@@ -56,20 +60,24 @@ normalized source
     -> generic SyntaxArena
 ```
 
-The independent generic parser path is:
+The fully independent hosted frontend path is:
 
 ```text
 normalized source
-    -> production Python lexer
+    -> GenericLexer
     -> generic TokenArena
     -> GenericParser
     -> generic SyntaxArena
 ```
 
-`GenericParser` consumes `TokenArena` directly. It does not import or construct
-`bootstrap.s3.ast` values and does not call `bootstrap.s3.parser`. The
-reference bridge remains solely as a differential oracle and compatibility
-path.
+`GenericLexer` does not call `bootstrap.s3.lexer.Lexer` or
+`bootstrap.s3.lexer.tokenize`; it shares only the stable
+`TokenKind`/`SyntaxMode` vocabulary. `GenericParser` consumes
+`TokenArena` directly, does not import or construct `bootstrap.s3.ast`
+values, and does not call `bootstrap.s3.parser`.
+
+The reference lexer/parser bridge remains available solely as a
+differential/compatibility oracle.
 
 Therefore:
 
@@ -77,8 +85,11 @@ Therefore:
 REAL_SOURCE_INPUT=YES
 GENERIC_TOKEN_ARENA=YES
 GENERIC_SYNTAX_ARENA_OUTPUT=YES
+INDEPENDENT_GENERIC_LEXER=YES_HOSTED
 INDEPENDENT_GENERIC_PARSER=YES_HOSTED_V0_6
+REFERENCE_LEXER_DIFFERENTIAL_ORACLE=YES
 REFERENCE_PARSER_DIFFERENTIAL_ORACLE=YES
+S3_NATIVE_LEXER=NO
 S3_NATIVE_PARSER=NO
 STAGE1_V4=NOT_AUTHORIZED
 ```
@@ -141,9 +152,12 @@ For a source unit of length N characters and T tokens:
 
 - normalization: O(N);
 - UTF-8 byte-offset table construction: O(N);
+- independent lexing: O(N);
 - token materialization: O(T);
-- reference parsing: governed by the existing recursive-descent parser;
-- AST-to-SyntaxArena projection: O(number of AST values);
+- independent recursive-descent parsing: O(T) for ordinary grammar paths,
+  plus bounded lookahead scans used to disambiguate generic calls/qualifiers;
+- reference parsing remains available only as a differential oracle;
+- AST-to-SyntaxArena compatibility projection: O(number of AST values);
 - direct node/token lookup: O(1);
 - child traversal: O(child count).
 
@@ -154,7 +168,7 @@ No generic token or syntax identity is reconstructed by rescanning source.
 V1 does not:
 
 - replace the default production Python compiler/parser path;
-- replace the production lexer;
+- replace the default production Python lexer path;
 - implement an S3-native lexer;
 - implement an S3-native parser;
 - execute semantic expression passes;
@@ -163,6 +177,7 @@ V1 does not:
 - turn `compile_program` into source-to-output compilation;
 - authorize self-host re-entry or Stage1 V4.
 
-The next parser-specific frontier is ordinary-S3/native parser execution over
-the same TokenArena/SyntaxArena contract. Hosted parser independence is now a
-separate implemented capability; native parser execution remains unclaimed.
+The hosted source frontend is now independent from both reference lexer and
+reference parser decisions. The next frontend frontier is an ordinary-S3/native
+lexer+parser execution path over the same SourceView/TokenArena/SyntaxArena
+contracts. Native frontend execution remains unclaimed.
