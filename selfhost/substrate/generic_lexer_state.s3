@@ -12,58 +12,6 @@ record GenericLexerState:
     token_starts: vector<i64>
     token_ends: vector<i64>
 
-fn is_ascii_digit(value: i64) -> trit:
-    match value >= 48:
-        -1:
-            return -1
-        0:
-            return -1
-        1:
-            match value <= 57:
-                -1:
-                    return -1
-                0:
-                    return 1
-                1:
-                    return 1
-
-fn is_ascii_identifier_start(value: i64) -> trit:
-    match value == 95:
-        -1:
-            discard 0
-        0:
-            return 1
-        1:
-            return 1
-
-    match value >= 65:
-        -1:
-            discard 0
-        0:
-            discard 0
-        1:
-            match value <= 90:
-                -1:
-                    discard 0
-                0:
-                    return 1
-                1:
-                    return 1
-
-    match value >= 97:
-        -1:
-            return -1
-        0:
-            return -1
-        1:
-            match value <= 122:
-                -1:
-                    return -1
-                0:
-                    return 1
-                1:
-                    return 1
-
 export fn generic_lexer_state_case(case_id: i64) -> i64:
     mut source: vector<i64> = vector_new<i64>(16)
     discard vector_push<i64>(&mut source, 102)
@@ -78,27 +26,25 @@ export fn generic_lexer_state_case(case_id: i64) -> i64:
     discard vector_push<i64>(&mut source, 50)
     discard vector_push<i64>(&mut source, 51)
 
-    mut digest: i64 = 0
     mut cursor: i64 = 0
+    mut line: i64 = 1
+    mut column: i64 = 1
+    mut digest: i64 = 0
+
     while cursor < vector_len<i64>(&source):
         mut value: i64 = vector_get<i64>(&source, cursor)
-        match is_ascii_digit(value):
+        digest = digest + value * (cursor + 1)
+        match value <=> 10:
             -1:
-                digest = digest + value
+                column = column + 1
             0:
-                digest = digest + value * 3
+                line = line + 1
+                column = 1
             1:
-                digest = digest + value * 3
-        match is_ascii_identifier_start(value):
-            -1:
-                discard 0
-            0:
-                digest = digest + 7
-            1:
-                digest = digest + 7
+                column = column + 1
         cursor = cursor + 1
 
-    return digest + case_id
+    return digest + line * 1000 + column * 10 + case_id
 
 export fn generic_lexer_state_anchor() -> i64:
     return generic_lexer_state_case(0)
