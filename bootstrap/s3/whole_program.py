@@ -1068,17 +1068,32 @@ class WholeProgramContext:
 
 
 def compile_program(source_bundle: SourceBundle, output_sink: OutputSink, *, prepared_artifacts: PreparedProgramArtifacts | None = None) -> WholeProgramCompileResult:
-    """Composition-root contract with an explicit prepared-artifact boundary.
+    """Whole-program composition root.
 
-    No parser or source-to-output implementation is hidden here.  Calling the
-    root without prepared artifacts fails closed and records that the frontend
-    phases are unavailable.
+    With prepared_artifacts, preserve the explicit test-artifact composition
+    path used by the existing architecture tests.
+
+    Without prepared artifacts, real source now executes the independent hosted
+    frontend through INPUT, SYNTAX, and REGISTRATION. The root then fails closed
+    at TYPE because semantic type resolution, expression semantics, lowering,
+    and emission are not implemented by this generic pipeline yet.
     """
     context = WholeProgramContext(source_bundle, output_capacity=output_sink.capacity)
-    if prepared_artifacts is None:
-        context.diagnostics.append(PhaseKind.INPUT, "S3E_FRONTEND_UNAVAILABLE", "compile_program requires TEST_ARTIFACT_INPUT until lexer/parser/lowering/emitter exist")
-        return WholeProgramCompileResult(False, output_sink.to_bytes(), context.diagnostics.ordered(), ("INPUT:COMMITTED", "SYNTAX:SKIPPED", "REGISTRATION:SKIPPED"), context.structural_digest())
     context.sink = output_sink
+    if prepared_artifacts is None:
+        from .frontend_control_plane import ingest_source_frontend
+
+        frontend = ingest_source_frontend(context)
+        if not frontend.success:
+            return context._failure_result(test_artifact_input=False)
+
+        context.phases.begin(PhaseKind.TYPE)
+        context.phases.fail(
+            "S3E_TYPE_PHASE_UNAVAILABLE",
+            "generic source frontend is registered; real TYPE/semantic resolution is not implemented",
+        )
+        return context._failure_result(test_artifact_input=False)
+
     return context.compose(prepared_artifacts)
 
 
