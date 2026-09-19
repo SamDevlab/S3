@@ -68,6 +68,8 @@ class TokenArena:
     POSITION_AUTHORITY = "normalized_utf8_bytes"
 
     def __init__(self, *, file_id: int, source: str, mode: SyntaxMode) -> None:
+        if isinstance(file_id, bool) or not isinstance(file_id, int) or file_id < 0:
+            raise ValueError("file_id must be a non-negative integer")
         self.file_id = file_id
         self.source = source
         self.mode = mode
