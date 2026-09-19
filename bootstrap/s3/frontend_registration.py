@@ -187,8 +187,9 @@ def _record_spec(
         elif child.kind is NodeKind.RECORD_FIELD:
             field = _declaration_payload(arena, child)
             # TypeId does not exist yet at registration time. -1 is the
-            # explicit unresolved sentinel; the source type remains in syntax.
-            _type_child(arena, child.id)
+            # explicit unresolved sentinel; type_syntax_id retains the source
+            # identity for the later TYPE phase.
+            type_syntax_id = _type_child(arena, child.id)
             fields.append(
                 FieldSpec(
                     field.symbol_id,
@@ -196,6 +197,7 @@ def _record_spec(
                     len(fields),
                     False,
                     _span(child),
+                    type_syntax_id,
                 )
             )
 
@@ -232,18 +234,22 @@ def _enum_spec(
             arena.node(payload_id)
             for payload_id in arena.child_ids(child.id)
         )
+        payload_type_syntax_ids: list[int] = []
         for payload_field in payload_fields:
             if payload_field.kind is not NodeKind.RECORD_FIELD:
                 raise FrontendRegistrationError(
                     f"enum variant node {child.id} has non-field payload syntax"
                 )
-            _type_child(arena, payload_field.id)
+            payload_type_syntax_ids.append(
+                _type_child(arena, payload_field.id)
+            )
         variants.append(
             VariantSpec(
                 variant.symbol_id,
                 len(variants),
                 len(variants),
                 tuple(-1 for _ in payload_fields),
+                tuple(payload_type_syntax_ids),
             )
         )
 
