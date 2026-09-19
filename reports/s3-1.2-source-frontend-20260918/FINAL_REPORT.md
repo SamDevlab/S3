@@ -5,7 +5,7 @@
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
 BRANCH=feat/s3-1.2-source-frontend
-IMPLEMENTATION_SOURCE_HEAD=02a7b5ca2979c180b855b025c6bc75a0b1d72ef8
+IMPLEMENTATION_SOURCE_HEAD=b95e270e5cf68c76c7721b21ce767f9734b780c6
 PR=301
 PR_STATE=OPEN_DRAFT
 PR_MERGED=NO
@@ -34,6 +34,13 @@ SHARED_SYMBOL_NAMESPACE=YES
 S3_TOKEN_ARENA_SHAPE=YES
 S3_GENERIC_LEXER_STATE_SHAPE=YES
 S3_GENERIC_PARSER_STATE_SHAPE=YES
+
+FRONTEND_PROGRAM_REGISTRATION=YES_HOSTED
+FRONTEND_CONTROL_PLANE_INGESTION=YES_INPUT_SYNTAX_REGISTRATION
+PROGRAM_REGISTRY_IMPORT_VISIBILITY=ENFORCED
+PROGRAM_REGISTRY_MODULE_CYCLES=REJECTED
+NOMINAL_FIELD_RANGES=PER_TYPE
+NOMINAL_TYPE_SYNTAX_RETENTION=YES
 ```
 
 The independent hosted source path is now:
@@ -60,6 +67,17 @@ source
 The independent path does not call the production `Lexer`/`tokenize`,
 does not construct `bootstrap.s3.ast` values, and does not call
 `bootstrap.s3.parser`.
+
+The independent frontend is additionally bridged into the whole-program
+control plane. A fresh context can now consume real source through INPUT,
+SYNTAX, and REGISTRATION and stops with TYPE as the next legal phase.
+
+The registration bridge derives deterministic module/function/nominal/import/
+export identities directly from generic syntax. Implicit module identity follows
+the existing module-graph logical-path authority. ProgramRegistry now also
+enforces import visibility, rejects module import cycles, scopes field/variant
+ranges per nominal type, and retains unresolved field/payload type-syntax IDs
+for the later TYPE phase.
 
 The default production compiler/frontend remains unchanged.
 
@@ -180,14 +198,17 @@ SELFHOST_GATE_10=DIRECT_TOKEN_AND_NODE_IDS_PRESERVED
 SELFHOST_GATE_11=FRONTEND_COMPLEXITY_DOCUMENTED
 ```
 
-The next remaining frontend boundary after validation is:
+The next remaining self-host frontend boundary after validation is:
 
 ```text
 NEXT_SELFHOST_REPRESENTABILITY_BLOCKER=ORDINARY_S3_NATIVE_FRONTEND_EXECUTION
 ```
 
-Ordinary-S3 token/lexer/parser state shapes now exist, but complete lexer/parser
-algorithms have not yet been executed as ordinary S3/native code.
+For the hosted compiler architecture, the next legal control-plane phase is
+TYPE. Real semantic type resolution, semantic expression passes, lowering and
+emission remain unimplemented. Ordinary-S3 token/lexer/parser state shapes
+exist, but complete lexer/parser algorithms have not yet been executed as
+ordinary S3/native code.
 
 ## Publication boundary
 
