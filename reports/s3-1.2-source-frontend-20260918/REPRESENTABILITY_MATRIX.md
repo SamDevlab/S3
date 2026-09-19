@@ -14,11 +14,12 @@
 | complete lexer algorithm ordinary S3 | BLOCKED | hosted algorithm not yet projected/executed natively |
 | parser cursor/state hosted | REPRESENTABLE_NOW | generic_parser.py |
 | parser cursor/state ordinary S3 | REPRESENTABLE_NOW_FOR_SHAPE | generic_parser_state.s3 |
-| bounded native function parser slice | QUALIFIED_FOR_MINIMAL_FUNCTION_AND_BINARY_RETURN | native token vectors -> function/return/integer and binary-expression structural digests; Linux x86-64 15-test pass |
+| bounded native function parser slice | QUALIFIED_FOR_EXPRESSION_CORE | native token vectors -> function/return/tree structural digests; Linux x86-64 34-test pass |
 | parser grammar decisions hosted | REPRESENTABLE_NOW_V0_6 | GenericParser consumes TokenArena directly |
 | parser differential oracle | AVAILABLE | production Python parser |
-| native binary integer-expression parser slice | QUALIFIED_FOR_BINARY_RETURN_SUBSET | `1 + 2` and `40 + 2` pass; missing-left and missing-right cases reject |
-| complete parser algorithm ordinary S3 | BLOCKED | hosted algorithm not yet projected/executed natively; precedence/general expression coverage remains |
+| native integer expression parser slice | QUALIFIED_FOR_EXPRESSION_CORE | integer literals, `+`, `*`, precedence, left associativity, and parenthesized grouping pass natively |
+| native expression negative cases | QUALIFIED | missing operands, unclosed grouping, and extra close reject with `-1` |
+| complete parser algorithm ordinary S3 | BLOCKED | identifier expressions, statements, semantic analysis, lowering, and emission remain outside this slice |
 | parser-level SyntaxArena | REPRESENTABLE_NOW_HOSTED | direct GenericParser output |
 | hosted AST dependency in independent path | NO | GenericLexer -> TokenArena -> GenericParser -> SyntaxArena |
 | reference lexer dependency in independent path | NO | TokenArena.from_source_independent uses GenericLexer |
@@ -78,6 +79,7 @@ TokenIds and NodeIds are never reconstructed by source recount.
 
 ## Next blocker
 
-`NATIVE_EXPRESSION_PRECEDENCE`: generalize the native expression parser beyond
-the bounded integer-plus-integer return shape while preserving the existing
-SourceView/TokenArena/SyntaxArena contracts.
+`NATIVE_IDENTIFIER_EXPRESSION`: extend the native expression parser beyond
+literal/operator/grouping forms while preserving the existing
+SourceView/TokenArena/SyntaxArena contracts. Identifier expressions are not
+implemented by this PR.

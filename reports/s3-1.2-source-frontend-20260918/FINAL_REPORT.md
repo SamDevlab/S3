@@ -5,9 +5,9 @@
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
 BRANCH=feat/s3-1.2-source-frontend
-IMPLEMENTATION_SOURCE_HEAD=ff384778ceceb33335e8ee3a06cb63a48ea66e85
+IMPLEMENTATION_SOURCE_HEAD=5230f92281e482a30fee8d116fb29d6932483fe1
 SOURCE_CHANGED_AFTER_IMPLEMENTATION_HEAD=NO
-FINAL_FUNCTIONAL_HEAD=ff384778ceceb33335e8ee3a06cb63a48ea66e85
+FINAL_FUNCTIONAL_HEAD=5230f92281e482a30fee8d116fb29d6932483fe1
 PR=301
 PR_STATE=OPEN_DRAFT
 PR_MERGED=NO
@@ -152,27 +152,36 @@ fixture literals. The focused regression computes the independent hosted
 
 ```text
 ORDINARY_S3_LEXER_SLICE=PASS_HOSTED_AND_LINUX_NATIVE
-ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_MINIMAL_FUNCTION_AND_BINARY_EXPRESSION_SUBSET
+ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_EXPRESSION_CORE_SUBSET
 S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
-S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION_PLUS_BINARY_EXPRESSION
-NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_BINARY_RETURN_SUBSET
-NATIVE_EXPRESSION_PARSING=PARTIALLY_PROVEN
+S3_NATIVE_PARSER=PARTIAL_EXPRESSION_CORE
+NATIVE_INTEGER_EXPRESSION=PASS
+NATIVE_BINARY_ADDITION=PASS
+NATIVE_MULTIPLICATION=PASS
+NATIVE_EXPRESSION_PRECEDENCE=PASS
+NATIVE_SAME_LEVEL_ASSOCIATIVITY=PASS
+NATIVE_PARENTHESIZED_EXPRESSION=PASS
+NATIVE_GROUPING_OVERRIDES_PRECEDENCE=PASS
+NATIVE_EXPRESSION_NEGATIVE_CASES=PASS
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_INTEGER_BINARY_PRECEDENCE_PARENTHESES_SUBSET
+HOST_EXECUTION_SUPPORT=PRESENT_AS_EXPECTED
+HOST_SEMANTIC_DECISIONS=DECREASING_BUT_PRESENT
 ```
 
 The Windows run records the Linux-native marker as an expected platform skip.
-The same test passed on the Linux x86-64 VM with `15 passed`, covering the
-lexer cases, the two original valid parser cases, two valid binary-expression
-cases, and four parser/binary-expression rejection cases. Remote Linux
-compileall also passed. The native parser consumes only the native token
-vectors and has no fallback to the hosted lexer/parser.
+The same test passed on the Linux x86-64 VM with `34 passed`, covering the
+lexer cases, the minimal parser cases, precedence/associativity/grouping
+cases, and malformed expression cases. Remote Linux compileall also passed.
+The native parser consumes only the native token vectors and has no fallback
+to the hosted lexer/parser.
 
 The bounded native parser accepts `fn <identifier>() -> i64:` with an indented
-integer return and the binary `integer + integer` return shape. Its original
-structural digests are `1063349395` for `entry`/`42` and `38641705493` for
-`worker`/`7`; binary digests are `33517221` for `calc`/`1 + 2` and
-`1002593000003` for `compute`/`40 + 2`. Missing integer, missing operands,
-and trailing source are rejected. The independent hosted `GenericParser`
-remains the differential oracle.
+integer expression return. Its structural digest is derived from the native
+tree shape and the independent hosted syntax spans; it is not tied to fixture
+names or fixed event counts. The independent hosted `GenericParser` remains
+the differential oracle. Identifier expressions, statements beyond this
+return-expression slice, semantic analysis, lowering, and emission remain
+outside the implementation scope.
 
 ## Tests authored
 
@@ -202,18 +211,19 @@ Focused tests now cover:
 - TYPE rollback while preserving committed registration.
 - bounded ordinary-S3 lexer slice parity with the independent hosted digest;
 - parenthesis-token differential behavior;
-- platform-gated native qualification for the lexer and minimal parser slice.
+- platform-gated native qualification for the lexer and expression parser
+  slice, including precedence, associativity, grouping, and malformed cases.
 
 Validation performed on the Windows checkout and Linux x86-64 VM:
 
-- `tests/test_native_frontend_slice.py`: 13 focused cases passed, 2 expected
-  Windows platform skips;
-- affected frontend tests: 53 passed, 2 expected Windows platform skips;
+- `tests/test_native_frontend_slice.py`: 32 passed, 2 expected Windows
+  platform skips;
+- affected frontend tests: 72 passed, 2 expected Windows platform skips;
 - `python -m compileall -q bootstrap tools tests`: PASS;
 - `git diff --check`: PASS.
-- Linux VM `tests/test_native_frontend_slice.py`: 15 passed;
+- Linux VM `tests/test_native_frontend_slice.py`: 34 passed;
 - Linux VM compileall: PASS.
-- Full suite on `ff384778ceceb33335e8ee3a06cb63a48ea66e85`: exit 0.
+- Full suite on `5230f92281e482a30fee8d116fb29d6932483fe1`: exit 0.
 
 The final full suite ran on the functional HEAD above. Any subsequent
 publication commit changes only documentation and report metadata, not
@@ -229,19 +239,25 @@ INDEPENDENT_GENERIC_LEXER=YES_HOSTED
 INDEPENDENT_GENERIC_PARSER=YES_HOSTED_V0_6
 
 S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
-S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION_PLUS_BINARY_EXPRESSION
-NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_BINARY_RETURN_SUBSET
-NATIVE_EXPRESSION_PARSING=PARTIALLY_PROVEN
-NATIVE_BINARY_EXPRESSION_PARSE=PASS
-NATIVE_BINARY_EXPRESSION_VALID_CASES=2
-NATIVE_BINARY_EXPRESSION_NEGATIVE_CASES=2
-NATIVE_BINARY_EXPRESSION_DIGEST_CASE_1=33517221
-NATIVE_BINARY_EXPRESSION_DIGEST_CASE_2=1002593000003
+S3_NATIVE_PARSER=PARTIAL_EXPRESSION_CORE
+NATIVE_INTEGER_EXPRESSION=PASS
+NATIVE_BINARY_ADDITION=PASS
+NATIVE_MULTIPLICATION=PASS
+NATIVE_EXPRESSION_PRECEDENCE=PASS
+NATIVE_SAME_LEVEL_ASSOCIATIVITY=PASS
+NATIVE_PARENTHESIZED_EXPRESSION=PASS
+NATIVE_GROUPING_OVERRIDES_PRECEDENCE=PASS
+NATIVE_EXPRESSION_NEGATIVE_CASES=PASS
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_INTEGER_BINARY_PRECEDENCE_PARENTHESES_SUBSET
+ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_EXPRESSION_CORE_SUBSET
+HOST_EXECUTION_SUPPORT=PRESENT_AS_EXPECTED
+HOST_SEMANTIC_DECISIONS=DECREASING_BUT_PRESENT
+NATIVE_BINARY_EXPRESSION_VALID_CASES=9
+NATIVE_BINARY_EXPRESSION_NEGATIVE_CASES=6
 BINARY_OPERATOR_FROM_INPUT=YES
 LEFT_OPERAND_FROM_INPUT=YES
 RIGHT_OPERAND_FROM_INPUT=YES
 OPTIONAL_IDENTIFIER_EXPRESSION=NOT_ATTEMPTED
-HOST_SEMANTIC_DECISIONS=DECREASING_BUT_PRESENT
 
 SEMANTIC_EXPRESSION_ANALYZER=NO
 GENERIC_LOWERING=NO
@@ -282,7 +298,7 @@ SELFHOST_GATE_11=FRONTEND_COMPLEXITY_DOCUMENTED
 The next remaining self-host frontend boundary after validation is:
 
 ```text
-NEXT_SELFHOST_REPRESENTABILITY_BLOCKER=NATIVE_EXPRESSION_PRECEDENCE
+NEXT_SELFHOST_REPRESENTABILITY_BLOCKER=NATIVE_IDENTIFIER_EXPRESSION
 ```
 
 For the hosted compiler architecture, the next legal control-plane phase is

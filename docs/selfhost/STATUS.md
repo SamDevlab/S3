@@ -133,14 +133,16 @@ Linux-native test as an expected local platform skip.
 The same ordinary-S3 source now also contains a bounded native parser slice.
 It consumes the native token vectors produced by the scanner and accepts the
 minimal `fn <identifier>() -> i64:` function shape with an indented integer
-return, including a binary `+` expression with two integer operands. Its
-digest is derived from the parsed identifier bytes, spans, operator, integer
-payloads, and token-vector length rather than from fixture names or constants.
-Two valid binary inputs (`1 + 2` and `40 + 2`) and two malformed inputs
-(missing right operand and missing left operand) are covered, with the
-independent hosted parser used only as the differential oracle. The Linux
-x86-64 focused qualification passed 15 tests, and the native path has no
-fallback to `GenericLexer`, `GenericParser`, or the Python parser.
+return. Its expression parser now handles integer literals, `+`, `*`,
+left-associative same-precedence chains, and parenthesized grouping with the
+hosted syntax tree as the independent differential oracle. The structural
+digest includes the parsed tree shape, source spans, operator codes, integer
+payloads, function name bytes, and token-vector length rather than fixture
+names or constants. Valid cases cover precedence, associativity, nested
+grouping, and multiplication; malformed missing-operand, unclosed-group, and
+extra-close inputs are rejected with `-1`. The Linux x86-64 focused
+qualification passed 34 tests, and the native path has no fallback to
+`GenericLexer`, `GenericParser`, or the Python parser.
 
 This remains partial ordinary-frontend execution evidence only. It does not
 claim a complete S3-native lexer or parser, semantic analysis, lowering,
@@ -148,11 +150,19 @@ emission, or a self-hosted compiler:
 
 ```text
 ORDINARY_S3_LEXER_SLICE=YES_HOSTED_AND_LINUX_NATIVE
-ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_MINIMAL_FUNCTION_AND_BINARY_EXPRESSION_SUBSET
+ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_EXPRESSION_CORE_SUBSET
 S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
-S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION_PLUS_BINARY_EXPRESSION
-NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_BINARY_RETURN_SUBSET
-NATIVE_EXPRESSION_PARSING=PARTIALLY_PROVEN
+S3_NATIVE_PARSER=PARTIAL_EXPRESSION_CORE
+NATIVE_INTEGER_EXPRESSION=PASS
+NATIVE_BINARY_ADDITION=PASS
+NATIVE_MULTIPLICATION=PASS
+NATIVE_EXPRESSION_PRECEDENCE=PASS
+NATIVE_SAME_LEVEL_ASSOCIATIVITY=PASS
+NATIVE_PARENTHESIZED_EXPRESSION=PASS
+NATIVE_GROUPING_OVERRIDES_PRECEDENCE=PASS
+NATIVE_EXPRESSION_NEGATIVE_CASES=PASS
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_INTEGER_BINARY_PRECEDENCE_PARENTHESES_SUBSET
+HOST_EXECUTION_SUPPORT=PRESENT_AS_EXPECTED
 HOST_SEMANTIC_DECISIONS=DECREASING_BUT_PRESENT
 ```
 

@@ -70,19 +70,21 @@ Linux x86-64 VM.
 
 `generic_native_parser_digest` consumes the token IDs, kinds, and spans emitted
 by the native lexer vectors. It recognizes the bounded
-`fn <identifier>() -> i64:` shape with an indented `return <integer>` body and
-the corresponding `return <integer> + <integer>` shape, checks the final
-newline and EOF, and derives a structural digest from the name bytes, spans,
-operator, integer payloads, and token count. The hosted independent
-`GenericParser` supplies the differential oracle; the native implementation
-does not call `GenericLexer`, `GenericParser`, `tokenize`, or `parse_tokens`.
+`fn <identifier>() -> i64:` shape with an indented return expression, checks
+the final newline and EOF, and parses integer literals, `+`, `*`, and
+parenthesized expressions using precedence climbing. The structural digest is
+derived from the resulting tree shape, source spans, operator codes, integer
+payloads, name bytes, and token count. The hosted independent `GenericParser`
+supplies the differential oracle; the native implementation does not call
+`GenericLexer`, `GenericParser`, `tokenize`, or `parse_tokens`.
 
-The original `entry`/`42` and `worker`/`7` cases remain covered. The binary
-`calc`/`1 + 2` and `compute`/`40 + 2` cases produce `33517221` and
-`1002593000003`, respectively. Missing right and missing left operands are
-rejected with `-1`. The Linux x86-64 focused qualification passed 15 tests,
-including all parser and binary-expression positives and negatives, while the
-Windows run records the native Linux marker as an expected platform skip.
+The original `entry`/`42` and `worker`/`7` cases remain covered. Additional
+cases prove `+`/`*` precedence, left associativity, grouping precedence
+overrides, nested parentheses, multiplication chains, missing operands,
+unclosed grouping, and extra closing delimiters. The Linux x86-64 focused
+qualification passed 34 tests, including all parser and expression positives
+and negatives, while the Windows run records the two native Linux markers as
+expected platform skips.
 
 ## Parser boundary
 
@@ -130,9 +132,19 @@ INDEPENDENT_GENERIC_PARSER=YES_HOSTED_V0_6
 REFERENCE_LEXER_DIFFERENTIAL_ORACLE=YES
 REFERENCE_PARSER_DIFFERENTIAL_ORACLE=YES
 S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
-S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION_PLUS_BINARY_EXPRESSION
-NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_BINARY_RETURN_SUBSET
-NATIVE_EXPRESSION_PARSING=PARTIALLY_PROVEN
+S3_NATIVE_PARSER=PARTIAL_EXPRESSION_CORE
+NATIVE_INTEGER_EXPRESSION=PASS
+NATIVE_BINARY_ADDITION=PASS
+NATIVE_MULTIPLICATION=PASS
+NATIVE_EXPRESSION_PRECEDENCE=PASS
+NATIVE_SAME_LEVEL_ASSOCIATIVITY=PASS
+NATIVE_PARENTHESIZED_EXPRESSION=PASS
+NATIVE_GROUPING_OVERRIDES_PRECEDENCE=PASS
+NATIVE_EXPRESSION_NEGATIVE_CASES=PASS
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_INTEGER_BINARY_PRECEDENCE_PARENTHESES_SUBSET
+ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_EXPRESSION_CORE_SUBSET
+HOST_EXECUTION_SUPPORT=PRESENT_AS_EXPECTED
+HOST_SEMANTIC_DECISIONS=DECREASING_BUT_PRESENT
 STAGE1_V4=NOT_AUTHORIZED
 ```
 
@@ -293,6 +305,6 @@ V1 does not:
 The hosted source frontend is now independent from both reference lexer and
 reference parser decisions. A bounded ordinary-S3/native lexer and parser
 slice is proven over the same token-vector and syntax contracts, including
-binary integer-return expressions. The next frontend frontier is broader
-native expression precedence and statement parsing; native semantic analysis,
+integer expression precedence and grouping. Identifier expressions and
+statement parsing remain outside this scope; native semantic analysis,
 lowering, and emission remain unclaimed.
