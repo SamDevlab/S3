@@ -26,10 +26,16 @@
 | module cycle rejection | REPRESENTABLE_NOW_HOSTED | deterministic registry graph validation |
 | nominal field/variant ranges | REPRESENTABLE_NOW_HOSTED | per-nominal ranges, duplicate checks scoped to owner |
 | unresolved nominal type syntax | REPRESENTABLE_NOW_HOSTED | FieldSpec/VariantSpec retain syntax IDs |
-| frontend -> control-plane registration | REPRESENTABLE_NOW_HOSTED | INPUT/SYNTAX/REGISTRATION only |
-| compile_program real-source ingestion | REPRESENTABLE_NOW_HOSTED_PARTIAL | commits through REGISTRATION, fails closed at TYPE |
+| frontend -> control-plane registration | REPRESENTABLE_NOW_HOSTED | INPUT/SYNTAX/REGISTRATION |
+| frontend TYPE resolution | REPRESENTABLE_NOW_HOSTED | frontend_types.py resolves canonical TypeIds |
+| function signatures from generic syntax | REPRESENTABLE_NOW_HOSTED | SemanticState signature arena populated transactionally |
+| local/imported nominal type identity | REPRESENTABLE_NOW_HOSTED | module/import aware nominal lookup |
+| owner-sensitive type parameters | REPRESENTABLE_NOW_HOSTED | function/nominal owner + ordinal identity |
+| record/enum member type metadata | REPRESENTABLE_NOW_HOSTED | resolved field and variant payload rows |
+| TYPE rollback | REPRESENTABLE_NOW_HOSTED | TypeArena + SemanticState checkpoints preserve registration |
+| compile_program real-source ingestion | REPRESENTABLE_NOW_HOSTED_PARTIAL | commits through TYPE, fails closed at SEMANTIC |
 | frontend diagnostics | PARTIAL | error codes enter phase diagnostics; complete source-span envelope pending |
-| TYPE phase from generic syntax | BLOCKED | real type resolution not implemented |
+| expression/declaration semantic phase | BLOCKED | no real expression/binding semantic analysis yet |
 | source -> IR | BLOCKED | semantic passes/lowering absent |
 | source -> output | BLOCKED | semantics/lowering/emitter absent |
 
