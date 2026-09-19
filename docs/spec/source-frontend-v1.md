@@ -70,17 +70,19 @@ Linux x86-64 VM.
 
 `generic_native_parser_digest` consumes the token IDs, kinds, and spans emitted
 by the native lexer vectors. It recognizes the bounded
-`fn <identifier>() -> i64:` shape with an indented `return <integer>` body,
-checks the final newline and EOF, and derives a structural digest from the
-name bytes, spans, integer value, and token count. The hosted independent
+`fn <identifier>() -> i64:` shape with an indented `return <integer>` body and
+the corresponding `return <integer> + <integer>` shape, checks the final
+newline and EOF, and derives a structural digest from the name bytes, spans,
+operator, integer payloads, and token count. The hosted independent
 `GenericParser` supplies the differential oracle; the native implementation
 does not call `GenericLexer`, `GenericParser`, `tokenize`, or `parse_tokens`.
 
-The valid `entry`/`42` and `worker`/`7` cases produce `1063349395` and
-`38641705493`, respectively. Missing integer and trailing source are rejected
-with `-1`. The Linux x86-64 focused qualification passed 11 tests, including
-the parser positives and negatives, while the Windows run records the native
-Linux marker as an expected platform skip.
+The original `entry`/`42` and `worker`/`7` cases remain covered. The binary
+`calc`/`1 + 2` and `compute`/`40 + 2` cases produce `33517221` and
+`1002593000003`, respectively. Missing right and missing left operands are
+rejected with `-1`. The Linux x86-64 focused qualification passed 15 tests,
+including all parser and binary-expression positives and negatives, while the
+Windows run records the native Linux marker as an expected platform skip.
 
 ## Parser boundary
 
@@ -128,8 +130,9 @@ INDEPENDENT_GENERIC_PARSER=YES_HOSTED_V0_6
 REFERENCE_LEXER_DIFFERENTIAL_ORACLE=YES
 REFERENCE_PARSER_DIFFERENTIAL_ORACLE=YES
 S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
-S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION
-NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_MINIMAL_FUNCTION_SUBSET
+S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION_PLUS_BINARY_EXPRESSION
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_BINARY_RETURN_SUBSET
+NATIVE_EXPRESSION_PARSING=PARTIALLY_PROVEN
 STAGE1_V4=NOT_AUTHORIZED
 ```
 
@@ -288,8 +291,8 @@ V1 does not:
 - authorize self-host re-entry or Stage1 V4.
 
 The hosted source frontend is now independent from both reference lexer and
-reference parser decisions. A bounded ordinary-S3/native lexer and minimal
-function parser slice is proven over the same token-vector and syntax
-contracts. The next frontend frontier is broader native statement and
-expression parsing; native semantic analysis, lowering, and emission remain
-unclaimed.
+reference parser decisions. A bounded ordinary-S3/native lexer and parser
+slice is proven over the same token-vector and syntax contracts, including
+binary integer-return expressions. The next frontend frontier is broader
+native expression precedence and statement parsing; native semantic analysis,
+lowering, and emission remain unclaimed.

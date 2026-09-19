@@ -5,8 +5,9 @@
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
 BRANCH=feat/s3-1.2-source-frontend
-IMPLEMENTATION_SOURCE_HEAD=3cce14ce78073d36dcc04088524f5563713cb84a
+IMPLEMENTATION_SOURCE_HEAD=ff384778ceceb33335e8ee3a06cb63a48ea66e85
 SOURCE_CHANGED_AFTER_IMPLEMENTATION_HEAD=NO
+FINAL_FUNCTIONAL_HEAD=ff384778ceceb33335e8ee3a06cb63a48ea66e85
 PR=301
 PR_STATE=OPEN_DRAFT
 PR_MERGED=NO
@@ -151,23 +152,27 @@ fixture literals. The focused regression computes the independent hosted
 
 ```text
 ORDINARY_S3_LEXER_SLICE=PASS_HOSTED_AND_LINUX_NATIVE
-ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_MINIMAL_FUNCTION_SUBSET
+ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_MINIMAL_FUNCTION_AND_BINARY_EXPRESSION_SUBSET
 S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
-S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION
-NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_MINIMAL_FUNCTION_SUBSET
+S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION_PLUS_BINARY_EXPRESSION
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_BINARY_RETURN_SUBSET
+NATIVE_EXPRESSION_PARSING=PARTIALLY_PROVEN
 ```
 
 The Windows run records the Linux-native marker as an expected platform skip.
-The same test passed on the Linux x86-64 VM with `11 passed`, covering the
-lexer cases, two valid native parser cases, and two native parser rejection
-cases. Remote Linux compileall also passed. The native parser consumes only
-the native token vectors and has no fallback to the hosted lexer/parser.
+The same test passed on the Linux x86-64 VM with `15 passed`, covering the
+lexer cases, the two original valid parser cases, two valid binary-expression
+cases, and four parser/binary-expression rejection cases. Remote Linux
+compileall also passed. The native parser consumes only the native token
+vectors and has no fallback to the hosted lexer/parser.
 
 The bounded native parser accepts `fn <identifier>() -> i64:` with an indented
-integer return. Its structural digests are `1063349395` for `entry`/`42` and
-`38641705493` for `worker`/`7`; missing integer and trailing source are
-rejected. The independent hosted `GenericParser` remains the differential
-oracle.
+integer return and the binary `integer + integer` return shape. Its original
+structural digests are `1063349395` for `entry`/`42` and `38641705493` for
+`worker`/`7`; binary digests are `33517221` for `calc`/`1 + 2` and
+`1002593000003` for `compute`/`40 + 2`. Missing integer, missing operands,
+and trailing source are rejected. The independent hosted `GenericParser`
+remains the differential oracle.
 
 ## Tests authored
 
@@ -201,18 +206,18 @@ Focused tests now cover:
 
 Validation performed on the Windows checkout and Linux x86-64 VM:
 
-- `tests/test_native_frontend_slice.py`: 9 focused cases passed, 2 expected
+- `tests/test_native_frontend_slice.py`: 13 focused cases passed, 2 expected
   Windows platform skips;
-- affected frontend tests: 46 passed, 2 expected Windows platform skips;
+- affected frontend tests: 53 passed, 2 expected Windows platform skips;
 - `python -m compileall -q bootstrap tools tests`: PASS;
 - `git diff --check`: PASS.
-- Linux VM `tests/test_native_frontend_slice.py`: 11 passed;
+- Linux VM `tests/test_native_frontend_slice.py`: 15 passed;
 - Linux VM compileall: PASS.
+- Full suite on `ff384778ceceb33335e8ee3a06cb63a48ea66e85`: exit 0.
 
-The final full suite on
-`3cce14ce78073d36dcc04088524f5563713cb84a` exited 0 after the native parser
-slice. Any subsequent publication commit changes only documentation and
-report metadata, not executable, compiler, or test logic.
+The final full suite ran on the functional HEAD above. Any subsequent
+publication commit changes only documentation and report metadata, not
+executable, compiler, or test logic.
 
 ## Architectural boundary
 
@@ -224,8 +229,19 @@ INDEPENDENT_GENERIC_LEXER=YES_HOSTED
 INDEPENDENT_GENERIC_PARSER=YES_HOSTED_V0_6
 
 S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
-S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION
-NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_MINIMAL_FUNCTION_SUBSET
+S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION_PLUS_BINARY_EXPRESSION
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_BINARY_RETURN_SUBSET
+NATIVE_EXPRESSION_PARSING=PARTIALLY_PROVEN
+NATIVE_BINARY_EXPRESSION_PARSE=PASS
+NATIVE_BINARY_EXPRESSION_VALID_CASES=2
+NATIVE_BINARY_EXPRESSION_NEGATIVE_CASES=2
+NATIVE_BINARY_EXPRESSION_DIGEST_CASE_1=33517221
+NATIVE_BINARY_EXPRESSION_DIGEST_CASE_2=1002593000003
+BINARY_OPERATOR_FROM_INPUT=YES
+LEFT_OPERAND_FROM_INPUT=YES
+RIGHT_OPERAND_FROM_INPUT=YES
+OPTIONAL_IDENTIFIER_EXPRESSION=NOT_ATTEMPTED
+HOST_SEMANTIC_DECISIONS=DECREASING_BUT_PRESENT
 
 SEMANTIC_EXPRESSION_ANALYZER=NO
 GENERIC_LOWERING=NO
@@ -266,7 +282,7 @@ SELFHOST_GATE_11=FRONTEND_COMPLEXITY_DOCUMENTED
 The next remaining self-host frontend boundary after validation is:
 
 ```text
-NEXT_SELFHOST_REPRESENTABILITY_BLOCKER=NATIVE_STATEMENT_OR_EXPRESSION_PARSING
+NEXT_SELFHOST_REPRESENTABILITY_BLOCKER=NATIVE_EXPRESSION_PRECEDENCE
 ```
 
 For the hosted compiler architecture, the next legal control-plane phase is

@@ -14,10 +14,11 @@
 | complete lexer algorithm ordinary S3 | BLOCKED | hosted algorithm not yet projected/executed natively |
 | parser cursor/state hosted | REPRESENTABLE_NOW | generic_parser.py |
 | parser cursor/state ordinary S3 | REPRESENTABLE_NOW_FOR_SHAPE | generic_parser_state.s3 |
-| bounded native function parser slice | QUALIFIED_FOR_MINIMAL_FUNCTION | native token vectors -> function/return/integer structural digest; Linux x86-64 pass |
+| bounded native function parser slice | QUALIFIED_FOR_MINIMAL_FUNCTION_AND_BINARY_RETURN | native token vectors -> function/return/integer and binary-expression structural digests; Linux x86-64 15-test pass |
 | parser grammar decisions hosted | REPRESENTABLE_NOW_V0_6 | GenericParser consumes TokenArena directly |
 | parser differential oracle | AVAILABLE | production Python parser |
-| complete parser algorithm ordinary S3 | BLOCKED | hosted algorithm not yet projected/executed natively |
+| native binary integer-expression parser slice | QUALIFIED_FOR_BINARY_RETURN_SUBSET | `1 + 2` and `40 + 2` pass; missing-left and missing-right cases reject |
+| complete parser algorithm ordinary S3 | BLOCKED | hosted algorithm not yet projected/executed natively; precedence/general expression coverage remains |
 | parser-level SyntaxArena | REPRESENTABLE_NOW_HOSTED | direct GenericParser output |
 | hosted AST dependency in independent path | NO | GenericLexer -> TokenArena -> GenericParser -> SyntaxArena |
 | reference lexer dependency in independent path | NO | TokenArena.from_source_independent uses GenericLexer |
@@ -77,6 +78,6 @@ TokenIds and NodeIds are never reconstructed by source recount.
 
 ## Next blocker
 
-`ORDINARY_S3_NATIVE_FRONTEND_EXECUTION`: project and qualify the complete
-lexer/parser algorithms as ordinary S3/native execution over the existing
+`NATIVE_EXPRESSION_PRECEDENCE`: generalize the native expression parser beyond
+the bounded integer-plus-integer return shape while preserving the existing
 SourceView/TokenArena/SyntaxArena contracts.
