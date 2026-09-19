@@ -379,18 +379,46 @@ export fn generic_lexer_native_case(case_id: i64) -> i64:
     discard vector_push<i64>(&mut source, 102)
     discard vector_push<i64>(&mut source, 110)
     discard vector_push<i64>(&mut source, 32)
-    discard vector_push<i64>(&mut source, 109)
-    discard vector_push<i64>(&mut source, 97)
-    discard vector_push<i64>(&mut source, 105)
-    discard vector_push<i64>(&mut source, 110)
-    match case_id == 1:
+    match case_id == 2:
         -1:
+            discard vector_push<i64>(&mut source, 101)
+            discard vector_push<i64>(&mut source, 110)
+            discard vector_push<i64>(&mut source, 116)
+            discard vector_push<i64>(&mut source, 114)
+            discard vector_push<i64>(&mut source, 121)
+        0:
+            match case_id == 3:
+                -1:
+                    discard vector_push<i64>(&mut source, 119)
+                    discard vector_push<i64>(&mut source, 111)
+                    discard vector_push<i64>(&mut source, 114)
+                    discard vector_push<i64>(&mut source, 107)
+                    discard vector_push<i64>(&mut source, 101)
+                    discard vector_push<i64>(&mut source, 114)
+                0:
+                    discard vector_push<i64>(&mut source, 109)
+                    discard vector_push<i64>(&mut source, 97)
+                    discard vector_push<i64>(&mut source, 105)
+                    discard vector_push<i64>(&mut source, 110)
+                1:
+                    discard vector_push<i64>(&mut source, 109)
+                    discard vector_push<i64>(&mut source, 97)
+                    discard vector_push<i64>(&mut source, 105)
+                    discard vector_push<i64>(&mut source, 110)
+        1:
+            discard vector_push<i64>(&mut source, 109)
+            discard vector_push<i64>(&mut source, 97)
+            discard vector_push<i64>(&mut source, 105)
+            discard vector_push<i64>(&mut source, 110)
+    match case_id == 0:
+        -1:
+            discard 0
+        0:
             discard vector_push<i64>(&mut source, 40)
             discard vector_push<i64>(&mut source, 41)
-        0:
-            discard 0
         1:
-            discard 0
+            discard vector_push<i64>(&mut source, 40)
+            discard vector_push<i64>(&mut source, 41)
     discard vector_push<i64>(&mut source, 10)
     discard vector_push<i64>(&mut source, 114)
     discard vector_push<i64>(&mut source, 101)
@@ -399,6 +427,19 @@ export fn generic_lexer_native_case(case_id: i64) -> i64:
     discard vector_push<i64>(&mut source, 114)
     discard vector_push<i64>(&mut source, 110)
     discard vector_push<i64>(&mut source, 32)
-    discard vector_push<i64>(&mut source, 48)
+    match case_id == 2:
+        -1:
+            discard vector_push<i64>(&mut source, 52)
+            discard vector_push<i64>(&mut source, 50)
+        0:
+            match case_id == 3:
+                -1:
+                    discard vector_push<i64>(&mut source, 55)
+                0:
+                    discard vector_push<i64>(&mut source, 48)
+                1:
+                    discard vector_push<i64>(&mut source, 48)
+        1:
+            discard vector_push<i64>(&mut source, 48)
     discard vector_push<i64>(&mut source, 10)
     return generic_lexer_scan_digest(&source)

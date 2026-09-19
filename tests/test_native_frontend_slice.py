@@ -18,6 +18,8 @@ from bootstrap.s3.lexer import SyntaxMode, TokenKind
 _ORDINARY_SOURCES = {
     0: "fn main\nreturn 0\n",
     1: "fn main()\nreturn 0\n",
+    2: "fn entry()\nreturn 42\n",
+    3: "fn worker()\nreturn 7\n",
 }
 _KIND_CODES = {
     TokenKind.FN: 2,
@@ -57,7 +59,10 @@ def _independent_digest(source: str) -> int:
     return digest
 
 
-@pytest.mark.parametrize("case_id,expected_digest", ((0, 1509), (1, 2101)))
+@pytest.mark.parametrize(
+    "case_id,expected_digest",
+    ((0, 1509), (1, 2101), (2, 2285), (3, 2375)),
+)
 def test_ordinary_s3_lexer_slice_matches_independent_generic_frontend(
     case_id: int,
     expected_digest: int,
@@ -81,7 +86,12 @@ def test_ordinary_s3_lexer_slice_qualifies_on_linux_x86_64(
     except NativeBackendError as error:
         pytest.skip(str(error))
 
-    for case_id, expected_digest in ((0, 1509), (1, 2101)):
+    for case_id, expected_digest in (
+        (0, 1509),
+        (1, 2101),
+        (2, 2285),
+        (3, 2375),
+    ):
         compilation = compile_source(_candidate_source(case_id))
         executable = toolchain.build(
             generate_native_assembly(compilation.assembly),
