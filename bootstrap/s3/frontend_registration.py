@@ -42,10 +42,62 @@ class FrontendRegistrationError(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
+class FrontendNodeRange:
+    file_id: int
+    first: int
+    count: int
+
+
+@dataclass(frozen=True, slots=True)
+class FrontendSyntaxIndex:
+    """Whole-program direct NodeIds over per-file SyntaxArena local IDs."""
+
+    ranges: tuple[FrontendNodeRange, ...]
+
+    @classmethod
+    def from_frontend(
+        cls,
+        frontend: SourceBundleFrontendResult,
+    ) -> "FrontendSyntaxIndex":
+        ranges: list[FrontendNodeRange] = []
+        first = 0
+        for unit in frontend.units:
+            count = len(unit.syntax_arena.nodes)
+            ranges.append(FrontendNodeRange(unit.file_id, first, count))
+            first += count
+        return cls(tuple(ranges))
+
+    @property
+    def node_count(self) -> int:
+        return sum(item.count for item in self.ranges)
+
+    def global_id(self, file_id: int, local_node_id: int) -> int:
+        for item in self.ranges:
+            if item.file_id == file_id:
+                if local_node_id < 0 or local_node_id >= item.count:
+                    raise FrontendRegistrationError(
+                        f"local node ID {local_node_id} is outside file {file_id}"
+                    )
+                return item.first + local_node_id
+        raise FrontendRegistrationError(f"unknown frontend file ID {file_id}")
+
+    def local_ref(self, global_node_id: int) -> tuple[int, int]:
+        if global_node_id < 0:
+            raise FrontendRegistrationError("global node ID must be non-negative")
+        for item in self.ranges:
+            if item.first <= global_node_id < item.first + item.count:
+                return item.file_id, global_node_id - item.first
+        raise FrontendRegistrationError(
+            f"unknown whole-program node ID {global_node_id}"
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class FrontendRegistrationPlan:
     modules: tuple[ModuleSpec, ...]
     symbol_names: tuple[str, ...]
     synthetic_symbol_first: int
+    syntax_index: FrontendSyntaxIndex
 
     def register(self, registry: ProgramRegistry) -> tuple[object, ...]:
         return registry.register(self.modules)
@@ -106,7 +158,13 @@ def _span(node: SyntaxNode) -> tuple[int, int, int]:
     return (node.span.file_id, node.span.start, node.span.end)
 
 
-def _type_child(arena: SyntaxArena, node_id: int) -> int:
+def _type_child(
+    arena: SyntaxArena,
+    node_id: int,
+    *,
+    file_id: int,
+    syntax_index: FrontendSyntaxIndex,
+) -> int:
     children = arena.child_ids(node_id)
     if len(children) != 1:
         raise FrontendRegistrationError(
@@ -117,13 +175,15 @@ def _type_child(arena: SyntaxArena, node_id: int) -> int:
         raise FrontendRegistrationError(
             f"declaration node {node_id} child is not a source type"
         )
-    return child.id
+    return syntax_index.global_id(file_id, child.id)
 
 
 def _function_spec(
     arena: SyntaxArena,
     node: SyntaxNode,
     *,
+    file_id: int,
+    syntax_index: FrontendSyntaxIndex,
     ordinal: int,
 ) -> FunctionSpec:
     payload = _function_payload(arena, node)
@@ -142,13 +202,18 @@ def _function_spec(
             parameters.append(
                 ParameterSpec(
                     declaration.symbol_id,
-                    _type_child(arena, child.id),
+                    _type_child(
+                        arena,
+                        child.id,
+                        file_id=file_id,
+                        syntax_index=syntax_index,
+                    ),
                     len(parameters),
                 )
             )
             continue
         if child.kind in _TYPE_NODE_KINDS:
-            result_type_syntax_id = child.id
+            result_type_syntax_id = syntax_index.global_id(file_id, child.id)
 
     if result_type_syntax_id < 0:
         raise FrontendRegistrationError(
@@ -157,7 +222,7 @@ def _function_spec(
 
     return FunctionSpec(
         payload.symbol_id,
-        node.id,
+        syntax_index.global_id(file_id, node.id),
         tuple(parameters),
         result_type_syntax_id,
         ordinal,
@@ -171,6 +236,8 @@ def _record_spec(
     arena: SyntaxArena,
     node: SyntaxNode,
     *,
+    file_id: int,
+    syntax_index: FrontendSyntaxIndex,
     ordinal: int,
 ) -> NominalTypeSpec:
     declaration = _declaration_payload(arena, node)
@@ -186,7 +253,12 @@ def _record_spec(
             # TypeId does not exist yet at registration time. -1 is the
             # explicit unresolved sentinel; type_syntax_id retains the source
             # identity for the later TYPE phase.
-            type_syntax_id = _type_child(arena, child.id)
+            type_syntax_id = _type_child(
+                        arena,
+                        child.id,
+                        file_id=file_id,
+                        syntax_index=syntax_index,
+                    )
             fields.append(
                 FieldSpec(
                     field.symbol_id,
@@ -200,7 +272,7 @@ def _record_spec(
 
     return NominalTypeSpec(
         declaration.symbol_id,
-        node.id,
+        syntax_index.global_id(file_id, node.id),
         TypeKind.RECORD,
         tuple(fields),
         (),
@@ -213,6 +285,8 @@ def _enum_spec(
     arena: SyntaxArena,
     node: SyntaxNode,
     *,
+    file_id: int,
+    syntax_index: FrontendSyntaxIndex,
     ordinal: int,
 ) -> NominalTypeSpec:
     declaration = _declaration_payload(arena, node)
@@ -252,7 +326,7 @@ def _enum_spec(
 
     return NominalTypeSpec(
         declaration.symbol_id,
-        node.id,
+        syntax_index.global_id(file_id, node.id),
         TypeKind.ENUM,
         (),
         tuple(variants),
@@ -312,6 +386,7 @@ def _module_spec(
     unit: SourceUnitFrontendResult,
     *,
     module_symbol_id: int,
+    syntax_index: FrontendSyntaxIndex,
 ) -> ModuleSpec:
     arena = unit.syntax_arena
     arena.validate()
@@ -332,6 +407,8 @@ def _module_spec(
             function = _function_spec(
                 arena,
                 child,
+                file_id=unit.file_id,
+                syntax_index=syntax_index,
                 ordinal=len(functions),
             )
             functions.append(function)
@@ -347,6 +424,8 @@ def _module_spec(
             nominal = _record_spec(
                 arena,
                 child,
+                file_id=unit.file_id,
+                syntax_index=syntax_index,
                 ordinal=len(nominal_types),
             )
             nominal_types.append(nominal)
@@ -362,6 +441,8 @@ def _module_spec(
             nominal = _enum_spec(
                 arena,
                 child,
+                file_id=unit.file_id,
+                syntax_index=syntax_index,
                 ordinal=len(nominal_types),
             )
             nominal_types.append(nominal)
@@ -391,7 +472,7 @@ def _module_spec(
     return ModuleSpec(
         module_symbol_id,
         unit.file_id,
-        root.id,
+        syntax_index.global_id(unit.file_id, root.id),
         tuple(functions),
         tuple(nominal_types),
         tuple(imports),
@@ -411,6 +492,7 @@ def build_registration_plan(
         raise FrontendRegistrationError("frontend symbol table is not unique")
 
     synthetic_symbol_first = len(symbols)
+    syntax_index = FrontendSyntaxIndex.from_frontend(frontend)
     modules: list[ModuleSpec] = []
     seen_module_symbols: set[int] = set()
 
@@ -429,6 +511,7 @@ def build_registration_plan(
             _module_spec(
                 unit,
                 module_symbol_id=module_symbol_id,
+                syntax_index=syntax_index,
             )
         )
 
@@ -436,11 +519,14 @@ def build_registration_plan(
         tuple(modules),
         tuple(symbols),
         synthetic_symbol_first,
+        syntax_index,
     )
 
 
 __all__ = [
     "FrontendRegistrationError",
+    "FrontendNodeRange",
     "FrontendRegistrationPlan",
+    "FrontendSyntaxIndex",
     "build_registration_plan",
 ]
