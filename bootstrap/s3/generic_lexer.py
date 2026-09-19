@@ -14,8 +14,8 @@ from .diagnostics import (
     LexError,
     SourceLocation,
 )
+from .frontend_token_arena import TokenArena, TokenRecord, TokenSpan
 from .lexer import SyntaxMode, TokenKind
-from .source_frontend import TokenArena, TokenRecord, TokenSpan
 
 
 _V0_5_KEYWORDS: dict[str, TokenKind] = {

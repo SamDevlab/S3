@@ -46,7 +46,7 @@ fn main() -> i64:
     )
 
     assert len(modules) == 2
-    assert len(tuple(registry.functions.items())) == 4
+    assert len(tuple(registry.functions.items())) == 3
     assert len(tuple(registry.nominal_types.items())) == 2
     assert len(tuple(registry.imports.items())) == 1
     assert len(tuple(registry.exports.items())) == 2

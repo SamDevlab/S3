@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from .async_limits import MAX_SELECT_ARITY
 from .compiler_substrate import SymbolInterner
 from .diagnostics import DiagnosticCode, ParseError, SourceLocation
+from .frontend_token_arena import TokenArena, TokenRecord
 from .generic_syntax import (
     DeclarationPayload,
     FloatPayload,
@@ -29,7 +30,6 @@ from .generic_syntax import (
     TypePayload,
 )
 from .lexer import SyntaxMode, TokenKind
-from .source_frontend import TokenArena, TokenRecord
 
 
 class GenericParserError(RuntimeError):

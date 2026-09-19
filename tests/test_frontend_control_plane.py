@@ -23,13 +23,14 @@ def test_source_frontend_advances_control_plane_through_type_resolution() -> Non
     result = ingest_source_frontend(context)
 
     assert result.success
-    assert result.next_phase is PhaseKind.TYPE
+    assert result.next_phase is PhaseKind.SEMANTIC
     assert result.phase_trace == (
         "INPUT:COMMITTED",
         "SYNTAX:COMMITTED",
         "REGISTRATION:COMMITTED",
+        "TYPE:COMMITTED",
     )
-    assert frontend_control_plane_ready_for_type(result)
+    assert frontend_control_plane_ready_for_semantic(result)
     assert len(result.modules) == 1
     assert context.syntax is result.frontend
     assert context.ir is None

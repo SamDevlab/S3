@@ -48,3 +48,334 @@ export fn generic_lexer_state_case(case_id: i64) -> i64:
 
 export fn generic_lexer_state_anchor() -> i64:
     return generic_lexer_state_case(0)
+
+fn generic_is_lower_alpha(unit: i64) -> trit:
+    match unit <=> 97:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            match unit <=> 122:
+                -1:
+                    return 1
+                0:
+                    return 1
+                1:
+                    return 0
+
+fn generic_is_upper_alpha(unit: i64) -> trit:
+    match unit <=> 65:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            match unit <=> 90:
+                -1:
+                    return 1
+                0:
+                    return 1
+                1:
+                    return 0
+
+fn generic_is_alpha(unit: i64) -> trit:
+    match generic_is_lower_alpha(unit):
+        -1:
+            return -1
+        0:
+            return generic_is_upper_alpha(unit)
+        1:
+            return 1
+
+fn generic_is_digit(unit: i64) -> trit:
+    match unit <=> 48:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            match unit <=> 57:
+                -1:
+                    return 1
+                0:
+                    return 1
+                1:
+                    return 0
+
+fn generic_is_word_char(unit: i64) -> trit:
+    match generic_is_alpha(unit):
+        -1:
+            match generic_is_digit(unit):
+                -1:
+                    match unit == 95:
+                        -1:
+                            return 1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    match unit == 95:
+                        -1:
+                            return 1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 1
+        0:
+            match generic_is_digit(unit):
+                -1:
+                    match unit == 95:
+                        -1:
+                            return 1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    match unit == 95:
+                        -1:
+                            return 1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 1
+        1:
+            return 1
+
+fn generic_word_kind(source: &vector<i64>, start: i64, end: i64) -> i64:
+    mut length: i64 = end - start
+
+    match length == 2:
+        -1:
+            match vector_get<i64>(source, start) == 102:
+                -1:
+                    match vector_get<i64>(source, start + 1) == 110:
+                        -1:
+                            return 2
+                        0:
+                            length = length
+                        1:
+                            length = length
+                0:
+                    length = length
+                1:
+                    length = length
+        0:
+            length = length
+        1:
+            length = length
+
+    match length == 6:
+        -1:
+            match vector_get<i64>(source, start) == 114:
+                -1:
+                    match vector_get<i64>(source, start + 1) == 101:
+                        -1:
+                            match vector_get<i64>(source, start + 2) == 116:
+                                -1:
+                                    match vector_get<i64>(source, start + 3) == 117:
+                                        -1:
+                                            match vector_get<i64>(source, start + 4) == 114:
+                                                -1:
+                                                    match vector_get<i64>(source, start + 5) == 110:
+                                                        -1:
+                                                            return 3
+                                                        0:
+                                                            length = length
+                                                        1:
+                                                            length = length
+                                                0:
+                                                    length = length
+                                                1:
+                                                    length = length
+                                        0:
+                                            length = length
+                                        1:
+                                            length = length
+                                0:
+                                    length = length
+                                1:
+                                    length = length
+                        0:
+                            length = length
+                        1:
+                            length = length
+                0:
+                    length = length
+                1:
+                    length = length
+        0:
+            length = length
+        1:
+            length = length
+
+    return 1
+
+fn generic_unit_class(unit: i64) -> trit:
+    match unit == 32:
+        -1:
+            return 1
+        0:
+            match unit == 9:
+                -1:
+                    return 1
+                0:
+                    match unit <=> 10:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return -1
+                1:
+                    match unit <=> 10:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return -1
+        1:
+            return -1
+
+fn generic_scan_kind(unit: i64) -> trit:
+    match generic_is_digit(unit):
+        -1:
+            match generic_is_alpha(unit):
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 1
+        0:
+            match generic_is_alpha(unit):
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 1
+        1:
+            return 0
+
+export fn generic_lexer_scan_digest(source: &vector<i64>) -> i64:
+    mut ids: vector<i64> = vector_new<i64>(64)
+    mut kinds: vector<i64> = vector_new<i64>(64)
+    mut starts: vector<i64> = vector_new<i64>(64)
+    mut ends: vector<i64> = vector_new<i64>(64)
+    mut cursor: i64 = 0
+    mut length: i64 = vector_len<i64>(source)
+
+    while cursor < length:
+        mut unit: i64 = vector_get<i64>(source, cursor)
+        match generic_unit_class(unit):
+            -1:
+                match generic_scan_kind(unit):
+                    -1:
+                        mut token_id: i64 = vector_len<i64>(&ids)
+                        discard vector_push<i64>(&mut ids, token_id)
+                        discard vector_push<i64>(&mut kinds, 100 + unit)
+                        discard vector_push<i64>(&mut starts, cursor)
+                        discard vector_push<i64>(&mut ends, cursor + 1)
+                        cursor = cursor + 1
+                    0:
+                        mut start: i64 = cursor
+                        mut end: i64 = cursor
+                        mut scanning: i64 = 1
+                        while scanning == 1:
+                            match end < length:
+                                -1:
+                                    match generic_is_digit(vector_get<i64>(source, end)):
+                                        -1:
+                                            scanning = 0
+                                        0:
+                                            scanning = 0
+                                        1:
+                                            end = end + 1
+                                0:
+                                    scanning = 0
+                                1:
+                                    scanning = 0
+                        mut token_id: i64 = vector_len<i64>(&ids)
+                        discard vector_push<i64>(&mut ids, token_id)
+                        discard vector_push<i64>(&mut kinds, 5)
+                        discard vector_push<i64>(&mut starts, start)
+                        discard vector_push<i64>(&mut ends, end)
+                        cursor = end
+                    1:
+                        mut start: i64 = cursor
+                        mut end: i64 = cursor
+                        mut scanning: i64 = 1
+                        while scanning == 1:
+                            match end < length:
+                                -1:
+                                    match generic_is_word_char(vector_get<i64>(source, end)):
+                                        -1:
+                                            scanning = 0
+                                        0:
+                                            scanning = 0
+                                        1:
+                                            end = end + 1
+                                0:
+                                    scanning = 0
+                                1:
+                                    scanning = 0
+                        mut token_id: i64 = vector_len<i64>(&ids)
+                        discard vector_push<i64>(&mut ids, token_id)
+                        discard vector_push<i64>(&mut kinds, generic_word_kind(source, start, end))
+                        discard vector_push<i64>(&mut starts, start)
+                        discard vector_push<i64>(&mut ends, end)
+                        cursor = end
+            0:
+                mut token_id: i64 = vector_len<i64>(&ids)
+                discard vector_push<i64>(&mut ids, token_id)
+                discard vector_push<i64>(&mut kinds, 6)
+                discard vector_push<i64>(&mut starts, cursor)
+                discard vector_push<i64>(&mut ends, cursor)
+                cursor = cursor + 1
+            1:
+                cursor = cursor + 1
+
+    mut token_id: i64 = vector_len<i64>(&ids)
+    discard vector_push<i64>(&mut ids, token_id)
+    discard vector_push<i64>(&mut kinds, 0)
+    discard vector_push<i64>(&mut starts, length)
+    discard vector_push<i64>(&mut ends, length)
+
+    mut index: i64 = 0
+    mut digest: i64 = 0
+    while index < vector_len<i64>(&ids):
+        digest = digest + vector_get<i64>(&ids, index) * 3
+        digest = digest + vector_get<i64>(&kinds, index) * 5
+        digest = digest + vector_get<i64>(&starts, index) * 7
+        digest = digest + vector_get<i64>(&ends, index) * 11
+        index = index + 1
+    return digest
+
+export fn generic_lexer_native_case(case_id: i64) -> i64:
+    mut source: vector<i64> = vector_new<i64>(32)
+    discard vector_push<i64>(&mut source, 102)
+    discard vector_push<i64>(&mut source, 110)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 109)
+    discard vector_push<i64>(&mut source, 97)
+    discard vector_push<i64>(&mut source, 105)
+    discard vector_push<i64>(&mut source, 110)
+    discard vector_push<i64>(&mut source, 10)
+    discard vector_push<i64>(&mut source, 114)
+    discard vector_push<i64>(&mut source, 101)
+    discard vector_push<i64>(&mut source, 116)
+    discard vector_push<i64>(&mut source, 117)
+    discard vector_push<i64>(&mut source, 114)
+    discard vector_push<i64>(&mut source, 110)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 48)
+    discard vector_push<i64>(&mut source, 10)
+    return generic_lexer_scan_digest(&source) + case_id

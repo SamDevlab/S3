@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import pytest
 
 from bootstrap.s3.compiler_substrate import SourceBundle
@@ -287,6 +290,22 @@ def test_independent_parser_does_not_require_reference_parser_output() -> None:
     assert result.parser_backend == "independent_generic_recursive_descent"
     assert NodeKind.BINARY in _kinds(result)
     result.syntax_arena.validate()
+
+
+def test_independent_kernels_do_not_import_source_frontend() -> None:
+    probe = (
+        "import sys; "
+        "import bootstrap.s3.generic_lexer; "
+        "import bootstrap.s3.generic_parser; "
+        "assert 'bootstrap.s3.source_frontend' not in sys.modules"
+    )
+    completed = subprocess.run(
+        [sys.executable, "-c", probe],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.stderr == ""
 
 
 @pytest.mark.parametrize(
