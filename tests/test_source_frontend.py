@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from bootstrap.s3.compiler_substrate import SourceBundle
 from bootstrap.s3.diagnostics import ParseError
 from bootstrap.s3.generic_syntax import (
     FunctionPayload,
@@ -9,7 +10,11 @@ from bootstrap.s3.generic_syntax import (
     PayloadKind,
 )
 from bootstrap.s3.lexer import SyntaxMode, TokenKind, tokenize
-from bootstrap.s3.source_frontend import TokenArena, parse_source_to_syntax
+from bootstrap.s3.source_frontend import (
+    TokenArena,
+    parse_source_bundle,
+    parse_source_to_syntax,
+)
 
 
 PROGRAM = """\
@@ -151,3 +156,29 @@ def test_source_frontend_preserves_reference_parse_failure() -> None:
         parse_source_to_syntax(
             "fn main() -> i64:\n    return\n"
         )
+
+def test_source_bundle_uses_canonical_file_order_and_shared_symbols() -> None:
+    bundle = SourceBundle(
+        (
+            (
+                "zeta.s3",
+                "module zeta\nfn value() -> i64:\n    return 2\n",
+            ),
+            (
+                "alpha.s3",
+                "module alpha\nfn value() -> i64:\n    return 1\n",
+            ),
+        )
+    )
+    first = parse_source_bundle(bundle)
+    second = parse_source_bundle(bundle)
+
+    assert tuple(unit.path for unit in first.units) == (
+        "alpha.s3",
+        "zeta.s3",
+    )
+    assert first.structural_digest() == second.structural_digest()
+    assert first.symbol_names.count("value") == 1
+    assert tuple(unit.file_id for unit in first.units) == (0, 1)
+    for unit in first.units:
+        unit.syntax_arena.validate()
