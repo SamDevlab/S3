@@ -181,6 +181,7 @@ class FunctionSpec:
     ordinal: int = 0
     exported: bool = False
     external: bool = False
+    generic_arity: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -244,6 +245,7 @@ class FunctionRecord:
     declared_result_type_syntax_id: int
     exported: bool
     external: bool
+    generic_arity: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -412,12 +414,17 @@ class ProgramRegistry:
                             self.parameters.checkpoint(), FunctionId(self.functions.checkpoint()),
                             parameter.symbol_id, parameter.type_syntax_id, parameter.ordinal,
                         ))
+                    if function.generic_arity < 0:
+                        raise RegistrationError(
+                            "S3E_SEMANTIC_INVALID_PROGRAM: invalid function generic arity"
+                        )
                     record = FunctionRecord(
                         FunctionId(self.functions.checkpoint()), module_id,
                         function.name_symbol_id, function.syntax_node_id,
                         IdRange(parameter_first, self.parameters.checkpoint() - parameter_first),
                         function.declared_result_type_syntax_id,
                         function.exported, function.external,
+                        function.generic_arity,
                     )
                     self.functions.append(record)
                     self._function_by_namespace[key] = record.id
