@@ -134,6 +134,43 @@ def test_type_arena_rejects_invalid_structural_identity() -> None:
         TypeArena().intern(TypeSpec(TypeKind.ARRAY, element_type_id=999, array_length=-1))
 
 
+def test_type_parameter_identity_distinguishes_function_and_nominal_owners() -> None:
+    arena = TypeArena()
+    function_parameter = arena.intern(
+        TypeSpec(
+            TypeKind.TYPE_PARAMETER,
+            owner_id=0,
+            parameter_ordinal=0,
+            owner_kind="function",
+            name="T",
+        )
+    )
+    nominal_parameter = arena.intern(
+        TypeSpec(
+            TypeKind.TYPE_PARAMETER,
+            owner_id=0,
+            parameter_ordinal=0,
+            owner_kind="nominal",
+            name="T",
+        )
+    )
+    assert function_parameter != nominal_parameter
+    assert arena.get(function_parameter).owner_kind == "function"
+    assert arena.get(nominal_parameter).owner_kind == "nominal"
+
+
+def test_type_parameter_rejects_missing_owner_kind() -> None:
+    with pytest.raises(TypeArenaError, match="owner kind"):
+        TypeArena().intern(
+            TypeSpec(
+                TypeKind.TYPE_PARAMETER,
+                owner_id=0,
+                parameter_ordinal=0,
+                name="T",
+            )
+        )
+
+
 def test_semantic_state_keeps_explicit_associations_and_rolls_back() -> None:
     registry = ProgramRegistry()
     registry.register((_modules()[0],))
