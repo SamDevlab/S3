@@ -97,7 +97,7 @@ def test_frontend_registration_uses_deterministic_synthetic_module_for_unnamed_f
     plan = build_registration_plan(frontend)
     assert len(plan.modules) == 1
     module = plan.modules[0]
-    assert plan.symbol_names[module.module_symbol_id] == "@source:main.s3"
+    assert plan.symbol_names[module.module_symbol_id] == "main"
 
 
 def test_duplicate_record_fields_fail_closed_at_registration() -> None:
