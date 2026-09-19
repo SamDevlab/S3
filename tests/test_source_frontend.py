@@ -481,3 +481,25 @@ fn main() -> i64:
     reference = TokenArena.from_source(source)
     independent = TokenArena.from_source_independent(source)
     assert _token_signature(independent) == _token_signature(reference)
+
+def test_independent_lexer_matches_reference_v0_5_tokens() -> None:
+    source = """\
+fn main() -> i64 {
+    // legacy comment
+    return 1;
+}
+"""
+    reference = TokenArena.from_source(source, mode=SyntaxMode.V0_5)
+    independent = TokenArena.from_source_independent(source, mode=SyntaxMode.V0_5)
+    assert _token_signature(independent) == _token_signature(reference)
+
+
+def test_independent_lexer_matches_reference_non_ascii_rejection() -> None:
+    source = "fn main() -> i64:\n    return é\n"
+    with pytest.raises(LexError) as reference_error:
+        TokenArena.from_source(source)
+    with pytest.raises(LexError) as independent_error:
+        TokenArena.from_source_independent(source)
+
+    assert independent_error.value.diagnostic_code is reference_error.value.diagnostic_code
+    assert independent_error.value.location == reference_error.value.location
