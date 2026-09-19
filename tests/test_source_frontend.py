@@ -326,3 +326,18 @@ def test_independent_parser_never_calls_reference_parse_tokens(monkeypatch) -> N
     )
     result.syntax_arena.validate()
     assert result.parser_backend == "independent_generic_recursive_descent"
+
+def test_independent_parser_preserves_exported_function_flag() -> None:
+    source = "export fn main() -> i64:\n    return 0\n"
+    reference = parse_source_to_syntax(source)
+    independent = parse_source_to_syntax_independent(source)
+
+    for result in (reference, independent):
+        function = next(
+            node
+            for _, node in result.syntax_arena.nodes.items()
+            if node.kind is NodeKind.FUNCTION
+        )
+        payload = result.syntax_arena.payload(function)
+        assert isinstance(payload, FunctionPayload)
+        assert payload.flags == 1
