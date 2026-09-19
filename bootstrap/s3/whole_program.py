@@ -160,6 +160,7 @@ class FieldSpec:
     ordinal: int = 0
     mutable: bool = False
     span: tuple[int, int, int] | None = None
+    type_syntax_id: int = -1
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,6 +169,7 @@ class VariantSpec:
     discriminant: int
     ordinal: int = 0
     payload_type_ids: tuple[int, ...] = ()
+    payload_type_syntax_ids: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
