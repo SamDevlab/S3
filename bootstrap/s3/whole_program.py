@@ -904,6 +904,14 @@ class PhaseOrchestrator:
         return tuple(f"{record.kind.value.upper()}:{record.status.value.upper()}" for _, record in self.records.items())
 
     @property
+    def next_phase(self) -> PhaseKind | None:
+        if self._active is not None:
+            return self.records.get(int(self._active)).kind
+        if self._next_index >= len(self._ORDER):
+            return None
+        return self._ORDER[self._next_index]
+
+    @property
     def terminal(self) -> bool:
         return self._next_index == len(self._ORDER) and self._active is None
 
