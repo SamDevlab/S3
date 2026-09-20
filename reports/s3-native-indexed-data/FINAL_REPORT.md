@@ -14,17 +14,17 @@ SOURCE_BASE_STATE=OPEN_DRAFT
 SOURCE_BASE_MERGED=NO
 
 NEW_BRANCH=feat/s3-native-indexed-data
-NEW_PR=PENDING
-NEW_PR_STATE=PENDING
+NEW_PR=307
+NEW_PR_STATE=OPEN_DRAFT
 NEW_PR_BASE=feat/s3-native-typed-values
-NEW_PR_HEAD=91390c473634ad855327f7a762fecefb1874f7f7
+NEW_PR_HEAD=3c125bc5a8ee7cbcf91361f9f632e11265b73e4a
 NEW_PR_MERGED=NO
 
 START_HEAD=889ad59451b8ef6231815b5c02a94c4873f49e4f
 FINAL_FUNCTIONAL_HEAD=91390c473634ad855327f7a762fecefb1874f7f7
-FINAL_HEAD=91390c473634ad855327f7a762fecefb1874f7f7
-FINAL_HEAD_DELTA_FROM_FUNCTIONAL_HEAD=NONE
-REMOTE_SYNC=NOT_PUSHED_AT_FUNCTIONAL_CHECKPOINT
+FINAL_HEAD=3c125bc5a8ee7cbcf91361f9f632e11265b73e4a
+FINAL_HEAD_DELTA_FROM_FUNCTIONAL_HEAD=DOCS_ONLY
+REMOTE_SYNC=origin/feat/s3-native-indexed-data=3c125bc5a8ee7cbcf91361f9f632e11265b73e4a
 ```
 
 The functional commit is:
@@ -140,7 +140,11 @@ NATIVE_LINUX_TEST_COUNT=0
 NATIVE_LINUX_INDEXED_WORKLOAD=DEFERRED
 NATIVE_LINUX_NUMERIC_WORKLOAD=DEFERRED
 NATIVE_LINUX_SCIENTIFIC_WORKLOAD=DEFERRED
-REMOTE_CHECKS=NOT_RUN_BEFORE_DRAFT_PR
+REMOTE_CHECKS=FAIL_PRE_EXECUTION
+REMOTE_CHECKS_CLASS=INFRA_DISPATCH
+REMOTE_CHECKS_HEAD=3c125bc5a8ee7cbcf91361f9f632e11265b73e4a
+REMOTE_CHECKS_RUNS=35528321750,35528321753
+REMOTE_CHECKS_EVIDENCE=all jobs failed after 2-3 seconds with no executed steps
 ```
 
 The focused and adjacent command was:
@@ -164,7 +168,8 @@ tests/test_native_indexed_data.py
 ```
 
 Documentation after the functional checkpoint is permitted without rerunning
-the full suite. No merge, release, tag, PyPI publication, or benchmark was
+the full suite. The report commit is documentation-only relative to the
+functional head. No merge, release, tag, PyPI publication, or benchmark was
 performed.
 
 ## Knowledge closure
