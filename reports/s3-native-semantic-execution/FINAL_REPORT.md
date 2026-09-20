@@ -29,6 +29,14 @@ COMPILEALL=PASS
 DIFF_CHECK=PASS
 FULL_SUITE_EXIT=0
 FULL_SUITE_TRANSCRIPT=scratch/s3-native-semantic-execution-full-suite-20260920-093742.txt
+
+REMOTE_CHECKS=FAIL_PRE_EXECUTION
+REMOTE_RUN=35514987171
+REMOTE_HEAD=4fb69f0b559392a86a00419cfcf52c15a81c2324
+REMOTE_JOBS=10
+REMOTE_STEPS_STARTED=NO
+REMOTE_TEST_EXECUTED=NO
+REMOTE_CI_RERUN=NO
 ```
 
 The full suite was executed once after the final functional source change.
@@ -119,3 +127,8 @@ PYPI=NO
 
 The base PR #304 checkout was not modified. The semantic branch is published
 as Draft PR #305 and remains unmerged for review.
+
+The natural GitHub Actions run failed before any job step started: every
+observed job had an empty `steps` list and terminated during dispatch. This is
+recorded as an infrastructure dispatch failure, not as a semantic or test
+failure. No rerun was requested.
