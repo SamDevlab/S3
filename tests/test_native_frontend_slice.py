@@ -75,6 +75,24 @@ _SEQUENCE_PARSER_SOURCES = {
     5: "fn sequence() -> i64:\n    return 1\n    garbage\n    return 2\n",
     6: "fn sequence() -> i64:\n    return 1\ntrailing\n",
 }
+_PROGRAM_PARSER_SOURCES = {
+    0: "fn main() -> i64:\n    value: i64 = 40\n    return value\n",
+    1: "fn calculate() -> i64:\n    base: i64 = 40\n    answer: i64 = base + 2\n    return answer\n",
+    2: "fn grouped() -> i64:\n    value: i64 = (1 + 2) * 3\n    return value\n",
+    3: "fn grouped() -> i64:\n    mut value: i64 = 1\n    value = value + 1\n    return value\n",
+    4: "fn add(a: i64, b: i64) -> i64:\n    result: i64 = a + b\n    return result\n",
+    5: "fn add(a: i64, b: i64) -> i64:\n    result: i64 = a + b\n    return result\n\nfn main() -> i64:\n    value: i64 = 40\n    return value\n",
+    6: "fn bad() -> i64:\n    : i64 = 1\n",
+    7: "fn bad() -> i64:\n    value: i64\n",
+    8: "fn main() -> i64:\n    value: i64 = 40\ntrailing\n",
+    9: "fn add(a: i64, b: i64) -> i64:\n    result: i64 = a + b\n    return result\n\nfn main() -> i64:\n    value: i64 = add(40, 2)\n    return value\n",
+}
+_PROGRAM_CALL_SOURCES = {
+    0: "fn add() -> i64:\n    return 40\n\nfn main() -> i64:\n    value: i64 = add()\n    return value\n",
+    1: "fn add(a: i64, b: i64) -> i64:\n    result: i64 = a + b\n    return result\n\nfn main() -> i64:\n    value: i64 = add(40)\n    return value\n",
+    2: "fn add(a: i64, b: i64) -> i64:\n    result: i64 = a + b\n    return result\n\nfn main() -> i64:\n    value: i64 = add(40, 2)\n    return value\n",
+    3: "fn add(a: i64, b: i64) -> i64:\n    result: i64 = a + b\n    return result\n\nfn main() -> i64:\n    value: i64 = add(40 + 1, 2 * 3)\n    return value\n",
+}
 
 
 def _candidate_source(case_id: int) -> str:
@@ -129,6 +147,28 @@ def _candidate_sequence_parser_source(case_id: int) -> str:
     return (
         substrate
         + f"\nfn main() -> i64:\n    return generic_native_parser_sequence_case({case_id})\n"
+    )
+
+
+def _candidate_program_parser_source(case_id: int) -> str:
+    repository = Path(__file__).parents[1]
+    substrate = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    return (
+        substrate
+        + f"\nfn main() -> i64:\n    return generic_native_parser_program_case_v2({case_id})\n"
+    )
+
+
+def _candidate_call_program_parser_source(case_id: int) -> str:
+    repository = Path(__file__).parents[1]
+    substrate = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    return (
+        substrate
+        + f"\nfn main() -> i64:\n    return generic_native_parser_program_call_case({case_id})\n"
     )
 
 
@@ -380,6 +420,164 @@ def _independent_sequence_parser_digest(source: str) -> int:
     )
 
 
+def _program_name_digest(source: str, start: int, end: int) -> int:
+    digest = 0
+    for unit in source[start:end].encode("utf-8"):
+        digest = digest * 31 + unit
+    return digest
+
+
+def _program_identifier_token(source: str, start: int, end: int):
+    tokens = TokenArena.from_source_independent(source, mode=SyntaxMode.V0_6)
+    return next(
+        token
+        for _, token in tokens.tokens.items()
+        if token.kind is TokenKind.IDENTIFIER
+        and start <= token.span.start < token.span.end <= end
+        and source[token.span.start:token.span.end] != "i64"
+    )
+
+
+def _independent_program_parser_digest(source: str) -> int:
+    parsed = parse_source_to_syntax_independent(source)
+    arena = parsed.syntax_arena
+
+    def tree_digest(node_id: int) -> int:
+        node = arena.node(node_id)
+        if node.kind is not NodeKind.CALL:
+            return _sequence_tree_digest(arena, source, node_id)
+        children = arena.child_ids(node.id)
+        assert children
+        callee_digest = tree_digest(children[0])
+        argument_chain = 0
+        for argument_id in reversed(children[1:]):
+            argument = arena.node(argument_id)
+            argument_children = arena.child_ids(argument.id)
+            assert len(argument_children) == 1
+            expression_id = argument_children[0]
+            expression = arena.node(expression_id)
+            link_digest = (
+                5 * 97
+                + tree_digest(expression_id) * 113
+                + expression.span.start * 103
+                + expression.span.end * 107
+            )
+            if argument_chain:
+                link_digest += argument_chain * 127
+            argument_chain = link_digest
+        digest = (
+            4 * 97
+            + (len(children) - 1) * 101
+            + node.span.start * 103
+            + node.span.end * 107
+            + callee_digest * 113
+        )
+        if argument_chain:
+            digest += argument_chain * 127
+        return digest
+
+    def statement_digest(statement_id: int) -> int:
+        statement = arena.node(statement_id)
+        children = arena.child_ids(statement.id)
+        if statement.kind is NodeKind.RETURN:
+            expression_id = children[0]
+            expression = arena.node(expression_id)
+            return (
+                7 * 97
+                + tree_digest(expression_id) * 101
+                + statement.span.start * 103
+                + expression.span.end * 107
+            )
+        if statement.kind is NodeKind.VARIABLE_DECLARATION:
+            declaration = arena.payload(statement)
+            name = _program_identifier_token(
+                source,
+                statement.span.start,
+                statement.span.end,
+            )
+            expression = arena.node(children[1])
+            mutable = getattr(declaration, "flags", 0) & 1
+            return (
+                5 * 97
+                + _program_name_digest(source, name.span.start, name.span.end) * 101
+                + 2 * 103
+                + mutable * 107
+                + tree_digest(children[1]) * 109
+                + statement.span.start * 113
+                + expression.span.end * 127
+            )
+        if statement.kind is NodeKind.ASSIGNMENT:
+            target = arena.node(children[0])
+            expression = arena.node(children[1])
+            return (
+                6 * 97
+                + _program_name_digest(source, target.span.start, target.span.end) * 101
+                + tree_digest(children[1]) * 103
+                + statement.span.start * 107
+                + expression.span.end * 109
+            )
+        raise AssertionError(f"unsupported program statement: {statement.kind}")
+
+    def function_digest(function_id: int) -> int:
+        function = arena.node(function_id)
+        payload = arena.payload(function)
+        name = _program_identifier_token(source, function.span.start, function.span.end)
+        function_children = arena.child_ids(function.id)
+        block = arena.node(payload.body_id)
+        parameters = [
+            arena.node(child_id)
+            for child_id in function_children
+            if arena.node(child_id).kind is NodeKind.PARAMETER
+        ]
+        parameter_digest = 0
+        for parameter in parameters:
+            parameter_name = _program_identifier_token(
+                source,
+                parameter.span.start,
+                parameter.span.end,
+            )
+            parameter_term = (
+                _program_name_digest(
+                    source,
+                    parameter_name.span.start,
+                    parameter_name.span.end,
+                ) * 11
+                + parameter_name.span.start * 13
+                + parameter_name.span.end * 17
+                + 2 * 19
+            )
+            parameter_digest = parameter_digest * 131 + parameter_term
+        block_digest = 0
+        block_children = arena.child_ids(block.id)
+        for statement_id in block_children:
+            block_digest = block_digest * 131 + statement_digest(statement_id)
+        return (
+            _program_name_digest(source, name.span.start, name.span.end) * 11
+            + name.span.start * 13
+            + name.span.end * 17
+            + 2 * 19
+            + parameter_digest * 23
+            + len(parameters) * 29
+            + block_digest * 31
+            + block.span.start * 37
+            + block.span.end * 41
+            + len(block_children) * 43
+        )
+
+    program = next(
+        node for _, node in arena.nodes.items() if node.kind is NodeKind.PROGRAM
+    )
+    functions = [
+        child_id
+        for child_id in arena.child_ids(program.id)
+        if arena.node(child_id).kind is NodeKind.FUNCTION
+    ]
+    digest = 0
+    for function_id in functions:
+        digest = digest * 131 + function_digest(function_id)
+    return digest + len(functions) * 47
+
+
 def _identifier_expression_node(source: str):
     parsed = parse_source_to_syntax_independent(source)
     arena = parsed.syntax_arena
@@ -611,6 +809,49 @@ def test_native_statement_sequence_has_no_reference_frontend_fallback() -> None:
         assert forbidden not in source
     parser_source = source.split("export fn generic_native_parser_sequence_case", 1)[0]
     assert "generic_native_parser_sequence_case(case_id" not in parser_source
+
+
+@pytest.mark.parametrize(
+    "case_id,source",
+    tuple((case_id, source) for case_id, source in _PROGRAM_PARSER_SOURCES.items() if case_id < 6),
+)
+def test_native_program_frontend_matches_independent_program_oracle(
+    case_id: int,
+    source: str,
+) -> None:
+    expected = _independent_program_parser_digest(source)
+    assert run_source(_candidate_program_parser_source(case_id)) == expected
+
+
+@pytest.mark.parametrize("case_id", (6, 7, 8))
+def test_native_program_frontend_rejects_structural_failures(case_id: int) -> None:
+    with pytest.raises(Exception):
+        parse_source_to_syntax_independent(_PROGRAM_PARSER_SOURCES[case_id])
+    assert run_source(_candidate_program_parser_source(case_id)) == -1
+
+
+def test_native_program_frontend_preserves_call_callee_and_argument_order() -> None:
+    for case_id, source in _PROGRAM_CALL_SOURCES.items():
+        expected = _independent_program_parser_digest(source)
+        assert run_source(_candidate_call_program_parser_source(case_id)) == expected
+    swapped = _PROGRAM_CALL_SOURCES[2].replace("add(40, 2)", "add(2, 40)")
+    assert _independent_program_parser_digest(swapped) != (
+        _independent_program_parser_digest(_PROGRAM_CALL_SOURCES[2])
+    )
+
+
+def test_native_program_frontend_has_no_reference_frontend_fallback() -> None:
+    source = _candidate_program_parser_source(5)
+    for forbidden in (
+        "GenericLexer(",
+        "GenericParser(",
+        "tokenize(",
+        "parse_tokens(",
+        "bootstrap.s3.ast",
+    ):
+        assert forbidden not in source
+    parser_source = source.split("export fn generic_native_parser_program_digest", 1)[0]
+    assert "generic_native_program_case_v2" not in parser_source
 
 
 @pytest.mark.s3_native
