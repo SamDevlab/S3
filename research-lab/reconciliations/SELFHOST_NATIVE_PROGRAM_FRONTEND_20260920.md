@@ -94,7 +94,7 @@ WINDOWS_FOCUSED=PASS
 FRONTEND_CHECKPOINT_TESTS=PASS
 WINDOWS_FOCUSED_COMMAND=python -m pytest tests/test_native_frontend_slice.py -q
 NATIVE_LINUX_QUALIFICATION=PASS
-NATIVE_LINUX_TEST_COUNT=the focused file passed with exit 0 on Linux x86-64; pytest did not print a count in quiet mode
+NATIVE_LINUX_TEST_COUNT=68 collected, exit 0
 NATIVE_LINUX_HEAD=bf79e618c64b96d2be5640b4f2949b829df10b5c
 COMPILEALL=PASS
 DIFF_CHECK=PASS
@@ -136,3 +136,25 @@ WHAT_REMAINS_UNKNOWN=native semantic/lowering ABI design, f64 representation, in
 
 No production compiler path, benchmark repository, or canonical source was
 modified by the research reconciliation.
+
+
+## Closure-gate reconciliation
+
+A later exact campaign report supplied the Linux collection count:
+
+```text
+NATIVE_LINUX_TEST_COUNT=68 collected, exit 0
+```
+
+One process discrepancy remains:
+
+```text
+FULL_SUITE=NOT_RUN_BY_POLICY
+```
+
+The megacampaign execution prompt required one full-suite run on the final functional head when the campaign closes, including closure at an architectural scope frontier. Therefore the representational/scientific-frontier finding remains valid, but the campaign should not be treated as having completed its strongest final regression gate until either:
+
+1. the full suite passes on the exact final functional head; or
+2. the Research Protocol is deliberately revised to exempt architectural-frontier closures from that gate.
+
+Do not rerun the full suite merely for subsequent docs-only research commits.
