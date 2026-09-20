@@ -13,14 +13,14 @@ SOURCE_BASE_MERGED=NO
 NEW_BRANCH=feat/s3-native-typed-values
 START_HEAD=48f2551c130ba29e6becf63aba2d4e57c69d35c6
 FINAL_FUNCTIONAL_HEAD=cc05357ad6e72c3bc13032b1ed55303be93f2661
-FINAL_HEAD=8984b67cd30f6d84f903335262b35dbe5e1a4886
-FINAL_HEAD_DELTA_FROM_FUNCTIONAL_HEAD=DOCS_ONLY_AFTER_REPORT_COMMIT
+FINAL_HEAD=f3b91bba9e7b98a7131ace8c4c7ea7945cca2392
+FINAL_HEAD_DELTA_FROM_FUNCTIONAL_HEAD=DOCS_ONLY
 NEW_PR=306
 NEW_PR_STATE=OPEN_DRAFT
 NEW_PR_BASE=feat/s3-native-semantic-execution
-NEW_PR_HEAD=8984b67cd30f6d84f903335262b35dbe5e1a4886
+NEW_PR_HEAD=f3b91bba9e7b98a7131ace8c4c7ea7945cca2392
 NEW_PR_MERGED=NO
-REMOTE_SYNC=origin/feat/s3-native-typed-values at 8984b67cd30f6d84f903335262b35dbe5e1a4886
+REMOTE_SYNC=origin/feat/s3-native-typed-values at f3b91bba9e7b98a7131ace8c4c7ea7945cca2392
 ```
 
 The functional commit contains only the typed-value implementation and its
@@ -197,7 +197,7 @@ WHAT_REMAINS_UNKNOWN=native indexed layout, bounds, ownership/lifetime, Linux qu
 
 ```text
 FILES_CHANGED=functional: generic_lexer_state.s3, native_semantic_execution.s3, native_typed_value_protocol.s3, tests/test_native_semantic_execution.py; documentation: this report
-COMMITS_CREATED=cc05357ad6e72c3bc13032b1ed55303be93f2661; 8984b67cd30f6d84f903335262b35dbe5e1a4886
+COMMITS_CREATED=cc05357ad6e72c3bc13032b1ed55303be93f2661; 8984b67cd30f6d84f903335262b35dbe5e1a4886; f3b91bba9e7b98a7131ace8c4c7ea7945cca2392
 PUSHED=YES
 CODE_READY=YES for scalar typed protocol
 CI_READY=NO until Draft PR natural checks are observed
