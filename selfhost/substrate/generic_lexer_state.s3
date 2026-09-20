@@ -301,6 +301,7 @@ fn generic_lexer_scan_tokens(source: &vector<i64>, ids: &mut vector<i64>, kinds:
                     0:
                         mut start: i64 = cursor
                         mut end: i64 = cursor
+                        mut token_kind: i64 = 5
                         mut scanning: i64 = 1
                         while scanning == 1:
                             match end < length:
@@ -316,9 +317,44 @@ fn generic_lexer_scan_tokens(source: &vector<i64>, ids: &mut vector<i64>, kinds:
                                     scanning = 0
                                 1:
                                     scanning = 0
+                        match end + 1 < length:
+                            -1:
+                                match vector_get<i64>(source, end) == 46:
+                                    -1:
+                                        match generic_is_digit(vector_get<i64>(source, end + 1)):
+                                            -1:
+                                                end = end
+                                            0:
+                                                end = end
+                                            1:
+                                                token_kind = 9
+                                                end = end + 2
+                                                mut scanning_fraction: i64 = 1
+                                                while scanning_fraction == 1:
+                                                    match end < length:
+                                                        -1:
+                                                            match generic_is_digit(vector_get<i64>(source, end)):
+                                                                -1:
+                                                                    scanning_fraction = 0
+                                                                0:
+                                                                    scanning_fraction = 0
+                                                                1:
+                                                                    end = end + 1
+                                                        0:
+                                                            scanning_fraction = 0
+                                                        1:
+                                                            scanning_fraction = 0
+                                    0:
+                                        end = end
+                                    1:
+                                        end = end
+                            0:
+                                end = end
+                            1:
+                                end = end
                         mut token_id: i64 = token_count
                         discard vector_push<i64>(ids, token_id)
-                        discard vector_push<i64>(kinds, 5)
+                        discard vector_push<i64>(kinds, token_kind)
                         discard vector_push<i64>(starts, start)
                         discard vector_push<i64>(ends, end)
                         token_count = token_count + 1

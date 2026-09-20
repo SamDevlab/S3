@@ -1,0 +1,1107 @@
+record NativeTypedValue:
+    kind: i64
+    i64_value: i64
+    f64_value: f64
+
+record NativeTypedResult:
+    status: i64
+    next_cursor: i64
+    value: NativeTypedValue
+
+fn native_typed_invalid_value() -> NativeTypedValue:
+    return NativeTypedValue(kind=0, i64_value=0, f64_value=0.0)
+
+fn native_typed_i64_value(value: i64) -> NativeTypedValue:
+    return NativeTypedValue(kind=1, i64_value=value, f64_value=0.0)
+
+fn native_typed_f64_value(value: f64) -> NativeTypedValue:
+    return NativeTypedValue(kind=2, i64_value=0, f64_value=value)
+
+fn native_typed_error() -> NativeTypedResult:
+    return NativeTypedResult(status=0, next_cursor=-1, value=native_typed_invalid_value())
+
+fn native_typed_no_return() -> NativeTypedResult:
+    return NativeTypedResult(status=-1, next_cursor=-1, value=native_typed_invalid_value())
+
+fn native_typed_value_result(cursor: i64, value: NativeTypedValue) -> NativeTypedResult:
+    return NativeTypedResult(status=1, next_cursor=cursor, value=value)
+
+fn native_typed_type_kind(
+    source: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64
+) -> i64:
+    mut start: i64 = vector_get<i64>(starts, cursor)
+    mut end: i64 = vector_get<i64>(ends, cursor)
+    match end - start == 3:
+        -1:
+            match vector_get<i64>(source, start) == 102:
+                -1:
+                    match vector_get<i64>(source, start + 1) == 54:
+                        -1:
+                            match vector_get<i64>(source, start + 2) == 52:
+                                -1:
+                                    return 2
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    match vector_get<i64>(source, start) == 105:
+                        -1:
+                            match vector_get<i64>(source, start + 1) == 54:
+                                -1:
+                                    match vector_get<i64>(source, start + 2) == 52:
+                                        -1:
+                                            return 1
+                                        0:
+                                            return 0
+                                        1:
+                                            return 0
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn native_typed_decimal_value(
+    source: &vector<i64>,
+    start: i64,
+    end: i64
+) -> f64:
+    mut cursor: i64 = start
+    mut value: f64 = 0.0
+    mut fraction: f64 = 0.0
+    mut scale: f64 = 1.0
+    while cursor < end:
+        mut unit: i64 = vector_get<i64>(source, cursor)
+        match unit == 46:
+            -1:
+                fraction = 1.0
+            0:
+                match fraction == 0.0:
+                    -1:
+                        value = value * 10.0 + to_f64(unit - 48)
+                    0:
+                        scale = scale * 10.0
+                        value = value + to_f64(unit - 48) / scale
+                    1:
+                        scale = scale * 10.0
+                        value = value + to_f64(unit - 48) / scale
+            1:
+                match fraction == 0.0:
+                    -1:
+                        value = value * 10.0 + to_f64(unit - 48)
+                    0:
+                        scale = scale * 10.0
+                        value = value + to_f64(unit - 48) / scale
+                    1:
+                        scale = scale * 10.0
+                        value = value + to_f64(unit - 48) / scale
+        cursor = cursor + 1
+    return value
+
+fn native_typed_lookup(
+    names: &i64_vector,
+    values: &vector<NativeTypedValue>,
+    wanted_name: i64
+) -> NativeTypedResult:
+    mut index: i64 = 0
+    while index < i64_vector_len(names):
+        match i64_vector_get(names, index) == wanted_name:
+            -1:
+                return native_typed_value_result(0, vector_get<NativeTypedValue>(&*values, index))
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    return native_typed_error()
+
+fn native_typed_set_local(
+    names: &mut i64_vector,
+    values: &mut vector<NativeTypedValue>,
+    wanted_name: i64,
+    value: NativeTypedValue
+) -> i64:
+    mut index: i64 = 0
+    while index < i64_vector_len(&*names):
+        match i64_vector_get(&*names, index) == wanted_name:
+            -1:
+                discard vector_set<NativeTypedValue>(&mut *values, index, value)
+                return 1
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    return 0
+
+fn native_typed_apply_binary(
+    operator: i64,
+    left: NativeTypedValue,
+    right: NativeTypedValue
+) -> NativeTypedValue:
+    match left.kind == right.kind:
+        -1:
+            match operator == 1:
+                -1:
+                    match left.kind == 1:
+                        -1:
+                            return native_typed_i64_value(left.i64_value + right.i64_value)
+                        0:
+                            match left.kind == 2:
+                                -1:
+                                    return native_typed_f64_value(left.f64_value + right.f64_value)
+                                0:
+                                    return native_typed_invalid_value()
+                                1:
+                                    return native_typed_invalid_value()
+                        1:
+                            return native_typed_invalid_value()
+                0:
+                    match operator == 2:
+                        -1:
+                            match left.kind == 1:
+                                -1:
+                                    return native_typed_i64_value(left.i64_value * right.i64_value)
+                                0:
+                                    match left.kind == 2:
+                                        -1:
+                                            return native_typed_f64_value(left.f64_value * right.f64_value)
+                                        0:
+                                            return native_typed_invalid_value()
+                                        1:
+                                            return native_typed_invalid_value()
+                                1:
+                                    return native_typed_invalid_value()
+                        0:
+                            match operator == 3:
+                                -1:
+                                    match left.kind == 1:
+                                        -1:
+                                            match left.i64_value <=> right.i64_value:
+                                                -1:
+                                                    return native_typed_i64_value(-1)
+                                                0:
+                                                    return native_typed_i64_value(0)
+                                                1:
+                                                    return native_typed_i64_value(1)
+                                        0:
+                                            match left.kind == 2:
+                                                -1:
+                                                    match left.f64_value <=> right.f64_value:
+                                                        -1:
+                                                            return native_typed_i64_value(-1)
+                                                        0:
+                                                            return native_typed_i64_value(0)
+                                                        1:
+                                                            return native_typed_i64_value(1)
+                                                0:
+                                                    return native_typed_invalid_value()
+                                                1:
+                                                    return native_typed_invalid_value()
+                                        1:
+                                            return native_typed_invalid_value()
+                                0:
+                                    return native_typed_invalid_value()
+                                1:
+                                    return native_typed_invalid_value()
+                        1:
+                            return native_typed_invalid_value()
+                1:
+                    return native_typed_invalid_value()
+        0:
+            return native_typed_invalid_value()
+        1:
+            return native_typed_invalid_value()
+
+fn native_typed_binary_result(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    token_count: i64,
+    right_cursor: i64,
+    minimum_precedence: i64,
+    names: &i64_vector,
+    values: &vector<NativeTypedValue>,
+    operator: i64,
+    precedence: i64,
+    left_value: NativeTypedValue
+) -> NativeTypedResult:
+    match precedence < minimum_precedence:
+        -1:
+            return native_typed_value_result(right_cursor, left_value)
+        0:
+            mut right_result: NativeTypedResult = native_typed_expression(
+                source,
+                kinds,
+                starts,
+                ends,
+                token_count,
+                right_cursor + 1,
+                precedence + 1,
+                names,
+                values
+            )
+            match right_result.status == 1:
+                -1:
+                    mut combined: NativeTypedValue = native_typed_apply_binary(
+                        operator,
+                        left_value,
+                        right_result.value
+                    )
+                    match combined.kind == 0:
+                        -1:
+                            return native_typed_error()
+                        0:
+                            return native_typed_value_result(right_result.next_cursor, combined)
+                        1:
+                            return native_typed_value_result(right_result.next_cursor, combined)
+                0:
+                    return native_typed_error()
+                1:
+                    return native_typed_error()
+        1:
+            return native_typed_error()
+
+fn native_typed_expression_tail(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    token_count: i64,
+    next_cursor: i64,
+    minimum_precedence: i64,
+    names: &i64_vector,
+    values: &vector<NativeTypedValue>,
+    left_value: NativeTypedValue
+) -> NativeTypedResult:
+    match generic_native_parser_kind(kinds, next_cursor) == 143:
+        -1:
+            return native_typed_binary_result(
+                source, kinds, starts, ends, token_count, next_cursor,
+                minimum_precedence, names, values, 1, 1, left_value
+            )
+        0:
+            match generic_native_parser_kind(kinds, next_cursor) == 142:
+                -1:
+                    return native_typed_binary_result(
+                        source, kinds, starts, ends, token_count, next_cursor,
+                        minimum_precedence, names, values, 2, 2, left_value
+                    )
+                0:
+                    match generic_native_parser_kind(kinds, next_cursor) == 160:
+                        -1:
+                            return native_typed_binary_result(
+                                source, kinds, starts, ends, token_count, next_cursor,
+                                minimum_precedence, names, values, 3, 1, left_value
+                            )
+                        0:
+                            return native_typed_value_result(next_cursor, left_value)
+                        1:
+                            return native_typed_value_result(next_cursor, left_value)
+                1:
+                    return native_typed_value_result(next_cursor, left_value)
+        1:
+            return native_typed_value_result(next_cursor, left_value)
+
+fn native_typed_expression(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    token_count: i64,
+    cursor: i64,
+    minimum_precedence: i64,
+    names: &i64_vector,
+    values: &vector<NativeTypedValue>
+) -> NativeTypedResult:
+    mut left_cursor: i64 = cursor
+    match generic_native_parser_kind(kinds, left_cursor) == 5:
+        -1:
+            return native_typed_expression_tail(
+                source,
+                kinds,
+                starts,
+                ends,
+                token_count,
+                left_cursor + 1,
+                minimum_precedence,
+                names,
+                values,
+                native_typed_i64_value(
+                    generic_native_parser_integer_value(
+                        source,
+                        vector_get<i64>(starts, left_cursor),
+                        vector_get<i64>(ends, left_cursor)
+                    )
+                )
+            )
+        0:
+            match generic_native_parser_kind(kinds, left_cursor) == 9:
+                -1:
+                    return native_typed_expression_tail(
+                        source,
+                        kinds,
+                        starts,
+                        ends,
+                        token_count,
+                        left_cursor + 1,
+                        minimum_precedence,
+                        names,
+                        values,
+                        native_typed_f64_value(
+                            native_typed_decimal_value(
+                                source,
+                                vector_get<i64>(starts, left_cursor),
+                                vector_get<i64>(ends, left_cursor)
+                            )
+                        )
+                    )
+                0:
+                    match generic_native_parser_kind(kinds, left_cursor) == 1:
+                        -1:
+                            mut name: i64 = generic_native_parser_name_digest(
+                                source,
+                                vector_get<i64>(starts, left_cursor),
+                                vector_get<i64>(ends, left_cursor)
+                            )
+                            match generic_native_parser_kind(kinds, left_cursor + 1) == 7:
+                                -1:
+                                    mut argument_cursor: i64 = left_cursor + 2
+                                    mut arguments: vector<NativeTypedValue> = vector_new<NativeTypedValue>(8)
+                                    mut parsing_arguments: i64 = 1
+                                    while parsing_arguments == 1:
+                                        match generic_native_parser_kind(kinds, argument_cursor) == 8:
+                                            -1:
+                                                parsing_arguments = 0
+                                            0:
+                                                mut argument_result: NativeTypedResult = native_typed_expression(
+                                                    source,
+                                                    kinds,
+                                                    starts,
+                                                    ends,
+                                                    token_count,
+                                                    argument_cursor,
+                                                    0,
+                                                    names,
+                                                    values
+                                                )
+                                                match argument_result.status == 1:
+                                                    -1:
+                                                        discard vector_push<NativeTypedValue>(&mut arguments, argument_result.value)
+                                                        argument_cursor = argument_result.next_cursor
+                                                        match generic_native_parser_kind(kinds, argument_cursor) == 144:
+                                                            -1:
+                                                                argument_cursor = argument_cursor + 1
+                                                            0:
+                                                                match generic_native_parser_kind(kinds, argument_cursor) == 8:
+                                                                    -1:
+                                                                        parsing_arguments = 0
+                                                                    0:
+                                                                        return native_typed_error()
+                                                                    1:
+                                                                        return native_typed_error()
+                                                            1:
+                                                                return native_typed_error()
+                                                    0:
+                                                        return native_typed_error()
+                                                    1:
+                                                        return native_typed_error()
+                                            1:
+                                                return native_typed_error()
+                                    match generic_native_parser_kind(kinds, argument_cursor) == 8:
+                                        -1:
+                                            mut function_start: i64 = native_semantic_find_function(
+                                                source,
+                                                kinds,
+                                                starts,
+                                                ends,
+                                                token_count,
+                                                name
+                                            )
+                                            match function_start <=> -1:
+                                                -1:
+                                                    return native_typed_error()
+                                                0:
+                                                    return native_typed_error()
+                                                1:
+                                                    mut function_result: NativeTypedResult = native_typed_function(
+                                                        source,
+                                                        kinds,
+                                                        starts,
+                                                        ends,
+                                                        token_count,
+                                                        function_start,
+                                                        &arguments
+                                                    )
+                                                    match function_result.status == 1:
+                                                        -1:
+                                                            return native_typed_expression_tail(
+                                                                source,
+                                                                kinds,
+                                                                starts,
+                                                                ends,
+                                                                token_count,
+                                                                argument_cursor + 1,
+                                                                minimum_precedence,
+                                                                names,
+                                                                values,
+                                                                function_result.value
+                                                            )
+                                                        0:
+                                                            return native_typed_error()
+                                                        1:
+                                                            return native_typed_error()
+                                        0:
+                                            return native_typed_error()
+                                        1:
+                                            return native_typed_error()
+                                0:
+                                    mut lookup_result: NativeTypedResult = native_typed_lookup(names, values, name)
+                                    match lookup_result.status == 1:
+                                        -1:
+                                            return native_typed_expression_tail(
+                                                source,
+                                                kinds,
+                                                starts,
+                                                ends,
+                                                token_count,
+                                                left_cursor + 1,
+                                                minimum_precedence,
+                                                names,
+                                                values,
+                                                lookup_result.value
+                                            )
+                                        0:
+                                            return native_typed_error()
+                                        1:
+                                            return native_typed_error()
+                                1:
+                                    return native_typed_error()
+                        0:
+                            match generic_native_parser_kind(kinds, left_cursor) == 7:
+                                -1:
+                                    mut grouped_result: NativeTypedResult = native_typed_expression(
+                                        source,
+                                        kinds,
+                                        starts,
+                                        ends,
+                                        token_count,
+                                        left_cursor + 1,
+                                        0,
+                                        names,
+                                        values
+                                    )
+                                    match grouped_result.status == 1:
+                                        -1:
+                                            match generic_native_parser_kind(kinds, grouped_result.next_cursor) == 8:
+                                                -1:
+                                                    return native_typed_expression_tail(
+                                                        source,
+                                                        kinds,
+                                                        starts,
+                                                        ends,
+                                                        token_count,
+                                                        grouped_result.next_cursor + 1,
+                                                        minimum_precedence,
+                                                        names,
+                                                        values,
+                                                        grouped_result.value
+                                                    )
+                                                0:
+                                                    return native_typed_error()
+                                                1:
+                                                    return native_typed_error()
+                                        0:
+                                            return native_typed_error()
+                                        1:
+                                            return native_typed_error()
+                                0:
+                                    return native_typed_error()
+                                1:
+                                    return native_typed_error()
+                        1:
+                            return native_typed_error()
+                1:
+                    return native_typed_error()
+        1:
+            return native_typed_error()
+
+fn native_typed_while(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    token_count: i64,
+    while_cursor: i64,
+    names: &mut i64_vector,
+    values: &mut vector<NativeTypedValue>
+) -> NativeTypedResult:
+    mut condition_start: i64 = while_cursor + 1
+    mut condition_result: NativeTypedResult = native_typed_expression(
+        source, kinds, starts, ends, token_count, condition_start, 0, &*names, &*values
+    )
+    match condition_result.status == 1:
+        -1:
+            discard 0
+        0:
+            return native_typed_error()
+        1:
+            return native_typed_error()
+    match generic_native_parser_kind(kinds, condition_result.next_cursor) == 158:
+        -1:
+            discard 0
+        0:
+            return native_typed_error()
+        1:
+            return native_typed_error()
+    match generic_native_parser_kind(kinds, condition_result.next_cursor + 1) == 6:
+        -1:
+            discard 0
+        0:
+            return native_typed_error()
+        1:
+            return native_typed_error()
+    mut body_start: i64 = condition_result.next_cursor + 2
+    mut body_indent: i64 = generic_native_parser_program_indent(
+        source, vector_get<i64>(starts, body_start)
+    )
+    mut body_end: i64 = body_start
+    mut scanning_body: i64 = 1
+    while scanning_body == 1:
+        match body_end < token_count:
+            -1:
+                match generic_native_parser_program_indent(
+                    source, vector_get<i64>(starts, body_end)
+                ) < body_indent:
+                    -1:
+                        scanning_body = 0
+                    0:
+                        body_end = body_end + 1
+                    1:
+                        body_end = body_end + 1
+            0:
+                scanning_body = 0
+            1:
+                scanning_body = 0
+    mut iterations: i64 = 0
+    mut running: i64 = 1
+    while running == 1:
+        mut current_condition: NativeTypedResult = native_typed_expression(
+            source, kinds, starts, ends, token_count, condition_start, 0, &*names, &*values
+        )
+        match current_condition.status == 1:
+            -1:
+                match current_condition.value.kind == 1:
+                    -1:
+                        match current_condition.value.i64_value == -1:
+                            -1:
+                                match iterations < 64:
+                                    -1:
+                                        match generic_native_parser_kind(kinds, body_start) == 1:
+                                            -1:
+                                                mut name: i64 = generic_native_parser_name_digest(
+                                                    source,
+                                                    vector_get<i64>(starts, body_start),
+                                                    vector_get<i64>(ends, body_start)
+                                                )
+                                                match generic_native_parser_kind(kinds, body_start + 1) == 161:
+                                                    -1:
+                                                        mut body_result: NativeTypedResult = native_typed_expression(
+                                                            source,
+                                                            kinds,
+                                                            starts,
+                                                            ends,
+                                                            token_count,
+                                                            body_start + 2,
+                                                            0,
+                                                            &*names,
+                                                            &*values
+                                                        )
+                                                        match body_result.status == 1:
+                                                            -1:
+                                                                match native_typed_set_local(
+                                                                    names,
+                                                                    values,
+                                                                    name,
+                                                                    body_result.value
+                                                                ) == 1:
+                                                                    -1:
+                                                                        iterations = iterations + 1
+                                                                    0:
+                                                                        return native_typed_error()
+                                                                    1:
+                                                                        return native_typed_error()
+                                                            0:
+                                                                return native_typed_error()
+                                                            1:
+                                                                return native_typed_error()
+                                                    0:
+                                                        return native_typed_error()
+                                                    1:
+                                                        return native_typed_error()
+                                            0:
+                                                return native_typed_error()
+                                            1:
+                                                return native_typed_error()
+                                    0:
+                                        return native_typed_error()
+                                    1:
+                                        return native_typed_error()
+                            0:
+                                running = 0
+                            1:
+                                running = 0
+                    0:
+                        return native_typed_error()
+                    1:
+                        return native_typed_error()
+            0:
+                return native_typed_error()
+            1:
+                return native_typed_error()
+    return native_typed_value_result(body_end, native_typed_invalid_value())
+
+fn native_typed_function(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    token_count: i64,
+    function_start: i64,
+    arguments: &vector<NativeTypedValue>
+) -> NativeTypedResult:
+    mut current: i64 = function_start + 2
+    mut names: i64_vector = i64_vector_new<i64>(64)
+    mut values: vector<NativeTypedValue> = vector_new<NativeTypedValue>(64)
+    mut argument_index: i64 = 0
+    match generic_native_parser_kind(kinds, current) == 7:
+        -1:
+            current = current + 1
+            mut parsing_parameters: i64 = 1
+            while parsing_parameters == 1:
+                match generic_native_parser_kind(kinds, current) == 8:
+                    -1:
+                        parsing_parameters = 0
+                    0:
+                        match generic_native_parser_kind(kinds, current) == 1:
+                            -1:
+                                mut name: i64 = generic_native_parser_name_digest(
+                                    source,
+                                    vector_get<i64>(starts, current),
+                                    vector_get<i64>(ends, current)
+                                )
+                                match generic_native_parser_kind(kinds, current + 1) == 158:
+                                    -1:
+                                        mut type_kind: i64 = native_typed_type_kind(source, starts, ends, current + 2)
+                                        match type_kind == 0:
+                                            -1:
+                                                return native_typed_error()
+                                            0:
+                                                discard 0
+                                            1:
+                                                discard 0
+                                        match argument_index < vector_len<NativeTypedValue>(&*arguments):
+                                            -1:
+                                                mut argument: NativeTypedValue = vector_get<NativeTypedValue>(&*arguments, argument_index)
+                                                match argument.kind == type_kind:
+                                                    -1:
+                                                        discard i64_vector_push(&mut names, name)
+                                                        discard vector_push<NativeTypedValue>(&mut values, argument)
+                                                        argument_index = argument_index + 1
+                                                        current = current + 3
+                                                        match generic_native_parser_kind(kinds, current) == 144:
+                                                            -1:
+                                                                current = current + 1
+                                                            0:
+                                                                parsing_parameters = 0
+                                                            1:
+                                                                parsing_parameters = 0
+                                                    0:
+                                                        return native_typed_error()
+                                                    1:
+                                                        return native_typed_error()
+                                            0:
+                                                return native_typed_error()
+                                            1:
+                                                return native_typed_error()
+                                    0:
+                                        return native_typed_error()
+                                    1:
+                                        return native_typed_error()
+                            0:
+                                return native_typed_error()
+                            1:
+                                return native_typed_error()
+                    1:
+                        return native_typed_error()
+        0:
+            return native_typed_error()
+        1:
+            return native_typed_error()
+    match generic_native_parser_kind(kinds, current) == 8:
+        -1:
+            current = current + 1
+        0:
+            return native_typed_error()
+        1:
+            return native_typed_error()
+    match generic_native_parser_kind(kinds, current) == 145:
+        -1:
+            current = current + 1
+        0:
+            return native_typed_error()
+        1:
+            return native_typed_error()
+    match generic_native_parser_kind(kinds, current) == 162:
+        -1:
+            current = current + 1
+        0:
+            return native_typed_error()
+        1:
+            return native_typed_error()
+    mut return_kind: i64 = native_typed_type_kind(source, starts, ends, current)
+    match return_kind == 0:
+        -1:
+            return native_typed_error()
+        0:
+            current = current + 1
+        1:
+            current = current + 1
+    match generic_native_parser_kind(kinds, current) == 158:
+        -1:
+            current = current + 1
+        0:
+            return native_typed_error()
+        1:
+            return native_typed_error()
+    match generic_native_parser_kind(kinds, current) == 6:
+        -1:
+            current = current + 1
+        0:
+            return native_typed_error()
+        1:
+            return native_typed_error()
+    mut scanning_body: i64 = 1
+    while scanning_body == 1:
+        match current < token_count:
+            -1:
+                match generic_native_parser_kind(kinds, current) == 3:
+                    -1:
+                        mut returned: NativeTypedResult = native_typed_expression(
+                            source, kinds, starts, ends, token_count, current + 1, 0, &names, &values
+                        )
+                        match returned.status == 1:
+                            -1:
+                                match returned.value.kind == return_kind:
+                                    -1:
+                                        return native_typed_value_result(function_start, returned.value)
+                                    0:
+                                        return native_typed_error()
+                                    1:
+                                        return native_typed_error()
+                            0:
+                                return native_typed_error()
+                            1:
+                                return native_typed_error()
+                    0:
+                        match generic_native_parser_program_word_code(source, starts, ends, current) == 4:
+                            -1:
+                                mut while_result: NativeTypedResult = native_typed_while(
+                                    source, kinds, starts, ends, token_count, current, &mut names, &mut values
+                                )
+                                match while_result.status == 1:
+                                    -1:
+                                        current = while_result.next_cursor
+                                    0:
+                                        return native_typed_error()
+                                    1:
+                                        return native_typed_error()
+                            0:
+                                match generic_native_parser_kind(kinds, current) == 1:
+                                    -1:
+                                        mut name: i64 = generic_native_parser_name_digest(
+                                            source,
+                                            vector_get<i64>(starts, current),
+                                            vector_get<i64>(ends, current)
+                                        )
+                                        match generic_native_parser_kind(kinds, current + 1) == 158:
+                                            -1:
+                                                mut declared_kind: i64 = native_typed_type_kind(source, starts, ends, current + 2)
+                                                match generic_native_parser_kind(kinds, current + 3) == 161:
+                                                    -1:
+                                                        mut initialized: NativeTypedResult = native_typed_expression(
+                                                            source, kinds, starts, ends, token_count, current + 4, 0, &names, &values
+                                                        )
+                                                        match initialized.status == 1:
+                                                            -1:
+                                                                match initialized.value.kind == declared_kind:
+                                                                    -1:
+                                                                        discard i64_vector_push(&mut names, name)
+                                                                        discard vector_push<NativeTypedValue>(&mut values, initialized.value)
+                                                                        current = initialized.next_cursor + 1
+                                                                    0:
+                                                                        return native_typed_error()
+                                                                    1:
+                                                                        return native_typed_error()
+                                                            0:
+                                                                return native_typed_error()
+                                                            1:
+                                                                return native_typed_error()
+                                                    0:
+                                                        return native_typed_error()
+                                                    1:
+                                                        return native_typed_error()
+                                            0:
+                                                match generic_native_parser_kind(kinds, current + 1) == 161:
+                                                    -1:
+                                                        mut assigned: NativeTypedResult = native_typed_expression(
+                                                            source, kinds, starts, ends, token_count, current + 2, 0, &names, &values
+                                                        )
+                                                        match assigned.status == 1:
+                                                            -1:
+                                                                mut existing: NativeTypedResult = native_typed_lookup(&names, &values, name)
+                                                                match existing.status == 1:
+                                                                    -1:
+                                                                        match existing.value.kind == assigned.value.kind:
+                                                                            -1:
+                                                                                discard native_typed_set_local(&mut names, &mut values, name, assigned.value)
+                                                                                current = assigned.next_cursor + 1
+                                                                            0:
+                                                                                return native_typed_error()
+                                                                            1:
+                                                                                return native_typed_error()
+                                                                    0:
+                                                                        return native_typed_error()
+                                                                    1:
+                                                                        return native_typed_error()
+                                                            0:
+                                                                return native_typed_error()
+                                                            1:
+                                                                return native_typed_error()
+                                                    0:
+                                                        return native_typed_error()
+                                                    1:
+                                                        return native_typed_error()
+                                            1:
+                                                return native_typed_error()
+                                    0:
+                                        scanning_body = 0
+                                    1:
+                                        scanning_body = 0
+                            1:
+                                return native_typed_error()
+                    1:
+                        scanning_body = 0
+            0:
+                scanning_body = 0
+            1:
+                scanning_body = 0
+    return native_typed_no_return()
+
+fn native_typed_execute_source(source: &vector<i64>) -> NativeTypedResult:
+    mut ids: vector<i64> = vector_new<i64>(256)
+    mut kinds: vector<i64> = vector_new<i64>(256)
+    mut starts: vector<i64> = vector_new<i64>(256)
+    mut ends: vector<i64> = vector_new<i64>(256)
+    mut token_count: i64 = generic_lexer_scan_tokens(source, &mut ids, &mut kinds, &mut starts, &mut ends)
+    mut main_name: vector<i64> = vector_new<i64>(4)
+    discard generic_native_program_word(&mut main_name, 1)
+    mut main_digest: i64 = generic_native_parser_name_digest(&main_name, 0, vector_len<i64>(&main_name))
+    mut function_start: i64 = native_semantic_find_function(
+        source, &kinds, &starts, &ends, token_count, main_digest
+    )
+    match function_start <=> -1:
+        -1:
+            return native_typed_error()
+        0:
+            return native_typed_error()
+        1:
+            mut arguments: vector<NativeTypedValue> = vector_new<NativeTypedValue>(1)
+            return native_typed_function(
+                source, &kinds, &starts, &ends, token_count, function_start, &arguments
+            )
+
+fn native_typed_execute_i64_source(source: &vector<i64>) -> i64:
+    mut result: NativeTypedResult = native_typed_execute_source(source)
+    match result.status == 1:
+        -1:
+            match result.value.kind == 1:
+                -1:
+                    return result.value.i64_value
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+fn native_typed_append_f64_fixture(source: &mut vector<i64>) -> i64:
+    discard generic_native_program_byte(source, 102)
+    discard generic_native_program_byte(source, 110)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 97)
+    discard generic_native_program_byte(source, 100)
+    discard generic_native_program_byte(source, 100)
+    discard generic_native_program_byte(source, 40)
+    discard generic_native_program_byte(source, 97)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 102)
+    discard generic_native_program_byte(source, 54)
+    discard generic_native_program_byte(source, 52)
+    discard generic_native_program_byte(source, 44)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 98)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 102)
+    discard generic_native_program_byte(source, 54)
+    discard generic_native_program_byte(source, 52)
+    discard generic_native_program_byte(source, 41)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 45)
+    discard generic_native_program_byte(source, 62)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 102)
+    discard generic_native_program_byte(source, 54)
+    discard generic_native_program_byte(source, 52)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 10)
+    discard generic_native_program_indent(source)
+    discard generic_native_program_word(source, 13)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 97)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 43)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 98)
+    discard generic_native_program_byte(source, 10)
+    discard generic_native_program_word(source, 0)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 1)
+    discard generic_native_program_byte(source, 40)
+    discard generic_native_program_byte(source, 41)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 45)
+    discard generic_native_program_byte(source, 62)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 102)
+    discard generic_native_program_byte(source, 54)
+    discard generic_native_program_byte(source, 52)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 10)
+    discard generic_native_program_indent(source)
+    discard generic_native_program_byte(source, 118)
+    discard generic_native_program_byte(source, 97)
+    discard generic_native_program_byte(source, 108)
+    discard generic_native_program_byte(source, 117)
+    discard generic_native_program_byte(source, 101)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 102)
+    discard generic_native_program_byte(source, 54)
+    discard generic_native_program_byte(source, 52)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 61)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 4)
+    discard generic_native_program_byte(source, 40)
+    discard generic_native_program_byte(source, 49)
+    discard generic_native_program_byte(source, 46)
+    discard generic_native_program_byte(source, 50)
+    discard generic_native_program_byte(source, 53)
+    discard generic_native_program_byte(source, 44)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 50)
+    discard generic_native_program_byte(source, 46)
+    discard generic_native_program_byte(source, 53)
+    discard generic_native_program_byte(source, 41)
+    discard generic_native_program_byte(source, 10)
+    discard generic_native_program_indent(source)
+    discard generic_native_program_byte(source, 118)
+    discard generic_native_program_byte(source, 97)
+    discard generic_native_program_byte(source, 108)
+    discard generic_native_program_byte(source, 117)
+    discard generic_native_program_byte(source, 101)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 61)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 118)
+    discard generic_native_program_byte(source, 97)
+    discard generic_native_program_byte(source, 108)
+    discard generic_native_program_byte(source, 117)
+    discard generic_native_program_byte(source, 101)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 43)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 49)
+    discard generic_native_program_byte(source, 46)
+    discard generic_native_program_byte(source, 48)
+    discard generic_native_program_byte(source, 10)
+    discard generic_native_program_indent(source)
+    discard generic_native_program_word(source, 13)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 118)
+    discard generic_native_program_byte(source, 97)
+    discard generic_native_program_byte(source, 108)
+    discard generic_native_program_byte(source, 117)
+    discard generic_native_program_byte(source, 101)
+    discard generic_native_program_byte(source, 10)
+    return 0
+
+export fn native_typed_f64_case() -> trit:
+    mut source: vector<i64> = vector_new<i64>(256)
+    discard native_typed_append_f64_fixture(&mut source)
+    mut result: NativeTypedResult = native_typed_execute_source(&source)
+    match result.status == 1:
+        -1:
+            match result.value.kind == 2:
+                -1:
+                    match result.value.f64_value <=> 4.75:
+                        -1:
+                            return 0
+                        0:
+                            return -1
+                        1:
+                            return 1
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+export fn native_typed_mixed_binary_case() -> trit:
+    mut result: NativeTypedValue = native_typed_apply_binary(
+        1,
+        native_typed_i64_value(1),
+        native_typed_f64_value(2.0)
+    )
+    match result.kind == 0:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 0
