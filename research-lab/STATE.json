@@ -1013,8 +1013,8 @@
     "shutdown_executed": false,
     "reconciliation": "reconciliations/SELFHOST_NATIVE_PROGRAM_FRONTEND_20260920.md",
     "focused_linux_test_count": "68 collected, exit 0",
-    "closure_gate_gap": "FULL_SUITE_NOT_RUN",
-    "closure_gate_required_action": "run full suite on exact final functional head or explicitly revise protocol"
+    "closure_gate_gap": "CLOSED_FULL_SUITE_PASS",
+    "closure_gate_required_action": "none"
   },
   "next_actions": [
     "Preserve the P4/P5/P6 evidence as historical research context; do not reopen rejected hypotheses without new measurements",
