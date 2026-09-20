@@ -807,6 +807,382 @@ fn generic_native_parser_tree_digest(
             digest = digest + left_digest * 113 + right_digest * 127
     return digest
 
+fn generic_native_parser_statement(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64,
+    node_kinds: &mut vector<i64>,
+    node_operators: &mut vector<i64>,
+    node_left: &mut vector<i64>,
+    node_right: &mut vector<i64>,
+    node_starts: &mut vector<i64>,
+    node_ends: &mut vector<i64>,
+    node_values: &mut vector<i64>
+) -> i64:
+    match generic_native_parser_take(kinds, cursor, 3):
+        -1:
+            mut expression_result: i64 = generic_native_parser_expression(
+                source,
+                kinds,
+                starts,
+                ends,
+                cursor + 1,
+                0,
+                node_kinds,
+                node_operators,
+                node_left,
+                node_right,
+                node_starts,
+                node_ends,
+                node_values
+            )
+            match expression_result == -1:
+                -1:
+                    return -1
+                0:
+                    discard 0
+                1:
+                    discard 0
+            mut expression_cursor: i64 = generic_native_parser_packed_cursor(expression_result)
+            match generic_native_parser_take(kinds, expression_cursor, 6):
+                -1:
+                    return generic_native_parser_pack(
+                        expression_cursor + 1,
+                        generic_native_parser_packed_node(expression_result)
+                    )
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+fn generic_native_parser_sequence_digest(source: &vector<i64>) -> i64:
+    mut ids: vector<i64> = vector_new<i64>(128)
+    mut kinds: vector<i64> = vector_new<i64>(128)
+    mut starts: vector<i64> = vector_new<i64>(128)
+    mut ends: vector<i64> = vector_new<i64>(128)
+    mut token_count: i64 = generic_lexer_scan_tokens(source, &mut ids, &mut kinds, &mut starts, &mut ends)
+    mut cursor: i64 = 0
+    mut name_start: i64 = -1
+    mut name_end: i64 = -1
+
+    match generic_native_parser_take(&kinds, cursor, 2):
+        -1:
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match generic_native_parser_take(&kinds, cursor, 1):
+        -1:
+            name_start = vector_get<i64>(&starts, cursor)
+            name_end = vector_get<i64>(&ends, cursor)
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match generic_native_parser_take(&kinds, cursor, 7):
+        -1:
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match generic_native_parser_take(&kinds, cursor, 8):
+        -1:
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+
+    match generic_native_parser_kind(&kinds, cursor) == 6:
+        -1:
+            cursor = cursor + 1
+        0:
+            match generic_native_parser_take(&kinds, cursor, 145):
+                -1:
+                    cursor = cursor + 1
+                0:
+                    return -1
+                1:
+                    return -1
+            match generic_native_parser_take(&kinds, cursor, 162):
+                -1:
+                    cursor = cursor + 1
+                0:
+                    return -1
+                1:
+                    return -1
+            match generic_native_parser_take(&kinds, cursor, 1):
+                -1:
+                    cursor = cursor + 1
+                0:
+                    return -1
+                1:
+                    return -1
+            match generic_native_parser_take(&kinds, cursor, 158):
+                -1:
+                    cursor = cursor + 1
+                0:
+                    return -1
+                1:
+                    return -1
+            match generic_native_parser_take(&kinds, cursor, 6):
+                -1:
+                    cursor = cursor + 1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+    mut node_kinds: vector<i64> = vector_new<i64>(128)
+    mut node_operators: vector<i64> = vector_new<i64>(128)
+    mut node_left: vector<i64> = vector_new<i64>(128)
+    mut node_right: vector<i64> = vector_new<i64>(128)
+    mut node_starts: vector<i64> = vector_new<i64>(128)
+    mut node_ends: vector<i64> = vector_new<i64>(128)
+    mut node_values: vector<i64> = vector_new<i64>(128)
+    mut statement_count: i64 = 0
+    mut block_start: i64 = -1
+    mut block_end: i64 = -1
+    mut sequence_digest: i64 = 0
+    mut scanning: i64 = 1
+
+    while scanning == 1:
+        match generic_native_parser_kind(&kinds, cursor) == 3:
+            -1:
+                mut statement_start: i64 = vector_get<i64>(&starts, cursor)
+                match statement_count == 0:
+                    -1:
+                        block_start = statement_start
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+                mut statement_result: i64 = generic_native_parser_statement(
+                    source,
+                    &kinds,
+                    &starts,
+                    &ends,
+                    cursor,
+                    &mut node_kinds,
+                    &mut node_operators,
+                    &mut node_left,
+                    &mut node_right,
+                    &mut node_starts,
+                    &mut node_ends,
+                    &mut node_values
+                )
+                match statement_result == -1:
+                    -1:
+                        return -1
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+                mut expression_node: i64 = generic_native_parser_packed_node(statement_result)
+                mut statement_end: i64 = vector_get<i64>(&node_ends, expression_node)
+                block_end = statement_end
+                mut expression_digest: i64 = generic_native_parser_tree_digest(
+                    expression_node,
+                    &node_kinds,
+                    &node_operators,
+                    &node_left,
+                    &node_right,
+                    &node_starts,
+                    &node_ends,
+                    &node_values
+                )
+                mut statement_digest: i64 = 0
+                mut statement_term: i64 = 4
+                statement_term = statement_term * 97
+                statement_digest = statement_digest + statement_term
+                statement_term = 3
+                statement_term = statement_term * 101
+                statement_digest = statement_digest + statement_term
+                statement_term = statement_start
+                statement_term = statement_term * 103
+                statement_digest = statement_digest + statement_term
+                statement_term = statement_end
+                statement_term = statement_term * 107
+                statement_digest = statement_digest + statement_term
+                statement_term = expression_digest
+                statement_term = statement_term * 109
+                statement_digest = statement_digest + statement_term
+                sequence_digest = sequence_digest * 131 + statement_digest
+                statement_count = statement_count + 1
+                cursor = generic_native_parser_packed_cursor(statement_result)
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+
+    match statement_count == 0:
+        -1:
+            return -1
+        0:
+            discard 0
+        1:
+            discard 0
+    match generic_native_parser_take(&kinds, cursor, 0):
+        -1:
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match cursor == token_count:
+        -1:
+            return sequence_digest + generic_native_parser_name_digest(source, name_start, name_end) * 11 + name_start * 13 + name_end * 17 + block_start * 19 + block_end * 23 + statement_count * 29 + token_count * 37
+        0:
+            return -1
+        1:
+            return -1
+
+fn generic_native_parser_sequence_prefix(source: &mut vector<i64>) -> i64:
+    discard vector_push<i64>(source, 102)
+    discard vector_push<i64>(source, 110)
+    discard vector_push<i64>(source, 32)
+    discard vector_push<i64>(source, 115)
+    discard vector_push<i64>(source, 101)
+    discard vector_push<i64>(source, 113)
+    discard vector_push<i64>(source, 117)
+    discard vector_push<i64>(source, 101)
+    discard vector_push<i64>(source, 110)
+    discard vector_push<i64>(source, 99)
+    discard vector_push<i64>(source, 101)
+    discard vector_push<i64>(source, 40)
+    discard vector_push<i64>(source, 41)
+    discard vector_push<i64>(source, 32)
+    discard vector_push<i64>(source, 45)
+    discard vector_push<i64>(source, 62)
+    discard vector_push<i64>(source, 32)
+    discard vector_push<i64>(source, 105)
+    discard vector_push<i64>(source, 54)
+    discard vector_push<i64>(source, 52)
+    discard vector_push<i64>(source, 58)
+    discard vector_push<i64>(source, 10)
+    discard vector_push<i64>(source, 32)
+    discard vector_push<i64>(source, 32)
+    discard vector_push<i64>(source, 32)
+    discard vector_push<i64>(source, 32)
+    return 0
+
+fn generic_native_parser_sequence_return(source: &mut vector<i64>, value: i64) -> i64:
+    discard vector_push<i64>(source, 114)
+    discard vector_push<i64>(source, 101)
+    discard vector_push<i64>(source, 116)
+    discard vector_push<i64>(source, 117)
+    discard vector_push<i64>(source, 114)
+    discard vector_push<i64>(source, 110)
+    discard vector_push<i64>(source, 32)
+    match value <=> 1:
+        -1:
+            discard vector_push<i64>(source, 51)
+        0:
+            discard vector_push<i64>(source, 49)
+        1:
+            match value <=> 2:
+                -1:
+                    discard vector_push<i64>(source, 49)
+                0:
+                    discard vector_push<i64>(source, 50)
+                1:
+                    discard vector_push<i64>(source, 51)
+    discard vector_push<i64>(source, 10)
+    discard vector_push<i64>(source, 32)
+    discard vector_push<i64>(source, 32)
+    discard vector_push<i64>(source, 32)
+    discard vector_push<i64>(source, 32)
+    return 0
+
+fn generic_native_parser_sequence_incomplete(source: &mut vector<i64>) -> i64:
+    discard vector_push<i64>(source, 114)
+    discard vector_push<i64>(source, 101)
+    discard vector_push<i64>(source, 116)
+    discard vector_push<i64>(source, 117)
+    discard vector_push<i64>(source, 114)
+    discard vector_push<i64>(source, 110)
+    discard vector_push<i64>(source, 10)
+    return 0
+
+fn generic_native_parser_sequence_garbage(source: &mut vector<i64>) -> i64:
+    discard vector_push<i64>(source, 103)
+    discard vector_push<i64>(source, 97)
+    discard vector_push<i64>(source, 114)
+    discard vector_push<i64>(source, 98)
+    discard vector_push<i64>(source, 97)
+    discard vector_push<i64>(source, 103)
+    discard vector_push<i64>(source, 101)
+    discard vector_push<i64>(source, 10)
+    return 0
+
+export fn generic_native_parser_sequence_case(case_id: i64) -> i64:
+    mut source: vector<i64> = vector_new<i64>(128)
+    discard generic_native_parser_sequence_prefix(&mut source)
+    match case_id <=> 0:
+        -1:
+            discard generic_native_parser_sequence_return(&mut source, 1)
+            discard generic_native_parser_sequence_garbage(&mut source)
+        0:
+            discard generic_native_parser_sequence_return(&mut source, 1)
+        1:
+            match case_id <=> 1:
+                -1:
+                    discard generic_native_parser_sequence_return(&mut source, 1)
+                    discard generic_native_parser_sequence_return(&mut source, 2)
+                0:
+                    discard generic_native_parser_sequence_return(&mut source, 1)
+                    discard generic_native_parser_sequence_return(&mut source, 2)
+                1:
+                    match case_id <=> 2:
+                        -1:
+                            discard generic_native_parser_sequence_return(&mut source, 1)
+                            discard generic_native_parser_sequence_return(&mut source, 2)
+                        0:
+                            discard generic_native_parser_sequence_return(&mut source, 1)
+                            discard generic_native_parser_sequence_return(&mut source, 2)
+                            discard generic_native_parser_sequence_return(&mut source, 3)
+                        1:
+                            match case_id <=> 3:
+                                -1:
+                                    discard generic_native_parser_sequence_return(&mut source, 1)
+                                    discard generic_native_parser_sequence_return(&mut source, 2)
+                                    discard generic_native_parser_sequence_return(&mut source, 3)
+                                0:
+                                    discard generic_native_parser_sequence_return(&mut source, 2)
+                                    discard generic_native_parser_sequence_return(&mut source, 1)
+                                1:
+                                    match case_id <=> 4:
+                                        -1:
+                                            discard generic_native_parser_sequence_return(&mut source, 2)
+                                            discard generic_native_parser_sequence_return(&mut source, 1)
+                                        0:
+                                            discard generic_native_parser_sequence_return(&mut source, 1)
+                                            discard generic_native_parser_sequence_incomplete(&mut source)
+                                        1:
+                                            match case_id <=> 5:
+                                                -1:
+                                                    discard generic_native_parser_sequence_return(&mut source, 1)
+                                                    discard generic_native_parser_sequence_incomplete(&mut source)
+                                                0:
+                                                    discard generic_native_parser_sequence_return(&mut source, 1)
+                                                    discard generic_native_parser_sequence_garbage(&mut source)
+                                                    discard generic_native_parser_sequence_return(&mut source, 2)
+                                                1:
+                                                    discard generic_native_parser_sequence_return(&mut source, 1)
+                                                    discard generic_native_parser_sequence_garbage(&mut source)
+    return generic_native_parser_sequence_digest(&source)
+
 export fn generic_native_parser_digest(source: &vector<i64>) -> i64:
     mut ids: vector<i64> = vector_new<i64>(64)
     mut kinds: vector<i64> = vector_new<i64>(64)
