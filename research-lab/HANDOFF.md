@@ -1273,3 +1273,22 @@ f64 and indexed data. Do not infer f64 or scientific-workload readiness from
 the i64 result. Detailed reconciliation:
 
 `research-lab/reconciliations/SELFHOST_NATIVE_SEMANTIC_EXECUTION_20260920.md`
+
+### 2026-09-20 update - native typed value protocol
+
+The follow-on branch `feat/s3-native-typed-values` was based on PR305's exact
+documentation head `48f2551c130ba29e6becf63aba2d4e57c69d35c6` and reached
+functional head `cc05357ad6e72c3bc13032b1ed55303be93f2661`. It introduced an
+explicit scalar `NativeTypedValue` / `NativeTypedResult` protocol. i64
+semantic execution still returns `42`; f64 literals, locals, assignment,
+parameters, calls, and returns execute through the same typed scalar model;
+mixed i64/f64 operations fail closed. The full Windows suite passed with
+`4021 passed, 312 skipped, 0 failed` at that functional head.
+
+The campaign stopped at the first real native indexed-data boundary. Hosted
+fixed arrays and slices exist, but the native protocol still lacks collection
+payload, element type, length, bounds, mutability, and ownership/lifetime
+contracts. Native indexed execution and scientific workloads therefore remain
+blocked architecturally. Read
+`reconciliations/SELFHOST_NATIVE_TYPED_VALUES_20260920.md` and the production
+report before selecting the next design.

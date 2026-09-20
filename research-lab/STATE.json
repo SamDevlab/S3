@@ -1206,5 +1206,30 @@
     "minimum_next_design_decision": "DEFINE_TAGGED_OR_PARALLEL_NATIVE_VALUE_AND_RESULT_CONTRACT",
     "scientific_workload_readiness": "BLOCKED_ARCHITECTURALLY",
     "reconciliation": "research-lab/reconciliations/SELFHOST_NATIVE_SEMANTIC_EXECUTION_20260920.md"
+  },
+  "selfhost_native_typed_values_20260920": {
+    "status": "COMPLETE_DRAFT_WITH_INDEXED_DATA_BLOCKER",
+    "base_pr": 305,
+    "base_head": "48f2551c130ba29e6becf63aba2d4e57c69d35c6",
+    "branch": "feat/s3-native-typed-values",
+    "functional_head": "cc05357ad6e72c3bc13032b1ed55303be93f2661",
+    "merged": false,
+    "native_typed_value_protocol": true,
+    "native_i64_semantic_execution": true,
+    "first_real_program_result": 42,
+    "native_f64_scalar_execution": true,
+    "numeric_coercion": false,
+    "indexed_data": "BLOCKED_ARCHITECTURALLY",
+    "first_missing_capability": "NATIVE_INDEXED_VALUE_PAYLOAD_LENGTH_BOUNDS_OWNERSHIP_CONTRACT",
+    "numeric_workload": "NOT_STARTED",
+    "scientific_workload": "NOT_STARTED",
+    "full_suite": "4021 passed, 312 skipped, 0 failed",
+    "full_suite_sha": "cc05357ad6e72c3bc13032b1ed55303be93f2661",
+    "full_suite_exit": 0,
+    "compileall": "PASS",
+    "diff_check": "PASS",
+    "linux_x86_64": "DEFERRED_TO_LINUX_HOST",
+    "reference_fallback": "NONE",
+    "reconciliation": "research-lab/reconciliations/SELFHOST_NATIVE_TYPED_VALUES_20260920.md"
   }
 }

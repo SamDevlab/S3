@@ -740,3 +740,25 @@ SCIENTIFIC_KERNEL_READINESS=BLOCKED_ARCHITECTURALLY
 MICROKERNEL_EXECUTED=NO
 PROMOTE_TO_ZETTEL=NO
 ```
+
+### 2026-09-20 evidence update - native typed value protocol
+
+The native semantic path generalized its proven i64 execution into an explicit
+typed scalar value/result protocol and executed a real f64 call/local/
+assignment/return fixture without coercion or hosted fallback. This strengthens
+IC-005, IC-008, IC-012, IC-015, and IC-016 while leaving IC-014 unchanged.
+
+The experiment also produced a negative boundary result: hosted fixed arrays
+and slices do not define a native collection payload, length, bounds, or
+ownership/lifetime representation. Native indexed and scientific workloads
+remain blocked until that contract is designed and proven.
+
+```text
+NATIVE_TYPED_VALUE_PROTOCOL=PASS
+NATIVE_I64=PASS
+NATIVE_F64=PASS
+NATIVE_INDEXED_DATA=BLOCKED_ARCHITECTURALLY
+SCIENTIFIC_WORKLOAD=NOT_STARTED
+FULL_SUITE=4021 passed, 312 skipped, 0 failed
+PROMOTE_TO_ZETTEL=NO
+```
