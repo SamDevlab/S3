@@ -2431,37 +2431,93 @@ export fn generic_native_parser_program_case(case_id: i64) -> i64:
             discard 0
     return generic_native_parser_program_digest(&source)
 
-fn generic_native_program_v2_literal(source: &mut vector<i64>, value: i64) -> i64:
-    match value <=> 1:
+fn generic_native_program_v2_digit(source: &mut vector<i64>, digit: i64) -> i64:
+    mut digits: vector<i64> = vector_new<i64>(10)
+    discard vector_push<i64>(&mut digits, 48)
+    discard vector_push<i64>(&mut digits, 49)
+    discard vector_push<i64>(&mut digits, 50)
+    discard vector_push<i64>(&mut digits, 51)
+    discard vector_push<i64>(&mut digits, 52)
+    discard vector_push<i64>(&mut digits, 53)
+    discard vector_push<i64>(&mut digits, 54)
+    discard vector_push<i64>(&mut digits, 55)
+    discard vector_push<i64>(&mut digits, 56)
+    discard vector_push<i64>(&mut digits, 57)
+    match digit <=> 0:
         -1:
             return -1
         0:
-            discard generic_native_program_byte(source, 49)
+            discard generic_native_program_byte(source, vector_get<i64>(&digits, 0))
             return 0
         1:
-            match value <=> 2:
+            match digit < 10:
+                -1:
+                    discard generic_native_program_byte(source, vector_get<i64>(&digits, digit))
+                    return 0
+                0:
+                    discard generic_native_program_byte(source, vector_get<i64>(&digits, digit))
+                    return 0
+                1:
+                    return -1
+
+fn generic_native_program_v2_literal(source: &mut vector<i64>, value: i64) -> i64:
+    match value <=> 0:
+        -1:
+            return -1
+        0:
+            return generic_native_program_v2_digit(source, 0)
+        1:
+            mut remaining: i64 = value
+            mut hundreds: i64 = 0
+            mut taking_hundreds: i64 = 1
+            while taking_hundreds == 1:
+                match remaining < 100:
+                    -1:
+                        taking_hundreds = 0
+                    0:
+                        remaining = remaining - 100
+                        hundreds = hundreds + 1
+                    1:
+                        remaining = remaining - 100
+                        hundreds = hundreds + 1
+            match hundreds < 10:
+                -1:
+                    discard 0
+                0:
+                    discard 0
+                1:
+                    return -1
+            mut tens: i64 = 0
+            mut taking_tens: i64 = 1
+            while taking_tens == 1:
+                match remaining < 10:
+                    -1:
+                        taking_tens = 0
+                    0:
+                        remaining = remaining - 10
+                        tens = tens + 1
+                    1:
+                        remaining = remaining - 10
+                        tens = tens + 1
+            match hundreds <=> 0:
                 -1:
                     return -1
                 0:
-                    discard generic_native_program_byte(source, 50)
-                    return 0
-                1:
-                    match value <=> 3:
+                    match tens <=> 0:
                         -1:
                             return -1
                         0:
-                            discard generic_native_program_byte(source, 51)
+                            discard generic_native_program_v2_digit(source, remaining)
                             return 0
                         1:
-                            match value <=> 40:
-                                -1:
-                                    return -1
-                                0:
-                                    discard generic_native_program_byte(source, 52)
-                                    discard generic_native_program_byte(source, 48)
-                                    return 0
-                                1:
-                                    return -1
+                            discard generic_native_program_v2_digit(source, tens)
+                            discard generic_native_program_v2_digit(source, remaining)
+                            return 0
+                1:
+                    discard generic_native_program_v2_digit(source, hundreds)
+                    discard generic_native_program_v2_digit(source, tens)
+                    discard generic_native_program_v2_digit(source, remaining)
+                    return 0
 
 fn generic_native_program_v2_header(source: &mut vector<i64>, name_id: i64) -> i64:
     discard generic_native_program_word(source, 0)
