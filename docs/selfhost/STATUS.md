@@ -141,8 +141,16 @@ payloads, function name bytes, and token-vector length rather than fixture
 names or constants. Valid cases cover precedence, associativity, nested
 grouping, and multiplication; malformed missing-operand, unclosed-group, and
 extra-close inputs are rejected with `-1`. The Linux x86-64 focused
-qualification passed 34 tests, and the native path has no fallback to
+qualification passed 36 tests, and the native path has no fallback to
 `GenericLexer`, `GenericParser`, or the Python parser.
+
+The parser now also accepts identifier primaries from the same source-derived
+token spans. Identifier leaves preserve their source span and a deterministic
+byte-derived payload, so distinct names remain distinct without symbol
+resolution or semantic name validation. Identifier expressions compose with
+the existing `+`, `*`, and grouping precedence path; consecutive primaries and
+missing operands remain deterministic syntax errors. The hosted syntax parser
+is used only as the independent oracle for these tests.
 
 This remains partial ordinary-frontend execution evidence only. It does not
 claim a complete S3-native lexer or parser, semantic analysis, lowering,
@@ -150,9 +158,9 @@ emission, or a self-hosted compiler:
 
 ```text
 ORDINARY_S3_LEXER_SLICE=YES_HOSTED_AND_LINUX_NATIVE
-ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_EXPRESSION_CORE_SUBSET
+ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_IDENTIFIER_EXPRESSION_SUBSET
 S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
-S3_NATIVE_PARSER=PARTIAL_EXPRESSION_CORE
+S3_NATIVE_PARSER=PARTIAL_EXPRESSION_CORE_WITH_IDENTIFIERS
 NATIVE_INTEGER_EXPRESSION=PASS
 NATIVE_BINARY_ADDITION=PASS
 NATIVE_MULTIPLICATION=PASS
@@ -161,7 +169,16 @@ NATIVE_SAME_LEVEL_ASSOCIATIVITY=PASS
 NATIVE_PARENTHESIZED_EXPRESSION=PASS
 NATIVE_GROUPING_OVERRIDES_PRECEDENCE=PASS
 NATIVE_EXPRESSION_NEGATIVE_CASES=PASS
-NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_INTEGER_BINARY_PRECEDENCE_PARENTHESES_SUBSET
+NATIVE_IDENTIFIER_PRIMARY=PASS
+NATIVE_IDENTIFIER_BINARY_EXPRESSION=PASS
+NATIVE_IDENTIFIER_PRECEDENCE_INTEGRATION=PASS
+NATIVE_IDENTIFIER_GROUPING_INTEGRATION=PASS
+NATIVE_IDENTIFIER_NEGATIVE_CASES=PASS
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_INTEGER_BINARY_PRECEDENCE_PARENTHESES_IDENTIFIERS_SUBSET
+FINAL_FUNCTIONAL_HEAD=0cceff303f0337fe45db9b80a2e7b6e814ff979e
+FULL_SUITE=PASS
+FULL_SUITE_SHA=0cceff303f0337fe45db9b80a2e7b6e814ff979e
+NEXT_BLOCKER=NATIVE_STATEMENT_SEQUENCE
 HOST_EXECUTION_SUPPORT=PRESENT_AS_EXPECTED
 HOST_SEMANTIC_DECISIONS=DECREASING_BUT_PRESENT
 ```
