@@ -741,6 +741,27 @@ MICROKERNEL_EXECUTED=NO
 PROMOTE_TO_ZETTEL=NO
 ```
 
+### 2026-09-20 evidence update - native indexed data boundary
+
+The native typed-value line reached a bounded indexed-data contract using
+explicit metadata and typed vector payloads. Local construction, lengths, and
+payload reads pass, but the hosted semantic model rejects a reference to the
+nominal aggregate because references currently require scalar targets. This is
+evidence that hosted arrays/vectors/slices do not, by themselves, specify a
+native aggregate ABI. Ownership, lifetime, aliasing, and transfer behavior must
+be designed before indexed execution or scientific workloads can be promoted.
+
+```text
+NATIVE_INDEXED_VALUE_CONTRACT=PASS_FOR_LOCAL_PROBES
+NATIVE_AGGREGATE_CALL_BOUNDARY=BLOCKED
+NATIVE_INDEXED_EXECUTION=NOT_PROVEN
+NUMERIC_WORKLOAD=NOT_STARTED
+SCIENTIFIC_WORKLOAD=NOT_STARTED
+STRENGTHENS=IC-005,IC-008,IC-012,IC-015,IC-016
+IC-014=UNCHANGED
+PROMOTE_TO_ZETTEL=NO
+```
+
 ### 2026-09-20 evidence update - native typed value protocol
 
 The native semantic path generalized its proven i64 execution into an explicit

@@ -1292,3 +1292,37 @@ contracts. Native indexed execution and scientific workloads therefore remain
 blocked architecturally. Read
 `reconciliations/SELFHOST_NATIVE_TYPED_VALUES_20260920.md` and the production
 report before selecting the next design.
+
+### 2026-09-20 update - native indexed data boundary
+
+PR #307 is an open Draft based on the exact PR #306 head. The campaign added a
+bounded `NativeIndexedValue` contract with explicit element kind, length,
+mutability, ownership, lifetime, and typed vector payloads. Local construction,
+length, payload read, and vector-payload parameter probes passed. The complete
+Windows suite passed at the functional head with `4027 passed, 312 skipped,
+0 failed` and exit 0.
+
+The first real blocker is the existing semantic rule that references must
+target scalar types: a reference to the nominal indexed aggregate is rejected.
+Separate payload and length parameters do not establish an aggregate ABI. A
+future campaign must define and prove aggregate reference or explicit
+ownership/transfer semantics before claiming indexed i64/f64 execution or
+numeric/scientific workloads.
+
+```text
+PR307=OPEN_DRAFT
+FUNCTIONAL_HEAD=91390c473634ad855327f7a762fecefb1874f7f7
+FINAL_CANDIDATE_HEAD=3c125bc5a8ee7cbcf91361f9f632e11265b73e4a
+NATIVE_INDEXED_DATA=BLOCKED_AT_AGGREGATE_REFERENCE_BOUNDARY
+NUMERIC_WORKLOAD=NOT_STARTED
+SCIENTIFIC_WORKLOAD=NOT_STARTED
+FULL_SUITE=4027 passed, 312 skipped, 0 failed
+FULL_SUITE_EXIT=0
+REMOTE_CHECKS=FAIL_PRE_EXECUTION
+REMOTE_CI_RERUN=NO
+REFERENCE_FALLBACK=NONE
+```
+
+Detailed reconciliation:
+
+`research-lab/reconciliations/SELFHOST_NATIVE_INDEXED_DATA_20260920.md`
