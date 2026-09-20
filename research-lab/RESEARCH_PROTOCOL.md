@@ -269,6 +269,57 @@ Before ending a major research session:
 7. leave `NEXT_ACTIONS` explicit;
 8. do not rely on chat memory as the only source of truth.
 
+## Campaign knowledge-closure protocol
+
+Every meaningful compiler/self-hosting campaign must feed durable knowledge back into the Research Lab. Validation artifacts and PR descriptions are not sufficient by themselves.
+
+This applies to successful, failed, blocked, negative and inconclusive campaigns.
+
+At a natural campaign checkpoint or closure, record only the knowledge delta:
+
+```text
+CAMPAIGN=
+TARGET_SHA_OR_PR=
+WHAT_WORKED=
+WHAT_FAILED=
+WHAT_WAS_FALSIFIED=
+WHAT_REMAINS_UNKNOWN=
+NATIVE_OR_RUNTIME_EVIDENCE=
+RELEVANT_ZETTELS_STRENGTHENED=
+RELEVANT_ZETTELS_WEAKENED_OR_SUPERSEDED=
+NEW_CANDIDATE_INSIGHTS=
+NEXT_DISCRIMINATING_QUESTION=
+```
+
+Rules:
+
+1. Do not create a Zettel merely because a campaign completed.
+2. Create or promote an atomic note only when the campaign establishes durable knowledge with scope and provenance.
+3. Failures and negative results are first-class output. Record why an approach failed and the condition under which it may be worth reopening.
+4. Successful implementation results must record the boundary of what was actually proved; do not silently generalize a bounded subset.
+5. Infrastructure failures must be distinguished from code/test failures.
+6. If an existing temporary note gains material new evidence, update/reconcile that note or its insight candidate rather than creating a duplicate idea.
+7. If a campaign changes the active architecture or research direction, reconcile `STATE.json` / `HANDOFF.md` at the next research publication checkpoint.
+8. Campaign knowledge closure should be folded into the existing development closeout; it is not a reason to rerun unrelated tests or create a documentation-only PR for every small commit.
+9. A multi-milestone megacampaign may accumulate focused observations during execution and perform one consolidated knowledge closure at meaningful checkpoints and at campaign end.
+10. Chat memory is never the only durable record for a material success, failure, falsification or architectural decision.
+
+The intended loop is:
+
+```text
+IMPLEMENT
+   ↓
+VALIDATE
+   ↓
+LEARN
+   ↓
+RECONCILE NOTES
+   ↓
+NEXT CAMPAIGN
+```
+
+This closes a gap observed during the 2026-09 self-hosting work: PRs #301/#302 produced substantial native-frontend evidence, but the long-lived Zettelkasten was not updated while the implementation advanced.
+
 ## Workflow provenance and remote-write containment
 
 A Git ref carries both research content and the automation definitions that
