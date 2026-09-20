@@ -50,6 +50,41 @@ Detailed reconciliation:
 
 `research-lab/reconciliations/SELFHOST_STATEMENT_SEQUENCE_20260920.md`
 
+### 2026-09-20 update - native aggregate references and indexed SSD
+
+PR #308 is an open Draft based on PR #307. The campaign extended the native
+semantic, IR, verifier, lowering and emulator layers with a bounded immutable
+aggregate-reference value for known records. The owner is the caller/local
+record, the callee borrows for the call, and the reference cannot escape. The
+aggregate crosses the boundary as one semantic value; payload, length and
+typed-vector identity remain linked.
+
+```text
+FUNCTIONAL_HEAD=fd4cf580e61cd82b6c49425d0ee9d34d3573de8b
+FINAL_HEAD=59a27730bd6dd9ba3526fed160182dee8054d1d9
+PR=308
+AGGREGATE_REFERENCE=PASS_FOR_KNOWN_RECORDS
+INDEXED_I64=PASS_FOR_NATIVE_S3_IR_PATH
+INDEXED_F64=PASS_FOR_NATIVE_S3_IR_PATH
+SSD=PASS_EXPECTED_14_0
+RMSD=BLOCKED
+```
+
+The first full suite was intentionally run once at the functional head. It
+found three stale exact-enum expectations for the newly introduced aggregate
+opcodes. Those test contracts were repaired in the final test-only commit and
+the affected tests passed; the full suite was not rerun. Linux x86-64
+aggregate emission remains deferred because the `TAGG*` Assembly surface is
+not yet implemented by the x86 emitter.
+
+The first real blocker after SSD is `NATIVE_MATH_PRIMITIVE_CONTRACT`: no
+existing sqrt builtin, intrinsic, runtime helper, libm path, IR opcode or
+backend path was found. Do not implement RMSD through a host math fallback.
+
+Detailed reconciliation:
+
+`research-lab/reconciliations/SELFHOST_NATIVE_AGGREGATE_REFERENCES_20260920.md`
+
 ---
 
 

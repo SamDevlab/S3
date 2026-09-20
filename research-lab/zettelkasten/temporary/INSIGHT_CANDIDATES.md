@@ -783,3 +783,32 @@ SCIENTIFIC_WORKLOAD=NOT_STARTED
 FULL_SUITE=4021 passed, 312 skipped, 0 failed
 PROMOTE_TO_ZETTEL=NO
 ```
+
+### 2026-09-20 evidence update - bounded native aggregate references
+
+PR #308 provides a bounded, immutable, call-scoped aggregate reference for
+known record values. The caller remains the owner; the callee borrows one
+semantic aggregate value; the borrow cannot escape or mutate the aggregate.
+The implementation preserves aggregate identity, typed vector payloads and
+length through semantic analysis, IR, verification, lowering and the native S3
+IR execution path. Indexed i64, indexed f64 and a function-bound SSD fixture
+all pass without host collection semantics.
+
+This is evidence for a narrow model, not a general ownership system. Mutable
+aggregate borrows, ownership transfer, aggregate returns and Linux x86-64
+aggregate emission remain unqualified. The next workload step is blocked by
+the absence of an existing sqrt contract in semantic, IR, runtime or backend
+layers. RMSD was not simulated with a host math fallback.
+
+```text
+NATIVE_AGGREGATE_REFERENCE=PASS_FOR_KNOWN_RECORDS
+READ_ONLY_CALL_BOUNDED_BORROW=PASS
+INDEXED_I64=PASS_FOR_NATIVE_S3_IR_PATH
+INDEXED_F64=PASS_FOR_NATIVE_S3_IR_PATH
+SSD=PASS_EXPECTED_14_0
+SQRT=BLOCKED_NO_EXISTING_PRIMITIVE_CONTRACT
+RMSD=BLOCKED
+STRENGTHENS=IC-003,IC-005,IC-008,IC-012,IC-015,IC-016
+IC-014=UNCHANGED
+PROMOTE_TO_ZETTEL=NO_PENDING_INDEPENDENT_REVIEW
+```
