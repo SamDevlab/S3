@@ -1245,3 +1245,28 @@ Do not infer full self-hosting, native scientific execution, or benchmark
 performance from this checkpoint. A future campaign must begin with an
 explicit semantic/lowering/runtime design and preserve the differential
 boundary; it must not silently expand this parser slice into an ABI or runtime.
+
+### 2026-09-20 update — PR #305 native semantic execution
+
+PR #305 is an open Draft on `feat/s3-native-semantic-execution`, based on the
+exact PR #304 head. It closes the first i64 semantic execution slice in S3
+source: literals, local binding, assignment, parameters, calls, returns,
+grouping, and bounded while execution. The first real result is `42` for
+`40 + 2`; arbitrary positive literals and zero/one/many loop iterations are
+covered. The semantic path has no hosted frontend fallback.
+
+```text
+FUNCTIONAL_HEAD=34a923f84db7ff8d4f9b7cf9083f272169cc7524
+FINAL_DOCS_HEAD=4fb69f0b
+NATIVE_I64_SEMANTICS=PASS
+FOCUSED_SEMANTIC=14 passed, 1 skipped
+FULL_SUITE=PASS
+FULL_SUITE_EXIT=0
+LINUX_X86_64=DEFERRED_TO_LINUX_HOST
+```
+
+The next blocker is the missing native typed value/result contract needed for
+f64 and indexed data. Do not infer f64 or scientific-workload readiness from
+the i64 result. Detailed reconciliation:
+
+`research-lab/reconciliations/SELFHOST_NATIVE_SEMANTIC_EXECUTION_20260920.md`
