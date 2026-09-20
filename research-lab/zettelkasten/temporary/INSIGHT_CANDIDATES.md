@@ -4,7 +4,7 @@
 DATE=2026-08-15
 STATUS=ACTIVE
 OFFICIAL_ZETTEL_IDS_ALLOCATED=NO
-CANDIDATE_COUNT=14
+CANDIDATE_COUNT=16
 ```
 
 These are second-order syntheses produced by connecting existing supported and open notes after the P13.R0 literature rebase.
@@ -606,3 +606,64 @@ Current bounded direction:
 Candidate experiment:
 
 Only after the native frontend/type pipeline is mature, choose one deliberately small subset (for example literal-only return inference or one local arithmetic constraint) and measure whether the reduction in annotation burden justifies the semantic/compiler complexity. Do not make this part of the current self-hosting campaign.
+
+
+## IC-015 — Self-hosting is an enabling milestone, not the terminal objective
+
+Synthesis:
+
+```text
+SELF_HOSTING
+    ↓
+PROGRAM CAPABILITY
+    ↓
+REAL WORKLOAD
+    ↓
+INDEPENDENT CORRECTNESS
+    ↓
+RESOURCE MEASUREMENT
+    ↓
+USEFUL COMPUTE / COST
+```
+
+Self-hosting matters when it improves autonomy, correctness, compiler control, implementation independence or the ability to execute useful programs. It is not by itself the terminal success criterion for S3.
+
+Why temporary:
+
+The current native frontend campaign has not yet reached a representative scientific workload. The strategic claim must be tested by carrying at least one useful program from source through native execution and independent measurement.
+
+Candidate experiment:
+
+Use the first scientific-kernel-oriented workload as a post-frontend maturity gate. Require semantic correctness before performance measurement and report cost per work unit rather than treating self-host completion as the endpoint.
+
+---
+
+## IC-016 — External useful workloads should drive post-core language capability selection
+
+Synthesis:
+
+After a minimal coherent language core exists, additional language/compiler capability should be prioritized by the requirements of useful external workloads rather than by syntax completeness alone.
+
+```text
+USEFUL WORKLOAD
+    ↓
+REQUIRED LANGUAGE/SEMANTIC CAPABILITY
+    ↓
+IMPLEMENT MINIMUM MISSING CAPABILITY
+    ↓
+CORRECTNESS
+    ↓
+MEASUREMENT
+```
+
+Current motivating workload:
+
+A future RMSD / pairwise geometric kernel derived from the Biolab molecular-discovery workflow can act as one capability driver, without requiring the S3 compiler repository to absorb Biolab itself.
+
+Why temporary:
+
+One workload can bias a language design if treated as universal. The candidate therefore proposes workload-driven prioritization, not workload-specific semantics.
+
+Candidate experiment:
+
+For the next native-program-frontend campaign, map the capabilities required by a small scientific kernel (local state, iteration, calls, numeric operations, indexed data if needed). Prefer those capabilities over unrelated language expansion, while preserving the real S3 grammar and architecture.
