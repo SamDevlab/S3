@@ -1155,3 +1155,35 @@ Read `P13_P14_RECONCILIATION.md`, `zettelkasten/P14_INDEX.md`, and
 `zettelkasten/notes/S3-ZK-0076.md` through `S3-ZK-0079.md` before any future
 performance research. Do not start P14.3 or production optimization from
 this checkpoint.
+
+## Authoritative current checkpoint: native program frontend campaign - 2026-09-20
+
+The functional PR #304 (`feat/s3-native-program-frontend`) extends the
+bounded native source slice with typed local state, mutable assignment, typed
+parameters, multi-function structure, calls, relational expressions and
+`while` block structure. Its final pushed functional head for this checkpoint
+is `bf79e618c64b96d2be5640b4f2949b829df10b5c`. The exact reconciliation is in
+`reconciliations/SELFHOST_NATIVE_PROGRAM_FRONTEND_20260920.md`.
+
+The result is a real representational program frontend, not a self-hosted
+semantic compiler. Focused Windows tests, compileall, diff-check, and the
+focused Linux x86-64 qualification passed. The natural PR CI run failed
+before execution with all observed jobs ending in 1-8 seconds and `steps=[]`,
+so it is classified as infrastructure dispatch failure and was not rerun.
+
+The scientific-kernel gate is closed as a scope frontier:
+
+```text
+SCIENTIFIC_KERNEL_READINESS=BLOCKED_ARCHITECTURALLY
+FIRST_MISSING_SCIENTIFIC_CAPABILITY=native semantic/lowering/execution plus f64 indexed data and math contracts
+SCIENTIFIC_MICROKERNEL_EXECUTED=NO
+FULL_SUITE=NOT_RUN_BY_POLICY
+PR304=OPEN_DRAFT
+PR304_MERGED=NO
+S3_BENCHMARKS_CHANGED=NO
+```
+
+Do not infer full self-hosting, native scientific execution, or benchmark
+performance from this checkpoint. A future campaign must begin with an
+explicit semantic/lowering/runtime design and preserve the differential
+boundary; it must not silently expand this parser slice into an ABI or runtime.
