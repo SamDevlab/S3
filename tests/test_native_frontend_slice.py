@@ -15,6 +15,7 @@ from bootstrap.s3.generic_syntax import (
     IntegerPayload,
     NodeKind,
     OperatorPayload,
+    SymbolPayload,
 )
 from bootstrap.s3.frontend_token_arena import TokenArena
 from bootstrap.s3.lexer import SyntaxMode, TokenKind
@@ -52,6 +53,19 @@ _BINARY_PARSER_SOURCES = {
     9: "fn calc() -> i64:\n    return ((1 + 2) * 3)\n",
     14: "fn calc() -> i64:\n    return 1 * 2 * 3\n",
 }
+_IDENTIFIER_PARSER_SOURCES = {
+    0: "fn identity() -> i64:\n    return value\n",
+    1: "fn identity() -> i64:\n    return counter\n",
+    2: "fn identity() -> i64:\n    return value + 2\n",
+    3: "fn identity() -> i64:\n    return 2 + value\n",
+    4: "fn identity() -> i64:\n    return left + right\n",
+    5: "fn identity() -> i64:\n    return left + right * 3\n",
+    6: "fn identity() -> i64:\n    return 3 * value + 2\n",
+    7: "fn identity() -> i64:\n    return (left + 2) * right\n",
+    8: "fn identity() -> i64:\n    return value other\n",
+    9: "fn identity() -> i64:\n    return value +\n",
+    10: "fn identity() -> i64:\n    return unknown\n",
+}
 
 
 def _candidate_source(case_id: int) -> str:
@@ -84,6 +98,17 @@ def _candidate_binary_parser_source(case_id: int) -> str:
     return (
         substrate
         + f"\nfn main() -> i64:\n    return generic_native_parser_binary_case({case_id})\n"
+    )
+
+
+def _candidate_identifier_parser_source(case_id: int) -> str:
+    repository = Path(__file__).parents[1]
+    substrate = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    return (
+        substrate
+        + f"\nfn main() -> i64:\n    return generic_native_parser_identifier_case({case_id})\n"
     )
 
 
@@ -197,6 +222,83 @@ def _independent_binary_parser_digest(source: str) -> int:
     digest += native_token_count * 37
     assert function.span.start == 0
     return digest
+
+
+def _independent_identifier_parser_digest(source: str) -> int:
+    parsed = parse_source_to_syntax_independent(source)
+    arena = parsed.syntax_arena
+    function = next(
+        node for _, node in arena.nodes.items() if node.kind is NodeKind.FUNCTION
+    )
+    return_node = next(
+        node for _, node in arena.nodes.items() if node.kind is NodeKind.RETURN
+    )
+
+    def tree_digest(node_id: int) -> int:
+        node = arena.node(node_id)
+        payload = arena.payload(node)
+        operator = payload.operator_id + 1 if isinstance(payload, OperatorPayload) else 0
+        digest = (
+            (2 if node.kind is NodeKind.BINARY else 3 if node.kind is NodeKind.IDENTIFIER else 1 if node.kind is NodeKind.INTEGER_LITERAL else 0) * 97
+            + operator * 101
+            + node.span.start * 103
+            + node.span.end * 107
+        )
+        if node.kind is NodeKind.INTEGER_LITERAL:
+            assert isinstance(payload, IntegerPayload)
+            return digest + payload.value * 109
+        if node.kind is NodeKind.IDENTIFIER:
+            name_digest = 0
+            for unit in source[node.span.start:node.span.end].encode("utf-8"):
+                name_digest = name_digest * 31 + unit
+            return digest + name_digest * 109
+        assert node.kind is NodeKind.BINARY
+        children = arena.child_ids(node.id)
+        assert len(children) == 2
+        return digest + tree_digest(children[0]) * 113 + tree_digest(children[1]) * 127
+
+    expression = next(
+        arena.node(child_id)
+        for child_id in arena.child_ids(return_node.id)
+        if arena.node(child_id).kind
+        in {NodeKind.BINARY, NodeKind.INTEGER_LITERAL, NodeKind.IDENTIFIER}
+    )
+    tokens = TokenArena.from_source_independent(source, mode=SyntaxMode.V0_6)
+    name_token = next(
+        token
+        for _, token in tokens.tokens.items()
+        if token.kind is TokenKind.IDENTIFIER and token.text != "i64"
+    )
+    name_digest = 0
+    for unit in source[name_token.span.start:name_token.span.end].encode("utf-8"):
+        name_digest = name_digest * 31 + unit
+    native_token_count = len(tokens) - sum(
+        token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
+        for _, token in tokens.tokens.items()
+    ) + 1
+    digest = tree_digest(expression.id)
+    digest += name_digest * 11
+    digest += name_token.span.start * 13
+    digest += name_token.span.end * 17
+    digest += return_node.span.start * 19
+    digest += native_token_count * 37
+    assert function.span.start == 0
+    return digest
+
+
+def _identifier_expression_node(source: str):
+    parsed = parse_source_to_syntax_independent(source)
+    arena = parsed.syntax_arena
+    return_node = next(
+        node for _, node in arena.nodes.items() if node.kind is NodeKind.RETURN
+    )
+    expression = next(
+        arena.node(child_id)
+        for child_id in arena.child_ids(return_node.id)
+        if arena.node(child_id).kind
+        in {NodeKind.BINARY, NodeKind.INTEGER_LITERAL, NodeKind.IDENTIFIER}
+    )
+    return arena, expression
 
 
 def _binary_expression_node(source: str):
@@ -333,6 +435,47 @@ def test_native_binary_expression_rejects_malformed_input(case_id: int) -> None:
     assert run_source(_candidate_binary_parser_source(case_id)) == -1
 
 
+@pytest.mark.parametrize("case_id", (0, 1, 10))
+def test_native_identifier_primary_matches_independent_syntax_oracle(case_id: int) -> None:
+    source = _IDENTIFIER_PARSER_SOURCES[case_id]
+    arena, expression = _identifier_expression_node(source)
+    assert expression.kind is NodeKind.IDENTIFIER
+    assert isinstance(arena.payload(expression), SymbolPayload)
+    assert source[expression.span.start:expression.span.end] in {
+        "value",
+        "counter",
+        "unknown",
+    }
+    expected = _independent_identifier_parser_digest(source)
+    assert run_source(_candidate_identifier_parser_source(case_id)) == expected
+
+
+@pytest.mark.parametrize("case_id", (2, 3, 4, 5, 6, 7))
+def test_native_identifier_binary_expression_matches_independent_syntax_oracle(
+    case_id: int,
+) -> None:
+    source = _IDENTIFIER_PARSER_SOURCES[case_id]
+    arena, expression = _identifier_expression_node(source)
+    assert expression.kind is NodeKind.BINARY
+    assert run_source(_candidate_identifier_parser_source(case_id)) == (
+        _independent_identifier_parser_digest(source)
+    )
+
+
+def test_native_identifier_payload_is_source_derived() -> None:
+    assert run_source(_candidate_identifier_parser_source(0)) != run_source(
+        _candidate_identifier_parser_source(1)
+    )
+    assert run_source(_candidate_identifier_parser_source(4)) != run_source(
+        _candidate_identifier_parser_source(5)
+    )
+
+
+@pytest.mark.parametrize("case_id", (8, 9))
+def test_native_identifier_expression_rejects_malformed_input(case_id: int) -> None:
+    assert run_source(_candidate_identifier_parser_source(case_id)) == -1
+
+
 def test_native_parser_slice_has_no_reference_frontend_fallback() -> None:
     source = _candidate_parser_source(0)
     for forbidden in (
@@ -407,4 +550,22 @@ def test_native_parser_minimal_function_qualifies_on_linux_x86_64(
         completed = toolchain.run(executable)
         assert completed.returncode == 0
         assert completed.stdout == "program returned: -1\n"
+        assert completed.stderr == ""
+
+    for case_id in _IDENTIFIER_PARSER_SOURCES:
+        compilation = compile_source(_candidate_identifier_parser_source(case_id))
+        executable = toolchain.build(
+            generate_native_assembly(compilation.assembly),
+            tmp_path / f"ordinary-s3-identifier-parser-{case_id}",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        expected = (
+            -1
+            if case_id in {8, 9}
+            else _independent_identifier_parser_digest(
+                _IDENTIFIER_PARSER_SOURCES[case_id]
+            )
+        )
+        assert completed.stdout == f"program returned: {expected}\n"
         assert completed.stderr == ""
