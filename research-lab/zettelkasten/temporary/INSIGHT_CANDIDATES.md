@@ -4,7 +4,7 @@
 DATE=2026-08-15
 STATUS=ACTIVE
 OFFICIAL_ZETTEL_IDS_ALLOCATED=NO
-CANDIDATE_COUNT=13
+CANDIDATE_COUNT=14
 ```
 
 These are second-order syntheses produced by connecting existing supported and open notes after the P13.R0 literature rebase.
@@ -479,6 +479,13 @@ When self-hosting is eventually authorized, select one semantically bounded comp
 
 ---
 
+
+### 2026-09-19 evidence update
+
+PRs #301 and #302 provide direct bounded evidence for this synthesis. The self-hosting frontend advanced by keeping an independent hosted frontend as oracle while replacing lexer/parser decisions with ordinary S3-native execution in small semantic slices. Expression precedence/grouping and identifier primaries were added without reference fallback, with Linux x86-64 native qualification and full-suite validation on the functional heads.
+
+This materially strengthens IC-012, but the candidate remains temporary until the approach is exercised across broader statement/block/function-body and later semantic stages. The current evidence supports the method for the bounded source-frontend subset, not a universal self-hosting theorem.
+
 ## IC-013 — Evaluator/compiler agreement can be a bounded differential oracle
 
 Synthesis:
@@ -532,3 +539,56 @@ BOUNDED VALIDATION PATH
 ```
 
 Do not promote all thirteen automatically. Negative evidence may reject or merge candidates.
+
+### 2026-09-19 evidence update
+
+The independent GenericLexer/GenericParser/SyntaxArena path used by PRs #301/#302 acted as a bounded differential oracle for the separately implemented native S3 frontend. Structural agreement covered token/syntax behavior while native execution was qualified on Linux x86-64.
+
+This strengthens the claim that independent reference/compiler agreement is useful when implementation independence and semantic scope are explicit. It does not yet establish the need for a second full evaluator for all of S3.
+
+
+## IC-014 — Implicit signatures and numeric representation inference are separate research questions
+
+Synthesis:
+
+A concise surface form such as:
+
+```s3
+fn soma(a, b):
+    return a + b
+```
+
+contains at least two separable research problems:
+
+```text
+SIGNATURE / SEMANTIC TYPE INFERENCE
+        !=
+PHYSICAL NUMERIC REPRESENTATION SELECTION
+```
+
+A future compiler could infer semantic relationships among parameters/returns while still treating concrete integer width as a later representation decision. This connects to representation-flexibility and commitment-boundary ideas, but does not imply that runtime width promotion is desirable.
+
+Connections:
+
+```text
+[[S3-ZK-0016]]
+[[S3-ZK-0017]]
+IC-005
+IC-008
+```
+
+Why temporary:
+
+Full parameter inference can require type variables, constraint solving, call-site/interprocedural information, overload resolution and recursion handling. Automatic range-based integer-width selection adds control-flow/range analysis and ABI concerns. Dynamic promotion from i32 to i64 during native execution would complicate stack layout, registers, SSA, aggregates, optimization and FFI.
+
+Current bounded direction:
+
+- keep explicit types as the stable self-hosting target;
+- if revisited, test optional return inference separately from parameter inference;
+- treat compile-time representation selection separately from semantic type inference;
+- keep explicit concrete widths where ABI/FFI/binary contracts require them;
+- prefer static width selection before execution over dynamic widening.
+
+Candidate experiment:
+
+Only after the native frontend/type pipeline is mature, choose one deliberately small subset (for example literal-only return inference or one local arithmetic constraint) and measure whether the reduction in annotation burden justifies the semantic/compiler complexity. Do not make this part of the current self-hosting campaign.
