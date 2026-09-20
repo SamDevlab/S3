@@ -386,6 +386,50 @@ class IRVerifier:
                     self._error("address_of cannot target a reference", instruction.location)
             return
 
+        if opcode is IROpcode.AGGREGATE_ADDRESS_OF:
+            result, result_type = require_result()
+            if result_type is not IRType.REFERENCE:
+                self._error("aggregate_address_of result must be a reference", instruction.location)
+            if not instruction.reference_aggregate:
+                self._error("aggregate_address_of requires a record identity", instruction.location)
+            if instruction.reference_target is not None or instruction.reference_is_slice:
+                self._error("aggregate_address_of cannot carry scalar or slice metadata", instruction.location)
+            if len(instruction.operands) != len(instruction.aggregate_field_paths):
+                self._error("aggregate_address_of field layout is inconsistent", instruction.location)
+            if any(register_types[operand] is IRType.REFERENCE for operand in instruction.operands):
+                self._error("aggregate_address_of fields cannot be references", instruction.location)
+            return
+
+        if opcode is IROpcode.AGGREGATE_FIELD_LOAD:
+            _, result_type = require_result()
+            operand_types = require_operands(1)
+            if operand_types != (IRType.REFERENCE,):
+                self._error("aggregate_field_load requires an aggregate reference", instruction.location)
+            if not instruction.reference_aggregate or not instruction.aggregate_field_path:
+                self._error("aggregate_field_load requires aggregate identity and field path", instruction.location)
+            aggregate_register = next(register for register in function.registers if register.index == instruction.operands[0])
+            if aggregate_register.reference_aggregate != instruction.reference_aggregate:
+                self._error("aggregate_field_load identity does not match reference", instruction.location)
+            if result_type is IRType.REFERENCE:
+                self._error("aggregate_field_load cannot produce a reference", instruction.location)
+            return
+
+        if opcode is IROpcode.AGGREGATE_FIELD_ADDRESS:
+            _, result_type = require_result()
+            operand_types = require_operands(1)
+            if result_type is not IRType.REFERENCE or operand_types != (IRType.REFERENCE,):
+                self._error("aggregate_field_address requires a reference result and operand", instruction.location)
+            if not instruction.reference_aggregate or not instruction.aggregate_field_path:
+                self._error("aggregate_field_address requires aggregate identity and field path", instruction.location)
+            if instruction.reference_target not in {IRType.TRIT, IRType.TRYTE, IRType.I64, IRType.F64, IRType.STRING, IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
+                self._error("aggregate_field_address requires a supported field type", instruction.location)
+            aggregate_register = next(register for register in function.registers if register.index == instruction.operands[0])
+            if aggregate_register.reference_aggregate != instruction.reference_aggregate:
+                self._error("aggregate_field_address identity does not match reference", instruction.location)
+            if instruction.reference_mutable:
+                self._error("aggregate_field_address cannot create a mutable aggregate field borrow", instruction.location)
+            return
+
         if opcode is IROpcode.SLICE_LENGTH:
             result, result_type = require_result()
             operand_types = require_operands(2)
@@ -635,6 +679,14 @@ class IRVerifier:
                     f"call to '{instruction.callee}' has incompatible argument types",
                     instruction.location,
                 )
+            if callee is not None:
+                for operand, parameter in zip(instruction.operands, callee.parameters, strict=True):
+                    actual = next(register for register in function.registers if register.index == operand)
+                    if actual.reference_aggregate != parameter.reference_aggregate:
+                        self._error(
+                            f"call to '{instruction.callee}' has incompatible reference identity",
+                            instruction.location,
+                        )
             if instruction.results:
                 expected_results = callee.result_types if callee is not None else builtin[1]
                 if len(instruction.results) != len(expected_results):

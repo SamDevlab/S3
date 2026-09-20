@@ -88,6 +88,12 @@ def instruction_use_def(instruction: AssemblyInstruction) -> tuple[frozenset[int
         return frozenset({regs[0]}), frozenset()
     elif opcode is AssemblyOpcode.TADDR:
         return frozenset(regs[1:]), frozenset({regs[0]})
+    elif opcode is AssemblyOpcode.TAGGADDR:
+        return frozenset(regs[1:]), frozenset({regs[0]})
+    elif opcode is AssemblyOpcode.TAGGLOAD:
+        return frozenset({regs[1]}), frozenset({regs[0]})
+    elif opcode is AssemblyOpcode.TAGGFIELDADDR:
+        return frozenset({regs[1]}), frozenset({regs[0]})
     elif opcode is AssemblyOpcode.TREFLOAD:
         return frozenset({regs[1]}), frozenset({regs[0]})
     elif opcode is AssemblyOpcode.TREFSTORE:

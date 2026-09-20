@@ -269,7 +269,14 @@ fn main() -> tryte {
         for function in program.functions
         for instruction in function.instructions
     }
-    assert seen == set(AssemblyOpcode)
+    # Aggregate-reference opcodes are represented and verified in Assembly,
+    # but native x86 emission is intentionally not qualified by this campaign.
+    native_unqualified = {
+        AssemblyOpcode.TAGGADDR,
+        AssemblyOpcode.TAGGLOAD,
+        AssemblyOpcode.TAGGFIELDADDR,
+    }
+    assert seen == set(AssemblyOpcode) - native_unqualified
     native = "\n".join(generate_native_assembly(program) for program in programs)
     assert "__s3_tryte_min" in native
     assert "__s3_tryte_max" in native

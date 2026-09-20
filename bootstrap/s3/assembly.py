@@ -88,6 +88,9 @@ class AssemblyOpcode(Enum):
     TJMP = "TJMP"
     TBR3 = "TBR3"
     TADDR = "TADDR"
+    TAGGADDR = "TAGGADDR"
+    TAGGLOAD = "TAGGLOAD"
+    TAGGFIELDADDR = "TAGGFIELDADDR"
     TREFLOAD = "TREFLOAD"
     TREFSTORE = "TREFSTORE"
     TSLEN = "TSLEN"
@@ -157,6 +160,9 @@ class AssemblyInstruction:
     reference_target: AssemblyType | None = None
     reference_mutable: bool = False
     reference_is_slice: bool = False
+    reference_aggregate: str | None = None
+    aggregate_field_paths: tuple[tuple[str, ...], ...] = ()
+    aggregate_field_path: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.result_width < 0:
@@ -214,14 +220,14 @@ class AssemblyInstruction:
             )
         elif self.opcode is AssemblyOpcode.TRET:
             operands = _render_register_group(self.registers)
-        elif self.opcode is AssemblyOpcode.TADDR:
+        elif self.opcode in {AssemblyOpcode.TADDR, AssemblyOpcode.TAGGADDR}:
             if self.memory is not None:
                 operands = f"r{self.registers[0]}, m{self.memory}"
                 if len(self.registers) > 1:
                     operands += f", r{self.registers[1]}"
             else:
                 operands = ", ".join(f"r{register}" for register in self.registers)
-        elif self.opcode in {AssemblyOpcode.TREFLOAD, AssemblyOpcode.TREFSTORE}:
+        elif self.opcode in {AssemblyOpcode.TAGGLOAD, AssemblyOpcode.TAGGFIELDADDR, AssemblyOpcode.TREFLOAD, AssemblyOpcode.TREFSTORE}:
             operands = ", ".join(f"r{register}" for register in self.registers)
         elif self.opcode is AssemblyOpcode.TSLEN:
             operands = f"r{self.registers[0]}, r{self.registers[1]}"
@@ -541,6 +547,9 @@ def _parse_instruction(
         AssemblyOpcode.TJMP: 1,
         AssemblyOpcode.TBR3: 4,
         AssemblyOpcode.TADDR: 2,
+        AssemblyOpcode.TAGGADDR: 2,
+        AssemblyOpcode.TAGGLOAD: 2,
+        AssemblyOpcode.TAGGFIELDADDR: 2,
         AssemblyOpcode.TREFLOAD: 2,
         AssemblyOpcode.TREFSTORE: 2,
     }
@@ -553,8 +562,14 @@ def _parse_instruction(
     elif opcode is not AssemblyOpcode.TCALL:
         expected = fixed_counts[opcode]
         valid_counts = {expected}
-        if opcode is AssemblyOpcode.TADDR:
+        if opcode in {AssemblyOpcode.TADDR, AssemblyOpcode.TAGGADDR}:
             valid_counts.add(3)
+        if opcode is AssemblyOpcode.TAGGADDR:
+            if len(operands) < 2:
+                raise AssemblyParseError(
+                    f"{opcode.value} expects at least 2 operands, got {len(operands)}",
+                    line,
+                )
         if len(operands) not in valid_counts:
             raise AssemblyParseError(
                 f"{opcode.value} expects {expected} operand(s), got "

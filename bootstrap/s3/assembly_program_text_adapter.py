@@ -120,6 +120,9 @@ SUPPORTED_PROGRAM_OPCODES = frozenset(
         AssemblyOpcode.TJMP,
         AssemblyOpcode.TBR3,
         AssemblyOpcode.TADDR,
+        AssemblyOpcode.TAGGADDR,
+        AssemblyOpcode.TAGGLOAD,
+        AssemblyOpcode.TAGGFIELDADDR,
         AssemblyOpcode.TREFLOAD,
     AssemblyOpcode.TREFSTORE,
     AssemblyOpcode.TSLEN,
@@ -732,7 +735,7 @@ def _emit_supported_instruction(
         )
         return
 
-    if opcode in {AssemblyOpcode.TADDR, AssemblyOpcode.TREFLOAD, AssemblyOpcode.TREFSTORE}:
+    if opcode in {AssemblyOpcode.TADDR, AssemblyOpcode.TAGGADDR, AssemblyOpcode.TAGGLOAD, AssemblyOpcode.TAGGFIELDADDR, AssemblyOpcode.TREFLOAD, AssemblyOpcode.TREFSTORE}:
         _require_no_extra_operands(
             instruction,
             opcode.value,

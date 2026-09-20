@@ -65,6 +65,23 @@ class SliceValue:
     mutable: bool
 
 
+@dataclass(frozen=True)
+class AggregateReferenceValue:
+    """Read-only view of one nominal record's existing storage cells."""
+
+    aggregate_type: str
+    fields: tuple[tuple[tuple[str, ...], _Cell], ...]
+    mutable: bool
+
+    def field(self, path: tuple[str, ...]) -> _Cell:
+        for candidate, cell in self.fields:
+            if candidate == path:
+                return cell
+        raise IRExecutionError(
+            f"aggregate '{self.aggregate_type}' has no field '{'.'.join(path)}'"
+        )
+
+
 @dataclass
 class _Frame:
     function: IRFunction
@@ -208,6 +225,46 @@ def _execute_function(functions, function, arguments, caller):
             else:
                 cell = frame.registers[instruction.operands[0]]
             _write(frame, instruction.result, ReferenceValue(cell, 0, instruction.reference_mutable))
+        elif op is IROpcode.AGGREGATE_ADDRESS_OF:
+            if not instruction.reference_aggregate:
+                raise IRExecutionError("aggregate reference is missing its type identity")
+            if len(instruction.operands) != len(instruction.aggregate_field_paths):
+                raise IRExecutionError("aggregate reference field layout is inconsistent")
+            fields = tuple(
+                (path, frame.registers[register])
+                for path, register in zip(
+                    instruction.aggregate_field_paths,
+                    instruction.operands,
+                    strict=True,
+                )
+            )
+            _write(
+                frame,
+                instruction.result,
+                AggregateReferenceValue(
+                    instruction.reference_aggregate,
+                    fields,
+                    instruction.reference_mutable,
+                ),
+            )
+        elif op is IROpcode.AGGREGATE_FIELD_LOAD:
+            aggregate = _read(frame, instruction.operands[0])
+            if not isinstance(aggregate, AggregateReferenceValue):
+                raise IRExecutionError("invalid aggregate reference load")
+            cell = aggregate.field(instruction.aggregate_field_path)
+            if not cell.initialized:
+                raise IRExecutionError("uninitialized aggregate field load")
+            _write(frame, instruction.result, cell.value)
+        elif op is IROpcode.AGGREGATE_FIELD_ADDRESS:
+            aggregate = _read(frame, instruction.operands[0])
+            if not isinstance(aggregate, AggregateReferenceValue):
+                raise IRExecutionError("invalid aggregate reference address")
+            cell = aggregate.field(instruction.aggregate_field_path)
+            _write(
+                frame,
+                instruction.result,
+                ReferenceValue(cell, 0, instruction.reference_mutable),
+            )
         elif op is IROpcode.REFERENCE_LOAD:
             ref = _read(frame, instruction.operands[0])
             if not isinstance(ref, ReferenceValue) or not ref.cell.initialized: raise IRExecutionError("invalid reference load")
@@ -285,7 +342,7 @@ def _memory_type(function, memory_index):
 
 def _store_value(cell, value, value_type):
     if value_type is IRType.REFERENCE:
-        if not isinstance(value, (ReferenceValue, SliceValue)):
+        if not isinstance(value, (ReferenceValue, SliceValue, AggregateReferenceValue)):
             raise IRExecutionError("invalid null or non-provenance reference")
     elif value_type is IRType.STRING:
         if not isinstance(value, str):
