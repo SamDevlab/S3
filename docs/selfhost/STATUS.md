@@ -152,6 +152,27 @@ the existing `+`, `*`, and grouping precedence path; consecutive primaries and
 missing operands remain deterministic syntax errors. The hosted syntax parser
 is used only as the independent oracle for these tests.
 
+The native parser slice now also consumes a variable-length statement sequence
+inside the same function body. It preserves statement count and order, records
+the block boundary from the first statement through the final expression, and
+rejects incomplete statements, interleaved garbage, and trailing source. The
+Linux x86-64 focused qualification passed 55 tests on the isolated archive;
+the sequence cases are differential-checked against hosted `NodeKind.BLOCK`
+children and do not introduce a fallback to the hosted parser.
+
+```text
+NATIVE_STATEMENT_SEQUENCE=PASS
+NATIVE_SINGLE_STATEMENT=PASS
+NATIVE_TWO_STATEMENT_SEQUENCE=PASS
+NATIVE_THREE_STATEMENT_SEQUENCE=PASS
+NATIVE_VARIABLE_STATEMENT_COUNT=PASS
+STATEMENT_ORDER_PRESERVED=PASS
+STATEMENT_BLOCK_BOUNDARY=PASS
+NATIVE_STATEMENT_SEQUENCE_NEGATIVES=PASS
+NATIVE_LINUX_STATEMENT_SEQUENCE=PASS
+NEXT_BLOCKER=NATIVE_LOCAL_BINDING
+```
+
 This remains partial ordinary-frontend execution evidence only. It does not
 claim a complete S3-native lexer or parser, semantic analysis, lowering,
 emission, or a self-hosted compiler:

@@ -66,6 +66,15 @@ _IDENTIFIER_PARSER_SOURCES = {
     9: "fn identity() -> i64:\n    return value +\n",
     10: "fn identity() -> i64:\n    return unknown\n",
 }
+_SEQUENCE_PARSER_SOURCES = {
+    0: "fn sequence() -> i64:\n    return 1\n",
+    1: "fn sequence() -> i64:\n    return 1\n    return 2\n",
+    2: "fn sequence() -> i64:\n    return 1\n    return 2\n    return 3\n",
+    3: "fn sequence() -> i64:\n    return 2\n    return 1\n",
+    4: "fn sequence() -> i64:\n    return 1\n    return\n",
+    5: "fn sequence() -> i64:\n    return 1\n    garbage\n    return 2\n",
+    6: "fn sequence() -> i64:\n    return 1\ntrailing\n",
+}
 
 
 def _candidate_source(case_id: int) -> str:
@@ -109,6 +118,17 @@ def _candidate_identifier_parser_source(case_id: int) -> str:
     return (
         substrate
         + f"\nfn main() -> i64:\n    return generic_native_parser_identifier_case({case_id})\n"
+    )
+
+
+def _candidate_sequence_parser_source(case_id: int) -> str:
+    repository = Path(__file__).parents[1]
+    substrate = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    return (
+        substrate
+        + f"\nfn main() -> i64:\n    return generic_native_parser_sequence_case({case_id})\n"
     )
 
 
@@ -284,6 +304,80 @@ def _independent_identifier_parser_digest(source: str) -> int:
     digest += native_token_count * 37
     assert function.span.start == 0
     return digest
+
+
+def _sequence_tree_digest(arena, source: str, node_id: int) -> int:
+    node = arena.node(node_id)
+    payload = arena.payload(node)
+    kind = (
+        2 if node.kind is NodeKind.BINARY
+        else 3 if node.kind is NodeKind.IDENTIFIER
+        else 1 if node.kind is NodeKind.INTEGER_LITERAL
+        else 0
+    )
+    operator = payload.operator_id + 1 if isinstance(payload, OperatorPayload) else 0
+    digest = kind * 97 + operator * 101 + node.span.start * 103 + node.span.end * 107
+    if node.kind is NodeKind.INTEGER_LITERAL:
+        assert isinstance(payload, IntegerPayload)
+        return digest + payload.value * 109
+    if node.kind is NodeKind.IDENTIFIER:
+        name_digest = 0
+        for unit in source[node.span.start:node.span.end].encode("utf-8"):
+            name_digest = name_digest * 31 + unit
+        return digest + name_digest * 109
+    assert node.kind is NodeKind.BINARY
+    children = arena.child_ids(node.id)
+    assert len(children) == 2
+    return digest + _sequence_tree_digest(arena, source, children[0]) * 113 + _sequence_tree_digest(arena, source, children[1]) * 127
+
+
+def _independent_sequence_parser_digest(source: str) -> int:
+    parsed = parse_source_to_syntax_independent(source)
+    arena = parsed.syntax_arena
+    function = next(
+        node for _, node in arena.nodes.items() if node.kind is NodeKind.FUNCTION
+    )
+    function_children = arena.child_ids(function.id)
+    block = arena.node(function_children[1])
+    assert block.kind is NodeKind.BLOCK
+    sequence_digest = 0
+    block_children = arena.child_ids(block.id)
+    for child_id in block_children:
+        statement = arena.node(child_id)
+        assert statement.kind is NodeKind.RETURN
+        expression_id = arena.child_ids(statement.id)[0]
+        expression_digest = _sequence_tree_digest(arena, source, expression_id)
+        statement_digest = (
+            4 * 97
+            + 3 * 101
+            + statement.span.start * 103
+            + statement.span.end * 107
+            + expression_digest * 109
+        )
+        sequence_digest = sequence_digest * 131 + statement_digest
+    tokens = TokenArena.from_source_independent(source, mode=SyntaxMode.V0_6)
+    name_token = next(
+        token
+        for _, token in tokens.tokens.items()
+        if token.kind is TokenKind.IDENTIFIER and token.text != "i64"
+    )
+    name_digest = 0
+    for unit in source[name_token.span.start:name_token.span.end].encode("utf-8"):
+        name_digest = name_digest * 31 + unit
+    native_token_count = len(tokens) - sum(
+        token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
+        for _, token in tokens.tokens.items()
+    ) + 1
+    return (
+        sequence_digest
+        + name_digest * 11
+        + name_token.span.start * 13
+        + name_token.span.end * 17
+        + block.span.start * 19
+        + block.span.end * 23
+        + len(block_children) * 29
+        + native_token_count * 37
+    )
 
 
 def _identifier_expression_node(source: str):
@@ -474,6 +568,89 @@ def test_native_identifier_payload_is_source_derived() -> None:
 @pytest.mark.parametrize("case_id", (8, 9))
 def test_native_identifier_expression_rejects_malformed_input(case_id: int) -> None:
     assert run_source(_candidate_identifier_parser_source(case_id)) == -1
+
+
+@pytest.mark.parametrize("case_id", (0, 1, 2))
+def test_native_statement_sequence_matches_independent_block_oracle(case_id: int) -> None:
+    source = _SEQUENCE_PARSER_SOURCES[case_id]
+    expected = _independent_sequence_parser_digest(source)
+    assert run_source(_candidate_sequence_parser_source(case_id)) == expected
+
+
+def test_native_statement_sequence_preserves_count_and_order() -> None:
+    one = run_source(_candidate_sequence_parser_source(0))
+    two = run_source(_candidate_sequence_parser_source(1))
+    three = run_source(_candidate_sequence_parser_source(2))
+    reversed_two = run_source(_candidate_sequence_parser_source(3))
+    assert one == _independent_sequence_parser_digest(_SEQUENCE_PARSER_SOURCES[0])
+    assert two == _independent_sequence_parser_digest(_SEQUENCE_PARSER_SOURCES[1])
+    assert three == _independent_sequence_parser_digest(_SEQUENCE_PARSER_SOURCES[2])
+    assert reversed_two == _independent_sequence_parser_digest(_SEQUENCE_PARSER_SOURCES[3])
+    assert len({one, two, three}) == 3
+    assert two != reversed_two
+
+
+@pytest.mark.parametrize("case_id", (4, 5, 6))
+def test_native_statement_sequence_rejects_incomplete_internal_and_trailing_source(
+    case_id: int,
+) -> None:
+    with pytest.raises(Exception):
+        parse_source_to_syntax_independent(_SEQUENCE_PARSER_SOURCES[case_id])
+    assert run_source(_candidate_sequence_parser_source(case_id)) == -1
+
+
+def test_native_statement_sequence_has_no_reference_frontend_fallback() -> None:
+    source = _candidate_sequence_parser_source(1)
+    for forbidden in (
+        "GenericLexer(",
+        "GenericParser(",
+        "tokenize(",
+        "parse_tokens(",
+        "bootstrap.s3.ast",
+    ):
+        assert forbidden not in source
+    parser_source = source.split("export fn generic_native_parser_sequence_case", 1)[0]
+    assert "generic_native_parser_sequence_case(case_id" not in parser_source
+
+
+@pytest.mark.s3_native
+def test_native_statement_sequence_qualifies_on_linux_x86_64(
+    tmp_path: Path,
+) -> None:
+    if platform.system() != "Linux" or platform.machine().lower() not in {
+        "x86_64",
+        "amd64",
+    }:
+        pytest.skip("ordinary S3 statement sequence qualification requires Linux x86-64")
+    try:
+        toolchain = NativeToolchain.detect()
+    except NativeBackendError as error:
+        pytest.skip(str(error))
+
+    for case_id in (0, 1, 2, 3):
+        source = _SEQUENCE_PARSER_SOURCES[case_id]
+        compilation = compile_source(_candidate_sequence_parser_source(case_id))
+        executable = toolchain.build(
+            generate_native_assembly(compilation.assembly),
+            tmp_path / f"ordinary-s3-sequence-{case_id}",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stdout == (
+            f"program returned: {_independent_sequence_parser_digest(source)}\n"
+        )
+        assert completed.stderr == ""
+
+    for case_id in (4, 5, 6):
+        compilation = compile_source(_candidate_sequence_parser_source(case_id))
+        executable = toolchain.build(
+            generate_native_assembly(compilation.assembly),
+            tmp_path / f"ordinary-s3-sequence-negative-{case_id}",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stdout == "program returned: -1\n"
+        assert completed.stderr == ""
 
 
 def test_native_parser_slice_has_no_reference_frontend_fallback() -> None:
