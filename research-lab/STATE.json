@@ -978,7 +978,11 @@
     "Treat PRs #301/#302 as the current bounded self-hosting frontend evidence; do not generalize them to full self-hosting",
     "Use NATIVE_STATEMENT_SEQUENCE as the next parser blocker, then consolidate related frontend milestones into a larger self-hosting campaign rather than one PR per tiny grammar feature",
     "At each meaningful campaign checkpoint, reconcile successes, failures, negative results and unknowns into the Research Lab under D-009",
-    "Keep IC-014 implicit signatures/numeric representation inference deferred and outside the active self-hosting target"
+    "Keep IC-014 implicit signatures/numeric representation inference deferred and outside the active self-hosting target",
+    "Treat PR #303 as the final micro-PR in the native frontend sequence; do not open a standalone PR only for NATIVE_LOCAL_BINDING",
+    "Start the next frontend phase as one larger NATIVE_PROGRAM_FRONTEND campaign with internal semantic milestones and checkpoint validation",
+    "Use focused tests during internal milestones and reserve broader/full qualification for meaningful checkpoints/campaign closure",
+    "Keep self-hosting as an enabling path toward useful program/scientific-kernel capability rather than a terminal objective"
   ],
   "selfhost_frontend_20260919": {
     "status": "ACTIVE_RECONCILED",
@@ -1044,5 +1048,47 @@
       ],
       "insight_candidate_added": "IC-014"
     }
+  },
+  "selfhost_statement_sequence_20260920": {
+    "status": "COMPLETE_DRAFT",
+    "pr": 303,
+    "base_pr": 302,
+    "branch": "feat/s3-native-statement-sequence",
+    "head": "6231eb676ea3f8a67461a2bd2d6db82aea753f86",
+    "functional_head": "fa379629a7491458ca3a6d9a567ef7fe01eb5885",
+    "final_head_delta": "DOCS_ONLY",
+    "merged": false,
+    "native_statement_sequence": true,
+    "variable_statement_count": true,
+    "statement_order_preserved": true,
+    "block_boundary": true,
+    "trailing_source_rejection": true,
+    "negative_cases": true,
+    "windows_focused": "PASS",
+    "linux_native": "55 passed",
+    "full_suite": "PASS",
+    "full_suite_sha": "fa379629a7491458ca3a6d9a567ef7fe01eb5885",
+    "compileall": "PASS",
+    "diff_check": "PASS",
+    "reference_fallback": "NONE",
+    "native_parser": "PARTIAL_EXPRESSION_CORE_WITH_IDENTIFIERS_AND_STATEMENT_SEQUENCE",
+    "ordinary_native_execution": "PROVEN_FOR_STATEMENT_SEQUENCE_SUBSET",
+    "host_semantic_decisions": "DECREASING_BUT_PRESENT",
+    "remote_ci": {
+      "status": "FAIL_PRE_EXECUTION",
+      "cause": "INFRA_DISPATCH",
+      "jobs_failed": 10,
+      "failure_window": "2-3s",
+      "steps_started": false,
+      "remote_test_executed": false,
+      "runner_assigned": "UNKNOWN"
+    },
+    "code_ready": true,
+    "ci_ready": false,
+    "ready_for_base_merge": false,
+    "next_internal_blocker": "NATIVE_LOCAL_BINDING",
+    "next_campaign": "NATIVE_PROGRAM_FRONTEND",
+    "micro_pr_phase": "CLOSED",
+    "reconciliation": "research-lab/reconciliations/SELFHOST_STATEMENT_SEQUENCE_20260920.md"
   }
 }
