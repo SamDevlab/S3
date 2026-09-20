@@ -591,7 +591,110 @@ fn generic_native_parser_expression(
                         identifier_end,
                         identifier_value
                     )
-                    left_result = generic_native_parser_pack(expression_cursor + 1, identifier_node)
+                    mut identifier_cursor: i64 = expression_cursor + 1
+                    match generic_native_parser_kind(kinds, identifier_cursor) == 7:
+                        -1:
+                            mut call_cursor: i64 = identifier_cursor + 1
+                            mut argument_head: i64 = -1
+                            mut argument_tail: i64 = -1
+                            mut argument_count: i64 = 0
+                            mut parsing_arguments: i64 = 1
+                            while parsing_arguments == 1:
+                                match generic_native_parser_kind(kinds, call_cursor) == 8:
+                                    -1:
+                                        call_cursor = call_cursor + 1
+                                        parsing_arguments = 0
+                                    0:
+                                        mut argument_result: i64 = generic_native_parser_expression(
+                                            source,
+                                            kinds,
+                                            starts,
+                                            ends,
+                                            call_cursor,
+                                            0,
+                                            node_kinds,
+                                            node_operators,
+                                            node_left,
+                                            node_right,
+                                            node_starts,
+                                            node_ends,
+                                            node_values
+                                        )
+                                        match argument_result == -1:
+                                            -1:
+                                                return -1
+                                            0:
+                                                discard 0
+                                            1:
+                                                discard 0
+                                        mut argument_node: i64 = generic_native_parser_packed_node(argument_result)
+                                        mut argument_start: i64 = vector_get<i64>(&*node_starts, argument_node)
+                                        mut argument_end: i64 = vector_get<i64>(&*node_ends, argument_node)
+                                        mut argument_link: i64 = generic_native_parser_add_node(
+                                            node_kinds,
+                                            node_operators,
+                                            node_left,
+                                            node_right,
+                                            node_starts,
+                                            node_ends,
+                                            node_values,
+                                            5,
+                                            0,
+                                            argument_node,
+                                            -1,
+                                            argument_start,
+                                            argument_end,
+                                            0
+                                        )
+                                        match argument_head == -1:
+                                            -1:
+                                                argument_head = argument_link
+                                                argument_tail = argument_link
+                                            0:
+                                                discard vector_set<i64>(&mut *node_right, argument_tail, argument_link)
+                                                argument_tail = argument_link
+                                            1:
+                                                argument_tail = argument_tail
+                                        argument_count = argument_count + 1
+                                        call_cursor = generic_native_parser_packed_cursor(argument_result)
+                                        match generic_native_parser_take(kinds, call_cursor, 144):
+                                            -1:
+                                                call_cursor = call_cursor + 1
+                                            0:
+                                                match generic_native_parser_take(kinds, call_cursor, 8):
+                                                    -1:
+                                                        call_cursor = call_cursor + 1
+                                                        parsing_arguments = 0
+                                                    0:
+                                                        return -1
+                                                    1:
+                                                        return -1
+                                            1:
+                                                return -1
+                                    1:
+                                        return -1
+                            mut call_end: i64 = vector_get<i64>(ends, call_cursor - 1)
+                            mut call_node: i64 = generic_native_parser_add_node(
+                                node_kinds,
+                                node_operators,
+                                node_left,
+                                node_right,
+                                node_starts,
+                                node_ends,
+                                node_values,
+                                4,
+                                argument_count,
+                                identifier_node,
+                                argument_head,
+                                identifier_start,
+                                call_end,
+                                0
+                            )
+                            left_result = generic_native_parser_pack(call_cursor, call_node)
+                        0:
+                            left_result = generic_native_parser_pack(identifier_cursor, identifier_node)
+                        1:
+                            left_result = generic_native_parser_pack(identifier_cursor, identifier_node)
                 0:
                     match generic_native_parser_kind(kinds, expression_cursor) == 7:
                         -1:
@@ -651,7 +754,21 @@ fn generic_native_parser_expression(
                         operator = 3
                         precedence = 2
                     0:
-                        scanning = 0
+                        match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 160:
+                            -1:
+                                operator = 10
+                                precedence = 0
+                            0:
+                                match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 162:
+                                    -1:
+                                        operator = 12
+                                        precedence = 0
+                                    0:
+                                        scanning = 0
+                                    1:
+                                        scanning = 0
+                            1:
+                                scanning = 0
                     1:
                         scanning = 0
             1:
@@ -732,6 +849,71 @@ fn generic_native_parser_tree_digest(
     mut start: i64 = vector_get<i64>(node_starts, node)
     mut end: i64 = vector_get<i64>(node_ends, node)
     mut digest: i64 = kind * 97 + operator * 101 + start * 103 + end * 107
+    match kind == 4:
+        -1:
+            mut callee_digest: i64 = generic_native_parser_tree_digest(
+                vector_get<i64>(node_left, node),
+                node_kinds,
+                node_operators,
+                node_left,
+                node_right,
+                node_starts,
+                node_ends,
+                node_values
+            )
+            match vector_get<i64>(node_right, node) <=> 0:
+                -1:
+                    return digest + callee_digest * 113
+                0:
+                    return digest + callee_digest * 113
+                1:
+                    mut arguments_digest: i64 = generic_native_parser_tree_digest(
+                        vector_get<i64>(node_right, node),
+                        node_kinds,
+                        node_operators,
+                        node_left,
+                        node_right,
+                        node_starts,
+                        node_ends,
+                        node_values
+                    )
+                    return digest + callee_digest * 113 + arguments_digest * 127
+        0:
+            match kind == 5:
+                -1:
+                    mut argument_digest: i64 = generic_native_parser_tree_digest(
+                        vector_get<i64>(node_left, node),
+                        node_kinds,
+                        node_operators,
+                        node_left,
+                        node_right,
+                        node_starts,
+                        node_ends,
+                        node_values
+                    )
+                    match vector_get<i64>(node_right, node) <=> 0:
+                        -1:
+                            return digest + argument_digest * 113
+                        0:
+                            return digest + argument_digest * 113
+                        1:
+                            mut next_argument_digest: i64 = generic_native_parser_tree_digest(
+                                vector_get<i64>(node_right, node),
+                                node_kinds,
+                                node_operators,
+                                node_left,
+                                node_right,
+                                node_starts,
+                                node_ends,
+                                node_values
+                            )
+                            return digest + argument_digest * 113 + next_argument_digest * 127
+                0:
+                    discard 0
+                1:
+                    discard 0
+        1:
+            discard 0
     match kind == 1:
         -1:
             digest = digest + vector_get<i64>(node_values, node) * 109
@@ -786,13 +968,13 @@ fn generic_native_parser_tree_digest(
         1:
             mut left_digest: i64 = generic_native_parser_tree_digest(
                 vector_get<i64>(node_left, node),
-                node_kinds,
-                node_operators,
-                node_left,
-                node_right,
-                node_starts,
-                node_ends,
-                node_values
+                &*node_kinds,
+                &*node_operators,
+                &*node_left,
+                &*node_right,
+                &*node_starts,
+                &*node_ends,
+                &*node_values
             )
             mut right_digest: i64 = generic_native_parser_tree_digest(
                 vector_get<i64>(node_right, node),
@@ -806,6 +988,1878 @@ fn generic_native_parser_tree_digest(
             )
             digest = digest + left_digest * 113 + right_digest * 127
     return digest
+
+fn generic_native_parser_program_byte_is(
+    source: &vector<i64>,
+    position: i64,
+    expected: i64
+) -> trit:
+    match vector_get<i64>(source, position) == expected:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 1
+
+fn generic_native_parser_program_word_code(
+    source: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64
+) -> i64:
+    mut start: i64 = vector_get<i64>(starts, cursor)
+    mut end: i64 = vector_get<i64>(ends, cursor)
+    mut length: i64 = end - start
+
+    match length == 3:
+        -1:
+            match generic_native_parser_program_byte_is(source, start, 109):
+                -1:
+                    match generic_native_parser_program_byte_is(source, start + 1, 117):
+                        -1:
+                            match generic_native_parser_program_byte_is(source, start + 2, 116):
+                                -1:
+                                    return 1
+                                0:
+                                    length = length
+                                1:
+                                    length = length
+                        0:
+                            length = length
+                        1:
+                            length = length
+                0:
+                    length = length
+                1:
+                    length = length
+            match generic_native_parser_program_byte_is(source, start, 105):
+                -1:
+                    match generic_native_parser_program_byte_is(source, start + 1, 54):
+                        -1:
+                            match generic_native_parser_program_byte_is(source, start + 2, 52):
+                                -1:
+                                    return 2
+                                0:
+                                    length = length
+                                1:
+                                    length = length
+                        0:
+                            length = length
+                        1:
+                            length = length
+                0:
+                    length = length
+                1:
+                    length = length
+            match generic_native_parser_program_byte_is(source, start, 102):
+                -1:
+                    match generic_native_parser_program_byte_is(source, start + 1, 54):
+                        -1:
+                            match generic_native_parser_program_byte_is(source, start + 2, 52):
+                                -1:
+                                    return 3
+                                0:
+                                    length = length
+                                1:
+                                    length = length
+                        0:
+                            length = length
+                        1:
+                            length = length
+                0:
+                    length = length
+                1:
+                    length = length
+        0:
+            length = length
+        1:
+            length = length
+
+    match length == 5:
+        -1:
+            match generic_native_parser_program_byte_is(source, start, 119):
+                -1:
+                    match generic_native_parser_program_byte_is(source, start + 1, 104):
+                        -1:
+                            match generic_native_parser_program_byte_is(source, start + 2, 105):
+                                -1:
+                                    match generic_native_parser_program_byte_is(source, start + 3, 108):
+                                        -1:
+                                            match generic_native_parser_program_byte_is(source, start + 4, 101):
+                                                -1:
+                                                    return 4
+                                                0:
+                                                    length = length
+                                                1:
+                                                    length = length
+                                        0:
+                                            length = length
+                                        1:
+                                            length = length
+                                0:
+                                    length = length
+                                1:
+                                    length = length
+                        0:
+                            length = length
+                        1:
+                            length = length
+                0:
+                    length = length
+                1:
+                    length = length
+        0:
+            length = length
+        1:
+            length = length
+    return 0
+
+fn generic_native_parser_program_indent(
+    source: &vector<i64>,
+    position: i64
+) -> i64:
+    mut line_start: i64 = position
+    mut searching: i64 = 1
+    while searching == 1:
+        match line_start == 0:
+            -1:
+                searching = 0
+            0:
+                match vector_get<i64>(source, line_start - 1) == 10:
+                    -1:
+                        searching = 0
+                    0:
+                        line_start = line_start - 1
+                    1:
+                        line_start = line_start - 1
+            1:
+                match vector_get<i64>(source, line_start - 1) == 10:
+                    -1:
+                        searching = 0
+                    0:
+                        line_start = line_start - 1
+                    1:
+                        line_start = line_start - 1
+    mut cursor: i64 = line_start
+    mut indent: i64 = 0
+    while cursor < position:
+        match vector_get<i64>(source, cursor) == 32:
+            -1:
+                indent = indent + 1
+            0:
+                match vector_get<i64>(source, cursor) == 9:
+                    -1:
+                        indent = indent + 4
+                    0:
+                        indent = indent
+                    1:
+                        indent = indent
+            1:
+                indent = indent
+        cursor = cursor + 1
+    return indent
+
+fn generic_native_parser_program_type_code(
+    source: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64
+) -> i64:
+    return generic_native_parser_program_word_code(source, starts, ends, cursor)
+
+fn generic_native_parser_program_return(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64,
+    node_kinds: &mut vector<i64>,
+    node_operators: &mut vector<i64>,
+    node_left: &mut vector<i64>,
+    node_right: &mut vector<i64>,
+    node_starts: &mut vector<i64>,
+    node_ends: &mut vector<i64>,
+    node_values: &mut vector<i64>,
+    result: &mut vector<i64>
+) -> i64:
+    mut start: i64 = vector_get<i64>(starts, cursor)
+    mut expression_result: i64 = generic_native_parser_expression(
+        source,
+        kinds,
+        starts,
+        ends,
+        cursor + 1,
+        0,
+        node_kinds,
+        node_operators,
+        node_left,
+        node_right,
+        node_starts,
+        node_ends,
+        node_values
+    )
+    match expression_result == -1:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            discard 0
+    mut expression_node: i64 = generic_native_parser_packed_node(expression_result)
+    mut expression_cursor: i64 = generic_native_parser_packed_cursor(expression_result)
+    match generic_native_parser_take(kinds, expression_cursor, 6):
+        -1:
+            mut expression_digest: i64 = generic_native_parser_tree_digest(
+                expression_node,
+                &*node_kinds,
+                &*node_operators,
+                &*node_left,
+                &*node_right,
+                &*node_starts,
+                &*node_ends,
+                &*node_values
+            )
+            mut statement_end: i64 = vector_get<i64>(&*node_ends, expression_node)
+            mut statement_kind: i64 = 7
+            mut digest: i64 = statement_kind * 97 + expression_digest * 101 + start * 103 + statement_end * 107
+            discard vector_push<i64>(result, expression_cursor + 1)
+            discard vector_push<i64>(result, digest)
+            discard vector_push<i64>(result, statement_end)
+            return 1
+        0:
+            return 0
+        1:
+            return 0
+
+fn generic_native_parser_program_declaration(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64,
+    mutable: i64,
+    node_kinds: &mut vector<i64>,
+    node_operators: &mut vector<i64>,
+    node_left: &mut vector<i64>,
+    node_right: &mut vector<i64>,
+    node_starts: &mut vector<i64>,
+    node_ends: &mut vector<i64>,
+    node_values: &mut vector<i64>,
+    result: &mut vector<i64>
+) -> i64:
+    mut current: i64 = cursor
+    mut start: i64 = vector_get<i64>(starts, current)
+    match mutable == 1:
+        -1:
+            current = current + 1
+        0:
+            current = current
+        1:
+            current = current
+    match generic_native_parser_take(kinds, current, 1):
+        -1:
+            mut name_start: i64 = vector_get<i64>(starts, current)
+            mut name_end: i64 = vector_get<i64>(ends, current)
+            mut name_digest: i64 = generic_native_parser_name_digest(source, name_start, name_end)
+            current = current + 1
+            match generic_native_parser_take(kinds, current, 158):
+                -1:
+                    current = current + 1
+                0:
+                    return 0
+                1:
+                    return 0
+            mut type_code: i64 = generic_native_parser_program_type_code(source, starts, ends, current)
+            match type_code <=> 2:
+                -1:
+                    return 0
+                0:
+                    current = current + 1
+                1:
+                    match type_code == 3:
+                        -1:
+                            current = current + 1
+                        0:
+                            return 0
+                        1:
+                            return 0
+            match generic_native_parser_take(kinds, current, 161):
+                -1:
+                    current = current + 1
+                0:
+                    return 0
+                1:
+                    return 0
+            mut expression_result: i64 = generic_native_parser_expression(
+                source,
+                kinds,
+                starts,
+                ends,
+                current,
+                0,
+                node_kinds,
+                node_operators,
+                node_left,
+                node_right,
+                node_starts,
+                node_ends,
+                node_values
+            )
+            match expression_result == -1:
+                -1:
+                    return 0
+                0:
+                    discard 0
+                1:
+                    discard 0
+            mut expression_node: i64 = generic_native_parser_packed_node(expression_result)
+            current = generic_native_parser_packed_cursor(expression_result)
+            match generic_native_parser_take(kinds, current, 6):
+                -1:
+                    mut expression_digest: i64 = generic_native_parser_tree_digest(
+                        expression_node,
+                        &*node_kinds,
+                        &*node_operators,
+                        &*node_left,
+                        &*node_right,
+                        &*node_starts,
+                        &*node_ends,
+                        &*node_values
+                    )
+                    mut statement_end: i64 = vector_get<i64>(&*node_ends, expression_node)
+                    mut statement_kind: i64 = 5
+                    mut digest: i64 = statement_kind * 97 + name_digest * 101 + type_code * 103 + mutable * 107 + expression_digest * 109 + start * 113 + statement_end * 127
+                    discard vector_push<i64>(result, current + 1)
+                    discard vector_push<i64>(result, digest)
+                    discard vector_push<i64>(result, statement_end)
+                    return 1
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn generic_native_parser_program_assignment(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64,
+    node_kinds: &mut vector<i64>,
+    node_operators: &mut vector<i64>,
+    node_left: &mut vector<i64>,
+    node_right: &mut vector<i64>,
+    node_starts: &mut vector<i64>,
+    node_ends: &mut vector<i64>,
+    node_values: &mut vector<i64>,
+    result: &mut vector<i64>
+) -> i64:
+    mut start: i64 = vector_get<i64>(starts, cursor)
+    mut name_start: i64 = vector_get<i64>(starts, cursor)
+    mut name_end: i64 = vector_get<i64>(ends, cursor)
+    mut name_digest: i64 = generic_native_parser_name_digest(source, name_start, name_end)
+    mut current: i64 = cursor + 1
+    match generic_native_parser_take(kinds, current, 161):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    mut expression_result: i64 = generic_native_parser_expression(
+        source,
+        kinds,
+        starts,
+        ends,
+        current,
+        0,
+        node_kinds,
+        node_operators,
+        node_left,
+        node_right,
+        node_starts,
+        node_ends,
+        node_values
+    )
+    match expression_result == -1:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            discard 0
+    mut expression_node: i64 = generic_native_parser_packed_node(expression_result)
+    current = generic_native_parser_packed_cursor(expression_result)
+    match generic_native_parser_take(kinds, current, 6):
+        -1:
+            mut expression_digest: i64 = generic_native_parser_tree_digest(
+                expression_node,
+                &*node_kinds,
+                &*node_operators,
+                &*node_left,
+                &*node_right,
+                &*node_starts,
+                &*node_ends,
+                &*node_values
+            )
+            mut statement_end: i64 = vector_get<i64>(&*node_ends, expression_node)
+            mut statement_kind: i64 = 6
+            mut digest: i64 = statement_kind * 97 + name_digest * 101 + expression_digest * 103 + start * 107 + statement_end * 109
+            discard vector_push<i64>(result, current + 1)
+            discard vector_push<i64>(result, digest)
+            discard vector_push<i64>(result, statement_end)
+            return 1
+        0:
+            return 0
+        1:
+            return 0
+
+fn generic_native_parser_program_block(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64,
+    parent_indent: i64,
+    node_kinds: &mut vector<i64>,
+    node_operators: &mut vector<i64>,
+    node_left: &mut vector<i64>,
+    node_right: &mut vector<i64>,
+    node_starts: &mut vector<i64>,
+    node_ends: &mut vector<i64>,
+    node_values: &mut vector<i64>,
+    result: &mut vector<i64>
+) -> i64:
+    mut current: i64 = cursor
+    mut body_indent: i64 = -1
+    mut body_start: i64 = -1
+    mut body_end: i64 = -1
+    mut statement_count: i64 = 0
+    mut block_digest: i64 = 0
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match generic_native_parser_kind(kinds, current) == 0:
+            -1:
+                scanning = 0
+            0:
+                match generic_native_parser_kind(kinds, current) == 6:
+                    -1:
+                        current = current + 1
+                    0:
+                        mut statement_indent: i64 = generic_native_parser_program_indent(
+                            source,
+                            vector_get<i64>(starts, current)
+                        )
+                        match body_indent == -1:
+                            -1:
+                                body_indent = statement_indent
+                                body_start = vector_get<i64>(starts, current)
+                            0:
+                                body_indent = body_indent
+                            1:
+                                body_indent = body_indent
+                        match statement_indent <=> parent_indent:
+                            -1:
+                                scanning = 0
+                            0:
+                                scanning = 0
+                            1:
+                                match statement_indent <=> body_indent:
+                                    -1:
+                                        scanning = 0
+                                    0:
+                                        mut statement_result: vector<i64> = vector_new<i64>(4)
+                                        match generic_native_parser_program_statement(
+                                            source,
+                                            kinds,
+                                            starts,
+                                            ends,
+                                            current,
+                                            node_kinds,
+                                            node_operators,
+                                            node_left,
+                                            node_right,
+                                            node_starts,
+                                            node_ends,
+                                            node_values,
+                                            &mut statement_result
+                                        ) == 1:
+                                            -1:
+                                                current = vector_get<i64>(&statement_result, 0)
+                                                block_digest = block_digest * 131 + vector_get<i64>(&statement_result, 1)
+                                                body_end = vector_get<i64>(&statement_result, 2)
+                                                statement_count = statement_count + 1
+                                            0:
+                                                return 0
+                                            1:
+                                                return 0
+                                    1:
+                                        return 0
+                    1:
+                        scanning = 0
+            1:
+                scanning = 0
+    match statement_count == 0:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            discard 0
+    discard vector_push<i64>(result, current)
+    discard vector_push<i64>(result, block_digest)
+    discard vector_push<i64>(result, statement_count)
+    discard vector_push<i64>(result, body_start)
+    discard vector_push<i64>(result, body_end)
+    return 1
+
+fn generic_native_parser_program_while(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64,
+    node_kinds: &mut vector<i64>,
+    node_operators: &mut vector<i64>,
+    node_left: &mut vector<i64>,
+    node_right: &mut vector<i64>,
+    node_starts: &mut vector<i64>,
+    node_ends: &mut vector<i64>,
+    node_values: &mut vector<i64>,
+    result: &mut vector<i64>
+) -> i64:
+    mut start: i64 = vector_get<i64>(starts, cursor)
+    mut condition_result: i64 = generic_native_parser_expression(
+        source,
+        kinds,
+        starts,
+        ends,
+        cursor + 1,
+        0,
+        node_kinds,
+        node_operators,
+        node_left,
+        node_right,
+        node_starts,
+        node_ends,
+        node_values
+    )
+    match condition_result == -1:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            discard 0
+    mut condition_node: i64 = generic_native_parser_packed_node(condition_result)
+    mut current: i64 = generic_native_parser_packed_cursor(condition_result)
+    match generic_native_parser_take(kinds, current, 158):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    match generic_native_parser_take(kinds, current, 6):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    mut block_result: vector<i64> = vector_new<i64>(8)
+    mut parent_indent: i64 = generic_native_parser_program_indent(source, start)
+    match generic_native_parser_program_block(
+        source,
+        kinds,
+        starts,
+        ends,
+        current,
+        parent_indent,
+        node_kinds,
+        node_operators,
+        node_left,
+        node_right,
+        node_starts,
+        node_ends,
+        node_values,
+        &mut block_result
+    ) == 1:
+        -1:
+            mut body_digest: i64 = vector_get<i64>(&block_result, 1)
+            mut body_count: i64 = vector_get<i64>(&block_result, 2)
+            mut body_start: i64 = vector_get<i64>(&block_result, 3)
+            mut body_end: i64 = vector_get<i64>(&block_result, 4)
+            mut condition_digest: i64 = generic_native_parser_tree_digest(
+                condition_node,
+                &*node_kinds,
+                &*node_operators,
+                &*node_left,
+                &*node_right,
+                &*node_starts,
+                &*node_ends,
+                &*node_values
+            )
+            mut digest: i64 = 8
+            digest = digest * 97
+            digest = digest + condition_digest * 101
+            digest = digest + body_digest * 103
+            digest = digest + start * 107
+            digest = digest + body_start * 109
+            digest = digest + body_end * 113
+            digest = digest + body_count * 127
+            discard vector_push<i64>(result, vector_get<i64>(&block_result, 0))
+            discard vector_push<i64>(result, digest)
+            discard vector_push<i64>(result, body_end)
+            return 1
+        0:
+            return 0
+        1:
+            return 0
+
+fn generic_native_parser_program_statement(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64,
+    node_kinds: &mut vector<i64>,
+    node_operators: &mut vector<i64>,
+    node_left: &mut vector<i64>,
+    node_right: &mut vector<i64>,
+    node_starts: &mut vector<i64>,
+    node_ends: &mut vector<i64>,
+    node_values: &mut vector<i64>,
+    result: &mut vector<i64>
+) -> i64:
+    match generic_native_parser_kind(kinds, cursor) == 3:
+        -1:
+            return generic_native_parser_program_return(
+                source,
+                kinds,
+                starts,
+                ends,
+                cursor,
+                node_kinds,
+                node_operators,
+                node_left,
+                node_right,
+                node_starts,
+                node_ends,
+                node_values,
+                result
+            )
+        0:
+            match generic_native_parser_kind(kinds, cursor) == 1:
+                -1:
+                    mut word_code: i64 = generic_native_parser_program_word_code(source, starts, ends, cursor)
+                    match word_code == 4:
+                        -1:
+                            return generic_native_parser_program_while(
+                                source,
+                                kinds,
+                                starts,
+                                ends,
+                                cursor,
+                                node_kinds,
+                                node_operators,
+                                node_left,
+                                node_right,
+                                node_starts,
+                                node_ends,
+                                node_values,
+                                result
+                            )
+                        0:
+                            discard 0
+                        1:
+                            discard 0
+                    match word_code == 1:
+                        -1:
+                            return generic_native_parser_program_declaration(
+                                source,
+                                kinds,
+                                starts,
+                                ends,
+                                cursor,
+                                1,
+                                node_kinds,
+                                node_operators,
+                                node_left,
+                                node_right,
+                                node_starts,
+                                node_ends,
+                                node_values,
+                                result
+                            )
+                        0:
+                            match generic_native_parser_kind(kinds, cursor + 1) == 158:
+                                -1:
+                                    return generic_native_parser_program_declaration(
+                                        source,
+                                        kinds,
+                                        starts,
+                                        ends,
+                                        cursor,
+                                        0,
+                                        node_kinds,
+                                        node_operators,
+                                        node_left,
+                                        node_right,
+                                        node_starts,
+                                        node_ends,
+                                        node_values,
+                                        result
+                                    )
+                                0:
+                                    match generic_native_parser_kind(kinds, cursor + 1) == 161:
+                                        -1:
+                                            return generic_native_parser_program_assignment(
+                                                source,
+                                                kinds,
+                                                starts,
+                                                ends,
+                                                cursor,
+                                                node_kinds,
+                                                node_operators,
+                                                node_left,
+                                                node_right,
+                                                node_starts,
+                                                node_ends,
+                                                node_values,
+                                                result
+                                            )
+                                        0:
+                                            return 0
+                                        1:
+                                            return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn generic_native_parser_program_function(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64,
+    result: &mut vector<i64>
+) -> i64:
+    mut current: i64 = cursor
+    match generic_native_parser_take(kinds, current, 2):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    mut name_start: i64 = vector_get<i64>(starts, current)
+    mut name_end: i64 = vector_get<i64>(ends, current)
+    mut name_digest: i64 = generic_native_parser_name_digest(source, name_start, name_end)
+    match generic_native_parser_take(kinds, current, 1):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    match generic_native_parser_take(kinds, current, 7):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    mut parameter_digest: i64 = 0
+    mut parameter_count: i64 = 0
+    mut parsing_parameters: i64 = 1
+    while parsing_parameters == 1:
+        match generic_native_parser_kind(kinds, current) == 8:
+            -1:
+                parsing_parameters = 0
+            0:
+                match generic_native_parser_take(kinds, current, 1):
+                    -1:
+                        mut parameter_start: i64 = vector_get<i64>(starts, current)
+                        mut parameter_end: i64 = vector_get<i64>(ends, current)
+                        mut parameter_name_digest: i64 = generic_native_parser_name_digest(source, parameter_start, parameter_end)
+                        current = current + 1
+                        match generic_native_parser_take(kinds, current, 158):
+                            -1:
+                                current = current + 1
+                            0:
+                                return 0
+                            1:
+                                return 0
+                        mut type_code: i64 = generic_native_parser_program_type_code(source, starts, ends, current)
+                        match type_code <=> 2:
+                            -1:
+                                return 0
+                            0:
+                                current = current + 1
+                            1:
+                                match type_code == 3:
+                                    -1:
+                                        current = current + 1
+                                    0:
+                                        return 0
+                                    1:
+                                        return 0
+                        mut parameter_term: i64 = parameter_name_digest * 11 + parameter_start * 13 + parameter_end * 17 + type_code * 19
+                        parameter_digest = parameter_digest * 131 + parameter_term
+                        parameter_count = parameter_count + 1
+                        match generic_native_parser_kind(kinds, current) == 144:
+                            -1:
+                                current = current + 1
+                            0:
+                                parsing_parameters = 0
+                            1:
+                                parsing_parameters = 0
+                    0:
+                        return 0
+                    1:
+                        return 0
+            1:
+                return 0
+    match generic_native_parser_take(kinds, current, 8):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    match generic_native_parser_take(kinds, current, 145):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    match generic_native_parser_take(kinds, current, 162):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    mut return_type: i64 = generic_native_parser_program_type_code(source, starts, ends, current)
+    match return_type <=> 2:
+        -1:
+            return 0
+        0:
+            current = current + 1
+        1:
+            match return_type == 3:
+                -1:
+                    current = current + 1
+                0:
+                    return 0
+                1:
+                    return 0
+    match generic_native_parser_take(kinds, current, 158):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    match generic_native_parser_take(kinds, current, 6):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+
+    mut body_start: i64 = -1
+    mut body_end: i64 = -1
+    mut body_indent: i64 = -1
+    mut statement_count: i64 = 0
+    mut block_digest: i64 = 0
+    mut scanning: i64 = 1
+    mut node_kinds: vector<i64> = vector_new<i64>(128)
+    mut node_operators: vector<i64> = vector_new<i64>(128)
+    mut node_left: vector<i64> = vector_new<i64>(128)
+    mut node_right: vector<i64> = vector_new<i64>(128)
+    mut node_starts: vector<i64> = vector_new<i64>(128)
+    mut node_ends: vector<i64> = vector_new<i64>(128)
+    mut node_values: vector<i64> = vector_new<i64>(128)
+    while scanning == 1:
+        match generic_native_parser_kind(kinds, current) == 0:
+            -1:
+                scanning = 0
+            0:
+                match generic_native_parser_kind(kinds, current) == 6:
+                    -1:
+                        current = current + 1
+                    0:
+                        mut statement_indent: i64 = generic_native_parser_program_indent(source, vector_get<i64>(starts, current))
+                        match body_indent <=> 0:
+                            -1:
+                                body_indent = statement_indent
+                                body_start = vector_get<i64>(starts, current)
+                            0:
+                                body_indent = body_indent
+                            1:
+                                body_indent = body_indent
+                        match statement_indent <=> body_indent:
+                            -1:
+                                scanning = 0
+                            0:
+                                mut statement_result: vector<i64> = vector_new<i64>(4)
+                                match generic_native_parser_program_statement(
+                                    source,
+                                    kinds,
+                                    starts,
+                                    ends,
+                                    current,
+                                    &mut node_kinds,
+                                    &mut node_operators,
+                                    &mut node_left,
+                                    &mut node_right,
+                                    &mut node_starts,
+                                    &mut node_ends,
+                                    &mut node_values,
+                                    &mut statement_result
+                                ) == 1:
+                                    -1:
+                                        current = vector_get<i64>(&statement_result, 0)
+                                        block_digest = block_digest * 131 + vector_get<i64>(&statement_result, 1)
+                                        body_end = vector_get<i64>(&statement_result, 2)
+                                        statement_count = statement_count + 1
+                                    0:
+                                        return 0
+                                    1:
+                                        return 0
+                            1:
+                                return 0
+                    1:
+                        scanning = 0
+            1:
+                scanning = 0
+    match statement_count == 0:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            discard 0
+    mut function_digest: i64 = name_digest * 11 + name_start * 13 + name_end * 17 + return_type * 19 + parameter_digest * 23 + parameter_count * 29 + block_digest * 31 + body_start * 37 + body_end * 41 + statement_count * 43
+    discard vector_push<i64>(result, current)
+    discard vector_push<i64>(result, function_digest)
+    return 1
+
+export fn generic_native_parser_program_digest(source: &vector<i64>) -> i64:
+    mut ids: vector<i64> = vector_new<i64>(256)
+    mut kinds: vector<i64> = vector_new<i64>(256)
+    mut starts: vector<i64> = vector_new<i64>(256)
+    mut ends: vector<i64> = vector_new<i64>(256)
+    mut token_count: i64 = generic_lexer_scan_tokens(source, &mut ids, &mut kinds, &mut starts, &mut ends)
+    mut cursor: i64 = 0
+    mut function_count: i64 = 0
+    mut program_digest: i64 = 0
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match generic_native_parser_kind(&kinds, cursor) == 0:
+            -1:
+                scanning = 0
+            0:
+                match generic_native_parser_kind(&kinds, cursor) == 6:
+                    -1:
+                        cursor = cursor + 1
+                    0:
+                        match generic_native_parser_program_indent(source, vector_get<i64>(&starts, cursor)) == 0:
+                            -1:
+                                mut function_result: vector<i64> = vector_new<i64>(4)
+                                match generic_native_parser_program_function(
+                                    source,
+                                    &kinds,
+                                    &starts,
+                                    &ends,
+                                    cursor,
+                                    &mut function_result
+                                ) == 1:
+                                    -1:
+                                        cursor = vector_get<i64>(&function_result, 0)
+                                        program_digest = program_digest * 131 + vector_get<i64>(&function_result, 1)
+                                        function_count = function_count + 1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+                            0:
+                                return -1
+                            1:
+                                return -1
+                    1:
+                        scanning = 0
+            1:
+                scanning = 0
+    match function_count == 0:
+        -1:
+            return -1
+        0:
+            discard 0
+        1:
+            discard 0
+    match generic_native_parser_take(&kinds, cursor, 0):
+        -1:
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match cursor == token_count:
+        -1:
+            return program_digest + function_count * 47
+        0:
+            return -1
+        1:
+            return -1
+
+fn generic_native_program_byte(source: &mut vector<i64>, value: i64) -> i64:
+    discard vector_push<i64>(source, value)
+    return 0
+
+fn generic_native_program_word(source: &mut vector<i64>, word_id: i64) -> i64:
+    match word_id <=> 0:
+        -1:
+            return -1
+        0:
+            discard generic_native_program_byte(source, 102)
+            discard generic_native_program_byte(source, 110)
+            return 0
+        1:
+            match word_id <=> 1:
+                -1:
+                    return -1
+                0:
+                    discard generic_native_program_byte(source, 109)
+                    discard generic_native_program_byte(source, 97)
+                    discard generic_native_program_byte(source, 105)
+                    discard generic_native_program_byte(source, 110)
+                    return 0
+                1:
+                    match word_id <=> 2:
+                        -1:
+                            return -1
+                        0:
+                            discard generic_native_program_byte(source, 99)
+                            discard generic_native_program_byte(source, 97)
+                            discard generic_native_program_byte(source, 108)
+                            discard generic_native_program_byte(source, 99)
+                            discard generic_native_program_byte(source, 117)
+                            discard generic_native_program_byte(source, 108)
+                            discard generic_native_program_byte(source, 97)
+                            discard generic_native_program_byte(source, 116)
+                            discard generic_native_program_byte(source, 101)
+                            return 0
+                        1:
+                            match word_id <=> 3:
+                                -1:
+                                    return -1
+                                0:
+                                    discard generic_native_program_byte(source, 114)
+                                    discard generic_native_program_byte(source, 101)
+                                    discard generic_native_program_byte(source, 115)
+                                    discard generic_native_program_byte(source, 117)
+                                    discard generic_native_program_byte(source, 108)
+                                    discard generic_native_program_byte(source, 116)
+                                    return 0
+                                1:
+                                    match word_id <=> 4:
+                                        -1:
+                                            return -1
+                                        0:
+                                            discard generic_native_program_byte(source, 97)
+                                            discard generic_native_program_byte(source, 100)
+                                            discard generic_native_program_byte(source, 100)
+                                            return 0
+                                        1:
+                                            match word_id <=> 5:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    discard generic_native_program_byte(source, 103)
+                                                    discard generic_native_program_byte(source, 114)
+                                                    discard generic_native_program_byte(source, 111)
+                                                    discard generic_native_program_byte(source, 117)
+                                                    discard generic_native_program_byte(source, 112)
+                                                    discard generic_native_program_byte(source, 101)
+                                                    discard generic_native_program_byte(source, 100)
+                                                    return 0
+                                                1:
+                                                    match word_id <=> 6:
+                                                        -1:
+                                                            return -1
+                                                        0:
+                                                            discard generic_native_program_byte(source, 98)
+                                                            discard generic_native_program_byte(source, 97)
+                                                            discard generic_native_program_byte(source, 100)
+                                                            return 0
+                                                        1:
+                                                            match word_id <=> 7:
+                                                                -1:
+                                                                    return -1
+                                                                0:
+                                                                    discard generic_native_program_byte(source, 118)
+                                                                    discard generic_native_program_byte(source, 97)
+                                                                    discard generic_native_program_byte(source, 108)
+                                                                    discard generic_native_program_byte(source, 117)
+                                                                    discard generic_native_program_byte(source, 101)
+                                                                    return 0
+                                                                1:
+                                                                    match word_id <=> 8:
+                                                                        -1:
+                                                                            return -1
+                                                                        0:
+                                                                            discard generic_native_program_byte(source, 98)
+                                                                            discard generic_native_program_byte(source, 97)
+                                                                            discard generic_native_program_byte(source, 115)
+                                                                            discard generic_native_program_byte(source, 101)
+                                                                            return 0
+                                                                        1:
+                                                                            match word_id <=> 9:
+                                                                                -1:
+                                                                                    return -1
+                                                                                0:
+                                                                                    discard generic_native_program_byte(source, 97)
+                                                                                    discard generic_native_program_byte(source, 110)
+                                                                                    discard generic_native_program_byte(source, 115)
+                                                                                    discard generic_native_program_byte(source, 119)
+                                                                                    discard generic_native_program_byte(source, 101)
+                                                                                    discard generic_native_program_byte(source, 114)
+                                                                                    return 0
+                                                                                1:
+                                                                                    match word_id <=> 10:
+                                                                                        -1:
+                                                                                            return -1
+                                                                                        0:
+                                                                                            discard generic_native_program_byte(source, 97)
+                                                                                            return 0
+                                                                                        1:
+                                                                                            match word_id <=> 11:
+                                                                                                -1:
+                                                                                                    return -1
+                                                                                                0:
+                                                                                                    discard generic_native_program_byte(source, 98)
+                                                                                                    return 0
+                                                                                                1:
+                                                                                                    match word_id <=> 12:
+                                                                                                        -1:
+                                                                                                            return -1
+                                                                                                        0:
+                                                                                                            discard generic_native_program_byte(source, 105)
+                                                                                                            discard generic_native_program_byte(source, 54)
+                                                                                                            discard generic_native_program_byte(source, 52)
+                                                                                                            return 0
+                                                                                                        1:
+                                                                                                            match word_id <=> 13:
+                                                                                                                -1:
+                                                                                                                    return -1
+                                                                                                                0:
+                                                                                                                    discard generic_native_program_byte(source, 114)
+                                                                                                                    discard generic_native_program_byte(source, 101)
+                                                                                                                    discard generic_native_program_byte(source, 116)
+                                                                                                                    discard generic_native_program_byte(source, 117)
+                                                                                                                    discard generic_native_program_byte(source, 114)
+                                                                                                                    discard generic_native_program_byte(source, 110)
+                                                                                                                    return 0
+                                                                                                                1:
+                                                                                                                    match word_id <=> 14:
+                                                                                                                        -1:
+                                                                                                                            return -1
+                                                                                                                        0:
+                                                                                                                            discard generic_native_program_byte(source, 109)
+                                                                                                                            discard generic_native_program_byte(source, 117)
+                                                                                                                            discard generic_native_program_byte(source, 116)
+                                                                                                                            return 0
+                                                                                                                        1:
+                                                                                                                            match word_id <=> 15:
+                                                                                                                                -1:
+                                                                                                                                    return -1
+                                                                                                                                0:
+                                                                                                                                    discard generic_native_program_byte(source, 119)
+                                                                                                                                    discard generic_native_program_byte(source, 104)
+                                                                                                                                    discard generic_native_program_byte(source, 105)
+                                                                                                                                    discard generic_native_program_byte(source, 108)
+                                                                                                                                    discard generic_native_program_byte(source, 101)
+                                                                                                                                    return 0
+                                                                                                                                1:
+                                                                                                                                    match word_id <=> 16:
+                                                                                                                                        -1:
+                                                                                                                                            return -1
+                                                                                                                                        0:
+                                                                                                                                            discard generic_native_program_byte(source, 116)
+                                                                                                                                            discard generic_native_program_byte(source, 111)
+                                                                                                                                            discard generic_native_program_byte(source, 116)
+                                                                                                                                            discard generic_native_program_byte(source, 97)
+                                                                                                                                            discard generic_native_program_byte(source, 108)
+                                                                                                                                            return 0
+                                                                                                                                        1:
+                                                                                                                                            match word_id <=> 17:
+                                                                                                                                                -1:
+                                                                                                                                                    return -1
+                                                                                                                                                0:
+                                                                                                                                                    discard generic_native_program_byte(source, 105)
+                                                                                                                                                    return 0
+                                                                                                                                                1:
+                                                                                                                                                    match word_id <=> 18:
+                                                                                                                                                        -1:
+                                                                                                                                                            return -1
+                                                                                                                                                        0:
+                                                                                                                                                            discard generic_native_program_byte(source, 108)
+                                                                                                                                                            discard generic_native_program_byte(source, 105)
+                                                                                                                                                            discard generic_native_program_byte(source, 109)
+                                                                                                                                                            discard generic_native_program_byte(source, 105)
+                                                                                                                                                            discard generic_native_program_byte(source, 116)
+                                                                                                                                                            return 0
+                                                                                                                                                        1:
+                                                                                                                                                            match word_id <=> 19:
+                                                                                                                                                                -1:
+                                                                                                                                                                    return -1
+                                                                                                                                                                0:
+                                                                                                                                                                    discard generic_native_program_byte(source, 116)
+                                                                                                                                                                    discard generic_native_program_byte(source, 114)
+                                                                                                                                                                    discard generic_native_program_byte(source, 97)
+                                                                                                                                                                    discard generic_native_program_byte(source, 105)
+                                                                                                                                                                    discard generic_native_program_byte(source, 108)
+                                                                                                                                                                    return 0
+                                                                                                                                                                1:
+                                                                                                                                                                    match word_id <=> 20:
+                                                                                                                                                                        -1:
+                                                                                                                                                                            return -1
+                                                                                                                                                                        0:
+                                                                                                                                                                            discard generic_native_program_byte(source, 103)
+                                                                                                                                                                            discard generic_native_program_byte(source, 97)
+                                                                                                                                                                            discard generic_native_program_byte(source, 114)
+                                                                                                                                                                            discard generic_native_program_byte(source, 98)
+                                                                                                                                                                            discard generic_native_program_byte(source, 97)
+                                                                                                                                                                            discard generic_native_program_byte(source, 103)
+                                                                                                                                                                            discard generic_native_program_byte(source, 101)
+                                                                                                                                                                            return 0
+                                                                                                                                                                        1:
+                                                                                                                                                                            return -1
+fn generic_native_program_indent(source: &mut vector<i64>) -> i64:
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 32)
+    return 0
+
+fn generic_native_program_header(source: &mut vector<i64>, name_id: i64) -> i64:
+    discard generic_native_program_word(source, 0)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, name_id)
+    discard generic_native_program_byte(source, 40)
+    discard generic_native_program_byte(source, 41)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 45)
+    discard generic_native_program_byte(source, 62)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 6)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 10)
+    return generic_native_program_indent(source)
+
+fn generic_native_program_append_parameter_header(source: &mut vector<i64>) -> i64:
+    discard generic_native_program_word(source, 0)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 3)
+    discard generic_native_program_byte(source, 40)
+    discard generic_native_program_word(source, 9)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 6)
+    discard generic_native_program_byte(source, 44)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 7)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 6)
+    discard generic_native_program_byte(source, 41)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 45)
+    discard generic_native_program_byte(source, 62)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 6)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 10)
+    return generic_native_program_indent(source)
+
+fn generic_native_program_literal_binding(source: &mut vector<i64>, name_id: i64, value: i64) -> i64:
+    discard generic_native_program_word(source, name_id)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 6)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 61)
+    discard generic_native_program_byte(source, 32)
+    match value == 1:
+        -1:
+            discard generic_native_program_byte(source, 49)
+        0:
+            discard generic_native_program_byte(source, 52)
+        1:
+            discard generic_native_program_byte(source, 49)
+            discard generic_native_program_byte(source, 50)
+    discard generic_native_program_byte(source, 10)
+    return generic_native_program_indent(source)
+
+fn generic_native_program_return_name(source: &mut vector<i64>, name_id: i64) -> i64:
+    discard generic_native_program_word(source, 7)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, name_id)
+    discard generic_native_program_byte(source, 10)
+    return 0
+
+export fn generic_native_parser_program_case(case_id: i64) -> i64:
+    mut source: vector<i64> = vector_new<i64>(256)
+    match case_id == 0:
+        -1:
+            discard generic_native_program_header(&mut source, 1)
+            discard generic_native_program_literal_binding(&mut source, 7, 40)
+            discard generic_native_program_return_name(&mut source, 7)
+        0:
+            match case_id == 1:
+                -1:
+                    discard generic_native_program_header(&mut source, 2)
+                    discard generic_native_program_literal_binding(&mut source, 8, 40)
+                    discard generic_native_program_word(&mut source, 7)
+                    discard generic_native_program_byte(&mut source, 58)
+                    discard generic_native_program_byte(&mut source, 32)
+                    discard generic_native_program_word(&mut source, 6)
+                    discard generic_native_program_byte(&mut source, 32)
+                    discard generic_native_program_byte(&mut source, 61)
+                    discard generic_native_program_byte(&mut source, 32)
+                    discard generic_native_program_word(&mut source, 8)
+                    discard generic_native_program_byte(&mut source, 32)
+                    discard generic_native_program_byte(&mut source, 43)
+                    discard generic_native_program_byte(&mut source, 32)
+                    discard generic_native_program_byte(&mut source, 50)
+                    discard generic_native_program_byte(&mut source, 10)
+                    discard generic_native_program_indent(&mut source)
+                    discard generic_native_program_return_name(&mut source, 7)
+                0:
+                    match case_id == 2:
+                        -1:
+                            discard generic_native_program_header(&mut source, 5)
+                            discard generic_native_program_word(&mut source, 6)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_word(&mut source, 7)
+                            discard generic_native_program_byte(&mut source, 58)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_word(&mut source, 6)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 61)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_word(&mut source, 7)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 61)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 7)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 43)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 49)
+                            discard generic_native_program_byte(&mut source, 10)
+                            discard generic_native_program_indent(&mut source)
+                            discard generic_native_program_return_name(&mut source, 7)
+                        0:
+                            discard generic_native_program_append_parameter_header(&mut source)
+                            discard generic_native_program_word(&mut source, 3)
+                            discard generic_native_program_byte(&mut source, 58)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_word(&mut source, 6)
+                            discard generic_native_program_byte(&mut source, 10)
+                            discard generic_native_program_indent(&mut source)
+                            discard generic_native_program_word(&mut source, 3)
+                            discard generic_native_program_byte(&mut source, 58)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_word(&mut source, 6)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 61)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_word(&mut source, 9)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 43)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_word(&mut source, 7)
+                            discard generic_native_program_byte(&mut source, 10)
+                            discard generic_native_program_indent(&mut source)
+                            discard generic_native_program_return_name(&mut source, 3)
+                        1:
+                            discard generic_native_program_header(&mut source, 6)
+                            discard generic_native_program_word(&mut source, 14)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_word(&mut source, 7)
+                            discard generic_native_program_byte(&mut source, 58)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_word(&mut source, 6)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 61)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 49)
+                            discard generic_native_program_byte(&mut source, 10)
+                            discard generic_native_program_indent(&mut source)
+                            discard generic_native_program_word(&mut source, 7)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 61)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_word(&mut source, 7)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 43)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 49)
+                            discard generic_native_program_byte(&mut source, 10)
+                            discard generic_native_program_indent(&mut source)
+                            discard generic_native_program_return_name(&mut source, 7)
+                1:
+                    discard 0
+        1:
+            discard 0
+    return generic_native_parser_program_digest(&source)
+
+fn generic_native_program_v2_literal(source: &mut vector<i64>, value: i64) -> i64:
+    match value <=> 1:
+        -1:
+            return -1
+        0:
+            discard generic_native_program_byte(source, 49)
+            return 0
+        1:
+            match value <=> 2:
+                -1:
+                    return -1
+                0:
+                    discard generic_native_program_byte(source, 50)
+                    return 0
+                1:
+                    match value <=> 3:
+                        -1:
+                            return -1
+                        0:
+                            discard generic_native_program_byte(source, 51)
+                            return 0
+                        1:
+                            match value <=> 40:
+                                -1:
+                                    return -1
+                                0:
+                                    discard generic_native_program_byte(source, 52)
+                                    discard generic_native_program_byte(source, 48)
+                                    return 0
+                                1:
+                                    return -1
+
+fn generic_native_program_v2_header(source: &mut vector<i64>, name_id: i64) -> i64:
+    discard generic_native_program_word(source, 0)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, name_id)
+    discard generic_native_program_byte(source, 40)
+    discard generic_native_program_byte(source, 41)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 45)
+    discard generic_native_program_byte(source, 62)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 12)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 10)
+    return generic_native_program_indent(source)
+
+fn generic_native_program_v2_binding(
+    source: &mut vector<i64>,
+    name_id: i64,
+    value: i64,
+    mutable: i64,
+    next_indent: i64
+) -> i64:
+    match mutable <=> 1:
+        -1:
+            discard 0
+        0:
+            discard generic_native_program_word(source, 14)
+            discard generic_native_program_byte(source, 32)
+        1:
+            discard 0
+    discard generic_native_program_word(source, name_id)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 12)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 61)
+    discard generic_native_program_byte(source, 32)
+    match generic_native_program_v2_literal(source, value) == 0:
+        -1:
+            discard 0
+        0:
+            return -1
+        1:
+            return -1
+    discard generic_native_program_byte(source, 10)
+    match next_indent <=> 1:
+        -1:
+            return 0
+        0:
+            return generic_native_program_indent(source)
+        1:
+            return 0
+
+fn generic_native_program_v2_add_words(
+    source: &mut vector<i64>,
+    name_id: i64,
+    left_id: i64,
+    right_id: i64,
+    right_value: i64,
+    right_is_literal: i64
+) -> i64:
+    discard generic_native_program_word(source, name_id)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 12)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 61)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, left_id)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 43)
+    discard generic_native_program_byte(source, 32)
+    match right_is_literal <=> 1:
+        -1:
+            discard generic_native_program_word(source, right_id)
+        0:
+            match generic_native_program_v2_literal(source, right_value) == 0:
+                -1:
+                    discard 0
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+    discard generic_native_program_byte(source, 10)
+    return generic_native_program_indent(source)
+
+fn generic_native_program_v2_add_parameter_header(source: &mut vector<i64>) -> i64:
+    discard generic_native_program_word(source, 0)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 4)
+    discard generic_native_program_byte(source, 40)
+    discard generic_native_program_word(source, 10)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 12)
+    discard generic_native_program_byte(source, 44)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 11)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 12)
+    discard generic_native_program_byte(source, 41)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 45)
+    discard generic_native_program_byte(source, 62)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 12)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 10)
+    return generic_native_program_indent(source)
+
+fn generic_native_program_v2_assignment_plus_one(source: &mut vector<i64>, name_id: i64) -> i64:
+    discard generic_native_program_word(source, name_id)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 61)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, name_id)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 43)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_v2_literal(source, 1)
+    discard generic_native_program_byte(source, 10)
+    return generic_native_program_indent(source)
+
+fn generic_native_program_v2_return(source: &mut vector<i64>, name_id: i64) -> i64:
+    discard generic_native_program_word(source, 13)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, name_id)
+    discard generic_native_program_byte(source, 10)
+    return 0
+
+export fn generic_native_parser_program_case_v2(case_id: i64) -> i64:
+    mut source: vector<i64> = vector_new<i64>(512)
+    match case_id <=> 0:
+        -1:
+            return -1
+        0:
+            discard generic_native_program_v2_header(&mut source, 1)
+            discard generic_native_program_v2_binding(&mut source, 7, 40, 0, 1)
+            discard generic_native_program_v2_return(&mut source, 7)
+        1:
+            match case_id <=> 1:
+                -1:
+                    return -1
+                0:
+                    discard generic_native_program_v2_header(&mut source, 2)
+                    discard generic_native_program_v2_binding(&mut source, 8, 40, 0, 1)
+                    discard generic_native_program_v2_add_words(&mut source, 9, 8, 0, 2, 1)
+                    discard generic_native_program_v2_return(&mut source, 9)
+                1:
+                    match case_id <=> 2:
+                        -1:
+                            return -1
+                        0:
+                            discard generic_native_program_v2_header(&mut source, 5)
+                            discard generic_native_program_word(&mut source, 7)
+                            discard generic_native_program_byte(&mut source, 58)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_word(&mut source, 12)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 61)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 40)
+                            discard generic_native_program_v2_literal(&mut source, 1)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 43)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_v2_literal(&mut source, 2)
+                            discard generic_native_program_byte(&mut source, 41)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_byte(&mut source, 42)
+                            discard generic_native_program_byte(&mut source, 32)
+                            discard generic_native_program_v2_literal(&mut source, 3)
+                            discard generic_native_program_byte(&mut source, 10)
+                            discard generic_native_program_indent(&mut source)
+                            discard generic_native_program_v2_return(&mut source, 7)
+                        1:
+                            match case_id <=> 3:
+                                -1:
+                                    return -1
+                                0:
+                                    discard generic_native_program_v2_header(&mut source, 5)
+                                    discard generic_native_program_v2_binding(&mut source, 7, 1, 1, 1)
+                                    discard generic_native_program_v2_assignment_plus_one(&mut source, 7)
+                                    discard generic_native_program_v2_return(&mut source, 7)
+                                1:
+                                    match case_id <=> 4:
+                                        -1:
+                                            return -1
+                                        0:
+                                            discard generic_native_program_v2_add_parameter_header(&mut source)
+                                            discard generic_native_program_v2_add_words(&mut source, 3, 10, 11, 0, 0)
+                                            discard generic_native_program_v2_return(&mut source, 3)
+                                        1:
+                                            match case_id <=> 5:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    discard generic_native_program_v2_add_parameter_header(&mut source)
+                                                    discard generic_native_program_v2_add_words(&mut source, 3, 10, 11, 0, 0)
+                                                    discard generic_native_program_v2_return(&mut source, 3)
+                                                    discard generic_native_program_byte(&mut source, 10)
+                                                    discard generic_native_program_v2_header(&mut source, 1)
+                                                    discard generic_native_program_v2_binding(&mut source, 7, 40, 0, 1)
+                                                    discard generic_native_program_v2_return(&mut source, 7)
+                                                1:
+                                                    match case_id <=> 6:
+                                                        -1:
+                                                            return -1
+                                                        0:
+                                                            discard generic_native_program_v2_header(&mut source, 6)
+                                                            discard generic_native_program_indent(&mut source)
+                                                            discard generic_native_program_byte(&mut source, 58)
+                                                            discard generic_native_program_byte(&mut source, 32)
+                                                            discard generic_native_program_word(&mut source, 12)
+                                                            discard generic_native_program_byte(&mut source, 32)
+                                                            discard generic_native_program_byte(&mut source, 61)
+                                                            discard generic_native_program_byte(&mut source, 32)
+                                                            discard generic_native_program_v2_literal(&mut source, 1)
+                                                            discard generic_native_program_byte(&mut source, 10)
+                                                        1:
+                                                            match case_id <=> 7:
+                                                                -1:
+                                                                    return -1
+                                                                0:
+                                                                    discard generic_native_program_v2_header(&mut source, 6)
+                                                                    discard generic_native_program_word(&mut source, 7)
+                                                                    discard generic_native_program_byte(&mut source, 58)
+                                                                    discard generic_native_program_byte(&mut source, 32)
+                                                                    discard generic_native_program_word(&mut source, 12)
+                                                                    discard generic_native_program_byte(&mut source, 32)
+                                                                    discard generic_native_program_byte(&mut source, 61)
+                                                                    discard generic_native_program_byte(&mut source, 10)
+                                                                1:
+                                                                    match case_id <=> 8:
+                                                                        -1:
+                                                                            return -1
+                                                                        0:
+                                                                            discard generic_native_program_v2_header(&mut source, 6)
+                                                                            discard generic_native_program_v2_binding(&mut source, 7, 1, 0, 0)
+                                                                            discard generic_native_program_word(&mut source, 20)
+                                                                            discard generic_native_program_byte(&mut source, 10)
+                                                                        1:
+                                                                            return -1
+    return generic_native_parser_program_digest(&source)
+
+fn generic_native_program_v2_return_literal(source: &mut vector<i64>, value: i64) -> i64:
+    discard generic_native_program_word(source, 13)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_v2_literal(source, value)
+    discard generic_native_program_byte(source, 10)
+    return 0
+
+fn generic_native_program_v2_call_binding(source: &mut vector<i64>, argument_count: i64) -> i64:
+    discard generic_native_program_word(source, 7)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 12)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 61)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 4)
+    discard generic_native_program_byte(source, 40)
+    match argument_count == 0:
+        -1:
+            discard 0
+        0:
+            match argument_count == 1:
+                -1:
+                    discard generic_native_program_v2_literal(source, 40)
+                0:
+                    discard generic_native_program_v2_literal(source, 40)
+                    discard generic_native_program_byte(source, 44)
+                    discard generic_native_program_byte(source, 32)
+                    discard generic_native_program_v2_literal(source, 2)
+                1:
+                    return -1
+        1:
+            return -1
+    discard generic_native_program_byte(source, 41)
+    discard generic_native_program_byte(source, 10)
+    return generic_native_program_indent(source)
+
+fn generic_native_program_v2_call_binding_compound(source: &mut vector<i64>) -> i64:
+    discard generic_native_program_word(source, 7)
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 12)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 61)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 4)
+    discard generic_native_program_byte(source, 40)
+    discard generic_native_program_v2_literal(source, 40)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 43)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_v2_literal(source, 1)
+    discard generic_native_program_byte(source, 44)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_v2_literal(source, 2)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 42)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_v2_literal(source, 3)
+    discard generic_native_program_byte(source, 41)
+    discard generic_native_program_byte(source, 10)
+    return generic_native_program_indent(source)
+
+export fn generic_native_parser_program_call_case(case_id: i64) -> i64:
+    mut source: vector<i64> = vector_new<i64>(512)
+    match case_id == 0:
+        -1:
+            discard generic_native_program_v2_header(&mut source, 4)
+            discard generic_native_program_v2_return_literal(&mut source, 40)
+            discard generic_native_program_byte(&mut source, 10)
+            discard generic_native_program_v2_header(&mut source, 1)
+            discard generic_native_program_v2_call_binding(&mut source, 0)
+            discard generic_native_program_v2_return(&mut source, 7)
+        0:
+            match case_id == 1:
+                -1:
+                    discard generic_native_program_v2_add_parameter_header(&mut source)
+                    discard generic_native_program_v2_add_words(&mut source, 3, 10, 11, 0, 0)
+                    discard generic_native_program_v2_return(&mut source, 3)
+                    discard generic_native_program_byte(&mut source, 10)
+                    discard generic_native_program_v2_header(&mut source, 1)
+                    discard generic_native_program_v2_call_binding(&mut source, 1)
+                    discard generic_native_program_v2_return(&mut source, 7)
+                0:
+                    match case_id == 2:
+                        -1:
+                            discard generic_native_program_v2_add_parameter_header(&mut source)
+                            discard generic_native_program_v2_add_words(&mut source, 3, 10, 11, 0, 0)
+                            discard generic_native_program_v2_return(&mut source, 3)
+                            discard generic_native_program_byte(&mut source, 10)
+                            discard generic_native_program_v2_header(&mut source, 1)
+                            discard generic_native_program_v2_call_binding(&mut source, 2)
+                            discard generic_native_program_v2_return(&mut source, 7)
+                        0:
+                            match case_id == 3:
+                                -1:
+                                    discard generic_native_program_v2_add_parameter_header(&mut source)
+                                    discard generic_native_program_v2_add_words(&mut source, 3, 10, 11, 0, 0)
+                                    discard generic_native_program_v2_return(&mut source, 3)
+                                    discard generic_native_program_byte(&mut source, 10)
+                                    discard generic_native_program_v2_header(&mut source, 1)
+                                    discard generic_native_program_v2_call_binding_compound(&mut source)
+                                    discard generic_native_program_v2_return(&mut source, 7)
+                                0:
+                                    return -1
+                                1:
+                                    return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        1:
+            return -1
+    return generic_native_parser_program_digest(&source)
+
+export fn generic_native_parser_program_while_case() -> i64:
+    mut source: vector<i64> = vector_new<i64>(256)
+    discard generic_native_program_v2_header(&mut source, 1)
+    discard generic_native_program_word(&mut source, 15)
+    discard generic_native_program_byte(&mut source, 32)
+    discard generic_native_program_v2_literal(&mut source, 1)
+    discard generic_native_program_byte(&mut source, 58)
+    discard generic_native_program_byte(&mut source, 10)
+    discard generic_native_program_indent(&mut source)
+    discard generic_native_program_indent(&mut source)
+    discard generic_native_program_v2_return_literal(&mut source, 1)
+    discard generic_native_program_indent(&mut source)
+    discard generic_native_program_v2_return_literal(&mut source, 2)
+    return generic_native_parser_program_digest(&source)
+
+export fn generic_native_parser_program_comparison_case() -> i64:
+    mut source: vector<i64> = vector_new<i64>(512)
+    discard generic_native_program_v2_header(&mut source, 1)
+    discard generic_native_program_v2_binding(&mut source, 10, 1, 1, 1)
+    discard generic_native_program_v2_binding(&mut source, 11, 2, 0, 1)
+    discard generic_native_program_word(&mut source, 15)
+    discard generic_native_program_byte(&mut source, 32)
+    discard generic_native_program_word(&mut source, 10)
+    discard generic_native_program_byte(&mut source, 32)
+    discard generic_native_program_byte(&mut source, 60)
+    discard generic_native_program_byte(&mut source, 32)
+    discard generic_native_program_word(&mut source, 11)
+    discard generic_native_program_byte(&mut source, 58)
+    discard generic_native_program_byte(&mut source, 10)
+    discard generic_native_program_indent(&mut source)
+    discard generic_native_program_indent(&mut source)
+    discard generic_native_program_v2_assignment_plus_one(&mut source, 10)
+    discard generic_native_program_v2_return(&mut source, 10)
+    return generic_native_parser_program_digest(&source)
 
 fn generic_native_parser_statement(
     source: &vector<i64>,
