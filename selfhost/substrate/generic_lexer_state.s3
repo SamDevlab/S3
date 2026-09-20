@@ -754,7 +754,21 @@ fn generic_native_parser_expression(
                         operator = 3
                         precedence = 2
                     0:
-                        scanning = 0
+                        match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 160:
+                            -1:
+                                operator = 10
+                                precedence = 0
+                            0:
+                                match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 162:
+                                    -1:
+                                        operator = 12
+                                        precedence = 0
+                                    0:
+                                        scanning = 0
+                                    1:
+                                        scanning = 0
+                            1:
+                                scanning = 0
                     1:
                         scanning = 0
             1:
@@ -1211,6 +1225,7 @@ fn generic_native_parser_program_return(
             mut digest: i64 = statement_kind * 97 + expression_digest * 101 + start * 103 + statement_end * 107
             discard vector_push<i64>(result, expression_cursor + 1)
             discard vector_push<i64>(result, digest)
+            discard vector_push<i64>(result, statement_end)
             return 1
         0:
             return 0
@@ -1317,6 +1332,7 @@ fn generic_native_parser_program_declaration(
                     mut digest: i64 = statement_kind * 97 + name_digest * 101 + type_code * 103 + mutable * 107 + expression_digest * 109 + start * 113 + statement_end * 127
                     discard vector_push<i64>(result, current + 1)
                     discard vector_push<i64>(result, digest)
+                    discard vector_push<i64>(result, statement_end)
                     return 1
                 0:
                     return 0
@@ -1395,6 +1411,210 @@ fn generic_native_parser_program_assignment(
             mut digest: i64 = statement_kind * 97 + name_digest * 101 + expression_digest * 103 + start * 107 + statement_end * 109
             discard vector_push<i64>(result, current + 1)
             discard vector_push<i64>(result, digest)
+            discard vector_push<i64>(result, statement_end)
+            return 1
+        0:
+            return 0
+        1:
+            return 0
+
+fn generic_native_parser_program_block(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64,
+    parent_indent: i64,
+    node_kinds: &mut vector<i64>,
+    node_operators: &mut vector<i64>,
+    node_left: &mut vector<i64>,
+    node_right: &mut vector<i64>,
+    node_starts: &mut vector<i64>,
+    node_ends: &mut vector<i64>,
+    node_values: &mut vector<i64>,
+    result: &mut vector<i64>
+) -> i64:
+    mut current: i64 = cursor
+    mut body_indent: i64 = -1
+    mut body_start: i64 = -1
+    mut body_end: i64 = -1
+    mut statement_count: i64 = 0
+    mut block_digest: i64 = 0
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match generic_native_parser_kind(kinds, current) == 0:
+            -1:
+                scanning = 0
+            0:
+                match generic_native_parser_kind(kinds, current) == 6:
+                    -1:
+                        current = current + 1
+                    0:
+                        mut statement_indent: i64 = generic_native_parser_program_indent(
+                            source,
+                            vector_get<i64>(starts, current)
+                        )
+                        match body_indent == -1:
+                            -1:
+                                body_indent = statement_indent
+                                body_start = vector_get<i64>(starts, current)
+                            0:
+                                body_indent = body_indent
+                            1:
+                                body_indent = body_indent
+                        match statement_indent <=> parent_indent:
+                            -1:
+                                scanning = 0
+                            0:
+                                scanning = 0
+                            1:
+                                match statement_indent <=> body_indent:
+                                    -1:
+                                        scanning = 0
+                                    0:
+                                        mut statement_result: vector<i64> = vector_new<i64>(4)
+                                        match generic_native_parser_program_statement(
+                                            source,
+                                            kinds,
+                                            starts,
+                                            ends,
+                                            current,
+                                            node_kinds,
+                                            node_operators,
+                                            node_left,
+                                            node_right,
+                                            node_starts,
+                                            node_ends,
+                                            node_values,
+                                            &mut statement_result
+                                        ) == 1:
+                                            -1:
+                                                current = vector_get<i64>(&statement_result, 0)
+                                                block_digest = block_digest * 131 + vector_get<i64>(&statement_result, 1)
+                                                body_end = vector_get<i64>(&statement_result, 2)
+                                                statement_count = statement_count + 1
+                                            0:
+                                                return 0
+                                            1:
+                                                return 0
+                                    1:
+                                        return 0
+                    1:
+                        scanning = 0
+            1:
+                scanning = 0
+    match statement_count == 0:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            discard 0
+    discard vector_push<i64>(result, current)
+    discard vector_push<i64>(result, block_digest)
+    discard vector_push<i64>(result, statement_count)
+    discard vector_push<i64>(result, body_start)
+    discard vector_push<i64>(result, body_end)
+    return 1
+
+fn generic_native_parser_program_while(
+    source: &vector<i64>,
+    kinds: &vector<i64>,
+    starts: &vector<i64>,
+    ends: &vector<i64>,
+    cursor: i64,
+    node_kinds: &mut vector<i64>,
+    node_operators: &mut vector<i64>,
+    node_left: &mut vector<i64>,
+    node_right: &mut vector<i64>,
+    node_starts: &mut vector<i64>,
+    node_ends: &mut vector<i64>,
+    node_values: &mut vector<i64>,
+    result: &mut vector<i64>
+) -> i64:
+    mut start: i64 = vector_get<i64>(starts, cursor)
+    mut condition_result: i64 = generic_native_parser_expression(
+        source,
+        kinds,
+        starts,
+        ends,
+        cursor + 1,
+        0,
+        node_kinds,
+        node_operators,
+        node_left,
+        node_right,
+        node_starts,
+        node_ends,
+        node_values
+    )
+    match condition_result == -1:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            discard 0
+    mut condition_node: i64 = generic_native_parser_packed_node(condition_result)
+    mut current: i64 = generic_native_parser_packed_cursor(condition_result)
+    match generic_native_parser_take(kinds, current, 158):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    match generic_native_parser_take(kinds, current, 6):
+        -1:
+            current = current + 1
+        0:
+            return 0
+        1:
+            return 0
+    mut block_result: vector<i64> = vector_new<i64>(8)
+    mut parent_indent: i64 = generic_native_parser_program_indent(source, start)
+    match generic_native_parser_program_block(
+        source,
+        kinds,
+        starts,
+        ends,
+        current,
+        parent_indent,
+        node_kinds,
+        node_operators,
+        node_left,
+        node_right,
+        node_starts,
+        node_ends,
+        node_values,
+        &mut block_result
+    ) == 1:
+        -1:
+            mut body_digest: i64 = vector_get<i64>(&block_result, 1)
+            mut body_count: i64 = vector_get<i64>(&block_result, 2)
+            mut body_start: i64 = vector_get<i64>(&block_result, 3)
+            mut body_end: i64 = vector_get<i64>(&block_result, 4)
+            mut condition_digest: i64 = generic_native_parser_tree_digest(
+                condition_node,
+                &*node_kinds,
+                &*node_operators,
+                &*node_left,
+                &*node_right,
+                &*node_starts,
+                &*node_ends,
+                &*node_values
+            )
+            mut digest: i64 = 8
+            digest = digest * 97
+            digest = digest + condition_digest * 101
+            digest = digest + body_digest * 103
+            digest = digest + start * 107
+            digest = digest + body_start * 109
+            digest = digest + body_end * 113
+            digest = digest + body_count * 127
+            discard vector_push<i64>(result, vector_get<i64>(&block_result, 0))
+            discard vector_push<i64>(result, digest)
+            discard vector_push<i64>(result, body_end)
             return 1
         0:
             return 0
@@ -1437,6 +1657,27 @@ fn generic_native_parser_program_statement(
             match generic_native_parser_kind(kinds, cursor) == 1:
                 -1:
                     mut word_code: i64 = generic_native_parser_program_word_code(source, starts, ends, cursor)
+                    match word_code == 4:
+                        -1:
+                            return generic_native_parser_program_while(
+                                source,
+                                kinds,
+                                starts,
+                                ends,
+                                cursor,
+                                node_kinds,
+                                node_operators,
+                                node_left,
+                                node_right,
+                                node_starts,
+                                node_ends,
+                                node_values,
+                                result
+                            )
+                        0:
+                            discard 0
+                        1:
+                            discard 0
                     match word_code == 1:
                         -1:
                             return generic_native_parser_program_declaration(
@@ -1695,7 +1936,7 @@ fn generic_native_parser_program_function(
                                     -1:
                                         current = vector_get<i64>(&statement_result, 0)
                                         block_digest = block_digest * 131 + vector_get<i64>(&statement_result, 1)
-                                        body_end = vector_get<i64>(&node_ends, vector_len<i64>(&node_ends) - 1)
+                                        body_end = vector_get<i64>(&statement_result, 2)
                                         statement_count = statement_count + 1
                                     0:
                                         return 0
@@ -2583,6 +2824,41 @@ export fn generic_native_parser_program_call_case(case_id: i64) -> i64:
                     return -1
         1:
             return -1
+    return generic_native_parser_program_digest(&source)
+
+export fn generic_native_parser_program_while_case() -> i64:
+    mut source: vector<i64> = vector_new<i64>(256)
+    discard generic_native_program_v2_header(&mut source, 1)
+    discard generic_native_program_word(&mut source, 15)
+    discard generic_native_program_byte(&mut source, 32)
+    discard generic_native_program_v2_literal(&mut source, 1)
+    discard generic_native_program_byte(&mut source, 58)
+    discard generic_native_program_byte(&mut source, 10)
+    discard generic_native_program_indent(&mut source)
+    discard generic_native_program_indent(&mut source)
+    discard generic_native_program_v2_return_literal(&mut source, 1)
+    discard generic_native_program_indent(&mut source)
+    discard generic_native_program_v2_return_literal(&mut source, 2)
+    return generic_native_parser_program_digest(&source)
+
+export fn generic_native_parser_program_comparison_case() -> i64:
+    mut source: vector<i64> = vector_new<i64>(512)
+    discard generic_native_program_v2_header(&mut source, 1)
+    discard generic_native_program_v2_binding(&mut source, 10, 1, 1, 1)
+    discard generic_native_program_v2_binding(&mut source, 11, 2, 0, 1)
+    discard generic_native_program_word(&mut source, 15)
+    discard generic_native_program_byte(&mut source, 32)
+    discard generic_native_program_word(&mut source, 10)
+    discard generic_native_program_byte(&mut source, 32)
+    discard generic_native_program_byte(&mut source, 60)
+    discard generic_native_program_byte(&mut source, 32)
+    discard generic_native_program_word(&mut source, 11)
+    discard generic_native_program_byte(&mut source, 58)
+    discard generic_native_program_byte(&mut source, 10)
+    discard generic_native_program_indent(&mut source)
+    discard generic_native_program_indent(&mut source)
+    discard generic_native_program_v2_assignment_plus_one(&mut source, 10)
+    discard generic_native_program_v2_return(&mut source, 10)
     return generic_native_parser_program_digest(&source)
 
 fn generic_native_parser_statement(

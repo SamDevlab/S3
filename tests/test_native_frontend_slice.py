@@ -93,6 +93,20 @@ _PROGRAM_CALL_SOURCES = {
     2: "fn add(a: i64, b: i64) -> i64:\n    result: i64 = a + b\n    return result\n\nfn main() -> i64:\n    value: i64 = add(40, 2)\n    return value\n",
     3: "fn add(a: i64, b: i64) -> i64:\n    result: i64 = a + b\n    return result\n\nfn main() -> i64:\n    value: i64 = add(40 + 1, 2 * 3)\n    return value\n",
 }
+_WHILE_PROGRAM_SOURCE = (
+    "fn main() -> i64:\n"
+    "    while 1:\n"
+    "        return 1\n"
+    "    return 2\n"
+)
+_COMPARISON_PROGRAM_SOURCE = (
+    "fn main() -> i64:\n"
+    "    mut a: i64 = 1\n"
+    "    b: i64 = 2\n"
+    "    while a < b:\n"
+    "        a = a + 1\n"
+    "    return a\n"
+)
 
 
 def _candidate_source(case_id: int) -> str:
@@ -169,6 +183,28 @@ def _candidate_call_program_parser_source(case_id: int) -> str:
     return (
         substrate
         + f"\nfn main() -> i64:\n    return generic_native_parser_program_call_case({case_id})\n"
+    )
+
+
+def _candidate_while_program_parser_source() -> str:
+    repository = Path(__file__).parents[1]
+    substrate = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    return (
+        substrate
+        + "\nfn main() -> i64:\n    return generic_native_parser_program_while_case()\n"
+    )
+
+
+def _candidate_comparison_program_parser_source() -> str:
+    repository = Path(__file__).parents[1]
+    substrate = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    return (
+        substrate
+        + "\nfn main() -> i64:\n    return generic_native_parser_program_comparison_case()\n"
     )
 
 
@@ -479,6 +515,23 @@ def _independent_program_parser_digest(source: str) -> int:
     def statement_digest(statement_id: int) -> int:
         statement = arena.node(statement_id)
         children = arena.child_ids(statement.id)
+        if statement.kind is NodeKind.WHILE:
+            condition_id, block_id = children
+            block = arena.node(block_id)
+            block_children = arena.child_ids(block.id)
+            assert block_children
+            block_digest = 0
+            for body_statement_id in block_children:
+                block_digest = block_digest * 131 + statement_digest(body_statement_id)
+            return (
+                8 * 97
+                + tree_digest(condition_id) * 101
+                + block_digest * 103
+                + statement.span.start * 107
+                + arena.node(block_children[0]).span.start * 109
+                + block.span.end * 113
+                + len(block_children) * 127
+            )
         if statement.kind is NodeKind.RETURN:
             expression_id = children[0]
             expression = arena.node(expression_id)
@@ -838,6 +891,16 @@ def test_native_program_frontend_preserves_call_callee_and_argument_order() -> N
     assert _independent_program_parser_digest(swapped) != (
         _independent_program_parser_digest(_PROGRAM_CALL_SOURCES[2])
     )
+
+
+def test_native_program_frontend_preserves_nested_while_and_outer_continuation() -> None:
+    expected = _independent_program_parser_digest(_WHILE_PROGRAM_SOURCE)
+    assert run_source(_candidate_while_program_parser_source()) == expected
+
+
+def test_native_program_frontend_preserves_relational_loop_state() -> None:
+    expected = _independent_program_parser_digest(_COMPARISON_PROGRAM_SOURCE)
+    assert run_source(_candidate_comparison_program_parser_source()) == expected
 
 
 def test_native_program_frontend_has_no_reference_frontend_fallback() -> None:
