@@ -127,3 +127,34 @@ SMALL_PR_BOUNDARIES
 Use focused tests per milestone, broader validation at meaningful checkpoints, and full/native qualification at campaign closure or other high-value boundaries.
 
 Stop the larger campaign only for an architectural blocker, required redesign, scope frontier, or completed campaign objective.
+
+
+## D-011 — Capability reuse audit precedes new representation
+
+Decision:
+
+Before a self-host, compiler, runtime, ABI, Assembly, backend, or workload campaign introduces a new representation or capability family, it must audit the current repository for an existing contract and classify the requirement as:
+
+REUSE_DIRECTLY
+PORT_TO_SELFHOST
+ADAPT_EXISTING_CONTRACT
+GENUINELY_MISSING
+HISTORICAL_OR_STALE_ONLY
+
+This preflight must inspect executable code/tests, normative specs/ADRs, later milestone execution/closure reports, the self-host/generic substrate, and applicable native runtime/backend paths.
+
+Operational rule:
+
+NEW REPRESENTATION REQUIRES A REUSE AUDIT FIRST.
+
+A new opcode, ABI family, ownership rule, runtime representation, or dependency is authorized only when the campaign records why the existing machinery cannot express the requirement.
+
+When sources disagree, prefer exact-head executable evidence, then matching normative contracts, then later execution/closure reports, before older planning documents and overview manifests.
+
+Reason:
+
+PR #307/#308 exposed avoidable duplication risk. The project already had validated ownership, lexical borrowing, numeric vectors, reference/slice IR, Linux x86-64 vector runtime, and composite-vector native evidence, but campaign planning initially treated aggregate ownership as a missing language capability. The same audit also showed that the scientific SSD/RMSD path can use existing f64-vector/borrow machinery and need not make the PR-local TAGG representation a prerequisite.
+
+Canonical audit:
+
+research-lab/reconciliations/SELFHOST_CAPABILITY_REUSE_AUDIT_20260920.md
