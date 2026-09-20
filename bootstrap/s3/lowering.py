@@ -113,8 +113,20 @@ class FunctionLowerer:
     def lower(self, *, external: bool = False) -> IRFunction:
         for parameter in self.function.parameters:
             if isinstance(parameter.type_name, (ast.ReferenceType, ast.SliceType)):
-                target = self._storage_type(parameter.type_name.target if isinstance(parameter.type_name, ast.ReferenceType) else parameter.type_name.element_type, parameter.location)
                 register = self._allocate_reference(parameter.type_name, parameter.location)
+                aggregate_name = (
+                    parameter.type_name.target.name
+                    if isinstance(parameter.type_name, ast.ReferenceType)
+                    and isinstance(parameter.type_name.target, ast.NominalType)
+                    and self.semantic_model.is_record_type(parameter.type_name.target)
+                    else None
+                )
+                target = None if aggregate_name is not None else self._storage_type(
+                    parameter.type_name.target
+                    if isinstance(parameter.type_name, ast.ReferenceType)
+                    else parameter.type_name.element_type,
+                    parameter.location,
+                )
                 slice_length_register = (
                     self._allocate(ast.TypeName.I64, parameter.location)
                     if isinstance(parameter.type_name, ast.SliceType)
@@ -122,9 +134,10 @@ class FunctionLowerer:
                 )
                 self.parameters.append(IRParameter(
                     parameter.name, register, IRType.REFERENCE, parameter.location,
-                    TYPE_MAP[target], parameter.type_name.mutable,
+                    None if target is None else TYPE_MAP[target], parameter.type_name.mutable,
                     isinstance(parameter.type_name, ast.SliceType),
                     slice_length_register,
+                    aggregate_name,
                 ))
                 if slice_length_register is not None:
                     self.parameters.append(IRParameter(
@@ -424,10 +437,23 @@ class FunctionLowerer:
         self, type_name: ast.ReferenceType | ast.SliceType, location: SourceLocation | None
     ) -> int:
         index = len(self.registers)
-        target = self._storage_type(type_name.target if isinstance(type_name, ast.ReferenceType) else type_name.element_type, location)
+        target_type = type_name.target if isinstance(type_name, ast.ReferenceType) else type_name.element_type
+        aggregate_name = (
+            target_type.name
+            if isinstance(target_type, ast.NominalType)
+            and self.semantic_model.is_record_type(target_type)
+            else None
+        )
+        target = None if aggregate_name is not None else self._storage_type(target_type, location)
         self.registers.append(IRRegister(
-            index, IRType.REFERENCE, location, TYPE_MAP[target], type_name.mutable,
-            isinstance(type_name, ast.SliceType)
+            index,
+            IRType.REFERENCE,
+            location,
+            None if target is None else TYPE_MAP[target],
+            type_name.mutable,
+            isinstance(type_name, ast.SliceType),
+            None,
+            aggregate_name,
         ))
         return index
 
@@ -2501,6 +2527,31 @@ class FunctionLowerer:
                     ))
                     return result
                 if isinstance(target, ast.FieldAccessExpression):
+                    target_owner_type = self.semantic_model.declared_type_of(target.target)
+                    if (
+                        isinstance(target_owner_type, ast.ReferenceType)
+                        and isinstance(target_owner_type.target, ast.NominalType)
+                        and self.semantic_model.is_record_type(target_owner_type.target)
+                    ):
+                        source = self._lower_expression(target.target)
+                        field_type = self.semantic_model.declared_type_of(target)
+                        if not isinstance(field_type, ast.TypeName):
+                            raise LoweringError(
+                                "aggregate reference fields must have a runtime cell type",
+                                expression.location,
+                            )
+                        result = self._allocate_reference(declared_type, expression.location)
+                        self._emit(IRInstruction(
+                            IROpcode.AGGREGATE_FIELD_ADDRESS,
+                            result=result,
+                            operands=(source,),
+                            reference_target=TYPE_MAP[field_type],
+                            reference_mutable=declared_type.mutable,
+                            reference_aggregate=target_owner_type.target.name,
+                            aggregate_field_path=(target.field_name,),
+                            location=expression.location,
+                        ))
+                        return result
                     source = self._lower_field_access(target)
                     result = self._allocate_reference(declared_type, expression.location)
                     self._emit(IRInstruction(
@@ -2517,6 +2568,33 @@ class FunctionLowerer:
                     raise LoweringError("unsupported address-of target", expression.location)
                 binding = self._lookup_variable(target.name, target.location)
                 result = self._allocate_reference(declared_type, expression.location)
+                if (
+                    isinstance(declared_type, ast.ReferenceType)
+                    and isinstance(declared_type.target, ast.NominalType)
+                    and self.semantic_model.is_record_type(declared_type.target)
+                ):
+                    if binding.fields is None:
+                        raise LoweringError(
+                            "aggregate reference target has no lowered fields",
+                            expression.location,
+                        )
+                    record = self.semantic_model.record(declared_type.target.name)
+                    paths = tuple(leaf.path for leaf in self.semantic_model.record_leaves(record.name))
+                    operands = self._flatten_record_registers(
+                        record.name,
+                        binding.fields,
+                        expression.location,
+                    )
+                    self._emit(IRInstruction(
+                        IROpcode.AGGREGATE_ADDRESS_OF,
+                        result=result,
+                        operands=operands,
+                        reference_mutable=declared_type.mutable,
+                        reference_aggregate=record.name,
+                        aggregate_field_paths=paths,
+                        location=expression.location,
+                    ))
+                    return result
                 self._emit(IRInstruction(
                     IROpcode.ADDRESS_OF, result=result,
                     operands=() if binding.register is None else (binding.register,),
@@ -2825,6 +2903,45 @@ class FunctionLowerer:
         raise LoweringError("unsupported expression", expression.location)
 
     def _lower_field_access(self, expression: ast.FieldAccessExpression) -> int:
+        target_type = self.semantic_model.declared_type_of(expression.target)
+        aggregate_reference = None
+        reference_expression: ast.Expression | None = None
+        if (
+            isinstance(target_type, ast.ReferenceType)
+            and isinstance(target_type.target, ast.NominalType)
+            and self.semantic_model.is_record_type(target_type.target)
+        ):
+            aggregate_reference = target_type.target.name
+            reference_expression = expression.target
+        elif isinstance(expression.target, ast.DereferenceExpression):
+            dereferenced_type = self.semantic_model.declared_type_of(expression.target)
+            reference_type = self.semantic_model.declared_type_of(expression.target.operand)
+            if (
+                isinstance(dereferenced_type, ast.NominalType)
+                and self.semantic_model.is_record_type(dereferenced_type)
+                and isinstance(reference_type, ast.ReferenceType)
+                and isinstance(reference_type.target, ast.NominalType)
+            ):
+                aggregate_reference = reference_type.target.name
+                reference_expression = expression.target.operand
+        if aggregate_reference is not None and reference_expression is not None:
+            field = self.semantic_model.record(aggregate_reference).field(expression.field_name)
+            if field is None or not isinstance(field.type_name, ast.TypeName):
+                raise LoweringError(
+                    "aggregate reference fields must have a runtime cell type",
+                    expression.location,
+                )
+            reference = self._lower_expression(reference_expression)
+            result = self._allocate(field.type_name, expression.location)
+            self._emit(IRInstruction(
+                IROpcode.AGGREGATE_FIELD_LOAD,
+                result=result,
+                operands=(reference,),
+                reference_aggregate=aggregate_reference,
+                aggregate_field_path=(expression.field_name,),
+                location=expression.location,
+            ))
+            return result
         if isinstance(expression.target, ast.Identifier):
             binding = self._lookup_variable_or_none(expression.target.name)
             if binding is None and (
@@ -3136,6 +3253,9 @@ class FunctionLowerer:
             signature.parameter_types,
             strict=True,
         ):
+            if isinstance(parameter_type, ast.ReferenceType):
+                registers.append(self._lower_expression(argument.expression))
+                continue
             if isinstance(parameter_type, ast.SliceType):
                 registers.append(self._lower_expression(argument.expression))
                 source_type = self.semantic_model.declared_type_of(argument.expression)

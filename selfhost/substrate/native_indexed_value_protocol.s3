@@ -37,6 +37,19 @@ fn native_indexed_f64_value(first: f64, second: f64, third: f64, mutable: i64) -
         f64_payload=payload
     )
 
+fn native_indexed_f64_single(value: f64, mutable: i64) -> NativeIndexedValue:
+    mut payload: f64_vector = f64_vector_new(1)
+    discard f64_vector_push(&mut payload, value)
+    return NativeIndexedValue(
+        element_kind=2,
+        length=1,
+        mutability=mutable,
+        ownership=1,
+        lifetime=1,
+        i64_payload=i64_vector_new(0),
+        f64_payload=payload
+    )
+
 fn native_indexed_i64_empty(mutable: i64) -> NativeIndexedValue:
     return NativeIndexedValue(
         element_kind=1,
@@ -68,6 +81,37 @@ fn native_indexed_i64_payload_sum(payload: &i64_vector, length: i64) -> i64:
         total = total + i64_vector_get(payload, index)
         index = index + 1
     return total
+
+fn native_indexed_i64_sum(value: &NativeIndexedValue) -> i64:
+    mut index: i64 = 0
+    mut total: i64 = 0
+    while index < value.length:
+        total = total + i64_vector_get(&value.i64_payload, index)
+        index = index + 1
+    return total
+
+fn native_indexed_f64_sum(value: &NativeIndexedValue) -> f64:
+    mut index: i64 = 0
+    mut total: f64 = 0.0
+    while index < value.length:
+        total = total + f64_vector_get(&value.f64_payload, index)
+        index = index + 1
+    return total
+
+fn native_indexed_ssd(a: &NativeIndexedValue, b: &NativeIndexedValue) -> f64:
+    match a.length == b.length:
+        -1:
+            mut index: i64 = 0
+            mut total: f64 = 0.0
+            while index < a.length:
+                mut delta: f64 = f64_vector_get(&a.f64_payload, index) - f64_vector_get(&b.f64_payload, index)
+                total = total + delta * delta
+                index = index + 1
+            return total
+        0:
+            return -1.0
+        1:
+            return -1.0
 
 fn native_indexed_contract_case() -> i64:
     mut integers: NativeIndexedValue = native_indexed_i64_value(10, 20, 12, 0)

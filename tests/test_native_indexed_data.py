@@ -6,6 +6,7 @@ import pytest
 
 from bootstrap.s3 import run_source
 from bootstrap.s3.diagnostics import SemanticError
+from bootstrap.s3.dynamic import BufferBoundsError
 from bootstrap.s3.pipeline import compile_source
 
 
@@ -55,15 +56,104 @@ def test_native_indexed_payload_can_cross_a_vector_reference_parameter() -> None
     assert run_source(source) == 42
 
 
-def test_native_indexed_aggregate_reference_boundary_fails_closed() -> None:
+def test_native_indexed_aggregate_reference_crosses_boundary_as_one_value() -> None:
     source = _candidate_source(
         "fn inspect(value: &NativeIndexedValue) -> i64:\n"
         "    return value.length\n"
         "fn main() -> i64:\n"
+        "    mut values: NativeIndexedValue = native_indexed_i64_value(10, 20, 12, 0)\n"
+        "    return inspect(&values) + values.length\n"
+    )
+    assert run_source(source) == 6
+
+
+def test_native_indexed_aggregate_reference_preserves_payload_and_length() -> None:
+    source = _candidate_source(
+        "fn inspect(value: &NativeIndexedValue) -> i64:\n"
+        "    return i64_vector_get(&value.i64_payload, value.length - 1)\n"
+        "fn main() -> i64:\n"
+        "    mut values: NativeIndexedValue = native_indexed_i64_value(10, 20, 12, 0)\n"
+        "    return inspect(&values) + inspect(&values)\n"
+    )
+    assert run_source(source) == 24
+
+
+def test_native_indexed_mutable_aggregate_reference_is_rejected() -> None:
+    source = _candidate_source(
+        "fn inspect(value: &mut NativeIndexedValue) -> i64:\n"
+        "    return value.length\n"
+        "fn main() -> i64:\n"
         "    return 0\n"
     )
-    with pytest.raises(SemanticError, match="reference target must be a scalar type"):
+    with pytest.raises(SemanticError, match="mutable aggregate references are not supported"):
         compile_source(source)
+
+
+def test_native_indexed_i64_function_reads_borrowed_aggregate() -> None:
+    source = _candidate_source(
+        "fn main() -> i64:\n"
+        "    mut values: NativeIndexedValue = native_indexed_i64_value(10, 20, 12, 0)\n"
+        "    return native_indexed_i64_sum(&values)\n"
+    )
+    assert run_source(source) == 42
+
+
+def test_native_indexed_f64_function_reads_borrowed_aggregate() -> None:
+    source = _candidate_source(
+        "fn main() -> f64:\n"
+        "    mut values: NativeIndexedValue = native_indexed_f64_value(1.25, 2.5, 1.0, 0)\n"
+        "    return native_indexed_f64_sum(&values)\n"
+    )
+    assert run_source(source) == 4.75
+
+
+def test_native_indexed_bounds_follow_the_borrowed_payload() -> None:
+    source = _candidate_source(
+        "fn inspect(value: &NativeIndexedValue) -> i64:\n"
+        "    return i64_vector_get(&value.i64_payload, value.length)\n"
+        "fn main() -> i64:\n"
+        "    mut values: NativeIndexedValue = native_indexed_i64_value(10, 20, 12, 0)\n"
+        "    return inspect(&values)\n"
+    )
+    with pytest.raises(BufferBoundsError, match=r"outside \[0, length\)"):
+        run_source(source)
+
+
+def test_native_indexed_aggregate_boundary_has_one_reference_parameter() -> None:
+    source = _candidate_source(
+        "fn inspect(value: &NativeIndexedValue) -> i64:\n"
+        "    return value.length\n"
+        "fn main() -> i64:\n"
+        "    mut values: NativeIndexedValue = native_indexed_i64_value(10, 20, 12, 0)\n"
+        "    return inspect(&values)\n"
+    )
+    compilation = compile_source(source)
+    inspect = next(function for function in compilation.ir.functions if function.name == "inspect")
+    assert len(inspect.parameters) == 1
+    assert inspect.parameters[0].reference_aggregate == "NativeIndexedValue"
+    main = next(function for function in compilation.ir.functions if function.name == "main")
+    call = next(instruction for instruction in main.instructions if instruction.callee == "inspect")
+    assert len(call.operands) == 1
+
+
+def test_native_indexed_ssd_uses_two_borrowed_aggregate_inputs() -> None:
+    source = _candidate_source(
+        "fn main() -> f64:\n"
+        "    mut left: NativeIndexedValue = native_indexed_f64_value(1.0, 2.0, 3.0, 0)\n"
+        "    mut right: NativeIndexedValue = native_indexed_f64_value(2.0, 4.0, 6.0, 0)\n"
+        "    return native_indexed_ssd(&left, &right)\n"
+    )
+    assert run_source(source) == 14.0
+
+
+def test_native_indexed_ssd_mismatched_lengths_return_explicit_invalid_result() -> None:
+    source = _candidate_source(
+        "fn main() -> f64:\n"
+        "    mut left: NativeIndexedValue = native_indexed_f64_value(1.0, 2.0, 3.0, 0)\n"
+        "    mut right: NativeIndexedValue = native_indexed_f64_single(2.0, 0)\n"
+        "    return native_indexed_ssd(&left, &right)\n"
+    )
+    assert run_source(source) == -1.0
 
 
 def test_native_indexed_protocol_is_explicit_and_has_no_host_fallback() -> None:
