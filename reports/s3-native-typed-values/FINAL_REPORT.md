@@ -13,14 +13,14 @@ SOURCE_BASE_MERGED=NO
 NEW_BRANCH=feat/s3-native-typed-values
 START_HEAD=48f2551c130ba29e6becf63aba2d4e57c69d35c6
 FINAL_FUNCTIONAL_HEAD=cc05357ad6e72c3bc13032b1ed55303be93f2661
-FINAL_HEAD=TO_BE_SET_AFTER_DOCUMENTATION_COMMIT
+FINAL_HEAD=8984b67cd30f6d84f903335262b35dbe5e1a4886
 FINAL_HEAD_DELTA_FROM_FUNCTIONAL_HEAD=DOCS_ONLY_AFTER_REPORT_COMMIT
-NEW_PR=TO_BE_CREATED
-NEW_PR_STATE=NOT_YET_CREATED
+NEW_PR=306
+NEW_PR_STATE=OPEN_DRAFT
 NEW_PR_BASE=feat/s3-native-semantic-execution
-NEW_PR_HEAD=feat/s3-native-typed-values
+NEW_PR_HEAD=8984b67cd30f6d84f903335262b35dbe5e1a4886
 NEW_PR_MERGED=NO
-REMOTE_SYNC=TO_BE_CONFIRMED_AFTER_PUSH
+REMOTE_SYNC=origin/feat/s3-native-typed-values at 8984b67cd30f6d84f903335262b35dbe5e1a4886
 ```
 
 The functional commit contains only the typed-value implementation and its
@@ -180,8 +180,8 @@ select the next minimum capability without changing the language.
 ```text
 KNOWLEDGE_CLOSURE=scalar typed value identity is an explicit boundary; indexed data is a separate native representation boundary
 RESEARCH_RECONCILIATION_FILE=research-lab/reconciliations/SELFHOST_NATIVE_TYPED_VALUES_20260920.md
-RESEARCH_STATE_UPDATED=NO_PENDING
-RESEARCH_HANDOFF_UPDATED=NO_PENDING
+RESEARCH_STATE_UPDATED=YES; research commit 6becd1ea
+RESEARCH_HANDOFF_UPDATED=YES; research commit 6becd1ea
 INSIGHT_CANDIDATES_STRENGTHENED=IC-005, IC-008, IC-012, IC-015, IC-016
 INSIGHT_CANDIDATES_WEAKENED=IC-014 unchanged; type inference remains separate
 NEW_ZETTELS=NONE
@@ -197,8 +197,8 @@ WHAT_REMAINS_UNKNOWN=native indexed layout, bounds, ownership/lifetime, Linux qu
 
 ```text
 FILES_CHANGED=functional: generic_lexer_state.s3, native_semantic_execution.s3, native_typed_value_protocol.s3, tests/test_native_semantic_execution.py; documentation: this report
-COMMITS_CREATED=cc05357ad6e72c3bc13032b1ed55303be93f2661; documentation commit pending
-PUSHED=NO_PENDING
+COMMITS_CREATED=cc05357ad6e72c3bc13032b1ed55303be93f2661; 8984b67cd30f6d84f903335262b35dbe5e1a4886
+PUSHED=YES
 CODE_READY=YES for scalar typed protocol
 CI_READY=NO until Draft PR natural checks are observed
 READY_FOR_BASE_MERGE=NO
