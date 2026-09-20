@@ -46,6 +46,22 @@ def _candidate_literal_source(value: int) -> str:
     )
 
 
+def _candidate_while_source(initial: int, limit: int) -> str:
+    repository = Path(__file__).parents[1]
+    lexer = (repository / "selfhost/substrate/generic_lexer_state.s3").read_text(
+        encoding="utf-8"
+    )
+    semantic = (
+        repository / "selfhost/substrate/native_semantic_execution.s3"
+    ).read_text(encoding="utf-8")
+    return (
+        lexer
+        + "\n"
+        + semantic
+        + f"\nfn main() -> i64:\n    return native_semantic_while({initial}, {limit})\n"
+    )
+
+
 def test_native_i64_semantic_literals_bindings_and_arithmetic() -> None:
     assert run_source(_candidate_source(0)) == 42
 
@@ -53,6 +69,18 @@ def test_native_i64_semantic_literals_bindings_and_arithmetic() -> None:
 @pytest.mark.parametrize("value", (0, 1, 7, 17, 100, 999))
 def test_native_i64_semantic_literal_is_not_42_specific(value: int) -> None:
     assert run_source(_candidate_literal_source(value)) == value
+
+
+@pytest.mark.parametrize(
+    ("initial", "limit", "expected"),
+    ((0, 0, 0), (0, 1, 1), (0, 6, 6), (40, 42, 42)),
+)
+def test_native_i64_semantic_while_executes_zero_one_and_many_iterations(
+    initial: int,
+    limit: int,
+    expected: int,
+) -> None:
+    assert run_source(_candidate_while_source(initial, limit)) == expected
 
 
 def test_native_i64_semantic_calls_use_native_frames_and_arguments() -> None:

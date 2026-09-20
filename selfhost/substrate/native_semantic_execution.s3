@@ -340,9 +340,29 @@ fn native_semantic_while_single_assignment(
         source,
         vector_get<i64>(starts, body_start)
     )
+    mut next_cursor: i64 = body_start
+    mut body_end_cursor: i64 = body_start
+    mut scanning_body_end: i64 = 1
+    while scanning_body_end == 1:
+        match body_end_cursor < token_count:
+            -1:
+                match generic_native_parser_program_indent(
+                    source,
+                    vector_get<i64>(starts, body_end_cursor)
+                ) < body_indent:
+                    -1:
+                        scanning_body_end = 0
+                    0:
+                        body_end_cursor = body_end_cursor + 1
+                    1:
+                        body_end_cursor = body_end_cursor + 1
+            0:
+                scanning_body_end = 0
+            1:
+                scanning_body_end = 0
+    next_cursor = body_end_cursor
     mut searching: i64 = 1
     mut iterations: i64 = 0
-    mut next_cursor: i64 = body_start
     while searching == 1:
         match iterations < 64:
             -1:
@@ -884,6 +904,34 @@ fn native_semantic_build_case(source: &mut vector<i64>, case_id: i64) -> i64:
                                     discard generic_native_program_v2_return(source, 7)
     return 0
 
+fn native_semantic_build_while_case(
+    source: &mut vector<i64>,
+    initial: i64,
+    limit: i64
+) -> i64:
+    discard generic_native_program_v2_header(source, 1)
+    discard generic_native_program_v2_binding(source, 7, initial, 0, 1)
+    discard generic_native_program_word(source, 15)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_word(source, 7)
+    discard generic_native_program_byte(source, 32)
+    discard generic_native_program_byte(source, 60)
+    discard generic_native_program_byte(source, 32)
+    match generic_native_program_v2_literal(source, limit) == 0:
+        -1:
+            discard 0
+        0:
+            return -1
+        1:
+            return -1
+    discard generic_native_program_byte(source, 58)
+    discard generic_native_program_byte(source, 10)
+    discard generic_native_program_indent(source)
+    discard generic_native_program_indent(source)
+    discard generic_native_program_v2_assignment_plus_one(source, 7)
+    discard generic_native_program_v2_return(source, 7)
+    return 0
+
 fn native_semantic_execute_source(source: &vector<i64>) -> i64:
     mut ids: vector<i64> = vector_new<i64>(128)
     mut kinds: vector<i64> = vector_new<i64>(128)
@@ -943,6 +991,17 @@ fn native_semantic_build_literal(source: &mut vector<i64>, value: i64) -> i64:
 export fn native_semantic_literal(value: i64) -> i64:
     mut source: vector<i64> = vector_new<i64>(512)
     match native_semantic_build_literal(&mut source, value) == -1:
+        -1:
+            return -1
+        0:
+            discard 0
+        1:
+            return -1
+    return native_semantic_execute_source(&source)
+
+export fn native_semantic_while(initial: i64, limit: i64) -> i64:
+    mut source: vector<i64> = vector_new<i64>(512)
+    match native_semantic_build_while_case(&mut source, initial, limit) == -1:
         -1:
             return -1
         0:
