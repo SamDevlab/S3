@@ -1,5 +1,29 @@
 # S3 Research Handoff
 
+## 2026-09-19 current overlay — native self-hosting frontend
+
+This overlay supersedes older "next" wording in this handoff when discussing current execution priority.
+
+Current production/self-hosting work has advanced beyond the August research snapshot:
+
+- PR #301 (Draft): native source-frontend expression core through integer literals, `+`, `*`, precedence, associativity and grouping; Linux x86-64 focused 34 passed; full suite PASS on functional head `5230f92281e482a30fee8d116fb29d6932483fe1`; no hosted-parser fallback.
+- PR #302 (Draft, stacked on #301): native identifier expressions integrated with binary expressions, precedence and grouping; Linux x86-64 focused 36 passed; full suite PASS on functional head `0cceff303f0337fe45db9b80a2e7b6e814ff979e`; no hosted-parser fallback.
+- Next parser blocker: `NATIVE_STATEMENT_SEQUENCE`.
+- Remote GitHub Actions remain blocked before step execution by runner/provisioning infrastructure; this is not classified as a test failure.
+- Process correction: the September implementation advanced without updating this Research Lab. Decision D-009 and the campaign knowledge-closure protocol now require meaningful campaigns to feed successes, failures, negative results and unknowns back into the Zettelkasten.
+- Operational correction: avoid one PR/research ceremony per microscopic grammar feature. Keep semantic milestones internally, but group related work into coherent self-hosting campaigns with focused intermediate validation and consolidated knowledge closure.
+
+Canonical detailed reconciliation:
+
+`research-lab/reconciliations/SELFHOST_FRONTEND_20260919.md`
+
+Current speculative language-design idea:
+
+`IC-014` records implicit function signatures / semantic type inference separately from numeric representation-width selection. It is deferred and must not alter the stable self-hosting target.
+
+---
+
+
 This is the durable context document for continuing S3 compiler research in another ChatGPT/Codex conversation.
 
 ## 1. Project identity
