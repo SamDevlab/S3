@@ -486,6 +486,13 @@ PRs #301 and #302 provide direct bounded evidence for this synthesis. The self-h
 
 This materially strengthens IC-012, but the candidate remains temporary until the approach is exercised across broader statement/block/function-body and later semantic stages. The current evidence supports the method for the bounded source-frontend subset, not a universal self-hosting theorem.
 
+
+### 2026-09-20 evidence update — statement sequence
+
+PR #303 extended the same replacement strategy from expression/identifier parsing to variable-length statement sequences. Single-, two-, three- and variable-count statement blocks passed, order and block boundaries were preserved, trailing source was rejected, Linux x86-64 qualification reached 55 focused passes, and the full suite passed on the functional head with no reference fallback.
+
+This further strengthens IC-012 for the native source-frontend domain: semantic-layer replacement has now survived a transition from expression trees to ordered statement structure. It remains temporary until broader program structure/semantics exercise the same method.
+
 ## IC-013 — Evaluator/compiler agreement can be a bounded differential oracle
 
 Synthesis:
@@ -546,6 +553,13 @@ The independent GenericLexer/GenericParser/SyntaxArena path used by PRs #301/#30
 
 This strengthens the claim that independent reference/compiler agreement is useful when implementation independence and semantic scope are explicit. It does not yet establish the need for a second full evaluator for all of S3.
 
+
+
+### 2026-09-20 evidence update — statement sequence
+
+PR #303 used the same independent-oracle boundary to validate ordered block structure and variable statement count while the native S3 parser made the covered parsing decisions. This broadens the oracle evidence beyond isolated expressions/primaries.
+
+The result strengthens bounded differential-oracle usefulness, but still does not establish a universal evaluator/compiler agreement framework for all S3 semantics.
 
 ## IC-014 — Implicit signatures and numeric representation inference are separate research questions
 
