@@ -1178,7 +1178,7 @@
     "branch": "feat/s3-native-semantic-execution",
     "start_head": "bf79e618c64b96d2be5640b4f2949b829df10b5c",
     "functional_head": "34a923f84db7ff8d4f9b7cf9083f272169cc7524",
-    "final_head": "095c67b894c2d4162a8c7503f523f4b13155f0ae",
+    "final_head": "48f2551c130ba29e6becf63aba2d4e57c69d35c6",
     "merged": false,
     "draft": true,
     "native_i64_semantic_execution": true,
