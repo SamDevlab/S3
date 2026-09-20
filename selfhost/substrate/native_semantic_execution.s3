@@ -19,13 +19,13 @@ fn native_semantic_find_function(
                     -1:
                         return cursor
                     0:
-                        cursor = cursor + 1
+                        cursor = cursor
                     1:
-                        cursor = cursor + 1
+                        cursor = cursor
             0:
-                cursor = cursor + 1
+                cursor = cursor
             1:
-                cursor = cursor + 1
+                cursor = cursor
         cursor = cursor + 1
     return -1
 
@@ -997,7 +997,7 @@ export fn native_semantic_literal(value: i64) -> i64:
             discard 0
         1:
             return -1
-    return native_semantic_execute_source(&source)
+    return native_typed_execute_i64_source(&source)
 
 export fn native_semantic_while(initial: i64, limit: i64) -> i64:
     mut source: vector<i64> = vector_new<i64>(512)
@@ -1008,7 +1008,7 @@ export fn native_semantic_while(initial: i64, limit: i64) -> i64:
             discard 0
         1:
             return -1
-    return native_semantic_execute_source(&source)
+    return native_typed_execute_i64_source(&source)
 
 export fn native_semantic_case(case_id: i64) -> i64:
     mut source: vector<i64> = vector_new<i64>(512)
@@ -1019,4 +1019,4 @@ export fn native_semantic_case(case_id: i64) -> i64:
             discard 0
         1:
             return -1
-    return native_semantic_execute_source(&source)
+    return native_typed_execute_i64_source(&source)

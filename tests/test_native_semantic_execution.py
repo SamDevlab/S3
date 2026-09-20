@@ -22,10 +22,15 @@ def _candidate_source(case_id: int) -> str:
     semantic = (
         repository / "selfhost/substrate/native_semantic_execution.s3"
     ).read_text(encoding="utf-8")
+    typed = (
+        repository / "selfhost/substrate/native_typed_value_protocol.s3"
+    ).read_text(encoding="utf-8")
     return (
         lexer
         + "\n"
         + semantic
+        + "\n"
+        + typed
         + f"\nfn main() -> i64:\n    return native_semantic_case({case_id})\n"
     )
 
@@ -38,10 +43,15 @@ def _candidate_literal_source(value: int) -> str:
     semantic = (
         repository / "selfhost/substrate/native_semantic_execution.s3"
     ).read_text(encoding="utf-8")
+    typed = (
+        repository / "selfhost/substrate/native_typed_value_protocol.s3"
+    ).read_text(encoding="utf-8")
     return (
         lexer
         + "\n"
         + semantic
+        + "\n"
+        + typed
         + f"\nfn main() -> i64:\n    return native_semantic_literal({value})\n"
     )
 
@@ -54,11 +64,58 @@ def _candidate_while_source(initial: int, limit: int) -> str:
     semantic = (
         repository / "selfhost/substrate/native_semantic_execution.s3"
     ).read_text(encoding="utf-8")
+    typed = (
+        repository / "selfhost/substrate/native_typed_value_protocol.s3"
+    ).read_text(encoding="utf-8")
     return (
         lexer
         + "\n"
         + semantic
+        + "\n"
+        + typed
         + f"\nfn main() -> i64:\n    return native_semantic_while({initial}, {limit})\n"
+    )
+
+
+def _candidate_f64_source() -> str:
+    repository = Path(__file__).parents[1]
+    lexer = (repository / "selfhost/substrate/generic_lexer_state.s3").read_text(
+        encoding="utf-8"
+    )
+    semantic = (
+        repository / "selfhost/substrate/native_semantic_execution.s3"
+    ).read_text(encoding="utf-8")
+    typed = (
+        repository / "selfhost/substrate/native_typed_value_protocol.s3"
+    ).read_text(encoding="utf-8")
+    return (
+        lexer
+        + "\n"
+        + semantic
+        + "\n"
+        + typed
+        + "\nfn main() -> trit:\n    return native_typed_f64_case()\n"
+    )
+
+
+def _candidate_mixed_binary_source() -> str:
+    repository = Path(__file__).parents[1]
+    lexer = (repository / "selfhost/substrate/generic_lexer_state.s3").read_text(
+        encoding="utf-8"
+    )
+    semantic = (
+        repository / "selfhost/substrate/native_semantic_execution.s3"
+    ).read_text(encoding="utf-8")
+    typed = (
+        repository / "selfhost/substrate/native_typed_value_protocol.s3"
+    ).read_text(encoding="utf-8")
+    return (
+        lexer
+        + "\n"
+        + semantic
+        + "\n"
+        + typed
+        + "\nfn main() -> trit:\n    return native_typed_mixed_binary_case()\n"
     )
 
 
@@ -97,6 +154,31 @@ def test_native_i64_semantic_assignment_updates_local_state() -> None:
 
 def test_native_i64_semantic_grouping_preserves_expression_value() -> None:
     assert run_source(_candidate_source(4)) == 42
+
+
+def test_native_typed_value_protocol_executes_f64_literal_call_and_return() -> None:
+    assert run_source(_candidate_f64_source()) == -1
+
+
+def test_native_typed_value_protocol_rejects_mixed_binary_types() -> None:
+    assert run_source(_candidate_mixed_binary_source()) == -1
+
+
+def test_native_typed_value_protocol_is_explicit_and_i64_wrappers_migrated() -> None:
+    repository = Path(__file__).parents[1]
+    protocol = (
+        repository / "selfhost/substrate/native_typed_value_protocol.s3"
+    ).read_text(encoding="utf-8")
+    semantic = (
+        repository / "selfhost/substrate/native_semantic_execution.s3"
+    ).read_text(encoding="utf-8")
+    assert "record NativeTypedValue:" in protocol
+    assert "kind: i64" in protocol
+    assert "i64_value: i64" in protocol
+    assert "f64_value: f64" in protocol
+    assert "record NativeTypedResult:" in protocol
+    assert "status: i64" in protocol
+    assert "native_typed_execute_i64_source(&source)" in semantic
 
 
 def test_native_semantic_path_has_no_hosted_frontend_fallback() -> None:
