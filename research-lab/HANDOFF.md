@@ -1361,3 +1361,24 @@ REFERENCE_FALLBACK=NONE
 Detailed reconciliation:
 
 `research-lab/reconciliations/SELFHOST_NATIVE_INDEXED_DATA_20260920.md`
+
+
+### 2026-09-20 correction — capability reuse audit
+
+A repository-wide audit after PR #308 corrected the interpretation of the recent indexed-data/aggregate blockers.
+
+The project already has established contracts for checked i64/f64, scalar f64 ABI, lexical borrowing, borrowed slices, owned dynamic data, i64/f64 vectors, composite ownership flow, generic reference/slice IR, native vector runtime, and Linux x86-64 composite-vector execution. The recent self-host campaigns were missing mappings into some of those contracts; they were not evidence that the language needed a new ownership system.
+
+The main process correction is D-011:
+
+NEW REPRESENTATION REQUIRES A REUSE AUDIT FIRST.
+
+Every new campaign must classify requirements as REUSE_DIRECTLY, PORT_TO_SELFHOST, ADAPT_EXISTING_CONTRACT, GENUINELY_MISSING, or HISTORICAL_OR_STALE_ONLY before adding opcodes, ABI rules, ownership semantics, runtime representations, or external dependencies.
+
+For the scientific path, direct existing f64-vector/borrow semantics must be qualified before PR-local TAGG aggregate emission is treated as a prerequisite. Repository-wide inspection classifies sqrt as genuinely missing; however, the existing builtin/CALL/TCALL/runtime-helper architecture must be evaluated before inventing a new IR or Assembly opcode.
+
+Material documentation drift was also found across old milestone planning docs, later execution reports, broad AI/capability manifests, and current implementation. Exact-head executable evidence and matching normative/later closure evidence take precedence over stale summaries.
+
+Canonical audit:
+
+research-lab/reconciliations/SELFHOST_CAPABILITY_REUSE_AUDIT_20260920.md
