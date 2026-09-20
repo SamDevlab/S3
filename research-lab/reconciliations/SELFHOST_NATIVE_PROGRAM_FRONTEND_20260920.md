@@ -98,7 +98,12 @@ NATIVE_LINUX_TEST_COUNT=the focused file passed with exit 0 on Linux x86-64; pyt
 NATIVE_LINUX_HEAD=bf79e618c64b96d2be5640b4f2949b829df10b5c
 COMPILEALL=PASS
 DIFF_CHECK=PASS
-FULL_SUITE=NOT_RUN_BY_POLICY
+FULL_SUITE=PASS
+FULL_SUITE_HEAD=bf79e618c64b96d2be5640b4f2949b829df10b5c
+FULL_SUITE_RESULT=4002 passed, 311 skipped, 572 subtests passed
+FULL_SUITE_EXIT=0
+FULL_SUITE_DURATION_SECONDS=4952.20
+FULL_SUITE_TRANSCRIPT=C:/Users/samue/AppData/Local/Temp/s3-pr304-full-suite-20260920-060307.txt
 ```
 
 The PR's natural GitHub Actions run failed before execution: all observed jobs
