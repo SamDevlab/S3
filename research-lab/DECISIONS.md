@@ -96,3 +96,34 @@ During the 2026-09 native frontend/self-hosting campaign, substantial evidence a
 Operational rule:
 
 Do not add documentation overhead to every micro-commit. Perform knowledge closure at meaningful campaign checkpoints and campaign end, consolidating multiple milestones when they belong to one megacampaign.
+
+
+## D-010 — Semantic milestone size and delivery boundary are separate
+
+Decision:
+
+Keep semantic/frontend milestones small enough to reason about and test, but do not require one branch/PR/report cycle for every microscopic grammar capability.
+
+After PRs #301–#303, the native frontend moves to a larger coherent campaign:
+
+```text
+NATIVE_PROGRAM_FRONTEND
+```
+
+with internal milestones such as local binding, assignment, parameters, calls and control-flow capability as justified by the real grammar.
+
+Reason:
+
+The #301 → #302 → #303 sequence validated incremental semantic replacement, but repeated PR/documentation/gate overhead became disproportionate to the size of each capability.
+
+Operational rule:
+
+```text
+SMALL_INTERNAL_MILESTONES
+        !=
+SMALL_PR_BOUNDARIES
+```
+
+Use focused tests per milestone, broader validation at meaningful checkpoints, and full/native qualification at campaign closure or other high-value boundaries.
+
+Stop the larger campaign only for an architectural blocker, required redesign, scope frontier, or completed campaign objective.
