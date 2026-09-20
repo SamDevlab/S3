@@ -11,7 +11,7 @@ BASE_PR=304
 BASE_HEAD=bf79e618c64b96d2be5640b4f2949b829df10b5c
 BRANCH=feat/s3-native-semantic-execution
 FUNCTIONAL_HEAD=34a923f84db7ff8d4f9b7cf9083f272169cc7524
-FINAL_DOCS_HEAD=4fb69f0b
+FINAL_DOCS_HEAD=095c67b894c2d4162a8c7503f523f4b13155f0ae
 PR=305
 PR_STATE=OPEN_DRAFT
 ```
@@ -43,6 +43,11 @@ FULL_SUITE_SHA=34a923f84db7ff8d4f9b7cf9083f272169cc7524
 FULL_SUITE_EXIT=0
 TRANSCRIPT=scratch/s3-native-semantic-execution-full-suite-20260920-093742.txt
 ```
+
+The natural GitHub Actions run for the documentary HEAD failed before job
+steps started: run `35514987171` reported ten failed jobs with empty `steps`
+lists. No remote test executed and no rerun was performed. This is classified
+as infrastructure dispatch failure.
 
 ## What remains unproven
 
