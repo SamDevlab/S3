@@ -21,6 +21,35 @@ Current speculative language-design idea:
 
 `IC-014` records implicit function signatures / semantic type inference separately from numeric representation-width selection. It is deferred and must not alter the stable self-hosting target.
 
+### 2026-09-20 update — PR #303 statement sequence complete
+
+PR #303 is now an open Draft on `feat/s3-native-statement-sequence`, stacked on #302.
+
+```text
+FUNCTIONAL_HEAD=fa379629a7491458ca3a6d9a567ef7fe01eb5885
+FINAL_HEAD=6231eb676ea3f8a67461a2bd2d6db82aea753f86
+FINAL_DELTA=DOCS_ONLY
+
+NATIVE_STATEMENT_SEQUENCE=PASS
+VARIABLE_STATEMENT_COUNT=PASS
+STATEMENT_ORDER_PRESERVED=PASS
+BLOCK_BOUNDARY=PASS
+TRAILING_SOURCE_REJECTION=PASS
+LINUX_NATIVE=55 passed
+FULL_SUITE=PASS
+REFERENCE_FALLBACK=NONE
+```
+
+The native parser frontier is now `PARTIAL_EXPRESSION_CORE_WITH_IDENTIFIERS_AND_STATEMENT_SEQUENCE`.
+
+Remote CI again failed before step execution (10 jobs in 2–3 seconds with `steps=[]`); no remote test executed and no rerun was performed. Treat this as infrastructure dispatch failure, not code failure.
+
+The next technical blocker is `NATIVE_LOCAL_BINDING`, but the process boundary changes here: #303 is the last intentionally microscopic frontend PR. The next phase is one larger `NATIVE_PROGRAM_FRONTEND` campaign with internal semantic milestones, focused intermediate tests, broader checkpoint validation and consolidated knowledge closure.
+
+Detailed reconciliation:
+
+`research-lab/reconciliations/SELFHOST_STATEMENT_SEQUENCE_20260920.md`
+
 ---
 
 
