@@ -4,7 +4,7 @@
 DATE=2026-08-15
 STATUS=ACTIVE
 OFFICIAL_ZETTEL_IDS_ALLOCATED=NO
-CANDIDATE_COUNT=13
+CANDIDATE_COUNT=16
 ```
 
 These are second-order syntheses produced by connecting existing supported and open notes after the P13.R0 literature rebase.
@@ -479,6 +479,20 @@ When self-hosting is eventually authorized, select one semantically bounded comp
 
 ---
 
+
+### 2026-09-19 evidence update
+
+PRs #301 and #302 provide direct bounded evidence for this synthesis. The self-hosting frontend advanced by keeping an independent hosted frontend as oracle while replacing lexer/parser decisions with ordinary S3-native execution in small semantic slices. Expression precedence/grouping and identifier primaries were added without reference fallback, with Linux x86-64 native qualification and full-suite validation on the functional heads.
+
+This materially strengthens IC-012, but the candidate remains temporary until the approach is exercised across broader statement/block/function-body and later semantic stages. The current evidence supports the method for the bounded source-frontend subset, not a universal self-hosting theorem.
+
+
+### 2026-09-20 evidence update — statement sequence
+
+PR #303 extended the same replacement strategy from expression/identifier parsing to variable-length statement sequences. Single-, two-, three- and variable-count statement blocks passed, order and block boundaries were preserved, trailing source was rejected, Linux x86-64 qualification reached 55 focused passes, and the full suite passed on the functional head with no reference fallback.
+
+This further strengthens IC-012 for the native source-frontend domain: semantic-layer replacement has now survived a transition from expression trees to ordered statement structure. It remains temporary until broader program structure/semantics exercise the same method.
+
 ## IC-013 — Evaluator/compiler agreement can be a bounded differential oracle
 
 Synthesis:
@@ -583,4 +597,146 @@ PROMOTE_TO_ZETTEL=NO
 ```text
 P14_RECONCILIATION_ZETTELS=S3-ZK-0076..S3-ZK-0079
 PROMOTE_TO_ZETTEL=NO for IC-001,IC-005,IC-006,IC-007,IC-011
+```
+### 2026-09-19 evidence update
+
+The independent GenericLexer/GenericParser/SyntaxArena path used by PRs #301/#302 acted as a bounded differential oracle for the separately implemented native S3 frontend. Structural agreement covered token/syntax behavior while native execution was qualified on Linux x86-64.
+
+This strengthens the claim that independent reference/compiler agreement is useful when implementation independence and semantic scope are explicit. It does not yet establish the need for a second full evaluator for all of S3.
+
+
+
+### 2026-09-20 evidence update — statement sequence
+
+PR #303 used the same independent-oracle boundary to validate ordered block structure and variable statement count while the native S3 parser made the covered parsing decisions. This broadens the oracle evidence beyond isolated expressions/primaries.
+
+The result strengthens bounded differential-oracle usefulness, but still does not establish a universal evaluator/compiler agreement framework for all S3 semantics.
+
+## IC-014 — Implicit signatures and numeric representation inference are separate research questions
+
+Synthesis:
+
+A concise surface form such as:
+
+```s3
+fn soma(a, b):
+    return a + b
+```
+
+contains at least two separable research problems:
+
+```text
+SIGNATURE / SEMANTIC TYPE INFERENCE
+        !=
+PHYSICAL NUMERIC REPRESENTATION SELECTION
+```
+
+A future compiler could infer semantic relationships among parameters/returns while still treating concrete integer width as a later representation decision. This connects to representation-flexibility and commitment-boundary ideas, but does not imply that runtime width promotion is desirable.
+
+Connections:
+
+```text
+[[S3-ZK-0016]]
+[[S3-ZK-0017]]
+IC-005
+IC-008
+```
+
+Why temporary:
+
+Full parameter inference can require type variables, constraint solving, call-site/interprocedural information, overload resolution and recursion handling. Automatic range-based integer-width selection adds control-flow/range analysis and ABI concerns. Dynamic promotion from i32 to i64 during native execution would complicate stack layout, registers, SSA, aggregates, optimization and FFI.
+
+Current bounded direction:
+
+- keep explicit types as the stable self-hosting target;
+- if revisited, test optional return inference separately from parameter inference;
+- treat compile-time representation selection separately from semantic type inference;
+- keep explicit concrete widths where ABI/FFI/binary contracts require them;
+- prefer static width selection before execution over dynamic widening.
+
+Candidate experiment:
+
+Only after the native frontend/type pipeline is mature, choose one deliberately small subset (for example literal-only return inference or one local arithmetic constraint) and measure whether the reduction in annotation burden justifies the semantic/compiler complexity. Do not make this part of the current self-hosting campaign.
+
+
+## IC-015 — Self-hosting is an enabling milestone, not the terminal objective
+
+Synthesis:
+
+```text
+SELF_HOSTING
+    ↓
+PROGRAM CAPABILITY
+    ↓
+REAL WORKLOAD
+    ↓
+INDEPENDENT CORRECTNESS
+    ↓
+RESOURCE MEASUREMENT
+    ↓
+USEFUL COMPUTE / COST
+```
+
+Self-hosting matters when it improves autonomy, correctness, compiler control, implementation independence or the ability to execute useful programs. It is not by itself the terminal success criterion for S3.
+
+Why temporary:
+
+The current native frontend campaign has not yet reached a representative scientific workload. The strategic claim must be tested by carrying at least one useful program from source through native execution and independent measurement.
+
+Candidate experiment:
+
+Use the first scientific-kernel-oriented workload as a post-frontend maturity gate. Require semantic correctness before performance measurement and report cost per work unit rather than treating self-host completion as the endpoint.
+
+---
+
+## IC-016 — External useful workloads should drive post-core language capability selection
+
+Synthesis:
+
+After a minimal coherent language core exists, additional language/compiler capability should be prioritized by the requirements of useful external workloads rather than by syntax completeness alone.
+
+```text
+USEFUL WORKLOAD
+    ↓
+REQUIRED LANGUAGE/SEMANTIC CAPABILITY
+    ↓
+IMPLEMENT MINIMUM MISSING CAPABILITY
+    ↓
+CORRECTNESS
+    ↓
+MEASUREMENT
+```
+
+Current motivating workload:
+
+A future RMSD / pairwise geometric kernel derived from the Biolab molecular-discovery workflow can act as one capability driver, without requiring the S3 compiler repository to absorb Biolab itself.
+
+Why temporary:
+
+One workload can bias a language design if treated as universal. The candidate therefore proposes workload-driven prioritization, not workload-specific semantics.
+
+Candidate experiment:
+
+For the next native-program-frontend campaign, map the capabilities required by a small scientific kernel (local state, iteration, calls, numeric operations, indexed data if needed). Prefer those capabilities over unrelated language expansion, while preserving the real S3 grammar and architecture.
+
+### 2026-09-20 evidence update — native program frontend closure
+
+PR #304 extended the bounded native source slice through typed locals,
+assignment, typed parameters, calls, relational expressions and `while`
+structure. Focused differential tests passed on Windows and Linux x86-64.
+The evidence remains representational: no native semantic/lowering/execution
+pipeline, `f64`, indexed data layout, or math primitive was introduced.
+
+This strengthens IC-012's bounded semantic-layer replacement discipline and
+provides directional evidence for IC-015/IC-016: a real program structure and
+the scientific-kernel requirement map are more informative than syntax
+completeness. It does not promote any candidate or establish a scientific
+kernel implementation. IC-014 remains unchanged because all signatures in
+the slice are explicitly typed.
+
+```text
+PR304_NATIVE_PROGRAM_FRONTEND=PASS_FOR_REPRESENTATIONAL_SUBSET
+SCIENTIFIC_KERNEL_READINESS=BLOCKED_ARCHITECTURALLY
+MICROKERNEL_EXECUTED=NO
+PROMOTE_TO_ZETTEL=NO
 ```
