@@ -69,3 +69,30 @@ The production milestone should later use the precise winning capability name.
 Reason:
 
 Avoid roadmap-driven confirmation bias.
+
+
+## D-009 — Every meaningful campaign closes its knowledge loop
+
+Decision:
+
+A compiler, self-hosting, correctness, performance or infrastructure campaign is not considered fully reconciled until its durable knowledge delta has been captured in the Research Lab.
+
+The closeout must distinguish:
+
+```text
+SUCCESS
+FAILURE
+NEGATIVE_RESULT
+INCONCLUSIVE
+INFRASTRUCTURE_BLOCKER
+```
+
+and connect the result to existing Zettels/insight candidates when possible.
+
+Reason:
+
+During the 2026-09 native frontend/self-hosting campaign, substantial evidence accumulated in PRs #301 and #302 while the Zettelkasten remained frozen at its 2026-08 state. The implementation progressed, but the research memory did not. This creates avoidable context loss and increases the chance that future agents repeat failed lines or fail to reuse validated ideas.
+
+Operational rule:
+
+Do not add documentation overhead to every micro-commit. Perform knowledge closure at meaningful campaign checkpoints and campaign end, consolidating multiple milestones when they belong to one megacampaign.
