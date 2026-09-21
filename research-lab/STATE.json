@@ -1001,7 +1001,7 @@
     "full_suite_head": "bf79e618c64b96d2be5640b4f2949b829df10b5c",
     "full_suite_result": "4002 passed, 311 skipped, 572 subtests passed",
     "full_suite_exit": 0,
-    "full_suite_duration_seconds": 4952.20,
+    "full_suite_duration_seconds": 4952.2,
     "full_suite_transcript": "C:/Users/samue/AppData/Local/Temp/s3-pr304-full-suite-20260920-060307.txt",
     "remote_ci": "FAIL_PRE_EXECUTION",
     "remote_ci_failure_cause": "INFRA_DISPATCH",
@@ -1183,7 +1183,14 @@
     "draft": true,
     "native_i64_semantic_execution": true,
     "first_real_program_result": 42,
-    "arbitrary_integer_literals": [0, 1, 7, 17, 100, 999],
+    "arbitrary_integer_literals": [
+      0,
+      1,
+      7,
+      17,
+      100,
+      999
+    ],
     "while_iterations": "ZERO_ONE_AND_MANY",
     "focused_semantic": "14 passed, 1 skipped",
     "adjacent_frontend": "PASS",
@@ -1263,7 +1270,10 @@
     "reference_fallback": "NONE",
     "remote_checks": "FAIL_PRE_EXECUTION",
     "remote_check_cause": "INFRA_DISPATCH",
-    "remote_check_runs": [35528321750, 35528321753],
+    "remote_check_runs": [
+      35528321750,
+      35528321753
+    ],
     "remote_steps_started": false,
     "remote_test_executed": false,
     "remote_ci_rerun": false,
@@ -1323,5 +1333,31 @@
     "remote_checks": "NOT_USED_AS_CORRECTNESS_GATE",
     "shutdown_executed": false,
     "reconciliation": "research-lab/reconciliations/SCIENTIFIC_KERNEL_0_1_20260920.md"
+  },
+  "selfhost_capability_reuse_audit_20260920": {
+    "status": "COMPLETE",
+    "canonical_main": "4c7aaf4ad59fdacdd83f230e11a0bd979081c80a",
+    "audited_pr": 308,
+    "audited_head": "db0f6b1533938c925daa603209d76d94bbe72485",
+    "root_cause": "capability authority drift and incomplete reuse preflight caused existing language/runtime/native contracts to be treated as missing",
+    "mandatory_preflight": "REUSE_DIRECTLY / PORT_TO_SELFHOST / ADAPT_EXISTING_CONTRACT / GENUINELY_MISSING / HISTORICAL_OR_STALE_ONLY",
+    "key_existing_capabilities": [
+      "M1.32 i64/f64 native numeric stack",
+      "M1.34 f64 FFI and borrowed slice ABI",
+      "M1.35/M1.39 lexical borrow and owned dynamic data",
+      "M1.40 i64/f64 vector runtime and native x86-64 support",
+      "M1.51/M1.52 implemented composite ownership flow",
+      "M1.55 vector<T> adapter",
+      "M1.62 borrowed views",
+      "generic reference/slice IR and verifier",
+      "S3 1.2 composite-vector Linux x86-64 qualification"
+    ],
+    "genuinely_missing": [
+      "sqrt semantic/runtime/native contract"
+    ],
+    "scientific_path_correction": "direct f64-vector/borrow path should be qualified before PR-local TAGG emission is treated as a workload prerequisite",
+    "documentation_drift": true,
+    "decision": "D-011",
+    "reconciliation": "research-lab/reconciliations/SELFHOST_CAPABILITY_REUSE_AUDIT_20260920.md"
   }
 }
