@@ -64,6 +64,7 @@ NUMERIC_CONVERSION_BUILTINS = {
 
 _DYNAMIC_BUILTIN_LOCATION = SourceLocation(0, 1, 1)
 _DYNAMIC_BUILTINS: dict[str, tuple[tuple[ast.DeclaredType, ...], ast.TypeName]] = {
+    "sqrt": ((ast.TypeName.F64,), ast.TypeName.F64),
     "bytes_new": ((ast.TypeName.I64,), ast.TypeName.BYTES),
     "bytes_len": ((ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.I64),
     "bytes_capacity": ((ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.I64),

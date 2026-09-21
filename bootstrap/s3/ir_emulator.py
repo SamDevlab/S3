@@ -35,7 +35,7 @@ from .verifier import verify_ir
 from .numeric import (
     NumericError, NumericValue, checked_i64_add, checked_i64_sub, checked_i64_mul,
     checked_i64_div, checked_i64_neg, checked_i64_to_tryte,
-    validate_f64, validate_i64,
+    sqrt_f64, validate_f64, validate_i64,
 )
 
 
@@ -382,6 +382,8 @@ def _reference_owner(value):
 
 
 def _execute_dynamic_builtin(name: str, args: tuple[object, ...]) -> object:
+    if name == "sqrt":
+        return sqrt_f64(args[0])
     if name == "host_capability_grant":
         return resource_runtime.grant(args[0])
     if name == "resource_open":

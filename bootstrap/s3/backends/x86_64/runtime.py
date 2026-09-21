@@ -165,6 +165,13 @@ __s3_builtin_bytes_new:
 __s3_builtin_text_new:
     jmp __s3_dyn_new
 
+.type __s3_builtin_sqrt,@function
+__s3_builtin_sqrt:
+    movq xmm0,rdi
+    sqrtsd xmm0,xmm0
+    movq rax,xmm0
+    ret
+
 .type __s3_builtin_bytes_len,@function
 __s3_builtin_bytes_len:
     mov rax,[rdi]

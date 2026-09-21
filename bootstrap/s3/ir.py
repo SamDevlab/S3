@@ -85,6 +85,7 @@ def _decode_composite_vector_runtime_name(
 
 
 DYNAMIC_BUILTIN_SIGNATURES: dict[str, tuple[tuple[IRType, ...], tuple[IRType, ...]]] = {
+    "sqrt": ((IRType.F64,), (IRType.F64,)),
     "bytes_new": ((IRType.I64,), (IRType.BYTES,)),
     "bytes_len": ((IRType.REFERENCE,), (IRType.I64,)),
     "bytes_capacity": ((IRType.REFERENCE,), (IRType.I64,)),
