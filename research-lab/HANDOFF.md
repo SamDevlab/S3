@@ -1361,3 +1361,32 @@ REFERENCE_FALLBACK=NONE
 Detailed reconciliation:
 
 `research-lab/reconciliations/SELFHOST_NATIVE_INDEXED_DATA_20260920.md`
+
+### 2026-09-20 update - scientific kernel 0.1
+
+PR #309 is an open Draft stacked on PR #308. The campaign reused the existing
+typed f64 vector, borrowed-reference, CALL, IR, emulator and x86 runtime
+contracts. It added the smallest missing math capability, `sqrt(f64) -> f64`,
+with hosted IEEE edge-case behavior and a direct SSE2 `sqrtsd` helper. RMSD is
+implemented as source-level `sqrt(SSD / N)` over direct f64 vectors.
+
+```text
+PR309=OPEN_DRAFT
+BASE_PR=308
+BASE_HEAD=db0f6b1533938c925daa603209d76d94bbe72485
+FUNCTIONAL_HEAD=e07d0b5464bf472b2ca18993f3e196a234ff0fc5
+DIRECT_F64_VECTOR_SSD_HOSTED=PASS_14_0
+SQRT_HOSTED=PASS
+RMSD_HOSTED=PASS
+LINUX_X86_64_NATIVE=PASS
+FULL_SUITE_FINAL=PASS
+FULL_SUITE_FINAL_EXIT=0
+BENCHMARK=NOT_RUN
+MERGED=NO
+SHUTDOWN=NO
+```
+
+The reuse audit is `research-lab/reconciliations/SELFHOST_CAPABILITY_REUSE_AUDIT_20260920.md`.
+No new value representation was needed. Keep the RMSD result as a correctness
+and native-capability checkpoint; do not infer scientific benchmark readiness
+until a separate controlled benchmark campaign is authorized.

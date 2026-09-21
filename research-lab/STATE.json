@@ -1298,5 +1298,30 @@
     "compileall": "PASS",
     "diff_check": "PASS",
     "reconciliation": "research-lab/reconciliations/SELFHOST_NATIVE_AGGREGATE_REFERENCES_20260920.md"
+  },
+  "scientific_kernel_0_1_20260920": {
+    "status": "COMPLETE_DRAFT_NATIVE_RMSD",
+    "pr": 309,
+    "base_pr": 308,
+    "base_head": "db0f6b1533938c925daa603209d76d94bbe72485",
+    "branch": "feat/s3-scientific-kernel-rmsd-v01",
+    "functional_head": "e07d0b5464bf472b2ca18993f3e196a234ff0fc5",
+    "merged": false,
+    "capability_reuse_audit": "PASS",
+    "new_representation": false,
+    "direct_f64_vector_ssd_hosted": "PASS_14_0",
+    "sqrt_hosted": "PASS",
+    "sqrt_ieee_edge_cases": "PASS",
+    "rmsd_hosted": "PASS_SQRT_14_OVER_3",
+    "linux_x86_64_native": "PASS",
+    "native_result": "program returned: -1",
+    "full_suite_final": "PASS",
+    "full_suite_final_exit": 0,
+    "benchmark": "NOT_RUN",
+    "s3_benchmarks_changed": false,
+    "biolab_changed": false,
+    "remote_checks": "NOT_USED_AS_CORRECTNESS_GATE",
+    "shutdown_executed": false,
+    "reconciliation": "research-lab/reconciliations/SCIENTIFIC_KERNEL_0_1_20260920.md"
   }
 }

@@ -127,3 +127,29 @@ SMALL_PR_BOUNDARIES
 Use focused tests per milestone, broader validation at meaningful checkpoints, and full/native qualification at campaign closure or other high-value boundaries.
 
 Stop the larger campaign only for an architectural blocker, required redesign, scope frontier, or completed campaign objective.
+
+
+## D-011 — New representation requires a reuse audit first
+
+Decision:
+
+```text
+Before adding a new scientific-kernel value representation, audit the
+existing semantic, IR, CALL, vector, reference, slice and native contracts.
+Prefer direct reuse, then a narrow contract adaptation, and only then a new
+representation when the existing model is factually insufficient.
+```
+
+Reason:
+
+The native frontend campaigns already established typed scalar, vector,
+reference and slice machinery. Adding a parallel scientific representation
+without checking those contracts would duplicate ownership and execution
+semantics and could hide whether the actual missing capability is only a math
+primitive such as `sqrt`.
+
+Operational rule:
+
+```text
+CAPABILITY_REUSE_AUDIT=REQUIRED_BEFORE_NEW_REPRESENTATION
+```
