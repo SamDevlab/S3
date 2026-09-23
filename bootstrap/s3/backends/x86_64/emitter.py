@@ -542,6 +542,9 @@ class X8664Emitter:
         *,
         include_budget: bool = True,
     ) -> list[str]:
+        self.current_function = function
+        self.current_block = block_name
+        self.current_instruction = compare
         _, left, right = compare.registers
         lines = (
             self._instruction_instrumentation(function, block_name, compare)

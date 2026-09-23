@@ -8,12 +8,22 @@ from pathlib import Path
 
 import pytest
 
+from bootstrap.s3.assembly import (
+    AssemblyBlock,
+    AssemblyFunction,
+    AssemblyInstruction,
+    AssemblyOpcode,
+    AssemblyParameter,
+    AssemblyProgram,
+    AssemblyType,
+)
 from bootstrap.s3.backends.x86_64.backend import (
     NATIVE_MAX_INSTRUCTIONS,
     X8664Backend,
     generate_native_assembly,
 )
 from bootstrap.s3.backends.x86_64.diagnostics import NativeBackendError
+from bootstrap.s3.backends.x86_64.emitter import X8664Emitter
 from bootstrap.s3.backends.x86_64.instruction_budget import (
     InstructionBudgetMode,
     budget_plan_diagnostics,
@@ -240,6 +250,90 @@ def test_exact_segment_codegen_has_exact_precharge_and_scalar_slow_path() -> Non
     assert f"add qword ptr [rip + __s3_instruction_count], {weight}" in exact
     assert "__s3_budget_0_slow:" in exact
     assert "inc qword ptr [rip + __s3_instruction_count]" in exact
+
+
+def test_fast_fused_compare_keeps_context_for_guarded_register_reads() -> None:
+    compare = AssemblyFunction(
+        "compare",
+        AssemblyType.I64,
+        (
+            AssemblyParameter(
+                0,
+                AssemblyType.REFERENCE,
+                AssemblyType.I64,
+                reference_is_slice=True,
+            ),
+            AssemblyParameter(1, AssemblyType.I64),
+            AssemblyParameter(2, AssemblyType.I64),
+        ),
+        ((3, AssemblyType.TRIT), (4, AssemblyType.I64)),
+        (
+            AssemblyBlock(
+                "entry",
+                (
+                    AssemblyInstruction(AssemblyOpcode.TCMP, (3, 1, 2)),
+                    AssemblyInstruction(
+                        AssemblyOpcode.TBR3,
+                        (3,),
+                        labels=("negative", "neutral", "positive"),
+                    ),
+                ),
+            ),
+            AssemblyBlock(
+                "negative",
+                (
+                    AssemblyInstruction(AssemblyOpcode.TCONST, (4,), immediate=-1),
+                    AssemblyInstruction(AssemblyOpcode.TRET, (4,)),
+                ),
+            ),
+            AssemblyBlock(
+                "neutral",
+                (
+                    AssemblyInstruction(AssemblyOpcode.TCONST, (4,), immediate=0),
+                    AssemblyInstruction(AssemblyOpcode.TRET, (4,)),
+                ),
+            ),
+            AssemblyBlock(
+                "positive",
+                (
+                    AssemblyInstruction(AssemblyOpcode.TCONST, (4,), immediate=1),
+                    AssemblyInstruction(AssemblyOpcode.TRET, (4,)),
+                ),
+            ),
+        ),
+        slice_registers=(0,),
+    )
+    main = AssemblyFunction(
+        "main",
+        AssemblyType.I64,
+        (),
+        ((0, AssemblyType.I64),),
+        (
+            AssemblyBlock(
+                "entry",
+                (
+                    AssemblyInstruction(AssemblyOpcode.TCONST, (0,), immediate=0),
+                    AssemblyInstruction(AssemblyOpcode.TRET, (0,)),
+                ),
+            ),
+        ),
+    )
+
+    emitter = X8664Emitter(
+        AssemblyProgram((compare, main)),
+        max_frames=100,
+        max_instructions=100,
+        instruction_budget_mode=InstructionBudgetMode.EXACT_SEGMENT,
+    )
+    exact = emitter.emit()
+    failure_contexts = [site.prefix for site in emitter.failure_sites]
+
+    assert exact.count("cmp byte ptr") >= 2
+    assert any(
+        "runtime error [uninitialized register] in function 'compare'" in context
+        and "(block entry, TCMP)" in context
+        for context in failure_contexts
+    )
 
 
 def test_single_segment_w_minus_one_exact_and_w_plus_one_boundaries(
