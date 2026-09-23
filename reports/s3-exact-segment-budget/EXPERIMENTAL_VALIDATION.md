@@ -60,9 +60,32 @@ and opcode. This was discovered by the JSMN build preflight before correctness
 or timing; no benchmark timing was performed for that failed attempt.
 
 E0 equivalence remains scoped to serialized execution, including synchronous
-callback re-entry at a call barrier; concurrent FFI entry is not qualified. No
-performance result is claimed here. The independent S3-Benchmarks campaign has
-not yet measured this source SHA.
+callback re-entry at a call barrier; concurrent FFI entry is not qualified.
+
+## Independent benchmark validation
+
+The independent Linux x86-64 S3-Benchmarks campaign measured this exact source
+freeze (`1a76e341098b54a639fec22eecea362cc243c46f`) against control
+`e07d0b5464bf472b2ca18993f3e196a234ff0fc5`, using benchmark source freeze
+`84347c9c400839c739241728f8e90f4a1273c33f`. Correctness and independent-session
+reproducibility passed for RMSD, XSBench, and JSMN at O0/O1. P2 recovered
+92.14%-104.56% of the measured P0-to-PNEG excess across the six cells and
+materially outperformed P1 in all six. Values above 100% mean that the measured
+P2 time was below the PNEG diagnostic lower bound; PNEG remains unsafe and is
+not a candidate.
+
+P2 increased `.text` by 39.17% for RMSD, 53.35%-53.57% for XSBench, and
+58.27%-58.54% for JSMN. Exact slow-path duplication is structurally present;
+its dominance over the remaining runtime difference is not independently
+established. No production performance claim or backend promotion follows.
+The next and only budget-line action is hardening the existing exact slow path
+while retaining E0 and byte-identical default P0 behavior.
+
+The complete result and raw evidence are published in S3-Benchmarks PR #24,
+currently OPEN/Draft/unmerged:
+`https://github.com/SamDevlab/S3-Benchmarks/pull/24`. The benchmark report head
+is `c69c5bf` (report-only commits after benchmark source freeze); PR #23 remains
+OPEN/Draft/unmerged.
 
 Only documentation may change after the frozen source gates. Any subsequent
 source, test, or executable-logic change invalidates the full-suite gate and
