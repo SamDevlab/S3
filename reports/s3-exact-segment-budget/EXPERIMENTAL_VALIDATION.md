@@ -30,15 +30,27 @@ Classification: `DEFAULT_MODE_BYTE_STABILITY=PASS` for this frozen corpus.
 - Same focused group on Windows: terminal exit 0; platform-native cases were
   skipped there and run on Linux instead.
 - `python -m compileall -q bootstrap/s3`: passed on Windows for the current
-  implementation before the final diagnostic-helper micro-adjustment; focused
-  tests and `py_compile` passed after that adjustment. Final compileall remains
-  a source-freeze gate.
-- `git diff --check`: passed before report authoring; final check remains
-  pending.
+  implementation after the final diagnostic-helper adjustment.
+- `git diff --check`: passed before this documentation-only update; rerun after
+  the update.
 
-## Pending; do not infer
+## Frozen source validation
 
-At the time of this snapshot, the one full S3 suite at source freeze has not
-run, the source SHA has not been frozen, and S3-Benchmarks has not consumed a
-candidate SHA. No performance result is claimed. Linux native E0 evidence is
-scoped to serial execution; concurrent FFI entry is not qualified.
+Final tested source SHA: `f4353c1b5bc3557dd05188d893f85de264300d5f`.
+
+Exactly one complete S3 suite ran on the Linux x86-64 VM from a clean detached
+worktree at that SHA, with `S3_NATIVE_REQUIRED=1`. It terminated with exit 0:
+4,372 passed, 1 skipped, 0 failed, and 0 errors. The immutable transcript is
+`/home/vboxuser/tmp/s3-full-suite-f4353c1b-20260923.log` and records both the
+tested SHA and `FULL_SUITE_EXIT=0`. The checkout remained clean at the tested
+SHA after the run.
+
+The focused Linux x86-64 E0 module separately passed all 22 tests. The complete
+suite also ran with native validation required. E0 equivalence remains scoped
+to serialized execution, including synchronous callback re-entry at a call
+barrier; concurrent FFI entry is not qualified. No performance result is
+claimed here. S3-Benchmarks validation has not yet consumed this candidate SHA.
+
+Only this validation report may change after the frozen source gates. Any
+subsequent source, test, or executable-logic change invalidates the full-suite
+gate and requires a new tested source SHA and one new full-suite run.
