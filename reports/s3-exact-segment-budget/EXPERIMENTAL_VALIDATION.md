@@ -22,35 +22,48 @@ Classification: `DEFAULT_MODE_BYTE_STABILITY=PASS` for this frozen corpus.
 
 ## Current focused gates
 
-- New exact-segment structural and Linux native E0 module: 22 passed on the
-  Linux x86-64 VM with `S3_NATIVE_REQUIRED=1`.
-- Focused instruction-limit, native x86-64, native integration, FFI,
-  registry/routing, Assembly verifier/control-flow, optimizer, and compilation
-  context group: terminal exit 0 on the Linux VM.
-- Same focused group on Windows: terminal exit 0; platform-native cases were
-  skipped there and run on Linux instead.
-- `python -m compileall -q bootstrap/s3`: passed on Windows for the current
-  implementation after the final diagnostic-helper adjustment.
-- `git diff --check`: passed before this documentation-only update; rerun after
-  the update.
+- On the final candidate, the focused group
+  `test_exact_segment_instruction_budget.py`,
+  `test_register_init_native_safety.py`, `test_native_x86_64.py`, and
+  `test_native_x86_64_integration.py` completed on Linux x86-64 with
+  `S3_NATIVE_REQUIRED=1` and exit 0. It includes the regression for fused
+  `TCMP/TBR3` with guarded register reads.
+- The benchmark-side JSMN build-only preflight produced all eight P0/P1/P2/PNEG
+  artifacts for O0/O1. Candidate P0 assembly matched the control in both
+  optimization modes. This preflight performed no timing.
+- `python -m compileall -q bootstrap/s3 tests`: passed on Linux at the final
+  candidate.
+- `git diff --check`: passed on the frozen source before this documentation-only
+  update; it is rerun after the update.
 
 ## Frozen source validation
 
-Final tested source SHA: `f4353c1b5bc3557dd05188d893f85de264300d5f`.
+Final tested source SHA: `1a76e341098b54a639fec22eecea362cc243c46f`.
 
 Exactly one complete S3 suite ran on the Linux x86-64 VM from a clean detached
 worktree at that SHA, with `S3_NATIVE_REQUIRED=1`. It terminated with exit 0:
-4,372 passed, 1 skipped, 0 failed, and 0 errors. The immutable transcript is
-`/home/vboxuser/tmp/s3-full-suite-f4353c1b-20260923.log` and records both the
-tested SHA and `FULL_SUITE_EXIT=0`. The checkout remained clean at the tested
-SHA after the run.
+4,373 passed, 1 skipped, 0 failed, and 0 errors. The progress transcript
+contains 4,374 collected outcomes, including one skip marker; the `-q` setting
+is applied both by project configuration and the invocation, so pytest's final
+count summary is suppressed. The immutable host transcript is
+`%TEMP%/s3-full-suite-1a76e341-20260923.log` (SHA-256
+`1b92f9a4009b7e8f50b91e5ab47fdba1a699acfc6ecdbb1a9af3a27a7f455d4e`), with
+execution status in the adjacent `.status` file. The run started at
+`2026-09-23T09:41:32-03:00`, ended at `2026-09-23T10:41:20-03:00`, and the
+checkout remained clean at the tested SHA.
 
-The focused Linux x86-64 E0 module separately passed all 22 tests. The complete
-suite also ran with native validation required. E0 equivalence remains scoped
-to serialized execution, including synchronous callback re-entry at a call
-barrier; concurrent FFI entry is not qualified. No performance result is
-claimed here. S3-Benchmarks validation has not yet consumed this candidate SHA.
+The candidate fixes missing diagnostic context in the exact-segment fused
+`TCMP/TBR3` path: context is now established before guarded register reads,
+including when fast-path accounting omits per-instruction instrumentation.
+The new regression verifies the runtime guard and failure-site function, block,
+and opcode. This was discovered by the JSMN build preflight before correctness
+or timing; no benchmark timing was performed for that failed attempt.
 
-Only this validation report may change after the frozen source gates. Any
-subsequent source, test, or executable-logic change invalidates the full-suite
-gate and requires a new tested source SHA and one new full-suite run.
+E0 equivalence remains scoped to serialized execution, including synchronous
+callback re-entry at a call barrier; concurrent FFI entry is not qualified. No
+performance result is claimed here. The independent S3-Benchmarks campaign has
+not yet measured this source SHA.
+
+Only documentation may change after the frozen source gates. Any subsequent
+source, test, or executable-logic change invalidates the full-suite gate and
+requires a new tested source SHA and one new full-suite run.
