@@ -270,13 +270,22 @@ class X8664Emitter:
         lines.append(f"    jmp {mangle_block(function.name, 'entry')}")
         function_liveness = analyze_liveness(function)
         if self.instruction_budget_mode is InstructionBudgetMode.EXACT_SEGMENT:
-            lines.extend(
-                self._emit_exact_segment_blocks(
-                    function,
-                    layout,
-                    function_liveness,
-                )
+            hot_lines, cold_lines = self._emit_exact_segment_blocks(
+                function,
+                layout,
+                function_liveness,
             )
+            lines.extend(hot_lines)
+            lines.append(f".size {symbol}, .-{symbol}")
+            if cold_lines:
+                lines.extend(
+                    (
+                        '.section .text.unlikely,"ax",@progbits',
+                        *cold_lines,
+                        ".section .text",
+                    )
+                )
+            return lines
         else:
             for block in function.blocks:
                 lines.append(f"{mangle_block(function.name, block.label)}:")
@@ -315,13 +324,14 @@ class X8664Emitter:
         function: AssemblyFunction,
         layout: FrameLayout,
         function_liveness,
-    ) -> list[str]:
+    ) -> tuple[list[str], list[str]]:
         plan = plan_budget_segments(function)
         by_block: dict[str, list] = {}
         for segment in plan.segments:
             by_block.setdefault(segment.block, []).append(segment)
 
         lines: list[str] = []
+        cold_lines: list[str] = []
         for block in function.blocks:
             lines.append(f"{mangle_block(function.name, block.label)}:")
             for segment in by_block.get(block.label, ()):
@@ -333,17 +343,17 @@ class X8664Emitter:
                     segment.logical_weight >= MIN_FAST_SEGMENT_WEIGHT
                     and segment.logical_weight <= self.max_instructions
                 ):
-                    lines.extend(
-                        self._emit_budgeted_segment(
-                            function,
-                            block,
-                            layout,
-                            function_liveness,
-                            segment.logical_weight,
-                            segment.first_instruction_index,
-                            segment.last_instruction_index,
-                        )
+                    segment_hot, segment_cold = self._emit_budgeted_segment(
+                        function,
+                        block,
+                        layout,
+                        function_liveness,
+                        segment.logical_weight,
+                        segment.first_instruction_index,
+                        segment.last_instruction_index,
                     )
+                    lines.extend(segment_hot)
+                    cold_lines.extend(segment_cold)
                 else:
                     lines.extend(
                         self._emit_instruction_sequence(
@@ -356,7 +366,7 @@ class X8664Emitter:
                             include_budget=True,
                         )
                     )
-        return lines
+        return lines, cold_lines
 
     def _emit_budgeted_segment(
         self,
@@ -367,11 +377,11 @@ class X8664Emitter:
         logical_weight: int,
         first_instruction_index: int,
         last_instruction_index: int,
-    ) -> list[str]:
+    ) -> tuple[list[str], list[str]]:
         segment_id = self._budget_segment_counter
         self._budget_segment_counter += 1
         slow_label = f".L__s3_budget_{segment_id}_slow"
-        done_label = f".L__s3_budget_{segment_id}_done"
+        continuation_label = f".L__s3_budget_{segment_id}_continue"
         remaining = self.max_instructions - logical_weight
         if remaining < 0:
             raise NativeBackendError("ineligible segment reached fast-path emitter")
@@ -415,9 +425,10 @@ class X8664Emitter:
 
         ends_control = block.instructions[last_instruction_index].is_terminator
         if not ends_control:
-            lines.append(f"    jmp {done_label}")
-        lines.append(f"{slow_label}:")
-        lines.extend(
+            lines.append(f"{continuation_label}:")
+
+        cold_lines = [f"{slow_label}:"]
+        cold_lines.extend(
             self._emit_instruction_sequence(
                 function,
                 block,
@@ -429,8 +440,8 @@ class X8664Emitter:
             )
         )
         if not ends_control:
-            lines.append(f"{done_label}:")
-        return lines
+            cold_lines.append(f"    jmp {continuation_label}")
+        return lines, cold_lines
 
     def _emit_instruction_sequence(
         self,

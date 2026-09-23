@@ -98,6 +98,26 @@ def _exact_native(program, *, max_instructions: int) -> str:
     ).generate(program)
 
 
+def _split_exact_cold_sections(assembly: str) -> tuple[str, str]:
+    marker = '.section .text.unlikely,"ax",@progbits\n'
+    restore = "\n.section .text\n"
+    hot_parts: list[str] = []
+    cold_parts: list[str] = []
+    cursor = 0
+    while True:
+        section_start = assembly.find(marker, cursor)
+        if section_start < 0:
+            hot_parts.append(assembly[cursor:])
+            break
+        hot_parts.append(assembly[cursor:section_start])
+        cold_start = section_start + len(marker)
+        cold_end = assembly.find(restore, cold_start)
+        assert cold_end >= 0
+        cold_parts.append(assembly[cold_start:cold_end])
+        cursor = cold_end + len(restore)
+    return "".join(hot_parts), "\n".join(cold_parts)
+
+
 def _native_toolchain() -> NativeToolchain:
     if platform.system() != "Linux" or platform.machine().lower() not in {
         "x86_64",
@@ -250,6 +270,123 @@ def test_exact_segment_codegen_has_exact_precharge_and_scalar_slow_path() -> Non
     assert f"add qword ptr [rip + __s3_instruction_count], {weight}" in exact
     assert "__s3_budget_0_slow:" in exact
     assert "inc qword ptr [rip + __s3_instruction_count]" in exact
+    assert '.section .text.unlikely,"ax",@progbits' in exact
+
+
+def test_outlined_slow_paths_preserve_segment_edges_and_unique_labels() -> None:
+    program = compile_source(LOOP_AND_CALL_SOURCE, "O0").assembly
+    limit = 100_000
+    exact = _exact_native(program, max_instructions=limit)
+    hot, cold = _split_exact_cold_sections(exact)
+
+    expected_segments = []
+    for function in program.functions:
+        blocks = {block.label: block for block in function.blocks}
+        for segment in plan_budget_segments(function).segments:
+            if not (segment.logical_weight >= 2 and segment.logical_weight <= limit):
+                continue
+            terminal = blocks[segment.block].instructions[
+                segment.last_instruction_index
+            ].is_terminator
+            expected_segments.append(
+                (len(expected_segments), terminal, segment.logical_weight)
+            )
+
+    expected_slow = [
+        f".L__s3_budget_{segment_id}_slow"
+        for segment_id, _, _ in expected_segments
+    ]
+    actual_slow = [
+        line[:-1]
+        for line in cold.splitlines()
+        if line.startswith(".L__s3_budget_") and line.endswith("_slow:")
+    ]
+    fast_targets = [
+        line.split("ja ", 1)[1]
+        for line in hot.splitlines()
+        if "ja .L__s3_budget_" in line and line.endswith("_slow")
+    ]
+    continuation_ids = [
+        segment_id
+        for segment_id, terminal, _ in expected_segments
+        if not terminal
+    ]
+    expected_continuations = [
+        f".L__s3_budget_{segment_id}_continue"
+        for segment_id in continuation_ids
+    ]
+    hot_continuations = [
+        line[:-1]
+        for line in hot.splitlines()
+        if line.startswith(".L__s3_budget_") and line.endswith("_continue:")
+    ]
+    cold_continuations = [
+        line.strip().split("jmp ", 1)[1]
+        for line in cold.splitlines()
+        if "jmp .L__s3_budget_" in line and line.rstrip().endswith("_continue")
+    ]
+
+    assert actual_slow == expected_slow
+    assert fast_targets == expected_slow
+    assert hot_continuations == expected_continuations
+    assert cold_continuations == expected_continuations
+    assert len(actual_slow) == len(set(actual_slow))
+    assert cold.count("inc qword ptr [rip + __s3_instruction_count]") == sum(
+        weight for _, _, weight in expected_segments
+    )
+    assert len(fast_targets) == len(expected_segments)
+    fast_precharges = [
+        line
+        for line in hot.splitlines()
+        if "add qword ptr [rip + __s3_instruction_count]" in line
+    ]
+    assert len(fast_precharges) == len(expected_segments)
+    assert not any(
+        line.startswith(".L__s3_budget_") and line.endswith("_done:")
+        for line in exact.splitlines()
+    )
+    assert not any(f"{label}:" in hot for label in expected_slow)
+    assert all(
+        f".L__s3_budget_{segment_id}_continue" not in cold
+        for segment_id, terminal, _ in expected_segments
+        if terminal
+    )
+
+
+def test_outlined_slow_path_matches_p0_at_each_reachable_failure_position(
+    tmp_path: Path,
+) -> None:
+    toolchain = _native_toolchain()
+    source = "fn main() -> tryte:\n    return 1 + 2\n"
+    program = compile_source(source, "O0").assembly
+    segment = next(
+        segment
+        for segment in plan_budget_segments(program.functions[0]).segments
+        if segment.logical_weight >= 2
+    )
+
+    for limit in range(1, segment.logical_weight):
+        p0 = _run_source(
+            source,
+            tmp_path / f"p0-{limit}",
+            toolchain,
+            budget_mode=InstructionBudgetMode.PER_INSTRUCTION,
+            max_instructions=limit,
+        )
+        p2h = _run_source(
+            source,
+            tmp_path / f"p2h-{limit}",
+            toolchain,
+            budget_mode=InstructionBudgetMode.EXACT_SEGMENT,
+            max_instructions=limit,
+        )
+        assert p0.returncode != 0
+        assert "instruction limit" in p0.stderr
+        assert (p2h.returncode, p2h.stdout, p2h.stderr) == (
+            p0.returncode,
+            p0.stdout,
+            p0.stderr,
+        )
 
 
 def test_fast_fused_compare_keeps_context_for_guarded_register_reads() -> None:
@@ -480,8 +617,11 @@ def test_repeated_serial_ffi_calls_preserve_process_budget_lifetime(
             max_instructions=limit,
             instruction_budget_mode=mode,
         )
+        ffi_assembly = backend._generate_ffi(program)
+        if mode is InstructionBudgetMode.EXACT_SEGMENT:
+            assert '.section .text.unlikely,"ax",@progbits' in ffi_assembly
         library = toolchain.build_shared(
-            backend._generate_ffi(program),
+            ffi_assembly,
             tmp_path / f"{mode.value}.so",
         )
         outcomes.append(
