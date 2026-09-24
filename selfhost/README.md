@@ -37,13 +37,14 @@ cursors, return fixed-layout events, summaries, or structured errors, and do
 not replace the Python Assembly parser, verifier, renderer, CLI, emulator,
 native backend, or golden contracts.
 
-The `selfhost/substrate/` components are the first bounded compiler-substrate
-shape: text-keyed maps, direct-ID arenas, source cursors, lexical-state
-records, output-sink state, and a compiler-context shape. They are ordinary S3
-representability artifacts backed by the normative hosted contracts in
-[`docs/spec/compiler-substrate-v1.md`](../docs/spec/compiler-substrate-v1.md).
-They intentionally stop before lexer/parser/semantic compiler implementation;
-full self-hosting remains deferred.
+The `selfhost/substrate/` components include text-keyed maps, direct-ID arenas,
+source cursors, lexical-state records, output-sink state, and a compiler-context
+shape, plus bounded S3-written lexer/parser/program and semantic execution
+slices. They are ordinary S3 representability and differential artifacts backed
+by hosted contracts in [`docs/spec/compiler-substrate-v1.md`](../docs/spec/compiler-substrate-v1.md).
+They do not form a complete compiler pipeline or compile the S3 compiler
+itself; Python remains the reference compiler and full self-hosting remains
+deferred.
 
 ## Full self-host policy
 

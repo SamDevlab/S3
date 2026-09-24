@@ -87,8 +87,10 @@ calling the production `Lexer`/`tokenize` implementation.
 `SyntaxArena` without constructing hosted AST objects or calling
 `bootstrap.s3.parser`.
 
-This is still not an S3-native frontend. Ordinary-S3 source/token/parser state
-shapes exist, but native lexer/parser execution remains a separate frontier.
+At this dated 2026-09-18 checkpoint, this was still not an S3-native frontend:
+ordinary-S3 source/token/parser state shapes existed, while native lexer/parser
+execution remained a separate frontier. The later bounded S3-native slices
+integrated by PR #313 are recorded below.
 
 The hosted frontend is also connected to the whole-program control plane
 through a syntax-to-registration bridge. A fresh `WholeProgramContext` can
@@ -203,6 +205,45 @@ NEXT_BLOCKER=NATIVE_STATEMENT_SEQUENCE
 HOST_EXECUTION_SUPPORT=PRESENT_AS_EXPECTED
 HOST_SEMANTIC_DECISIONS=DECREASING_BUT_PRESENT
 ```
+
+## Post-#313 bounded S3-native execution path (2026-09-24)
+
+PR #313 is merged into `main`; it cumulatively integrates the source-derived
+frontend and bounded execution capabilities developed across PRs #301–#309.
+These capabilities are real and useful, but they do not change the compiler
+policy:
+
+```text
+PR313_IN_MAIN=YES
+PR301_309_CAPABILITIES_IN_MAIN=YES
+REFERENCE_COMPILER=PYTHON
+FULL_SELFHOST=NOT_CLAIMED
+SELFHOST_REENTRY_AUTHORIZED=NO
+STAGE1_V4=NOT_AUTHORIZED
+```
+
+Keep three architectural layers distinct:
+
+| Layer | Current role |
+| --- | --- |
+| `REFERENCE` | `bootstrap/s3/` is the complete Python reference compiler and default production compilation path. |
+| `HOSTED_GENERIC` | Python generic lexer/parser, syntax/IR, verifier, frontend registration/type bridges, and whole-program control plane provide hosted compiler foundations and independently testable contracts. They do not yet form a replacement production compiler pipeline. |
+| `S3_NATIVE_EXPERIMENTAL` | S3-written substrate modules provide bounded source-derived lexer/parser/program and semantic execution slices, with typed-value and indexed-data protocols. These execute as S3 programs through the existing compiler/backend; they are not a compiler that compiles itself. |
+
+The integrated vertical line includes a partial ordinary-S3 source frontend and
+program structure, bounded i64 semantic execution, typed i64/f64 and indexed
+data contracts, and native execution support for read-only call-bounded
+aggregate references over known records. The scientific RMSD example composes
+S3 vector reads, arithmetic, division, and `sqrt`; its Linux x86-64 evidence is
+for a program compiled by the Python reference compiler and executed natively.
+It is not self-hosted compilation evidence.
+
+The S3-native parser/semantic components remain bounded subsets, not complete
+general-purpose lexer, parser, semantic analyzer, lowerer, verifier, or emitter
+stages. Their overlap with hosted generic contracts is intentional where it
+supports differential comparison; it is not a second production compiler.
+Historical reports retain the narrower status and limits that were true at
+their recorded checkpoints.
 
 ## Relationship to existing milestones
 

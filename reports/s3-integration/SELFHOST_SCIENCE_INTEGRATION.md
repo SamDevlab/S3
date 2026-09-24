@@ -20,7 +20,7 @@
 | #308 | Aggregate references |
 | #309 | First scientific RMSD kernel |
 
-Excluded: P2, P2H, the #310 exact-segment experiment, and all instruction-budget promotion. PRs #301–#309 remain open and Draft. PRs #310–#312 were not modified. No benchmarks were run.
+Excluded from the integration change: P2, P2H, the #310 exact-segment experiment, and all instruction-budget promotion. Current PR state: #301 and #313 are merged; #302–#309 remain open Draft review artifacts whose cumulative capabilities are in `main` through #313. PRs #310–#312 were not modified. No benchmarks were run for this integration.
 
 ## Local Validation
 
@@ -107,3 +107,21 @@ READY_FOR_HUMAN_MERGE_DECISION=YES
 ```
 
 GitHub Actions did not pass: it remains blocked by `BILLING_OR_QUOTA`. The owner explicitly accepted the preserved local Linux validation as sufficient for this merge and waived GitHub Actions as a required gate. No workflow/config fix, Actions rerun, benchmark, or research work was performed. This records a human-approved gate waiver, not a CI success.
+
+## Post-merge reconciliation (2026-09-24)
+
+The `Final Delivery Gate` above is a truthful pre-merge snapshot. The owner
+accepted the documented local/Linux gate, the evidence-only commit
+`12dd332e6a4f199890ca903430d9ea3448c7c5fa` was pushed, and PR #313 was marked
+Ready and merged with merge commit `c62496b6dc5252e2cfe0a8b54fe7c7ea4ea68034`
+at `2026-09-24T21:42:01Z`. The executable source freeze
+`d064c17ea811ab926df515cb90884e8c6efffb3d` and evidence commit are ancestors of
+the resulting `main`.
+
+Current GitHub PR state is not the same as the historical stack state: PR #301
+and PR #313 are merged; PRs #302–#309 remain open Draft review artifacts, but
+their cumulative capabilities are in `main` through PR #313. Their open state
+is not a missing parent-stack integration blocker. PRs #310–#312 remain open
+Draft experimental/review work and were not changed or promoted by this merge.
+GitHub Actions remains blocked by billing/quota; the approved local/Linux gate
+waiver is not a CI pass.

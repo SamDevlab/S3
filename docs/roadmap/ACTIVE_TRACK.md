@@ -1,6 +1,6 @@
 # Active S3 project track
 
-Last reviewed: 2026-09-17.
+Last reviewed: 2026-09-24.
 
 ## Active track
 
@@ -12,16 +12,27 @@ STABLE_V1_0_RELEASED=YES
 REFERENCE_COMPILER=PYTHON
 FULL_SELFHOST=DEFERRED_RESEARCH
 PYPI_PUBLISHED=NO
-S3_1_1_TECHNICAL_CLOSURE=PASS
-S3_1_1_RELEASE_PREP=PARKED
+MAIN_POST_313_INTEGRATION=YES
+PR301_309_CAPABILITIES_IN_MAIN=YES
+S3_1_1_TECHNICAL_CLOSURE=PASS_PR294_MERGED
+S3_1_1_RELEASE_PREP=OPEN_DRAFT_PR295_CONFLICTING
 S3_1_1_IMPLEMENTATION_STARTED=YES
-S3_1_1_PHASE=R5_TECHNICALLY_COMPLETE_RELEASE_DECISION_PENDING
+S3_1_1_PHASE=R0_R5_TECHNICAL_CLOSURE_IN_MAIN_RELEASE_DECISION_PENDING
 S3_1_2_IMPLEMENTATION_STARTED=YES
+S3_1_2_STATE=ACTIVE_NATIVE_BACKEND_PRODUCTIONIZATION_POST313
+P2_IN_MAIN=NO
+P2_DEFAULT=NO
+PER_INSTRUCTION_DEFAULT=YES
+P2_STATUS=EXPERIMENTAL_NOT_PROMOTED
+P2_PARENT_STACK_BLOCKER=RESOLVED_BY_PR313
+P2_PROMOTION_AUTHORIZED=NO
 ```
 
-S3 `v1.0.0` is the stable GitHub release of the current reference toolchain line. The active bounded objective is **S3 1.2 — Native Backend Productionization**.
+S3 `v1.0.0` remains the public stable release of the Python reference toolchain. PR #313 is merged; its cumulative source baseline brings the #301–#309 capabilities into `main`. This does not change the reference compiler or establish full self-hosting.
 
-The active development track is now **S3 1.2 — Native Backend Productionization**. The 1.1 reliability line remains technically closed and its release preparation remains parked; this track promotes Compact EA only as an explicit, fail-closed opt-in policy.
+The active development track remains **S3 1.2 — Native Backend Productionization**. It now includes a substantial bounded S3-native execution line alongside the Python-hosted generic compiler foundations. The 1.1 reliability line has technical closure in `main`; its separate 1.1.0 release candidate PR #295 remains OPEN/Draft and currently conflicts with `main`, so release preparation is not complete.
+
+The exact-segment instruction-budget P2 is a separate experimental candidate, not part of #313 or `main`. P2 remains unpromoted and `PER_INSTRUCTION` remains the default. The former parent-stack integration blocker is resolved by #313; code-size policy, port/rebase to current `main`, fresh validation and benchmark comparison, and infrastructure readiness remain independent gates.
 
 Reliability Lab v2 is built incrementally from current `main`: deterministic identities and schemas (R0), killable process isolation (R1), deterministic source generation (R2), differential execution and replay (R3), minimization/triage (R4), then bounded maintenance closure (R5).
 
@@ -49,18 +60,18 @@ R3 is complete on hardened `main` source `f16d4a8117dd6d7ceee84b691d6d9bfa1031b3
 
 The authoritative post-hardening campaign report SHA-256 is `f749d501a01d7f6f2b13e60d934b0c17dfac3cd3ccafe932ab27bd3e419e54d1`; the evidence manifest SHA-256 is `90ad0bc165d5b3d4fad93aabf5b553ae15c584100cd39dc39472f33196cd1952`. The previous successful Attempt 2 evidence on `a3aa7bd...` is retained as pre-hardening history and is not used as the final R3 certification.
 
-R4 is complete on the dedicated maintenance branch `feat/s3-1.1-r4-r5-reliability-closure-20260916` at implementation head `774849b1303e3fb726c2c4972457bfa88ba3247d`. The deterministic minimizer preserves the exact outcome and failure signature under the frozen 10,000-evaluation bound. Replay bundles are hash-verified before separate minimized output is written. Failure groups, canonical JSON, and Markdown reports use one deterministic ordering model. The focused R4 selection passed, and the full `python -m pytest -q` gate completed with exit code 0. No compiler/runtime semantics changed.
+R4's deterministic minimizer and replay/triage contracts were integrated through PR #294. Its historical implementation head was `774849b1303e3fb726c2c4972457bfa88ba3247d`; the evidence remains in the R4/R5 reports. The candidate hash is historical provenance, not the current `main` head.
 
-R5 is technically complete on candidate `d277a862223e8d07b39fd9a687dd1ce0651af63b` after one bounded Linux x86-64 campaign: 256/256 PASS, hosted O0/O1 for all 256 cases, and native O0/O1 for the bounded 32-case shard. The campaign report, stdout summary, and empty stderr were preserved with hashes in [`R5_MAINTENANCE_CLOSURE.md`](../../reports/s3-1.1-reliability-20260916/R5_MAINTENANCE_CLOSURE.md). The Windows full regression evidence is reused from the preceding implementation commit because the final commit changed documentation only. Historical v1.0.0 `393/393 PASS` remains a separate immutable baseline. Release and merge decisions are pending and no new release is implied.
+R5's bounded Linux x86-64 campaign recorded 256/256 PASS, hosted O0/O1 for all 256 cases, and native O0/O1 for the bounded 32-case shard on candidate `d277a862223e8d07b39fd9a687dd1ce0651af63b`. The campaign report and output hashes remain in [`R5_MAINTENANCE_CLOSURE.md`](../../reports/s3-1.1-reliability-20260916/R5_MAINTENANCE_CLOSURE.md). R0–R5 technical closure is integrated through merged PR #294. PR #295 is a separate release-preparation Draft PR, currently conflicting with `main`; no new release is implied.
 
-The GitHub Actions runs for the branch remain an independent infrastructure failure under issue #284: all 12 jobs ended before any workflow step with empty step lists. No rerun or workflow weakening was performed.
+GitHub Actions remains blocked before workflow steps by the account billing/quota condition reported for PR #313; no Actions rerun or workflow weakening was performed. Issue #284 remains OPEN and also tracks the unprotected `main` branch and absent required checks.
 
 ## Immediate priorities
 
-1. Preserve the completed post-hardening R3 evidence and keep issue #283 synchronized with the exact execution provenance.
-2. Keep GitHub Actions runner restoration and `main` protection tracked independently under #284; do not weaken workflows to obtain a green status.
-3. Obtain an explicit release decision for the technically complete R5 candidate; preserve historical v1.0.0 evidence as a separate baseline.
-4. Keep the v1.0.0 tag and release immutable; no PyPI publication or self-host re-entry is implied by R5 completion.
+1. Keep this post-#313 capability baseline canonical and preserve historical reports as time-stamped evidence.
+2. Keep runner restoration and `main` protection tracked under #284; do not weaken workflows to obtain a green status.
+3. Resolve the separate 1.1.0 release decision/PR #295 conflict only under its own release authorization.
+4. Keep exact-segment P2 experimental until its current-main port, code-size policy, fresh correctness/performance evidence, and infrastructure gates are independently closed.
 
 ## Out of scope
 
@@ -77,8 +88,8 @@ Full self-hosting may re-enter only through the design-first criteria in `docs/s
 
 ## Infrastructure note
 
-GitHub Actions jobs have been failing before any step is assigned (`runner_id=0`, empty step list). That condition is infrastructure/provisioning debt, not a demonstrated compiler regression, and must not be hidden by weakening workflows. The successful R3 certification came from explicit Windows-authenticated source verification plus exact-commit/tree execution on the Ubuntu x86-64 VM, not from GitHub Actions.
+GitHub Actions jobs have been failing before any step is assigned (`runner_id=0`, empty step list); PR #313's runs carry the billing/quota annotation. This is infrastructure debt, not a demonstrated compiler regression, and must not be hidden by weakening workflows. The successful R3 certification came from exact-commit/tree execution on the Ubuntu x86-64 VM, not from GitHub Actions. The #313 delivery likewise used preserved local/Linux evidence under an explicit CI waiver; that does not make GitHub CI green or remove the infrastructure blocker.
 
 ## Next operational step
 
-R3 is closed. R4 and R5 are technically complete on the dedicated branch. Release and merge remain separate decisions pending explicit authorization.
+The post-#313 integration is the current `main` baseline. Do not treat historical Draft state for PRs #302–#309 as a missing integration prerequisite. The next separate technical campaign may evaluate the selected P2 port/policy on this baseline; it is not started by this document.
