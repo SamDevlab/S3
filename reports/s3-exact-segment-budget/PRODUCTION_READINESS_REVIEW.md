@@ -66,9 +66,10 @@ with negative added-text and hot-layout recovery in all six cells.
 | `tests/test_exact_segment_instruction_budget.py` | `588241bb60da005c5b082a6f63c4ba67f914b54e7c47f5578f1082490584d408` | 23582 | Structural and native E0 regressions |
 
 The isolated review branch starts from the exact P2 tree. Its only additions
-are review artifacts and a copy of the base report needed to avoid deleting a
-document that exists on the PR base. Executable source and test content remain
-identical to P2.
+are review artifacts. The scientific-kernel report already exists on the PR
+#309 base and is omitted from this branch so the review diff does not duplicate
+that base-owned document. Executable source and test content remain identical
+to P2.
 
 ## 3. Evidence Provenance
 
