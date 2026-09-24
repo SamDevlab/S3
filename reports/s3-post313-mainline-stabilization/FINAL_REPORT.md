@@ -115,6 +115,7 @@ exact-segment P2 and does not make P2 part of `main`.
 ```text
 GITHUB_ACTIONS_STATUS=BLOCKED_BY_BILLING_OR_QUOTA
 GITHUB_ACTIONS_USED=NO
+GITHUB_ACTIONS_AUTO_RUN=36068708159_BLOCKED_BEFORE_STEPS
 CI_RERUN_ATTEMPTED=NO
 WORKFLOW_CHANGED=NO
 INFRA_284=OPEN_BLOCKER
@@ -129,6 +130,13 @@ empty list. Consequently no required checks, force-push restriction, or branch
 deletion restriction is enforced by a discovered branch-protection/ruleset
 policy. No protection settings were changed because Actions cannot currently
 execute its checks. No CI pass is claimed.
+
+Opening Draft PR #314 automatically triggered GitHub Actions run
+`36068708159` at head `179acaca68592d9937d163bcc99e3b55933e4950`. All 10 jobs
+completed as failures with `steps=[]`; the GitHub annotation states that jobs
+were not started because recent account payments failed or the spending limit
+needs attention. This is recorded as `BILLING_OR_QUOTA`, not as a compiler/test
+failure. No rerun was attempted.
 
 ## Local validation
 
