@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "scenario_id": "memory.ternary-subtraction.v1",
+  "version": "1.0.0",
+  "category": "agent-memory",
+  "objective": "Measure whether durable agent memory preserves the distinct S3 subtraction contracts across a later compiler change.",
+  "task": "Session A studies the subtraction contract. In a later fresh session, refactor subtraction lowering/code generation without replacing balanced trit/tryte subtraction with the machine numeric-difference operation.",
+  "critical_invariants": [
+    {
+      "id": "balanced-subtraction-invert-add",
+      "description": "Balanced trit/tryte subtraction keeps the historical INVERT + ADD lowering rather than a generic subtraction opcode."
+    },
+    {
+      "id": "machine-subtraction-numeric-difference",
+      "description": "Machine numeric subtraction uses the distinct NUMERIC_DIFFERENCE / TNDIFF path so checked i64 subtraction does not create false intermediate overflow."
+    }
+  ],
+  "oracle": {
+    "commands": [
+      {
+        "id": "subtraction-regression-tests",
+        "argv": ["{python}", "-m", "pytest", "-q", "tests/test_compiler.py", "tests/test_numeric_domains.py", "tests/test_numeric_closure.py"],
+        "timeout_seconds": 180
+      }
+    ],
+    "required_patterns": [
+      {
+        "id": "invert-codegen-mapping",
+        "glob": "bootstrap/s3/codegen.py",
+        "pattern": "IROpcode.INVERT: AssemblyOpcode.TINV"
+      },
+      {
+        "id": "numeric-difference-codegen-mapping",
+        "glob": "bootstrap/s3/codegen.py",
+        "pattern": "IROpcode.NUMERIC_DIFFERENCE: AssemblyOpcode.TNDIFF"
+      }
+    ],
+    "forbidden_patterns": [
+      {
+        "id": "no-generic-tsub-opcode",
+        "glob": "bootstrap/s3/assembly.py",
+        "pattern": "TSUB"
+      }
+    ]
+  }
+}

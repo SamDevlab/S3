@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s3-lang.local/external-benchmarks/smoke-1.0.0.schema.json",
+  "title": "S3 Agent Memory V1 Protocol Smoke 1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "status",
+    "scientific_claims_allowed",
+    "subject_commit",
+    "providers",
+    "scenarios",
+    "bundles",
+    "phase_steps",
+    "synthetic_observations",
+    "semantic_oracles_validated",
+    "semantic_oracle_failures"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "kind": {"const": "protocol-smoke"},
+    "status": {"enum": ["PASS", "FAIL"]},
+    "scientific_claims_allowed": {"const": false},
+    "subject_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "providers": {"const": 4},
+    "scenarios": {"const": 7},
+    "bundles": {"const": 28},
+    "phase_steps": {"const": 52},
+    "synthetic_observations": {"const": 28},
+    "semantic_oracles_validated": {"type": "integer", "minimum": 0, "maximum": 7},
+    "semantic_oracle_failures": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    }
+  }
+}
