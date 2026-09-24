@@ -20,7 +20,7 @@ CI blocker; the limit-edge coverage row is closed and is not counted.
 | Performance evidence | PASS_WITH_DOCUMENTED_SCOPE | 92.14%-104.56% excess recovery in six frozen cells; reproducibility and correctness recorded | No | Keep claims to named workloads/protocol |
 | Linux x86-64 native | PASS | Focused native gate: 75 passed; valid full suite: 4,390 passed, 1 skipped, 572 subtests passed, exit 0 at c07b2c48 | No within stated target | Run native smoke in any future candidate CI |
 | Other platforms | NOT_APPLICABLE to this scoped candidate | No P2 native qualification for Windows, ARM64, or macOS | Conditional if scope expands | Qualify only targets required by product policy |
-| Dependency stack | CONDITIONAL | PRs #301-#309 are open Draft; #310 is stacked and has non-P2 hardening differences | Yes | Integrate parents or separately review clean P2 extraction |
+| Dependency stack / integration | READY_FOR_INTEGRATION_ACTION | P2 code has no demonstrated #301-#309 functional dependency and applies cleanly to main; the one focused extraction gate fails its frozen-e07 byte oracle (50,066 expected, 49,947 observed) | Yes | Human decides retain #309/e07 baseline or authorize test-only baseline update on main; then Linux focused proof |
 | CI (S3 and benchmark repositories) | BLOCKED | S3 natural runs fail before steps, cause unknown; benchmark Actions permission is disabled and #24 has no runs/checks | Yes, one aggregate blocker | Diagnose S3 pre-step failure and restore benchmark workflow execution; absence of checks is not a pass |
 | Benchmark wrapper | CONDITIONAL | P2H full-suite wrapper failed after pytest; pytest exit not independently captured; distinct from P2 benchmark full-suite result | Operational debt | Repair wrapper in a separate tooling change before relying on it as a release gate |
 | Documentation | PASS_WITH_RECONCILIATION | P2's earlier f435/4,372 entry is distinguished from its 4,373 report entry; new c07b2c48 suite transcript is preserved and hashed in #312 | No | Keep source SHA, run, and transcript provenance distinct |
@@ -38,12 +38,12 @@ RELEASE_GATE_READINESS=BLOCKED
 PROMOTION_READINESS=READY_PENDING_MULTIPLE_BLOCKERS
 SEMANTIC_READINESS=PASS
 DECISION_RECOMMENDATION=PATH_A
-DECISION_AUTHORITY=HUMAN_ACCEPTANCE_REQUIRED
+DECISION_AUTHORITY=HUMAN_ACCEPTANCE_RECEIVED_FOR_PATH_A_ONLY; INTEGRATION_ORACLE_CHOICE_PENDING
 DECISION_STATUS=ACCEPTED
 ACCEPTED_CONCURRENCY_CONTRACT=SERIALIZED_SAME_ARTIFACT_ONLY
 BLOCKER_CONCURRENCY=CLOSED
 OPEN_BLOCKERS=3
-NEXT_CRITICAL_BLOCKER=PR_STACK
-NEXT_CAMPAIGN=S3_1_X_PR_STACK_INTEGRATION_CLOSURE
+NEXT_CRITICAL_BLOCKER=HUMAN_INTEGRATION_APPROVAL
+NEXT_CAMPAIGN=NONE_HUMAN_DECISION_REQUIRED
 S3_PRODUCTION_CHANGE_READY=NO
 ```

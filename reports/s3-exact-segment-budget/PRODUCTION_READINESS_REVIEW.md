@@ -330,30 +330,36 @@ assembler/linker toolchain.
 
 ## 9. Dependency Stack and Live PR State
 
-Live GitHub state on 2026-09-24:
+The live #301-#312 head/state recheck on 2026-09-24 found all twelve PRs still
+OPEN and Draft, with no head movement from the recorded snapshot. The earlier
+individual PR views reported MERGEABLE. All current check rollups were
+failures before steps; this stack audit did not diagnose or rerun CI. Exact
+metadata and file lists are in
+`reports/s3-integration/PR_STACK_GRAPH.json`.
 
-- S3 #301-#309 are OPEN Draft PRs forming a dependency chain from #301 on
-  `main` through #309 (`feat/s3-scientific-kernel-rmsd-v01`, head
-  `d064c17e...`).
-- S3 #310 is OPEN Draft, based on #309, with current head
-  `b2178088...`; it is not the P2 source identity.
-- S3-Benchmarks #24 is OPEN Draft and based on the #23-series research base;
-  #23 also remains OPEN Draft. Neither is merged.
-- This review PR is based on #309 so its candidate diff can be reviewed in
-  that stack. No parent PR was merged or retargeted.
-- Semantic-closure PR #312 is OPEN Draft, based on the same #309 lineage, at
-  head `6a97b728db9d194f77f5dae15967591d0c4315a7`. It carries the test-only
-  boundary additions and semantic evidence; it is unmerged and is not P2H.
+PRs #301-#309 form a real functional selfhost/scientific capability chain.
+They are not P2 implementation prerequisites. #310's current head
+`b2178088...` contains rejected P2H and is not safe to merge as selected P2.
+#311 is review/governance material; #312's whole PR is not required, although
+its test-only c07 boundary delta is a valuable P2 companion. The #310-#312
+branches declare #309 head `d064c17...` but their Git ancestry forks at #309
+source commit `e07d0b5...`; the omitted commits are documentation-only.
 
-At the tree level, the P2 delta against the #309 tree is limited to the budget
-backend, its focused test, and experiment/review documentation. A clean
-extraction is feasible, but was not performed. Integration still depends on
-the parent stack being integrated or on a separately reviewed clean extraction.
+One detached extraction trial applied exact selected P2 commits and c07 tests
+to current main `4c7aaf4...`, with no source conflict. P2 implementation bytes
+matched the selected SHA and compileall passed. The focused gate failed the
+frozen e07 output assertion (expected 50,066 bytes, observed 49,947 for
+`linear`); 21 Linux-native tests skipped on the Windows host. The mismatch
+cause was not established, and no retry or oracle edit was made. This is not a
+qualified stable candidate.
 
 ```text
-PR_STACK_STATUS=301->302->303->304->305->306->307->308->309->310; all open drafts
-STACK_READINESS=STACK_READY_AFTER_PARENT_MERGES
-CLEAN_EXTRACTION_FEASIBLE=YES
+STACK_ANALYSIS_CLOSED=YES
+STACK_INTEGRATION_EXECUTED=NO
+SELECTED_STRATEGY=CLEAN_P2_EXTRACTION
+EXTRACTION_SOURCE_APPLIED=YES
+EXTRACTION_CANDIDATE_QUALIFIED=NO
+BLOCKER_PR_STACK=READY_FOR_INTEGRATION_ACTION
 ```
 
 ## 10. CI and Benchmark Automation
@@ -468,7 +474,7 @@ an open blocker.
 
 | Blocking item | Evidence | Required resolution | Owner / next action |
 | --- | --- | --- | --- |
-| Integration lineage | #301-#309 remain open Draft; #310 is stacked on #309 and not P2 | Integrate parent stack or review a clean P2 extraction | S3 maintainers; next campaign `S3_1_X_PR_STACK_INTEGRATION_CLOSURE` |
+| Integration lineage / baseline oracle | Clean P2 source applies to main, but frozen-e07 byte assertion differs (50,066 expected vs 49,947 observed); cause not established | Human chooses preserve #309/e07 baseline or authorize test-only rebaseline on main, followed by Linux focused proof | S3 maintainers; integration action required |
 | CI (S3 and benchmark repositories) | S3 natural runs fail before steps with cause unknown; benchmark Actions are disabled with no checks | Diagnose S3 pre-step failure and restore the benchmark workflow gate; do not treat absent checks as pass | S3 and S3-Benchmarks CI owners |
 | Product code-size policy | measured `.text` growth, no documented cap found | Decide acceptable product scope/size limit; do not reopen budget architecture | S3 product maintainers |
 
@@ -493,10 +499,10 @@ SEMANTIC_READINESS=PASS
 TECHNICAL_CANDIDATE_READINESS=CONDITIONAL
 RELEASE_GATE_READINESS=BLOCKED
 PROMOTION_READINESS=READY_PENDING_MULTIPLE_BLOCKERS
-NEXT_CRITICAL_BLOCKER=PR_STACK
-NEXT_CAMPAIGN=S3_1_X_PR_STACK_INTEGRATION_CLOSURE
+NEXT_CRITICAL_BLOCKER=HUMAN_INTEGRATION_APPROVAL
+NEXT_CAMPAIGN=NONE_HUMAN_DECISION_REQUIRED
 DECISION_RECOMMENDATION=PATH_A
-DECISION_AUTHORITY=HUMAN_ACCEPTANCE_REQUIRED
+DECISION_AUTHORITY=HUMAN_ACCEPTANCE_RECEIVED_FOR_PATH_A_ONLY; INTEGRATION_ORACLE_CHOICE_PENDING
 DECISION_STATUS=ACCEPTED
 ACCEPTED_CONCURRENCY_CONTRACT=SERIALIZED_SAME_ARTIFACT_ONLY
 BLOCKER_CONCURRENCY=CLOSED
@@ -512,8 +518,9 @@ RELEASE=NO
 DEFAULT_SWITCH=NO
 ```
 
-The concurrency decision is closed. The next recommended engineering campaign
-is `S3_1_X_PR_STACK_INTEGRATION_CLOSURE`; it is not started here. The remaining
-blockers are PR stack, CI (S3 plus benchmark workflow execution), and product
+The concurrency decision and stack analysis are closed. The integration
+candidate is not ready: human direction is required on the frozen-output
+oracle before any test-only correction or further validation. The other
+blockers remain CI (S3 plus benchmark workflow execution) and product
 code-size policy. No P3/P4/P5 architecture search is recommended. No merge,
 default switch, promotion, tag, or release is authorized.

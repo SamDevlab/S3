@@ -50,7 +50,7 @@
     "native_accounting_synchronization": false,
     "instruction_accounting_scope": "PER_LOADED_ARTIFACT_INSTANCE_WRITABLE_BSS",
     "frame_accounting_scope": "PER_LOADED_ARTIFACT_INSTANCE_WRITABLE_BSS",
-    "decision_authority": "HUMAN_ACCEPTANCE_REQUIRED",
+    "decision_authority": "HUMAN_ACCEPTANCE_RECEIVED",
     "recommendation": "PATH_A",
     "human_approval_received": true,
     "human_approval_date": "2026-09-24",
@@ -109,8 +109,14 @@
     "parent_prs": [301, 302, 303, 304, 305, 306, 307, 308, 309],
     "parent_prs_state": "OPEN_DRAFT",
     "pr310": {"state": "OPEN", "draft": true, "merged": false, "head": "b2178088e0c17738058a92a64ea6c2971530d5cd"},
-    "stack_readiness": "STACK_READY_AFTER_PARENT_MERGES",
-    "clean_extraction_feasible": "YES_NOT_PERFORMED"
+    "stack_analysis": "CLOSED",
+    "selected_strategy": "CLEAN_P2_EXTRACTION",
+    "p2_functionally_requires_parent_stack": false,
+    "clean_extraction_source_applied": true,
+    "clean_extraction_candidate_qualified": false,
+    "frozen_e07_oracle_trial": {"expected_bytes":50066,"observed_bytes":49947,"case":"linear","focused_gate":"FAIL","cause":"NOT_ESTABLISHED"},
+    "linux_native_on_trial_host": "NOT_RUN_WINDOWS_HOST",
+    "stack_readiness": "READY_FOR_INTEGRATION_ACTION"
   },
   "ci": {
     "s3": {"status": "BLOCKED_INFRASTRUCTURE", "root_cause": "UNKNOWN", "observed_jobs_have_steps": false, "actions_enabled": true},
@@ -162,14 +168,14 @@
   "security_resource_review": "PASS_WITH_SERIALIZED_SCOPE",
   "maintenance_complexity": "MODERATE",
   "blocking_items": [
-    "unintegrated parent PR stack or reviewed clean extraction",
+    "human decision on preserving the #309/e07 frozen-output baseline or authorizing a main-based test-only rebaseline, followed by Linux focused proof",
     "CI: S3 pre-step failure with unattributed root cause and benchmark repository Actions disabled with no checks",
     "product policy for measured code-size increase"
   ],
   "blocker_status": {
     "limit_boundaries": "CLOSED",
     "concurrency": "CLOSED",
-    "pr_stack": "OPEN",
+    "pr_stack": "READY_FOR_INTEGRATION_ACTION",
     "ci": "OPEN",
     "code_size_policy": "OPEN",
     "open_blockers": 3
@@ -222,12 +228,15 @@
     "test_source_changed": true,
     "benchmark_rerun": false
   },
-  "decision_authority": "HUMAN_ACCEPTANCE_REQUIRED",
+  "decision_authority": "PATH_A_ACCEPTED; INTEGRATION_ORACLE_CHOICE_PENDING",
   "decision_recommendation": "PATH_A",
   "decision_status": "ACCEPTED",
   "accepted_concurrency_contract": "SERIALIZED_SAME_ARTIFACT_ONLY",
   "semantic_readiness": "PASS",
   "open_blockers": 3,
-  "next_critical_blocker": "PR_STACK",
-  "recommended_next_campaign": "S3_1_X_PR_STACK_INTEGRATION_CLOSURE"
+  "next_critical_blocker": "HUMAN_INTEGRATION_APPROVAL",
+  "recommended_next_campaign": "NONE_HUMAN_DECISION_REQUIRED",
+  "stack_analysis_closed": true,
+  "stack_integration_executed": false,
+  "integration_candidate_created": false
 }

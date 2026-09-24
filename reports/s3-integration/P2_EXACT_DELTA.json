@@ -1,0 +1,42 @@
+{
+  "candidate": "1a76e341098b54a639fec22eecea362cc243c46f",
+  "control": "e07d0b5464bf472b2ca18993f3e196a234ff0fc5",
+  "original_pr309_head": "d064c17ea811ab926df515cb90884e8c6efffb3d",
+  "implementation_commits": [
+    "f4353c1b5bc3557dd05188d893f85de264300d5f",
+    "1a76e341098b54a639fec22eecea362cc243c46f"
+  ],
+  "documentation_only_commit": "28c8148df8a30ec93b9ae3472bd9983532cfcee0",
+  "files": [
+    {"path":"bootstrap/s3/backends/x86_64/backend.py","sha256":"236c36df0b528b2edb88b124a0b36b9da34ea77c8d69a3a793bc3173dd133ea9","bytes":9005,"kind":"IMPLEMENTATION"},
+    {"path":"bootstrap/s3/backends/x86_64/emitter.py","sha256":"bcfb7f36728219d3b0e5847979b625574681be0007c8181ae3dfe52556ca52dc","bytes":91155,"kind":"IMPLEMENTATION"},
+    {"path":"bootstrap/s3/backends/x86_64/instruction_budget.py","sha256":"ee124fb48caa9e6f7eff95ad6187141b1d5cc6f3a72eef0c7533471db1716015","bytes":6158,"kind":"IMPLEMENTATION"},
+    {"path":"tests/test_exact_segment_instruction_budget.py","sha256":"588241bb60da005c5b082a6f63c4ba67f914b54e7c47f5578f1082490584d408","bytes":23582,"kind":"P2_TESTS"},
+    {"path":"reports/s3-exact-segment-budget/E0_BUDGET_EQUIVALENCE.md","sha256":"d44309519b340e42c1f81a37f335959c4818e01d81f7c7d3c0d9bdb161ddf232","bytes":1921,"kind":"RESEARCH_DOC"},
+    {"path":"reports/s3-exact-segment-budget/EXACT_SEGMENT_BUDGET_DESIGN.md","sha256":"b95cd16422d72721d9c613d4e9c216454fa5805091def47ad81248c8640416f0","bytes":2806,"kind":"RESEARCH_DOC"},
+    {"path":"reports/s3-exact-segment-budget/EXPERIMENTAL_VALIDATION.md","sha256":"eebaa87b90c9ab9bc8791efb285403a98c448d5c0dc2d2e1c4b75474b83db0b5","bytes":2131,"kind":"RESEARCH_DOC"},
+    {"path":"reports/s3-exact-segment-budget/SEGMENT_PLANNER_AUDIT.md","sha256":"1ea5959d6bde2f234b87334e6fed833bec2c32b862b638eb3422f5cc21c41283","bytes":2456,"kind":"RESEARCH_DOC"}
+  ],
+  "stat": {"files_changed":8,"insertions":1326,"deletions":37},
+  "default_mode": "PER_INSTRUCTION",
+  "exact_segment_mode": "OPT_IN_BACKEND_CONFIGURATION",
+  "public_source_or_abi_change": false,
+  "p2_source_content_matches_selected_sha": true,
+  "stable_main_trial": {
+    "base": "4c7aaf4ad59fdacdd83f230e11a0bd979081c80a",
+    "implementation_cherry_picks_clean": true,
+    "compileall": "PASS",
+    "focused_tests": {"passed":18,"failed":1,"skipped":21,"exit":1},
+    "failing_test": "test_default_mode_matches_frozen_e07_native_assembly_bytes",
+    "expected_bytes": 50066,
+    "observed_bytes": 49947,
+    "case": "linear",
+    "failure_root_cause": "NOT_ESTABLISHED",
+    "native_linux_tests_skipped_on_windows": true,
+    "diff_check": "PASS",
+    "retry_performed": false,
+    "full_suite": "NOT_RUN",
+    "benchmark": "NOT_RUN"
+  },
+  "integration_readiness": "HUMAN_DECISION_REQUIRED_BEFORE_ORACLE_CHANGE_OR_CANDIDATE"
+}
