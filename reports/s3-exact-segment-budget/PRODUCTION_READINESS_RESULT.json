@@ -1,0 +1,242 @@
+{
+  "campaign": "S3_EXACT_SEGMENT_BUDGET_PRODUCTION_READINESS_REVIEW",
+  "review_date": "2026-09-24",
+  "candidate_sha": "1a76e341098b54a639fec22eecea362cc243c46f",
+  "control_sha": "e07d0b5464bf472b2ca18993f3e196a234ff0fc5",
+  "rejected_hardening_sha": "6f320242e3c1ebbb0d2ac5d6d85272ab375e5333",
+  "pr310_current_head": "b2178088e0c17738058a92a64ea6c2971530d5cd",
+  "candidate_provenance": {
+    "status": "PASS",
+    "unrelated_source_changes": 0,
+    "executable_source_content_matches_p2": true,
+    "manifest": [
+      {"path": "bootstrap/s3/backends/x86_64/backend.py", "sha256": "236c36df0b528b2edb88b124a0b36b9da34ea77c8d69a3a793bc3173dd133ea9", "bytes": 9005},
+      {"path": "bootstrap/s3/backends/x86_64/emitter.py", "sha256": "bcfb7f36728219d3b0e5847979b625574681be0007c8181ae3dfe52556ca52dc", "bytes": 91155},
+      {"path": "bootstrap/s3/backends/x86_64/instruction_budget.py", "sha256": "ee124fb48caa9e6f7eff95ad6187141b1d5cc6f3a72eef0c7533471db1716015", "bytes": 6158},
+      {"path": "tests/test_exact_segment_instruction_budget.py", "sha256": "588241bb60da005c5b082a6f63c4ba67f914b54e7c47f5578f1082490584d408", "bytes": 23582}
+    ]
+  },
+  "semantic_contract": {
+    "status": "PASS_WITH_DOCUMENTED_SCOPE",
+    "e0_contract_documented": true,
+    "e0_test_mapping_complete": true,
+    "qualified_scope": ["serialized native execution", "synchronous callback re-entry"],
+    "limit_boundary_matrix": ["0x7ffffffe", "0x7fffffff", "0x80000000", "0x80000001", "10000000000", "U64_MAX"],
+    "limit_boundary_tests": "PASS_IN_BOTH_MODES_NATIVE_EXECUTABLE_AND_FFI",
+    "semantic_boundary_bug": false
+  },
+  "concurrency_contract": {
+    "governance_campaign": "S3_NATIVE_EXECUTION_CONCURRENCY_CONTRACT_DECISION",
+    "historical_contract": "UNSPECIFIED",
+    "existing_concurrent_entry_promise": "NONE_FOUND",
+    "current_product_need_for_same_artifact_concurrency": "NO_EVIDENCE",
+    "serial_execution": "QUALIFIED",
+    "synchronous_callback_reentry": "QUALIFIED",
+    "concurrent_same_artifact_ffi": "NOT_SUPPORTED",
+    "same_artifact_concurrency_qualification": "NOT_QUALIFIED",
+    "public_contract": "HISTORICALLY_UNSPECIFIED; PATH_A_NOW_ACCEPTED",
+    "path_a": "SAME_ARTIFACT_CONCURRENT_ENTRY_NOT_SUPPORTED",
+    "path_a_backward_compatibility": "PASS",
+    "path_b": "SAME_ARTIFACT_CONCURRENT_ENTRY_REQUIRED",
+    "path_b_is_new_runtime_semantics": true,
+    "accepted_scope": "SERIALIZED_SAME_ARTIFACT_ONLY; SYNCHRONOUS_CALLBACK_REENTRY_QUALIFIED; CONCURRENT_ENTRY_NOT_SUPPORTED",
+    "proposed_scope_accepted": true,
+    "concurrent_ffi_tests": "NOT_RUN",
+    "p0_and_p2_counter_model": "ALIGNED_WRITABLE_BSS; UNSYNCHRONIZED; NO_TLS_OR_LOCKED_RMW",
+    "p2_weakens_existing_concurrency_guarantee": false,
+    "ffi_execution_context_object": false,
+    "ffi_per_call_budget_object": false,
+    "native_tls_accounting_abi": false,
+    "native_accounting_synchronization": false,
+    "instruction_accounting_scope": "PER_LOADED_ARTIFACT_INSTANCE_WRITABLE_BSS",
+    "frame_accounting_scope": "PER_LOADED_ARTIFACT_INSTANCE_WRITABLE_BSS",
+    "decision_authority": "HUMAN_ACCEPTANCE_RECEIVED",
+    "recommendation": "PATH_A",
+    "human_approval_received": true,
+    "human_approval_date": "2026-09-24",
+    "decision_status": "ACCEPTED",
+    "accepted_contract": "SERIALIZED_SAME_ARTIFACT_ONLY",
+    "compatibility_classification": "CLARIFICATION_OF_UNSPECIFIED_BEHAVIOR",
+    "blocker_status": "CLOSED",
+    "status": "ACCEPTED_PATH_A_SCOPE_ONLY",
+    "overall_exact_segment_adr_accepted": false
+  },
+  "api_strategy": {
+    "current_default": "PER_INSTRUCTION",
+    "p2_mode": "EXACT_SEGMENT",
+    "surface": "SEMI_PUBLIC_BACKEND",
+    "mode_on_top_level_api_or_cli": false,
+    "recommended_strategy": "KEEP_EXPERIMENTAL_INTERNAL"
+  },
+  "compatibility": {
+    "language": "PASS",
+    "assembly": "PASS",
+    "ir": "PASS",
+    "ffi_abi": "PASS",
+    "diagnostics": "PASS",
+    "default_byte_identity": "PASS_FOR_FROZEN_REPRESENTATIVE_CORPUS",
+    "status": "PASS"
+  },
+  "resource_tradeoff": {
+    "text_growth_percent": {
+      "rmsd": 39.17,
+      "xsbench": [53.35, 53.57],
+      "jsmn": [58.27, 58.54]
+    },
+    "product_size_policy": "NOT_FOUND_IN_REVIEWED_DOCS",
+    "status": "CONDITIONAL_NEEDS_PRODUCT_POLICY"
+  },
+  "performance_evidence": {
+    "status": "PASS_WITH_DOCUMENTED_SCOPE",
+    "scope": "Linux x86-64; RMSD, XSBench, JSMN; frozen protocol only",
+    "excess_recovery_percent": {
+      "rmsd_o0": 104.56,
+      "rmsd_o1": 102.84,
+      "xsbench_o0": 97.00,
+      "xsbench_o1": 97.98,
+      "jsmn_o0": 92.14,
+      "jsmn_o1": 93.41
+    },
+    "qpi": "NOT_AVAILABLE",
+    "timing_rerun": false
+  },
+  "portability": {
+    "native_scope": "LINUX_X86_64",
+    "other_targets_qualified": false,
+    "status": "PASS_WITH_DOCUMENTED_SCOPE"
+  },
+  "dependency_stack": {
+    "parent_prs": [301, 302, 303, 304, 305, 306, 307, 308, 309],
+    "parent_prs_state": "OPEN_DRAFT",
+    "pr310": {"state": "OPEN", "draft": true, "merged": false, "head": "b2178088e0c17738058a92a64ea6c2971530d5cd"},
+    "stack_analysis": "CLOSED",
+    "selected_strategy": "CLEAN_P2_EXTRACTION",
+    "p2_functionally_requires_parent_stack": false,
+    "clean_extraction_source_applied": true,
+    "clean_extraction_candidate_qualified": false,
+    "frozen_e07_oracle_trial": {"expected_bytes":50066,"observed_bytes":49947,"case":"linear","focused_gate":"FAIL","cause":"NOT_ESTABLISHED"},
+    "linux_native_on_trial_host": "NOT_RUN_WINDOWS_HOST",
+    "stack_readiness": "READY_FOR_INTEGRATION_ACTION"
+  },
+  "ci": {
+    "s3": {"status": "BLOCKED_INFRASTRUCTURE", "root_cause": "UNKNOWN", "observed_jobs_have_steps": false, "actions_enabled": true},
+    "benchmark": {"status": "BLOCKED", "root_cause": "REPOSITORY_OR_ORG_POLICY", "actions_enabled": false, "checks": "NO_CHECKS_REPORTED", "runs": 0}
+  },
+  "semantic_pr": {
+    "number": 312,
+    "url": "https://github.com/SamDevlab/S3/pull/312",
+    "state": "OPEN",
+    "draft": true,
+    "merged": false,
+    "head": "6a97b728db9d194f77f5dae15967591d0c4315a7",
+    "base": "feat/s3-scientific-kernel-rmsd-v01",
+    "natural_ci": {
+      "status": "FAIL_BEFORE_STEPS_CAUSE_UNIDENTIFIED",
+      "runs": [36001998655, 36001998616, 36001998615],
+      "jobs": 13,
+      "jobs_with_steps": 0,
+      "manual_rerun": false
+    }
+  },
+  "benchmark_wrapper": {
+    "status": "P2H_POST_PYTEST_WRAPPER_FAILURE",
+    "summary": "106 passed, 1 skipped; separate pytest exit not captured",
+    "is_p2_evidence": false
+  },
+  "documentation": {
+    "proposed_adr": "CREATED_NOT_ACCEPTED",
+    "p2_suite_record_reconciled": true,
+    "semantic_closure_report": "reports/s3-exact-segment-budget/SEMANTIC_CLOSURE.md",
+    "semantic_closure_result": "reports/s3-exact-segment-budget/SEMANTIC_CLOSURE_RESULT.json",
+    "p2_suite": {
+      "source_sha": "1a76e341098b54a639fec22eecea362cc243c46f",
+      "result": "4373 passed, 1 skipped, 0 failed, exit 0",
+      "transcript_sha256_recorded": "1b92f9a4009b7e8f50b91e5ab47fdba1a699acfc6ecdbb1a9af3a27a7f455d4e",
+      "transcript_sha256_independently_verified_in_review": false,
+      "inherited": true,
+      "rerun": false
+    }
+  },
+  "rollback": {
+    "defined": true,
+    "mode": "PER_INSTRUCTION",
+    "requires_rebuild_and_redeploy": true,
+    "requires_data_migration": false,
+    "requires_language_change": false
+  },
+  "regression_policy": {"defined_as_proposal": true, "automated": false},
+  "security_resource_review": "PASS_WITH_SERIALIZED_SCOPE",
+  "maintenance_complexity": "MODERATE",
+  "blocking_items": [
+    "human decision on preserving the #309/e07 frozen-output baseline or authorizing a main-based test-only rebaseline, followed by Linux focused proof",
+    "CI: S3 pre-step failure with unattributed root cause and benchmark repository Actions disabled with no checks",
+    "product policy for measured code-size increase"
+  ],
+  "blocker_status": {
+    "limit_boundaries": "CLOSED",
+    "concurrency": "CLOSED",
+    "pr_stack": "READY_FOR_INTEGRATION_ACTION",
+    "ci": "OPEN",
+    "code_size_policy": "OPEN",
+    "open_blockers": 3
+  },
+  "governance_campaign_validation": {
+    "backend_source_changed": false,
+    "test_source_changed": false,
+    "executable_source_changed": false,
+    "full_suite_rerun": false,
+    "benchmark_rerun": false,
+    "compileall": "NOT_REQUIRED",
+    "diff_check": "PASS",
+    "json_parse": "PASS"
+  },
+  "nonblocking_items": [
+    "QPI unavailable",
+    "P2H rejected as hardening replacement without invalidating P2",
+    "P2H benchmark wrapper exit parsing issue is separate tooling debt"
+  ],
+  "technical_candidate_readiness": "CONDITIONAL",
+  "release_gate_readiness": "BLOCKED",
+  "promotion_readiness": "READY_PENDING_MULTIPLE_BLOCKERS",
+  "evidence_score": 89,
+  "evidence_score_is_readiness_score": false,
+  "budget_architecture_search": "CLOSED",
+  "no_new_budget_architecture": true,
+  "p2h_selected": false,
+  "p2_selected": true,
+  "source_changed_after_review_start": false,
+  "production_change_ready": false,
+  "ready_for_merge": false,
+  "merge": false,
+  "tag": false,
+  "release": false,
+  "default_switch": false,
+  "auto_shutdown": "FORBIDDEN",
+  "host_running_required": true,
+  "vm_running_required": true,
+  "virtualbox_running_required": true,
+  "semantic_closure": {
+    "test_source_commit": "c07b2c486b98e8408119f44ceedceb46c6d2549b",
+    "focused_tests": "75 passed, 0 failed; exit 0",
+    "focused_transcript_sha256": "1d078d76ce89cbcfa00ce85c4ed8e9d376524d97ea7381b89d666c6cfdc82406",
+    "full_suite": "4390 passed, 1 skipped, 572 subtests passed, 0 failed; exit 0",
+    "full_suite_head": "c07b2c486b98e8408119f44ceedceb46c6d2549b",
+    "full_suite_transcript_sha256": "6ebbbdc645cb66b3fcfea5b5683b64c416acd15eff11181ab2a99f6473f0e8b0",
+    "full_suite_transcript_path": "reports/s3-exact-segment-budget/evidence/full-suite-valid-c07b2c48-linux-x86_64.txt",
+    "invalid_archive_attempt_preserved_not_counted": true,
+    "backend_implementation_changed": false,
+    "test_source_changed": true,
+    "benchmark_rerun": false
+  },
+  "decision_authority": "PATH_A_ACCEPTED; INTEGRATION_ORACLE_CHOICE_PENDING",
+  "decision_recommendation": "PATH_A",
+  "decision_status": "ACCEPTED",
+  "accepted_concurrency_contract": "SERIALIZED_SAME_ARTIFACT_ONLY",
+  "semantic_readiness": "PASS",
+  "open_blockers": 3,
+  "next_critical_blocker": "HUMAN_INTEGRATION_APPROVAL",
+  "recommended_next_campaign": "NONE_HUMAN_DECISION_REQUIRED",
+  "stack_analysis_closed": true,
+  "stack_integration_executed": false,
+  "integration_candidate_created": false
+}

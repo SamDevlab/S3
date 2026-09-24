@@ -1,0 +1,120 @@
+{
+  "campaign": "S3_1_X_PR_STACK_INTEGRATION_CLOSURE",
+  "repository": "SamDevlab/S3",
+  "snapshot_utc": "2026-09-24T15:03:09Z",
+  "live_state_recheck_utc": "2026-09-24T15:25:49Z",
+  "main_sha": "4c7aaf4ad59fdacdd83f230e11a0bd979081c80a",
+  "all_existing_prs_301_312_open_draft_unmerged": true,
+  "all_current_check_rollups_failed": true,
+  "ci_root_cause_investigated": false,
+  "pr_graph": "reports/s3-integration/PR_STACK_GRAPH.json",
+  "selfhost_stack": {
+    "classification": "COHERENT_LINEAR_MILESTONE",
+    "prs": [301,302,303,304,305,306,307,308,309],
+    "functional_edges": ["301->302","302->303","303->304","304->305","305->306","306->307","307->308","308->309"],
+    "main_ahead_of_301_base": 0,
+    "stack_ahead_of_main_at_309": 144,
+    "merge_base": "4c7aaf4ad59fdacdd83f230e11a0bd979081c80a",
+    "current_main_conflict_classification": "NONE"
+  },
+  "p2_candidate_sha": "1a76e341098b54a639fec22eecea362cc243c46f",
+  "p2_control_sha": "e07d0b5464bf472b2ca18993f3e196a234ff0fc5",
+  "p2_original_pr309_head": "d064c17ea811ab926df515cb90884e8c6efffb3d",
+  "p2_exact_delta": "reports/s3-integration/P2_EXACT_DELTA.json",
+  "p2_functionally_requires_301_309": false,
+  "p2h_exclusion": {
+    "sha": "6f320242e3c1ebbb0d2ac5d6d85272ab375e5333",
+    "excluded": true,
+    "manifest": "reports/s3-integration/P2H_EXCLUSION_MANIFEST.md",
+    "pr310_current_head": "b2178088e0c17738058a92a64ea6c2971530d5cd",
+    "pr310_current_head_safe_to_merge_as_p2": false
+  },
+  "semantic_test_bundle": {
+    "pr_required": false,
+    "test_delta_required": true,
+    "commit": "c07b2c486b98e8408119f44ceedceb46c6d2549b",
+    "changed_file": "tests/test_exact_segment_instruction_budget.py",
+    "added_lines": 217,
+    "included_in_stable_candidate": false,
+    "full_suite_evidence": "4390 passed, 1 skipped, 572 subtests passed, 0 failed, exit 0",
+    "full_suite_head": "c07b2c486b98e8408119f44ceedceb46c6d2549b",
+    "transcript_sha256": "6ebbbdc645cb66b3fcfea5b5683b64c416acd15eff11181ab2a99f6473f0e8b0",
+    "bundle_doc": "reports/s3-integration/P2_SEMANTIC_TEST_BUNDLE.md"
+  },
+  "governance_bundle": {
+    "path_a_human_accepted": true,
+    "accepted_contract": "serialized same-artifact FFI and qualified synchronous callback reentry supported; concurrent same-artifact host-thread entry not supported or qualified",
+    "full_exact_segment_adr": "PROPOSED",
+    "whole_pr311_required": false,
+    "contract_doc_required_for_shipping": true
+  },
+  "strategies": {
+    "sequential_parent_chain": {"classification":"A_FEASIBLE_HIGH_DEBT","merge_operations":9,"executed":false},
+    "consolidated_selfhost": {"classification":"B_FEASIBLE_NOT_PREFERRED","dry_run":"NOT_RUN","reason":"retains broad unrelated selfhost surface and adds consolidation review risk"},
+    "clean_p2_extraction": {"classification":"BLOCKED_PENDING_HUMAN_TEST_ORACLE_DECISION","source_cherry_picks_clean":true,"compileall":"PASS","focused_tests":"18 passed, 1 failed, 21 skipped, exit 1","frozen_baseline_expected_bytes":50066,"observed_bytes":49947,"failure_cause":"NOT_ESTABLISHED","linux_native":"NOT_RUN_ON_WINDOWS_HOST","diff_check":"PASS"},
+    "minimal_integration": {"classification":"BLOCKED_BY_CLEAN_P2_VALIDATION","candidate_created":false}
+  },
+  "selected_strategy": "CLEAN_P2_EXTRACTION",
+  "selection_reason": "P2 implementation has no proven functional dependency on #301-#309; exact source cherry-picks are clean and unchanged, but a frozen-e07 output expectation fails on the stable-main composition and must not be silently rebaselined.",
+  "minimal_required_base": "main@4c7aaf4ad59fdacdd83f230e11a0bd979081c80a, after explicit human decision on frozen-output oracle",
+  "minimal_required_bundle": {
+    "base_features": [],
+    "p2_implementation": ["f4353c1b5bc3557dd05188d893f85de264300d5f","1a76e341098b54a639fec22eecea362cc243c46f"],
+    "p2_tests": ["P2 test file from selected P2 lineage","c07b2c486b98e8408119f44ceedceb46c6d2549b after oracle decision"],
+    "governance_docs": ["product-facing Path A concurrency contract clarification"],
+    "historical_only": ["full proposed ADR","temporary readiness/research reports","invalid archive evidence","P2H hardening artifacts"]
+  },
+  "candidate_branch": null,
+  "candidate_sha": null,
+  "dry_run_worktree": {
+    "path": "C:/Users/samue/Downloads/S3/scratch/s3-p2-extraction-candidate-20260924",
+    "head": "13c8427057bdf6135830b47bbb5b3be07ce418f7",
+    "detached": true,
+    "clean": true,
+    "stable_candidate": false
+  },
+  "source_identity": {
+    "p2_implementation_content_matches_selected_sha": true,
+    "default_per_instruction_content_match": "NOT_PROVEN_BY_FAILED_BYTE_ORACLE",
+    "performance_requalification_required_for_unchanged_p2_source": false,
+    "prior_rmsd_performance_evidence_scope": "specific #308/#309 workload composition; do not generalize to main extraction",
+    "benchmark_rerun": false
+  },
+  "validation": {
+    "compileall": "PASS",
+    "focused": "FAIL: 18 passed, 1 failed, 21 skipped, exit 1",
+    "linux_native": "NOT_RUN; native tests skipped on Windows host",
+    "full_suite_rerun": false,
+    "full_suite": "NOT_RUN",
+    "diff_check": "PASS",
+    "ci_rerun": false,
+    "benchmark_rerun": false
+  },
+  "pr_disposition": {
+    "301_309": "KEEP_OPEN_ACTIVE",
+    "310": "KEEP_OPEN_HISTORICAL; current head must not merge as P2",
+    "311": "REVIEW_ONLY_ARCHIVE",
+    "312": "KEEP_OPEN_HISTORICAL; test-only delta extractable after oracle decision"
+  },
+  "stack_analysis_closed": true,
+  "stack_integration_executed": false,
+  "remaining_blockers": [
+    "Human decision: preserve #309/e07 frozen output baseline by retaining that base, or authorize a test-only baseline update for main and then Linux-focused validation",
+    "S3 CI fails before job steps; cause unknown",
+    "S3-Benchmarks Actions disabled/no checks",
+    "Product code-size policy remains open"
+  ],
+  "blocker_pr_stack": "READY_FOR_INTEGRATION_ACTION",
+  "next_critical_blocker": "HUMAN_INTEGRATION_APPROVAL",
+  "next_campaign": "NONE_HUMAN_DECISION_REQUIRED",
+  "merge": false,
+  "close_prs": false,
+  "retarget_prs": false,
+  "force_push": false,
+  "tag": false,
+  "release": false,
+  "default_switch": false,
+  "shutdown": false,
+  "reboot": false,
+  "host_vm_virtualbox_must_remain_running": true
+}
