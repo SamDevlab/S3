@@ -12,7 +12,7 @@ CI blocker; the limit-edge coverage row is closed and is not counted.
 | Instruction-limit boundaries | PASS | Both modes build/link/execute at six limits including exact signed-32-bit neighbors; P0/P2 results match; P2 precharge checks `L-W` | No | Retain the boundary matrix and small-budget E0 fallback gates |
 | Calls | PASS | Call barrier and loop/call differential tests | No | Keep call barrier and accounting-order gates |
 | Callbacks / re-entry | PASS_WITH_DOCUMENTED_SCOPE | Synchronous callback re-entry and side-effect boundary tested | No | Preserve the synchronous-only claim |
-| Concurrent FFI | PENDING_GOVERNANCE | Narrow audit found no same-artifact concurrency promise or current product need; P0/P2 accounting is unsynchronized; Path A is recommended but not accepted | Yes, human decision | Human governance accepts/revises Path A; do not start implementation unless Path B is selected |
+| Concurrent FFI | PASS_WITH_DOCUMENTED_SCOPE | Human-approved Path A: serialized calls and qualified synchronous callback re-entry are supported; concurrent entry into the same loaded artifact is not supported or qualified | No; decision accepted | Preserve the contract; future same-artifact concurrency requires a separate execution-context, budget, frame-accounting, and synchronization contract |
 | Compatibility | PASS | No language, Assembly/IR format, ABI, calling-convention, or default changes; representative P0 byte identity | No | Retain default byte-identity corpus |
 | API surface | CONDITIONAL | Mode on exported `X8664Backend`; enum not re-exported; top-level API/CLI do not select it | No while kept experimental/internal | Revisit only if a supported public opt-in is proposed |
 | Default-mode strategy | CONDITIONAL | `PER_INSTRUCTION` remains default | No current behavior change | Recommend `KEEP_EXPERIMENTAL_INTERNAL` pending gates |
@@ -24,7 +24,7 @@ CI blocker; the limit-edge coverage row is closed and is not counted.
 | CI (S3 and benchmark repositories) | BLOCKED | S3 natural runs fail before steps, cause unknown; benchmark Actions permission is disabled and #24 has no runs/checks | Yes, one aggregate blocker | Diagnose S3 pre-step failure and restore benchmark workflow execution; absence of checks is not a pass |
 | Benchmark wrapper | CONDITIONAL | P2H full-suite wrapper failed after pytest; pytest exit not independently captured; distinct from P2 benchmark full-suite result | Operational debt | Repair wrapper in a separate tooling change before relying on it as a release gate |
 | Documentation | PASS_WITH_RECONCILIATION | P2's earlier f435/4,372 entry is distinguished from its 4,373 report entry; new c07b2c48 suite transcript is preserved and hashed in #312 | No | Keep source SHA, run, and transcript provenance distinct |
-| ADR | PENDING_GOVERNANCE | Proposed ADR remains unaccepted; its concurrency acceptance is the concurrency blocker above, not a separate blocker | Counted within concurrency governance | Human/project review; this document does not accept it |
+| ADR | PARTIALLY_ACCEPTED_SCOPE | The concurrency decision is accepted; the overall Exact Segment Budget ADR remains proposed and does not authorize promotion | No separate concurrency blocker | Keep overall P2 promotion gated by the remaining stack, CI, and code-size blockers |
 | Rollback | PASS as proposal | Rebuild with `PER_INSTRUCTION`; no language/data migration; artifact must be regenerated | No | Keep P0 fallback and document rebuild/redeploy requirement |
 | Regression testing | PASS as proposal | Required focused/full/native/performance tiers enumerated | No | Implement gates only in separately authorized release campaign |
 | Supportability | CONDITIONAL | Moderate complexity; mode not encoded in artifact metadata | No for internal mode | Preserve mode/config in build evidence for diagnosis |
@@ -36,13 +36,14 @@ CI blocker; the limit-edge coverage row is closed and is not counted.
 TECHNICAL_CANDIDATE_READINESS=CONDITIONAL
 RELEASE_GATE_READINESS=BLOCKED
 PROMOTION_READINESS=READY_PENDING_MULTIPLE_BLOCKERS
+SEMANTIC_READINESS=PASS
 DECISION_RECOMMENDATION=PATH_A
 DECISION_AUTHORITY=HUMAN_ACCEPTANCE_REQUIRED
-DECISION_STATUS=READY_FOR_HUMAN_ACCEPTANCE
-ACCEPTED_CONCURRENCY_CONTRACT=NONE_PENDING
-BLOCKER_CONCURRENCY=PENDING_GOVERNANCE
-OPEN_BLOCKERS=4
-NEXT_CRITICAL_BLOCKER=HUMAN_GOVERNANCE_DECISION
-NEXT_CAMPAIGN=NONE_HUMAN_DECISION_REQUIRED
+DECISION_STATUS=ACCEPTED
+ACCEPTED_CONCURRENCY_CONTRACT=SERIALIZED_SAME_ARTIFACT_ONLY
+BLOCKER_CONCURRENCY=CLOSED
+OPEN_BLOCKERS=3
+NEXT_CRITICAL_BLOCKER=PR_STACK
+NEXT_CAMPAIGN=S3_1_X_PR_STACK_INTEGRATION_CLOSURE
 S3_PRODUCTION_CHANGE_READY=NO
 ```

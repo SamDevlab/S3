@@ -13,14 +13,14 @@ layer; `PER_INSTRUCTION` remains the default. This does not establish universal
 S3 speedup or production readiness.
 
 The candidate is **conditionally technically ready for serialized Linux
-x86-64 use**. New exact-limit tests close the numeric boundary gap. The current
-public concurrency contract remains unspecified; a conservative serialized
-entry scope is documented as a proposal but is not yet accepted by project
-governance. The measured code-size increase also needs a product decision.
+x86-64 use**. New exact-limit tests close the numeric boundary gap. The
+historical same-artifact concurrency contract was unspecified; human
+governance has now accepted Path A as a clarification: serialized entry and
+qualified synchronous callback re-entry are supported, while concurrent host
+thread entry into the same loaded artifact is not currently supported or
+qualified. The measured code-size increase still needs a product decision.
 Release gates remain blocked by the unintegrated PR stack, S3 Actions failures
 before any job steps, and disabled Actions in the benchmark repository.
-Resolve the concurrency-scope decision before treating the candidate as a
-supported native capability.
 
 ```text
 P2_SELECTED=YES
@@ -201,13 +201,13 @@ counters. No runtime synchronization contract for those counters was found.
 Synchronous callback re-entry remains separately qualified at the call
 barrier, where accounting is updated before host code is entered.
 
-### Governance recommendation and decision authority
+### Accepted governance decision and authority
 
-**Recommendation: Path A. Decision status: ready for human acceptance, not
-accepted.** The repository's candidate-promotion policy requires explicit
-architectural review and an accepted ADR. It does not grant this campaign or
-agent authority to mark an ADR accepted. Therefore the accepted contract stays
-`NONE_PENDING` until project governance records the decision.
+**Path A is accepted for the native/FFI concurrency contract by explicit
+human approval on 2026-09-24.** This acceptance applies to the concurrency
+scope only; it does not accept the complete Exact Segment Budget ADR, promote
+P2, change defaults, or authorize release. The repository's candidate-
+promotion policy still governs those separate actions.
 
 Path A is a `CLARIFICATION_OF_UNSPECIFIED_BEHAVIOR`, not a breaking change:
 the audit found no earlier public promise, test dependency, or documented
@@ -235,7 +235,7 @@ behavior.
 `PATH_B_IS_NEW_RUNTIME_SEMANTICS=YES`
 `MORE_CAPABILITY != BETTER_CONTRACT`
 
-Path A wording for human review:
+Accepted Path A contract:
 
 > A loaded native S3 artifact currently supports serialized host invocation.
 > Synchronous callback re-entry is supported within the qualified native
@@ -246,11 +246,13 @@ Path A wording for human review:
 > Future concurrent-entry support requires a separate execution-context and
 > resource-accounting design.
 
-Until acceptance, `SAME_ARTIFACT_CONCURRENT_FFI=PENDING_DECISION`,
-`BLOCKER_CONCURRENCY=PENDING_GOVERNANCE`, and semantic readiness remains
-conditional. No synchronization or concurrent qualification is implemented;
-concurrent tests are not run. If Path B is selected, stop this campaign and
-open a separate implementation campaign only after that governance decision.
+`SAME_ARTIFACT_CONCURRENT_FFI=NOT_SUPPORTED`,
+`BLOCKER_CONCURRENCY=CLOSED`, and `SEMANTIC_READINESS=PASS` for the accepted
+serialized scope. No synchronization or concurrent qualification is
+implemented; concurrent tests are not run. Future same-artifact concurrency
+is a new capability and requires a separate contract for execution context,
+instruction budget, frame accounting, and synchronization. No implementation
+mechanism is selected here.
 
 ## 6. API, Default, and Compatibility
 
@@ -453,24 +455,22 @@ This defines a proposed regression policy; it is not yet automated.
 
 ## 13. Accepted Limitations and Blockers
 
-Known limitations are explicit: Path A is recommended but awaits human
-governance acceptance; same-artifact concurrent FFI remains unqualified;
+Known limitations are explicit: Path A is accepted for the concurrency scope,
+but same-artifact concurrent FFI remains unsupported and unqualified;
 native evidence is Linux x86-64 only; `.text` grows 39%-59%; P2H did not
 materially harden code size; QPI is unavailable; the S3 Actions failures have
 no attributed root cause; benchmark Actions are disabled; the PR stack remains
 unmerged; and the P2 S3 report contains a stale earlier full-suite entry.
 
-`OPEN_BLOCKERS=4`; blocker counting groups S3 and benchmark workflow execution
+`OPEN_BLOCKERS=3`; blocker counting groups S3 and benchmark workflow execution
 under the single CI blocker. The limit-edge coverage row below is closed, not
 an open blocker.
 
 | Blocking item | Evidence | Required resolution | Owner / next action |
 | --- | --- | --- | --- |
-| Concurrency contract governance | No public promise or current product need found; both candidates have unsynchronized artifact-scoped counters | Human project governance accepts or revises Path A; if Path B is selected, stop for a separate design campaign | Human/project governance; `HUMAN_GOVERNANCE_DECISION` |
-| Integration lineage | #301-#309 remain open Draft; #310 is stacked on #309 and not P2 | Integrate parent stack or review a clean P2 extraction | S3 maintainers; `S3_1_X_PR_STACK_INTEGRATION_CLOSURE` after contract decision |
+| Integration lineage | #301-#309 remain open Draft; #310 is stacked on #309 and not P2 | Integrate parent stack or review a clean P2 extraction | S3 maintainers; next campaign `S3_1_X_PR_STACK_INTEGRATION_CLOSURE` |
 | CI (S3 and benchmark repositories) | S3 natural runs fail before steps with cause unknown; benchmark Actions are disabled with no checks | Diagnose S3 pre-step failure and restore the benchmark workflow gate; do not treat absent checks as pass | S3 and S3-Benchmarks CI owners |
 | Product code-size policy | measured `.text` growth, no documented cap found | Decide acceptable product scope/size limit; do not reopen budget architecture | S3 product maintainers |
-| Limit-edge coverage | New Linux test-only matrix covers `0x7ffffffe` through `0x80000001`, 10 billion, and U64_MAX in both modes; P0/P2 results match | Closed for tested Linux x86-64 backend scope | Closed by semantic-closure evidence |
 
 P2's successful performance result remains valid and is not invalidated by
 these promotion blockers.
@@ -486,20 +486,21 @@ The gate-by-gate matrix is in
 R1_SUPPORTED_CAPABILITY=CONDITIONAL
 R2_INTEGRATION=CONDITIONAL
 R3_RELEASE_AUTOMATION=BLOCKED
-R4_SCOPE_CONTRACT=CONDITIONAL
+R4_SCOPE_CONTRACT=PASS_WITH_DOCUMENTED_SCOPE
 R5_RESOURCE_TRADEOFF=CONDITIONAL
 
+SEMANTIC_READINESS=PASS
 TECHNICAL_CANDIDATE_READINESS=CONDITIONAL
 RELEASE_GATE_READINESS=BLOCKED
 PROMOTION_READINESS=READY_PENDING_MULTIPLE_BLOCKERS
-NEXT_CRITICAL_BLOCKER=HUMAN_GOVERNANCE_DECISION
-NEXT_CAMPAIGN=NONE_HUMAN_DECISION_REQUIRED
+NEXT_CRITICAL_BLOCKER=PR_STACK
+NEXT_CAMPAIGN=S3_1_X_PR_STACK_INTEGRATION_CLOSURE
 DECISION_RECOMMENDATION=PATH_A
 DECISION_AUTHORITY=HUMAN_ACCEPTANCE_REQUIRED
-DECISION_STATUS=READY_FOR_HUMAN_ACCEPTANCE
-ACCEPTED_CONCURRENCY_CONTRACT=NONE_PENDING
-BLOCKER_CONCURRENCY=PENDING_GOVERNANCE
-OPEN_BLOCKERS=4
+DECISION_STATUS=ACCEPTED
+ACCEPTED_CONCURRENCY_CONTRACT=SERIALIZED_SAME_ARTIFACT_ONLY
+BLOCKER_CONCURRENCY=CLOSED
+OPEN_BLOCKERS=3
 
 EVIDENCE_SCORE=89 (research rubric only)
 QUALIFIED_PERFORMANCE_INDEX=NOT_AVAILABLE
@@ -511,8 +512,8 @@ RELEASE=NO
 DEFAULT_SWITCH=NO
 ```
 
-After human acceptance of Path A, the next engineering campaign is
-`S3_1_X_PR_STACK_INTEGRATION_CLOSURE`. The remaining blockers are PR stack, CI
-(S3 plus benchmark workflow execution), and product code-size policy. No
-P3/P4/P5 architecture search is recommended. This campaign stops at the human
-concurrency-contract acceptance boundary.
+The concurrency decision is closed. The next recommended engineering campaign
+is `S3_1_X_PR_STACK_INTEGRATION_CLOSURE`; it is not started here. The remaining
+blockers are PR stack, CI (S3 plus benchmark workflow execution), and product
+code-size policy. No P3/P4/P5 architecture search is recommended. No merge,
+default switch, promotion, tag, or release is authorized.

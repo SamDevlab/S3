@@ -3,6 +3,9 @@
 ```text
 STATUS=PROPOSED
 ACCEPTED=NO
+CONCURRENCY_DECISION=ACCEPTED_PATH_A
+CONCURRENCY_DECISION_APPROVAL=HUMAN_APPROVAL_RECEIVED_2026-09-24
+OVERALL_P2_ADR_ACCEPTED=NO
 ```
 
 ## Context
@@ -140,11 +143,11 @@ preserved in the semantic-closure branch at
 `reports/s3-exact-segment-budget/evidence/full-suite-valid-c07b2c48-linux-x86_64.txt`
 (SHA-256 `6ebbbdc645cb66b3fcfea5b5683b64c416acd15eff11181ab2a99f6473f0e8b0`).
 The single skip is optional `cryptography`, unavailable in the guest Python
-environment. No production/backend implementation changed. Current public
-documentation leaves same-artifact concurrency unspecified; the conservative
-caller-serialized scope remains proposed and unaccepted.
+environment. No production/backend implementation changed. Same-artifact
+concurrency was historically unspecified; the human-approved Path A contract
+below now clarifies the supported scope without accepting this complete P2 ADR.
 
-## Concurrency Contract Governance Decision (Not Accepted)
+## Concurrency Contract Governance Decision (Accepted Scope; Overall ADR Proposed)
 
 ### Context and historical contract
 
@@ -173,9 +176,9 @@ per-call budget object, or TLS accounting ABI. The Python buffer registry's
 lock protects that registry only; it does not synchronize native artifact
 accounting. No accounting ownership model is selected here.
 
-### Proposed contract and compatibility
+### Accepted contract and compatibility
 
-The recommendation is Path A, pending human/project acceptance:
+Human governance approved Path A on 2026-09-24:
 
 > A loaded native S3 artifact currently supports serialized host invocation.
 > Synchronous callback re-entry is supported within the qualified native
@@ -186,12 +189,12 @@ The recommendation is Path A, pending human/project acceptance:
 > Future concurrent-entry support requires a separate execution-context and
 > resource-accounting design.
 
-Path A would preserve qualified serialized execution and synchronous callback
+Path A preserves qualified serialized execution and synchronous callback
 re-entry. Since no earlier public promise, test dependency, or documented
 same-artifact concurrent behavior was found, its compatibility classification
 is `CLARIFICATION_OF_UNSPECIFIED_BEHAVIOR`, not a breaking change. Users needing
-parallel calls must not concurrently enter the same loaded artifact under the
-current unaccepted proposal. No unverified workaround is prescribed.
+parallel calls must not concurrently enter the same loaded artifact under this
+contract. No unverified workaround is prescribed.
 
 Path B means concurrent same-artifact entry is a required native capability.
 Current P0/P2 accounting does not qualify that promise. Choosing Path B would
@@ -204,21 +207,23 @@ mutex, atomics, TLS, or any other implementation mechanism.
 ### Decision authority and status
 
 The candidate-promotion policy requires explicit architectural review and an
-accepted ADR. It does not identify this campaign/agent as an acceptance
-authority. Therefore this document records a recommendation only:
+accepted ADR. The campaign/agent did not self-accept this decision; the user
+explicitly approved Path A in this task. This approval accepts the
+concurrency-scope decision only, not the complete Exact Segment Budget ADR or
+P2 promotion:
 
 ```text
 DECISION_RECOMMENDATION=PATH_A
 DECISION_AUTHORITY=HUMAN_ACCEPTANCE_REQUIRED
-DECISION_STATUS=READY_FOR_HUMAN_ACCEPTANCE
-ACCEPTED_CONCURRENCY_CONTRACT=NONE_PENDING
+DECISION_STATUS=ACCEPTED
+ACCEPTED_CONCURRENCY_CONTRACT=SERIALIZED_SAME_ARTIFACT_ONLY
+BLOCKER_CONCURRENCY=CLOSED
 ```
 
-This is a clarification proposal, not acceptance or production promotion.
-Until governance accepts or revises it, same-artifact concurrent entry remains
-unqualified and the concurrency blocker remains open. If Path B is selected,
-stop and start a separate concurrency-design campaign. No implementation,
-concurrent test, benchmark, or default change is authorized here.
+This is an accepted clarification of historically unspecified behavior, not a
+production promotion. Same-artifact concurrent entry remains unsupported and
+unqualified. No implementation, concurrent test, benchmark, or default
+change is authorized here.
 
 ### Future extension and non-goals
 
@@ -229,13 +234,12 @@ accounting architecture, qualify concurrency, or change executable behavior.
 
 ## Open Questions
 
-1. Is concurrent entry into one native artifact a supported product contract?
-2. Should the mode remain internal or become a documented backend option?
-3. What, if any, product binary-size limit applies to Linux x86-64 outputs?
-4. How will the stacked #301-#309 lineage be integrated or cleanly extracted?
-5. What causes the S3 pre-step CI failures, and who owns restoring Actions in
+1. Should the mode remain internal or become a documented backend option?
+2. What, if any, product binary-size limit applies to Linux x86-64 outputs?
+3. How will the stacked #301-#309 lineage be integrated or cleanly extracted?
+4. What causes the S3 pre-step CI failures, and who owns restoring Actions in
    S3-Benchmarks?
 
-This ADR remains proposed and unaccepted. Human/project governance must review
-the concurrency recommendation before stack integration proceeds and must
-review the complete ADR before any production promotion work.
+The concurrency-scope decision in this ADR is accepted. The complete Exact
+Segment Budget ADR remains proposed and unaccepted; it and all other promotion
+gates require review before any production promotion work.
