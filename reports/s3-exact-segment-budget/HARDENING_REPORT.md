@@ -24,6 +24,8 @@ Strategy A is a layout experiment, not presumed code-size compression. It moves 
 
 No H12B is opened because structural body sharing was rejected before implementation. No new budget architecture is proposed.
 
+The preceding ledger is unchanged: H1 `CONFIRMED`; H2 `CONFIRMED_CAUSAL_XSBENCH`; H3 `NOT_CONFIRMED`; H4 `OPEN`; H5 `OPEN`; H6 `WEAKENED`; H7 `CONFIRMED_GENERAL`; H8 `CONFIRMED_SAFE_NOT_MATERIAL`; H9 `CONFIRMED_EXACT_MAPPING`; H10 `CONFIRMED`; H11 `CONFIRMED_MATERIAL`. Final H12 is `SAFE_NOT_STRUCTURALLY_MATERIAL`; H12A is `NOT_CONFIRMED`. The predeclared hot-layout materiality threshold is 25%; no measured cell reached it. Evidence Score remains 89/100 under the existing rubric, and `QUALIFIED_PERFORMANCE_INDEX=NOT_AVAILABLE`.
+
 ## Evidence log
 
 Implementation, focused tests, source freeze, full-suite evidence, Linux native validation, benchmark validation, and final disposition are recorded below. Existing P2 timing and full-suite evidence remain historical controls and are not relabeled as P2H results.
