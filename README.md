@@ -204,6 +204,13 @@ Outros targets só devem ser tratados como suportados quando houver evidência d
 
 O repositório preserva componentes experimentais escritos em S3, mas **full compiler self-hosting está fora do caminho crítico**. Python continua sendo o compilador de referência e default.
 
+A `main` pós-#313 também contém fatias S3-native limitadas: frontend derivado
+de source e estrutura de programa, execução semântica delimitada, protocolos de
+valores tipados/dados indexados, referências agregadas read-only no caminho de
+compilação nativo e um workload RMSD executado no backend Linux x86-64. Essas
+fatias são compiladas pelo compilador Python de referência; não constituem um
+compilador S3 que compila a si próprio nem alteram o status de full self-hosting.
+
 Uma futura retomada exige primeiro uma arquitetura genérica completa — `source -> lexer -> parser -> AST/HIR -> semantics -> IR -> verifier -> emitter -> compile_program` — e os gates de reentrada documentados em [`docs/selfhost/REENTRY_CRITERIA.md`](docs/selfhost/REENTRY_CRITERIA.md).
 
 Veja também [`docs/selfhost/STATUS.md`](docs/selfhost/STATUS.md) e [`docs/selfhost/FUTURE_ARCHITECTURE.md`](docs/selfhost/FUTURE_ARCHITECTURE.md).
