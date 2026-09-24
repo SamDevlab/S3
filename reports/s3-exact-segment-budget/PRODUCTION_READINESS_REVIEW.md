@@ -163,37 +163,94 @@ checks. Segment precharge changes only instruction-accounting state; each S3
 instruction still goes through its normal emitter path, and slow-path failures
 retain the baseline failure site and context.
 
-## 5. Concurrency and Reentrancy
+## 5. Concurrency Governance Decision
 
-The instruction and frame counters are aligned writable `.bss` objects in the
-loaded artifact instance. P0 uses ordinary memory `inc`/`dec`; P2 uses ordinary
-memory `add` for fast-segment precharge and ordinary scalar `inc`/`dec`. Neither
-uses a lock-prefixed read-modify-write or thread-local storage. Serial calls
-share the loaded artifact's counter state, as covered by the repeated-serial
-FFI test. Synchronous callback re-entry is qualified because a call is a
-segment barrier and accounting is updated before host code is entered.
+### Historical contract and narrow contradiction audit
 
-ADR-0008 and ADR-0014 contain no same-artifact concurrency promise, and no
-concurrent-entry test was found. The current public contract is therefore
-`UNSPECIFIED`, not explicitly supported or explicitly prohibited. The proposed
-conservative scope is caller-serialized entry into one loaded artifact;
-synchronous re-entry within a serialized call remains qualified. This is
-documented in the proposed ADR but remains unaccepted pending project
-governance. The same lack of synchronization exists in P0, so no pre-existing
-concurrency guarantee was shown to be weakened by P2.
+The same-loaded-artifact host-thread entry contract is `UNSPECIFIED`. The
+narrow second-pass search covered README, specifications, docs, ADRs, public
+FFI/native API material, relevant FFI tests, and release/project artifacts for
+explicit thread-safety or same-artifact concurrent-entry promises. It found no
+contradiction to the earlier audit: `EXISTING_CONCURRENT_ENTRY_PROMISE=NONE_FOUND`.
+The AI-agent guide's restriction on concurrency describes that guide's agent
+scope; it does not promise or prohibit host threads entering one native shared
+object. Other S3 thread/structured-concurrency features likewise do not
+establish this native FFI contract.
 
-```text
-SERIAL_EXECUTION=QUALIFIED
-SYNCHRONOUS_CALLBACK_REENTRY=QUALIFIED
-CONCURRENT_FFI_ENTRY=NOT_QUALIFIED
-PROPOSED_SCOPE=NOT_SUPPORTED_UNLESS_EXPLICITLY_QUALIFIED
-PROPOSED_SCOPE_ACCEPTED=NO
-CONCURRENCY_READINESS=CONDITIONAL_PENDING_GOVERNANCE
-```
+Repository artifacts contain no evidence that a current or specifically
+planned product use case requires two host threads to call the same loaded S3
+shared object: `CURRENT_PRODUCT_NEED_FOR_SAME_ARTIFACT_CONCURRENCY=NO_EVIDENCE`.
+This is not a claim that such a use case could never arise.
 
-No synchronization or concurrent qualification is implemented. Concurrent
-tests are not required under the proposed serialized-only scope; they become
-necessary only if governance requires same-artifact concurrent entry.
+### Runtime and FFI facts
+
+P0 and P2 keep instruction accounting in an aligned writable `.bss` word per
+loaded native artifact instance; frame accounting is also artifact-scoped
+writable `.bss`. P0 uses ordinary memory `inc`/`dec`; P2 uses ordinary memory
+`add` for segment precharge and ordinary scalar `inc`/`dec`. These accounting
+operations have no lock-prefixed read-modify-write or TLS protocol. Serial
+calls share the artifact's counter state, as covered by
+`test_repeated_serial_ffi_calls_preserve_process_budget_lifetime`.
+
+The FFI contract exposes signatures, calling convention, scalar widths,
+call-scoped buffer views, and ownership rules. It exposes neither an execution
+context object nor a per-call budget object, and the native ABI exposes no
+thread-local accounting state. The Python `FFIBufferRegistry` has a lock for
+its own handle/buffer map; that lock does not synchronize native artifact
+counters. No runtime synchronization contract for those counters was found.
+Synchronous callback re-entry remains separately qualified at the call
+barrier, where accounting is updated before host code is entered.
+
+### Governance recommendation and decision authority
+
+**Recommendation: Path A. Decision status: ready for human acceptance, not
+accepted.** The repository's candidate-promotion policy requires explicit
+architectural review and an accepted ADR. It does not grant this campaign or
+agent authority to mark an ADR accepted. Therefore the accepted contract stays
+`NONE_PENDING` until project governance records the decision.
+
+Path A is a `CLARIFICATION_OF_UNSPECIFIED_BEHAVIOR`, not a breaking change:
+the audit found no earlier public promise, test dependency, or documented
+same-artifact concurrent functionality that it would remove. It retains the
+already qualified serialized FFI behavior and synchronous callback re-entry.
+Path B is a new runtime capability requirement, not a description of current
+behavior.
+
+| Criterion | Path A: serialized entry | Path B: concurrent entry required | Evidence | Implication |
+| --- | --- | --- | --- | --- |
+| Existing public promise | No same-artifact promise found | No same-artifact promise found | ADR-0008/0014, public API/docs and narrow search | Neither path inherits a prior concurrency guarantee |
+| P0 compatibility | Preserves existing unsynchronized implementation; documents a bound | Requires P0 semantics to be newly qualified or changed | P0 uses artifact-global ordinary counter operations | Path B expands the baseline contract |
+| P2 compatibility | No guarantee weakened relative to P0 | Current P2 aggregate precharge is not concurrency-equivalent to P0 | P0/P2 evidence and emitter operations | Path A is a scope clarification; Path B needs new semantics |
+| Serial FFI | Remains qualified | Must remain qualified | Repeated serial-call test | Both paths retain this supported behavior |
+| Callback re-entry | Qualified synchronous barrier behavior remains supported | Interactions with concurrent callers need definition | Callback re-entry test | Path B expands the interaction model |
+| New runtime semantics required | No implementation semantics added by the clarification | Yes | Concurrent counters and exhaustion have no defined ownership/order | Path B requires a separate design campaign |
+| Accounting ownership decision | Existing artifact-scoped state is only relied on for serialized calls | Must choose shared, per-thread, or per-call budget semantics | No execution-context/per-call-budget FFI object exists | Do not choose an accounting model here |
+| Frame-accounting decision | Existing artifact-scoped frame guard remains serialized | Must define shared frame accounting and concurrent ownership | Writable artifact `.bss`; no TLS contract | Path B adds resource semantics beyond instruction counting |
+| Implementation complexity | Documentation and governance only | Dedicated design, implementation, and qualification | No concurrency mechanism currently qualifies the counters | Do not implement in this campaign |
+| Performance risk | No executable change | Unknown until a design exists and is measured | No concurrency performance evidence | Do not infer a lock/atomic/TLS choice |
+| Rollback impact | No binary or API change | Would require separate compatibility and rollback policy | Existing `PER_INSTRUCTION` remains default | Path B promotion is separately gated |
+| Future extensibility | Explicitly leaves a future execution-context/accounting design open | Satisfies the requirement only after implementation | Current API lacks execution context | Path A is not a permanent prohibition |
+
+`PATH_A_BACKWARD_COMPATIBILITY=PASS`
+`PATH_B_IS_NEW_RUNTIME_SEMANTICS=YES`
+`MORE_CAPABILITY != BETTER_CONTRACT`
+
+Path A wording for human review:
+
+> A loaded native S3 artifact currently supports serialized host invocation.
+> Synchronous callback re-entry is supported within the qualified native
+> call-barrier contract. Concurrent entry into the same loaded artifact from
+> multiple host threads is not currently supported. This restriction applies
+> to artifact-scoped runtime accounting state and does not make a broader claim
+> that all S3 execution or all S3 programs are intrinsically single-threaded.
+> Future concurrent-entry support requires a separate execution-context and
+> resource-accounting design.
+
+Until acceptance, `SAME_ARTIFACT_CONCURRENT_FFI=PENDING_DECISION`,
+`BLOCKER_CONCURRENCY=PENDING_GOVERNANCE`, and semantic readiness remains
+conditional. No synchronization or concurrent qualification is implemented;
+concurrent tests are not run. If Path B is selected, stop this campaign and
+open a separate implementation campaign only after that governance decision.
 
 ## 6. API, Default, and Compatibility
 
@@ -396,19 +453,22 @@ This defines a proposed regression policy; it is not yet automated.
 
 ## 13. Accepted Limitations and Blockers
 
-Known limitations are explicit: same-artifact concurrent FFI is unqualified and
-its proposed caller-serialized scope is pending governance acceptance;
+Known limitations are explicit: Path A is recommended but awaits human
+governance acceptance; same-artifact concurrent FFI remains unqualified;
 native evidence is Linux x86-64 only; `.text` grows 39%-59%; P2H did not
 materially harden code size; QPI is unavailable; the S3 Actions failures have
 no attributed root cause; benchmark Actions are disabled; the PR stack remains
 unmerged; and the P2 S3 report contains a stale earlier full-suite entry.
 
+`OPEN_BLOCKERS=4`; blocker counting groups S3 and benchmark workflow execution
+under the single CI blocker. The limit-edge coverage row below is closed, not
+an open blocker.
+
 | Blocking item | Evidence | Required resolution | Owner / next action |
 | --- | --- | --- | --- |
-| Concurrency contract governance | ADR-0008/0014 and public API do not define same-artifact concurrent entry; P0 and P2 counters are unsynchronized; caller-serialized scope is proposed, not accepted | Accept or revise the proposed scope; qualify concurrency only if required | S3 project; `S3_NATIVE_EXECUTION_CONCURRENCY_CONTRACT_DECISION` |
+| Concurrency contract governance | No public promise or current product need found; both candidates have unsynchronized artifact-scoped counters | Human project governance accepts or revises Path A; if Path B is selected, stop for a separate design campaign | Human/project governance; `HUMAN_GOVERNANCE_DECISION` |
 | Integration lineage | #301-#309 remain open Draft; #310 is stacked on #309 and not P2 | Integrate parent stack or review a clean P2 extraction | S3 maintainers; `S3_1_X_PR_STACK_INTEGRATION_CLOSURE` after contract decision |
-| S3 release CI | #310 and #312 natural runs fail before steps; #312 has 13 jobs with `steps=[]`; root cause UNKNOWN | Obtain one real green run after attributable infrastructure/workflow diagnosis | S3 CI owners; `S3_CI_RELEASE_GATE_RECOVERY` |
-| Benchmark CI | Actions permissions `enabled=false`, no run/checks | Re-enable/configure the benchmark repository gate and capture a valid run | S3-Benchmarks maintainers |
+| CI (S3 and benchmark repositories) | S3 natural runs fail before steps with cause unknown; benchmark Actions are disabled with no checks | Diagnose S3 pre-step failure and restore the benchmark workflow gate; do not treat absent checks as pass | S3 and S3-Benchmarks CI owners |
 | Product code-size policy | measured `.text` growth, no documented cap found | Decide acceptable product scope/size limit; do not reopen budget architecture | S3 product maintainers |
 | Limit-edge coverage | New Linux test-only matrix covers `0x7ffffffe` through `0x80000001`, 10 billion, and U64_MAX in both modes; P0/P2 results match | Closed for tested Linux x86-64 backend scope | Closed by semantic-closure evidence |
 
@@ -432,8 +492,14 @@ R5_RESOURCE_TRADEOFF=CONDITIONAL
 TECHNICAL_CANDIDATE_READINESS=CONDITIONAL
 RELEASE_GATE_READINESS=BLOCKED
 PROMOTION_READINESS=READY_PENDING_MULTIPLE_BLOCKERS
-NEXT_CRITICAL_BLOCKER=CONCURRENCY_CONTRACT_GOVERNANCE_DECISION
-NEXT_CAMPAIGN=S3_NATIVE_EXECUTION_CONCURRENCY_CONTRACT_DECISION
+NEXT_CRITICAL_BLOCKER=HUMAN_GOVERNANCE_DECISION
+NEXT_CAMPAIGN=NONE_HUMAN_DECISION_REQUIRED
+DECISION_RECOMMENDATION=PATH_A
+DECISION_AUTHORITY=HUMAN_ACCEPTANCE_REQUIRED
+DECISION_STATUS=READY_FOR_HUMAN_ACCEPTANCE
+ACCEPTED_CONCURRENCY_CONTRACT=NONE_PENDING
+BLOCKER_CONCURRENCY=PENDING_GOVERNANCE
+OPEN_BLOCKERS=4
 
 EVIDENCE_SCORE=89 (research rubric only)
 QUALIFIED_PERFORMANCE_INDEX=NOT_AVAILABLE
@@ -445,6 +511,8 @@ RELEASE=NO
 DEFAULT_SWITCH=NO
 ```
 
-Priority after the contract decision is integration lineage, then S3 CI and
-benchmark CI recovery, then product code-size policy. No P3/P4/P5 architecture
-search is recommended. The review stops before any human promotion decision.
+After human acceptance of Path A, the next engineering campaign is
+`S3_1_X_PR_STACK_INTEGRATION_CLOSURE`. The remaining blockers are PR stack, CI
+(S3 plus benchmark workflow execution), and product code-size policy. No
+P3/P4/P5 architecture search is recommended. This campaign stops at the human
+concurrency-contract acceptance boundary.

@@ -17,7 +17,7 @@
     ]
   },
   "semantic_contract": {
-    "status": "CONDITIONAL_PENDING_CONCURRENCY_GOVERNANCE",
+    "status": "CONDITIONAL_PENDING_HUMAN_CONCURRENCY_ACCEPTANCE",
     "e0_contract_documented": true,
     "e0_test_mapping_complete": true,
     "qualified_scope": ["serialized native execution", "synchronous callback re-entry"],
@@ -26,15 +26,36 @@
     "semantic_boundary_bug": false
   },
   "concurrency_contract": {
+    "governance_campaign": "S3_NATIVE_EXECUTION_CONCURRENCY_CONTRACT_DECISION",
+    "historical_contract": "UNSPECIFIED",
+    "existing_concurrent_entry_promise": "NONE_FOUND",
+    "current_product_need_for_same_artifact_concurrency": "NO_EVIDENCE",
     "serial_execution": "QUALIFIED",
     "synchronous_callback_reentry": "QUALIFIED",
     "concurrent_same_artifact_ffi": "NOT_QUALIFIED",
     "public_contract": "UNSPECIFIED",
-    "proposed_scope": "NOT_SUPPORTED_UNLESS_EXPLICITLY_QUALIFIED",
+    "path_a": "SAME_ARTIFACT_CONCURRENT_ENTRY_NOT_SUPPORTED",
+    "path_a_backward_compatibility": "PASS",
+    "path_b": "SAME_ARTIFACT_CONCURRENT_ENTRY_REQUIRED",
+    "path_b_is_new_runtime_semantics": true,
+    "proposed_scope": "SERIALIZED_SAME_ARTIFACT_ONLY; SYNCHRONOUS_CALLBACK_REENTRY_QUALIFIED",
     "proposed_scope_accepted": false,
+    "concurrent_ffi_tests": "NOT_RUN",
     "p0_and_p2_counter_model": "ALIGNED_WRITABLE_BSS; UNSYNCHRONIZED; NO_TLS_OR_LOCKED_RMW",
     "p2_weakens_existing_concurrency_guarantee": false,
-    "status": "CONDITIONAL_PENDING_GOVERNANCE"
+    "ffi_execution_context_object": false,
+    "ffi_per_call_budget_object": false,
+    "native_tls_accounting_abi": false,
+    "native_accounting_synchronization": false,
+    "instruction_accounting_scope": "PER_LOADED_ARTIFACT_INSTANCE_WRITABLE_BSS",
+    "frame_accounting_scope": "PER_LOADED_ARTIFACT_INSTANCE_WRITABLE_BSS",
+    "decision_authority": "HUMAN_ACCEPTANCE_REQUIRED",
+    "recommendation": "PATH_A",
+    "decision_status": "READY_FOR_HUMAN_ACCEPTANCE",
+    "accepted_contract": "NONE_PENDING",
+    "compatibility_classification": "CLARIFICATION_OF_UNSPECIFIED_BEHAVIOR",
+    "blocker_status": "PENDING_GOVERNANCE",
+    "status": "CONDITIONAL_PENDING_HUMAN_ACCEPTANCE"
   },
   "api_strategy": {
     "current_default": "PER_INSTRUCTION",
@@ -137,12 +158,29 @@
   "security_resource_review": "PASS_WITH_SERIALIZED_SCOPE",
   "maintenance_complexity": "MODERATE",
   "blocking_items": [
-    "governance acceptance or revision of proposed same-artifact concurrent FFI scope",
+    "human governance acceptance or revision of the proposed same-artifact concurrent FFI scope",
     "unintegrated parent PR stack or reviewed clean extraction",
-    "S3 CI pre-step failure with unattributed root cause",
-    "benchmark repository Actions disabled and no checks",
+    "CI: S3 pre-step failure with unattributed root cause and benchmark repository Actions disabled with no checks",
     "product policy for measured code-size increase"
   ],
+  "blocker_status": {
+    "limit_boundaries": "CLOSED",
+    "concurrency": "PENDING_GOVERNANCE",
+    "pr_stack": "OPEN",
+    "ci": "OPEN",
+    "code_size_policy": "OPEN",
+    "open_blockers": 4
+  },
+  "governance_campaign_validation": {
+    "backend_source_changed": false,
+    "test_source_changed": false,
+    "executable_source_changed": false,
+    "full_suite_rerun": false,
+    "benchmark_rerun": false,
+    "compileall": "NOT_REQUIRED",
+    "diff_check": "PASS",
+    "json_parse": "PASS"
+  },
   "nonblocking_items": [
     "QPI unavailable",
     "P2H rejected as hardening replacement without invalidating P2",
@@ -181,6 +219,10 @@
     "test_source_changed": true,
     "benchmark_rerun": false
   },
-  "next_critical_blocker": "CONCURRENCY_CONTRACT_GOVERNANCE_DECISION",
-  "recommended_next_campaign": "S3_NATIVE_EXECUTION_CONCURRENCY_CONTRACT_DECISION"
+  "decision_authority": "HUMAN_ACCEPTANCE_REQUIRED",
+  "decision_recommendation": "PATH_A",
+  "decision_status": "READY_FOR_HUMAN_ACCEPTANCE",
+  "accepted_concurrency_contract": "NONE_PENDING",
+  "next_critical_blocker": "HUMAN_GOVERNANCE_DECISION",
+  "recommended_next_campaign": "NONE_HUMAN_DECISION_REQUIRED"
 }
