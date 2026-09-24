@@ -41,6 +41,17 @@ def validate_f64(value: float | int) -> float:
     return float(value)
 
 
+def sqrt_f64(value: float | int) -> float:
+    """Return the IEEE-754 binary64 square root used by all backends."""
+
+    value = validate_f64(value)
+    if math.isnan(value):
+        return value
+    if value < 0.0:
+        return float("nan")
+    return math.sqrt(value)
+
+
 def checked_i64_add(left: int, right: int) -> int:
     return validate_i64(validate_i64(left) + validate_i64(right))
 

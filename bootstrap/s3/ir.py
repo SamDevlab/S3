@@ -85,6 +85,7 @@ def _decode_composite_vector_runtime_name(
 
 
 DYNAMIC_BUILTIN_SIGNATURES: dict[str, tuple[tuple[IRType, ...], tuple[IRType, ...]]] = {
+    "sqrt": ((IRType.F64,), (IRType.F64,)),
     "bytes_new": ((IRType.I64,), (IRType.BYTES,)),
     "bytes_len": ((IRType.REFERENCE,), (IRType.I64,)),
     "bytes_capacity": ((IRType.REFERENCE,), (IRType.I64,)),
@@ -201,6 +202,9 @@ class IROpcode(Enum):
     LOAD = "load"
     STORE = "store"
     ADDRESS_OF = "address_of"
+    AGGREGATE_ADDRESS_OF = "aggregate_address_of"
+    AGGREGATE_FIELD_LOAD = "aggregate_field_load"
+    AGGREGATE_FIELD_ADDRESS = "aggregate_field_address"
     REFERENCE_LOAD = "reference_load"
     REFERENCE_STORE = "reference_store"
     SLICE_LENGTH = "slice_length"
@@ -254,6 +258,7 @@ class IRRegister:
     reference_mutable: bool = False
     reference_is_slice: bool = False
     slice_length_register: int | None = None
+    reference_aggregate: str | None = None
 
     @property
     def name(self) -> str:
@@ -269,6 +274,8 @@ class IRRegister:
             result["reference_target"] = self.reference_target.value
             result["reference_mutable"] = self.reference_mutable
             result["reference_is_slice"] = self.reference_is_slice
+        if self.reference_aggregate is not None:
+            result["reference_aggregate"] = self.reference_aggregate
         if self.location is not None:
             result["source"] = self.location.to_dict()
         return result
@@ -284,6 +291,7 @@ class IRParameter:
     reference_mutable: bool = False
     reference_is_slice: bool = False
     slice_length_register: int | None = None
+    reference_aggregate: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {
@@ -295,6 +303,8 @@ class IRParameter:
             result["reference_target"] = self.reference_target.value
             result["reference_mutable"] = self.reference_mutable
             result["reference_is_slice"] = self.reference_is_slice
+        if self.reference_aggregate is not None:
+            result["reference_aggregate"] = self.reference_aggregate
         if self.location is not None:
             result["source"] = self.location.to_dict()
         return result
@@ -342,6 +352,9 @@ class IRInstruction:
     reference_mutable: bool = False
     reference_is_slice: bool = False
     slice_length_result: int | None = None
+    reference_aggregate: str | None = None
+    aggregate_field_paths: tuple[tuple[str, ...], ...] = ()
+    aggregate_field_path: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.results and self.result is not None and self.results != (self.result,):
@@ -384,6 +397,12 @@ class IRInstruction:
             result["reference_target"] = self.reference_target.value
             result["reference_mutable"] = self.reference_mutable
             result["reference_is_slice"] = self.reference_is_slice
+        if self.reference_aggregate is not None:
+            result["reference_aggregate"] = self.reference_aggregate
+        if self.aggregate_field_paths:
+            result["aggregate_field_paths"] = [list(path) for path in self.aggregate_field_paths]
+        if self.aggregate_field_path:
+            result["aggregate_field_path"] = list(self.aggregate_field_path)
         return result
 
 

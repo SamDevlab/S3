@@ -1,0 +1,59 @@
+module selfhost.substrate.token_arena
+
+record TokenArenaShape:
+    token_ids: vector<i64>
+    token_kinds: vector<i64>
+    token_file_ids: vector<i64>
+    token_span_starts: vector<i64>
+    token_span_ends: vector<i64>
+    token_line_numbers: vector<i64>
+    token_columns: vector<i64>
+
+fn token_ids_are_direct(ids: &vector<i64>) -> trit:
+    mut index: i64 = 0
+    while index < vector_len<i64>(ids):
+        match vector_get<i64>(ids, index) == index:
+            -1:
+                return -1
+            0:
+                return 0
+            1:
+                index = index + 1
+    return 1
+
+export fn token_arena_shape_case(case_id: i64) -> i64:
+    mut ids: vector<i64> = vector_new<i64>(8)
+    mut kinds: vector<i64> = vector_new<i64>(8)
+    mut starts: vector<i64> = vector_new<i64>(8)
+    mut ends: vector<i64> = vector_new<i64>(8)
+
+    mut index: i64 = 0
+    while index < 6:
+        discard vector_push<i64>(&mut ids, index)
+        discard vector_push<i64>(&mut kinds, 10 + index + case_id)
+        discard vector_push<i64>(&mut starts, index * 3)
+        discard vector_push<i64>(&mut ends, index * 3 + 2)
+        index = index + 1
+
+    mut digest: i64 = 0
+    index = 0
+    while index < vector_len<i64>(&ids):
+        digest = digest + vector_get<i64>(&ids, index) * 3
+        digest = digest + vector_get<i64>(&kinds, index) * 5
+        digest = digest + vector_get<i64>(&starts, index) * 7
+        digest = digest + vector_get<i64>(&ends, index) * 11
+        index = index + 1
+
+    mut direct: i64 = 0
+    match token_ids_are_direct(&ids):
+        -1:
+            direct = -1
+        0:
+            direct = 0
+        1:
+            direct = 1
+
+    return direct * 100000 + digest
+
+export fn token_arena_shape_anchor() -> i64:
+    return token_arena_shape_case(0)

@@ -64,6 +64,9 @@ OPCODE_MAP = {
     IROpcode.JUMP: AssemblyOpcode.TJMP,
     IROpcode.BRANCH3: AssemblyOpcode.TBR3,
     IROpcode.ADDRESS_OF: AssemblyOpcode.TADDR,
+    IROpcode.AGGREGATE_ADDRESS_OF: AssemblyOpcode.TAGGADDR,
+    IROpcode.AGGREGATE_FIELD_LOAD: AssemblyOpcode.TAGGLOAD,
+    IROpcode.AGGREGATE_FIELD_ADDRESS: AssemblyOpcode.TAGGFIELDADDR,
     IROpcode.REFERENCE_LOAD: AssemblyOpcode.TREFLOAD,
     IROpcode.REFERENCE_STORE: AssemblyOpcode.TREFSTORE,
     IROpcode.SLICE_LENGTH: AssemblyOpcode.TSLEN,
@@ -141,6 +144,27 @@ def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
             reference_target=TYPE_MAP[instruction.reference_target],
             reference_mutable=instruction.reference_mutable,
         )
+    if opcode is AssemblyOpcode.TAGGADDR:
+        assert instruction.result is not None
+        return AssemblyInstruction(
+            opcode,
+            (instruction.result, *instruction.operands),
+            source=instruction.location,
+            reference_mutable=instruction.reference_mutable,
+            reference_aggregate=instruction.reference_aggregate,
+            aggregate_field_paths=instruction.aggregate_field_paths,
+        )
+    if opcode in {AssemblyOpcode.TAGGLOAD, AssemblyOpcode.TAGGFIELDADDR}:
+        assert instruction.result is not None
+        return AssemblyInstruction(
+            opcode,
+            (instruction.result, *instruction.operands),
+            source=instruction.location,
+            reference_target=TYPE_MAP[instruction.reference_target] if instruction.reference_target else None,
+            reference_mutable=instruction.reference_mutable,
+            reference_aggregate=instruction.reference_aggregate,
+            aggregate_field_path=instruction.aggregate_field_path,
+        )
     if opcode is AssemblyOpcode.TREFLOAD:
         assert instruction.result is not None
         return AssemblyInstruction(
@@ -185,7 +209,7 @@ def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
     for function in ir_program.functions:
         reference_sizes: dict[int, int] = {}
         for instruction in function.instructions:
-            if instruction.opcode is IROpcode.ADDRESS_OF and instruction.result is not None:
+            if instruction.opcode in {IROpcode.ADDRESS_OF, IROpcode.AGGREGATE_ADDRESS_OF} and instruction.result is not None:
                 if instruction.memory is not None:
                     memory = next(item for item in function.memory_objects if item.index == instruction.memory)
                     reference_sizes[instruction.result] = 1 if memory.element_type is IRType.TRIT else 2 if memory.element_type is IRType.TRYTE else 8

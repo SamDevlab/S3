@@ -492,6 +492,27 @@ class AssemblyVerifier:
                     raise EmulatorError(self._static_context(function, block, instruction, "TADDR source must be a direct value storage"))
             if instruction.reference_target is not source_type:
                 raise EmulatorError(self._static_context(function, block, instruction, "TADDR target type mismatch"))
+        elif opcode is AssemblyOpcode.TAGGADDR:
+            if len(instruction.registers) < 2:
+                raise EmulatorError(self._static_context(function, block, instruction, "TAGGADDR requires aggregate field registers"))
+            if register_type(instruction.registers[0]) is not AssemblyType.REFERENCE:
+                raise EmulatorError(self._static_context(function, block, instruction, "TAGGADDR destination must be a reference"))
+            if instruction.reference_aggregate is None:
+                raise EmulatorError(self._static_context(function, block, instruction, "TAGGADDR requires aggregate identity"))
+        elif opcode is AssemblyOpcode.TAGGLOAD:
+            if len(instruction.registers) != 2:
+                raise EmulatorError(self._static_context(function, block, instruction, "TAGGLOAD requires destination and aggregate reference"))
+            if register_type(instruction.registers[1]) is not AssemblyType.REFERENCE:
+                raise EmulatorError(self._static_context(function, block, instruction, "TAGGLOAD source must be a reference"))
+            if instruction.reference_aggregate is None or register_type(instruction.registers[0]) is AssemblyType.REFERENCE:
+                raise EmulatorError(self._static_context(function, block, instruction, "TAGGLOAD metadata is invalid"))
+        elif opcode is AssemblyOpcode.TAGGFIELDADDR:
+            if len(instruction.registers) != 2:
+                raise EmulatorError(self._static_context(function, block, instruction, "TAGGFIELDADDR requires destination and aggregate reference"))
+            if register_type(instruction.registers[0]) is not AssemblyType.REFERENCE or register_type(instruction.registers[1]) is not AssemblyType.REFERENCE:
+                raise EmulatorError(self._static_context(function, block, instruction, "TAGGFIELDADDR operands must be references"))
+            if instruction.reference_aggregate is None or instruction.reference_target is None:
+                raise EmulatorError(self._static_context(function, block, instruction, "TAGGFIELDADDR metadata is invalid"))
         elif opcode is AssemblyOpcode.TSLEN:
             destination, reference, length = instruction.registers
             if register_type(reference) is not AssemblyType.REFERENCE:

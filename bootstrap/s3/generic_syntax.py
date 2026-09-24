@@ -31,6 +31,26 @@ class SyntaxSpan:
 
 class NodeKind(Enum):
     PROGRAM = "program"
+    ARRAY_LITERAL = "array_literal"
+    TYPE_NAME = "type_name"
+    ARRAY_TYPE = "array_type"
+    VECTOR_TYPE = "vector_type"
+    NOMINAL_TYPE = "nominal_type"
+    REFERENCE_TYPE = "reference_type"
+    SLICE_TYPE = "slice_type"
+    TYPE_PARAMETER_TYPE = "type_parameter_type"
+    TYPE_PARAMETER = "type_parameter"
+    CALL_ARGUMENT = "call_argument"
+    RECORD_FIELD_VALUE = "record_field_value"
+    MATCH_CASE = "match_case"
+    MATCH_PAYLOAD_LABEL = "match_payload_label"
+    SELECT_ARM = "select_arm"
+    ASSIGNMENT_TARGET = "assignment_target"
+    INDEX_TARGET = "index_target"
+    FIELD_TARGET = "field_target"
+    DEREFERENCE_TARGET = "dereference_target"
+    RECORD_FIELD = "record_field"
+    ENUM_VARIANT = "enum_variant"
     INTEGER_LITERAL = "integer_literal"
     FLOAT_LITERAL = "float_literal"
     STRING_LITERAL = "string_literal"
@@ -124,6 +144,7 @@ class FunctionPayload:
     parameter_first: int = 0
     parameter_count: int = 0
     body_id: int = -1
+    flags: int = 0
 
 
 NodePayload: TypeAlias = (
@@ -158,6 +179,23 @@ class SyntaxCheckpoint:
 
 
 _PAYLOAD_AUTHORITY: dict[NodeKind, PayloadKind] = {
+    NodeKind.TYPE_NAME: PayloadKind.SYMBOL,
+    NodeKind.ARRAY_TYPE: PayloadKind.INTEGER,
+    NodeKind.NOMINAL_TYPE: PayloadKind.SYMBOL,
+    NodeKind.REFERENCE_TYPE: PayloadKind.INTEGER,
+    NodeKind.SLICE_TYPE: PayloadKind.INTEGER,
+    NodeKind.TYPE_PARAMETER_TYPE: PayloadKind.SYMBOL,
+    NodeKind.TYPE_PARAMETER: PayloadKind.DECLARATION,
+    NodeKind.RECORD_FIELD_VALUE: PayloadKind.DECLARATION,
+    NodeKind.ASSIGNMENT_TARGET: PayloadKind.DECLARATION,
+    NodeKind.INDEX_TARGET: PayloadKind.DECLARATION,
+    NodeKind.FIELD_TARGET: PayloadKind.DECLARATION,
+    NodeKind.RECORD_FIELD: PayloadKind.DECLARATION,
+    NodeKind.ENUM_VARIANT: PayloadKind.DECLARATION,
+    NodeKind.RECORD_CONSTRUCTION: PayloadKind.SYMBOL,
+    NodeKind.FIELD_ACCESS: PayloadKind.SYMBOL,
+    NodeKind.ADDRESS_OF: PayloadKind.INTEGER,
+    NodeKind.FOR: PayloadKind.DECLARATION,
     NodeKind.INTEGER_LITERAL: PayloadKind.INTEGER,
     NodeKind.FLOAT_LITERAL: PayloadKind.FLOAT,
     NodeKind.STRING_LITERAL: PayloadKind.TEXT,
@@ -355,9 +393,12 @@ class SyntaxArena:
             if type_id != -1 and not 0 <= type_id < self.type_count:
                 raise SyntaxValidationError(f"dangling type ID at node {node_id}")
         if isinstance(payload, FunctionPayload):
-            if not 0 <= payload.return_type_id < self.type_count or payload.parameter_first < 0:
+            if (
+                payload.return_type_id != -1
+                and not 0 <= payload.return_type_id < self.type_count
+            ) or payload.parameter_first < 0:
                 raise SyntaxValidationError(f"invalid function payload at node {node_id}")
-            if payload.parameter_count < 0 or payload.body_id < -1:
+            if payload.parameter_count < 0 or payload.body_id < -1 or payload.flags < 0:
                 raise SyntaxValidationError(f"invalid function payload at node {node_id}")
 
     def _validate_reachable_root(self, root_id: int) -> None:

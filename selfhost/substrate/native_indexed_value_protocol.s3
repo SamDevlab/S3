@@ -1,0 +1,206 @@
+record NativeIndexedValue:
+    element_kind: i64
+    length: i64
+    mutability: i64
+    ownership: i64
+    lifetime: i64
+    i64_payload: i64_vector
+    f64_payload: f64_vector
+
+fn native_indexed_i64_value(first: i64, second: i64, third: i64, mutable: i64) -> NativeIndexedValue:
+    mut payload: i64_vector = i64_vector_new(3)
+    discard i64_vector_push(&mut payload, first)
+    discard i64_vector_push(&mut payload, second)
+    discard i64_vector_push(&mut payload, third)
+    return NativeIndexedValue(
+        element_kind=1,
+        length=3,
+        mutability=mutable,
+        ownership=1,
+        lifetime=1,
+        i64_payload=payload,
+        f64_payload=f64_vector_new(0)
+    )
+
+fn native_indexed_f64_value(first: f64, second: f64, third: f64, mutable: i64) -> NativeIndexedValue:
+    mut payload: f64_vector = f64_vector_new(3)
+    discard f64_vector_push(&mut payload, first)
+    discard f64_vector_push(&mut payload, second)
+    discard f64_vector_push(&mut payload, third)
+    return NativeIndexedValue(
+        element_kind=2,
+        length=3,
+        mutability=mutable,
+        ownership=1,
+        lifetime=1,
+        i64_payload=i64_vector_new(0),
+        f64_payload=payload
+    )
+
+fn native_indexed_f64_single(value: f64, mutable: i64) -> NativeIndexedValue:
+    mut payload: f64_vector = f64_vector_new(1)
+    discard f64_vector_push(&mut payload, value)
+    return NativeIndexedValue(
+        element_kind=2,
+        length=1,
+        mutability=mutable,
+        ownership=1,
+        lifetime=1,
+        i64_payload=i64_vector_new(0),
+        f64_payload=payload
+    )
+
+fn native_indexed_i64_empty(mutable: i64) -> NativeIndexedValue:
+    return NativeIndexedValue(
+        element_kind=1,
+        length=0,
+        mutability=mutable,
+        ownership=1,
+        lifetime=1,
+        i64_payload=i64_vector_new(0),
+        f64_payload=f64_vector_new(0)
+    )
+
+fn native_indexed_i64_single(value: i64, mutable: i64) -> NativeIndexedValue:
+    mut payload: i64_vector = i64_vector_new(1)
+    discard i64_vector_push(&mut payload, value)
+    return NativeIndexedValue(
+        element_kind=1,
+        length=1,
+        mutability=mutable,
+        ownership=1,
+        lifetime=1,
+        i64_payload=payload,
+        f64_payload=f64_vector_new(0)
+    )
+
+fn native_indexed_i64_payload_sum(payload: &i64_vector, length: i64) -> i64:
+    mut index: i64 = 0
+    mut total: i64 = 0
+    while index < length:
+        total = total + i64_vector_get(payload, index)
+        index = index + 1
+    return total
+
+fn native_indexed_i64_sum(value: &NativeIndexedValue) -> i64:
+    mut index: i64 = 0
+    mut total: i64 = 0
+    while index < value.length:
+        total = total + i64_vector_get(&value.i64_payload, index)
+        index = index + 1
+    return total
+
+fn native_indexed_f64_sum(value: &NativeIndexedValue) -> f64:
+    mut index: i64 = 0
+    mut total: f64 = 0.0
+    while index < value.length:
+        total = total + f64_vector_get(&value.f64_payload, index)
+        index = index + 1
+    return total
+
+fn native_indexed_ssd(a: &NativeIndexedValue, b: &NativeIndexedValue) -> f64:
+    match a.length == b.length:
+        -1:
+            mut index: i64 = 0
+            mut total: f64 = 0.0
+            while index < a.length:
+                mut delta: f64 = f64_vector_get(&a.f64_payload, index) - f64_vector_get(&b.f64_payload, index)
+                total = total + delta * delta
+                index = index + 1
+            return total
+        0:
+            return -1.0
+        1:
+            return -1.0
+
+fn native_indexed_contract_case() -> i64:
+    mut integers: NativeIndexedValue = native_indexed_i64_value(10, 20, 12, 0)
+    mut floats: NativeIndexedValue = native_indexed_f64_value(1.25, 2.5, 1.0, 1)
+    match integers.element_kind == 1:
+        -1:
+            match floats.element_kind == 2:
+                -1:
+                    match integers.length == 3:
+                        -1:
+                            match floats.length == 3:
+                                -1:
+                                    match integers.mutability == 0:
+                                        -1:
+                                            match floats.mutability == 1:
+                                                -1:
+                                                    match integers.ownership == 1:
+                                                        -1:
+                                                            match integers.lifetime == 1:
+                                                                -1:
+                                                                    match i64_vector_len(&integers.i64_payload) == integers.length:
+                                                                        -1:
+                                                                            match f64_vector_len(&floats.f64_payload) == floats.length:
+                                                                                -1:
+                                                                                    return 1
+                                                                                0:
+                                                                                    return 0
+                                                                                1:
+                                                                                    return 0
+                                                                        0:
+                                                                            return 0
+                                                                        1:
+                                                                            return 0
+                                                                0:
+                                                                    return 0
+                                                                1:
+                                                                    return 0
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                0:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        0:
+                                            return 0
+                                        1:
+                                            return 0
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn native_indexed_length_case() -> i64:
+    mut empty: NativeIndexedValue = native_indexed_i64_empty(0)
+    mut single: NativeIndexedValue = native_indexed_i64_single(7, 0)
+    mut many: NativeIndexedValue = native_indexed_i64_value(10, 20, 12, 0)
+    return empty.length + single.length + many.length
+
+fn native_indexed_local_read_case() -> i64:
+    mut values: NativeIndexedValue = native_indexed_i64_value(10, 20, 12, 0)
+    mut index: i64 = 2
+    match index < 0:
+        -1:
+            return -1
+        0:
+            match index < values.length:
+                -1:
+                    return i64_vector_get(&values.i64_payload, index)
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+fn native_indexed_payload_parameter_case() -> i64:
+    mut values: NativeIndexedValue = native_indexed_i64_value(10, 20, 12, 0)
+    return native_indexed_i64_payload_sum(&values.i64_payload, values.length)

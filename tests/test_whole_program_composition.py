@@ -134,6 +134,66 @@ def test_type_arena_rejects_invalid_structural_identity() -> None:
         TypeArena().intern(TypeSpec(TypeKind.ARRAY, element_type_id=999, array_length=-1))
 
 
+def test_type_parameter_identity_distinguishes_function_and_nominal_owners() -> None:
+    arena = TypeArena()
+    function_parameter = arena.intern(
+        TypeSpec(
+            TypeKind.TYPE_PARAMETER,
+            owner_id=0,
+            parameter_ordinal=0,
+            owner_kind="function",
+            name="T",
+        )
+    )
+    nominal_parameter = arena.intern(
+        TypeSpec(
+            TypeKind.TYPE_PARAMETER,
+            owner_id=0,
+            parameter_ordinal=0,
+            owner_kind="nominal",
+            name="T",
+        )
+    )
+    assert function_parameter != nominal_parameter
+    assert arena.get(function_parameter).owner_kind == "function"
+    assert arena.get(nominal_parameter).owner_kind == "nominal"
+
+
+def test_type_parameter_rejects_missing_owner_kind() -> None:
+    with pytest.raises(TypeArenaError, match="owner kind"):
+        TypeArena().intern(
+            TypeSpec(
+                TypeKind.TYPE_PARAMETER,
+                owner_id=0,
+                parameter_ordinal=0,
+                name="T",
+            )
+        )
+
+
+def test_type_arena_appends_capability_primitives_without_renumbering_core_ids() -> None:
+    arena = TypeArena()
+    assert int(arena.primitive(TypeKind.TRIT)) == 0
+    assert int(arena.primitive(TypeKind.TEXT)) == 6
+    assert int(arena.primitive(TypeKind.HOST_CAPABILITY)) == 7
+    assert int(arena.primitive(TypeKind.RESOURCE_HANDLE)) == 8
+
+
+def test_type_arena_rejects_dangling_element_and_argument_ids() -> None:
+    arena = TypeArena()
+    with pytest.raises(TypeArenaError, match="unknown element"):
+        arena.intern(TypeSpec(TypeKind.VECTOR, element_type_id=999))
+    with pytest.raises(TypeArenaError, match="type arguments"):
+        arena.intern(
+            TypeSpec(
+                TypeKind.INSTANTIATED,
+                module_id=0,
+                nominal_declaration_id=0,
+                type_arguments=(999,),
+            )
+        )
+
+
 def test_semantic_state_keeps_explicit_associations_and_rolls_back() -> None:
     registry = ProgramRegistry()
     registry.register((_modules()[0],))
@@ -189,11 +249,30 @@ def test_composition_root_orchestrates_prepared_artifacts_without_fake_frontend(
     assert result.structural_digest
 
 
-def test_compile_program_fails_closed_without_prepared_frontend_artifacts() -> None:
-    result = compile_program(SourceBundle((("main.s3", "fn main"),)), OutputSink(32))
+def test_compile_program_runs_real_frontend_and_type_then_fails_closed_at_semantic_phase() -> None:
+    result = compile_program(
+        SourceBundle(
+            (
+                (
+                    "main.s3",
+                    "module main\nfn main() -> i64:\n    return 0\n",
+                ),
+            )
+        ),
+        OutputSink(32),
+    )
     assert result.success is False
+    assert result.test_artifact_input is False
     assert result.output == b""
-    assert result.diagnostics[0].code == "S3E_FRONTEND_UNAVAILABLE"
+    assert result.diagnostics[0].code == "S3E_SEMANTIC_PHASE_UNAVAILABLE"
+    assert result.phase_trace[:5] == (
+        "INPUT:COMMITTED",
+        "SYNTAX:COMMITTED",
+        "REGISTRATION:COMMITTED",
+        "TYPE:COMMITTED",
+        "SEMANTIC:FAILED",
+    )
+    assert "LOWERING:SKIPPED" in result.phase_trace
 
 
 def test_s3_whole_program_components_are_ordinary_representability_artifacts() -> None:

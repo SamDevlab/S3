@@ -1,14 +1,19 @@
 """Deterministic whole-program composition control plane.
 
-This module deliberately stops at prepared-artifact orchestration.  It owns
-program identities, canonical type identities, semantic associations,
-structured diagnostics, phase transactions, and the final composition digest.
-It does not lex, parse, analyze expressions, lower, or emit source programs.
+The control plane owns program identities, canonical type identities, semantic
+associations, structured diagnostics, phase transactions, and the final
+composition digest.
 
-The prepared-artifact boundary is intentional: tests may inject a validated
-``SyntaxArena`` and an ``IRProgram`` while the missing frontend phases remain
-explicitly skipped.  This keeps the architecture useful without turning a
-test harness into a fake compiler.
+Two explicit entry paths coexist:
+
+* prepared-artifact composition for architecture and verifier tests; and
+* real hosted source ingestion through the independent generic frontend,
+  currently committing INPUT, SYNTAX, and REGISTRATION before failing closed
+  at TYPE because generic type/semantic resolution is not implemented.
+
+Neither path fabricates lowering or emission.  The default production Python
+compiler remains separate, and this module does not constitute Stage1 or a
+self-hosted compiler.
 """
 
 from __future__ import annotations
@@ -103,6 +108,8 @@ class TypeKind(str, Enum):
     STRING = "string"
     BYTES = "bytes"
     TEXT = "text"
+    HOST_CAPABILITY = "host_capability"
+    RESOURCE_HANDLE = "resource_handle"
     VECTOR = "vector"
     MAP = "map"
     SET = "set"
@@ -160,6 +167,7 @@ class FieldSpec:
     ordinal: int = 0
     mutable: bool = False
     span: tuple[int, int, int] | None = None
+    type_syntax_id: int = -1
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,6 +176,7 @@ class VariantSpec:
     discriminant: int
     ordinal: int = 0
     payload_type_ids: tuple[int, ...] = ()
+    payload_type_syntax_ids: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -179,6 +188,7 @@ class FunctionSpec:
     ordinal: int = 0
     exported: bool = False
     external: bool = False
+    generic_arity: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -242,6 +252,7 @@ class FunctionRecord:
     declared_result_type_syntax_id: int
     exported: bool
     external: bool
+    generic_arity: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -346,6 +357,41 @@ class ProgramRegistry:
             for _, record in self.nominal_types.items()
         }
 
+    def _validate_import_cycles(self) -> None:
+        graph: dict[int, tuple[int, ...]] = {
+            module_id: ()
+            for module_id, _ in self.modules.items()
+        }
+        mutable: dict[int, list[int]] = {
+            module_id: []
+            for module_id in graph
+        }
+        for _, record in self.imports.items():
+            mutable[int(record.source_module_id)].append(int(record.target_module_id))
+        graph = {
+            module_id: tuple(sorted(set(targets)))
+            for module_id, targets in mutable.items()
+        }
+
+        visiting: set[int] = set()
+        visited: set[int] = set()
+
+        def visit(module_id: int) -> None:
+            if module_id in visited:
+                return
+            if module_id in visiting:
+                raise RegistrationError(
+                    "S3E_MODULE_CYCLE: module import cycle"
+                )
+            visiting.add(module_id)
+            for target in graph.get(module_id, ()):
+                visit(target)
+            visiting.remove(module_id)
+            visited.add(module_id)
+
+        for module_id in sorted(graph):
+            visit(module_id)
+
     @staticmethod
     def _module_key(spec: ModuleSpec) -> tuple[int, int, int, int]:
         return (spec.manifest_ordinal, spec.source_file_id, spec.module_symbol_id, spec.root_node_id)
@@ -365,8 +411,6 @@ class ProgramRegistry:
                 nominal_specs = tuple(sorted(spec.nominal_types, key=lambda item: (item.ordinal, item.name_symbol_id, item.syntax_node_id)))
                 function_first = self.functions.checkpoint()
                 nominal_first = self.nominal_types.checkpoint()
-                field_first = self.fields.checkpoint()
-                variant_first = self.variants.checkpoint()
                 for function in function_specs:
                     key = (int(module_id), function.name_symbol_id)
                     if key in self._function_by_namespace or key in self._type_by_namespace:
@@ -377,12 +421,17 @@ class ProgramRegistry:
                             self.parameters.checkpoint(), FunctionId(self.functions.checkpoint()),
                             parameter.symbol_id, parameter.type_syntax_id, parameter.ordinal,
                         ))
+                    if function.generic_arity < 0:
+                        raise RegistrationError(
+                            "S3E_SEMANTIC_INVALID_PROGRAM: invalid function generic arity"
+                        )
                     record = FunctionRecord(
                         FunctionId(self.functions.checkpoint()), module_id,
                         function.name_symbol_id, function.syntax_node_id,
                         IdRange(parameter_first, self.parameters.checkpoint() - parameter_first),
                         function.declared_result_type_syntax_id,
                         function.exported, function.external,
+                        function.generic_arity,
                     )
                     self.functions.append(record)
                     self._function_by_namespace[key] = record.id
@@ -393,16 +442,32 @@ class ProgramRegistry:
                     if nominal.generic_arity < 0:
                         raise RegistrationError("S3E_SEMANTIC_INVALID_PROGRAM: invalid generic arity")
                     type_id = NominalTypeId(self.nominal_types.checkpoint())
+                    nominal_field_first = self.fields.checkpoint()
+                    nominal_variant_first = self.variants.checkpoint()
+                    seen_fields: set[int] = set()
                     for field in sorted(nominal.fields, key=lambda item: (item.ordinal, item.symbol_id)):
-                        if any(existing.symbol_id == field.symbol_id for _, existing in self.fields.items() if _ >= field_first):
+                        if field.symbol_id in seen_fields:
                             raise RegistrationError("S3E_RECORD_FIELD_DUPLICATE: duplicate record field")
+                        seen_fields.add(field.symbol_id)
                         self.fields.append(field)
+                    seen_variants: set[int] = set()
                     for variant in sorted(nominal.variants, key=lambda item: (item.ordinal, item.symbol_id)):
+                        if variant.symbol_id in seen_variants:
+                            raise RegistrationError("S3E_ENUM_VARIANT_DUPLICATE: duplicate enum variant")
+                        seen_variants.add(variant.symbol_id)
                         self.variants.append(variant)
                     record = NominalTypeRecord(
                         type_id, module_id, nominal.name_symbol_id, nominal.syntax_node_id,
-                        nominal.kind, IdRange(field_first, self.fields.checkpoint() - field_first),
-                        IdRange(variant_first, self.variants.checkpoint() - variant_first), nominal.generic_arity,
+                        nominal.kind,
+                        IdRange(
+                            nominal_field_first,
+                            self.fields.checkpoint() - nominal_field_first,
+                        ),
+                        IdRange(
+                            nominal_variant_first,
+                            self.variants.checkpoint() - nominal_variant_first,
+                        ),
+                        nominal.generic_arity,
                     )
                     self.nominal_types.append(record)
                     self._type_by_namespace[key] = record.id
@@ -415,6 +480,15 @@ class ProgramRegistry:
                 self.modules.append(module)
                 self._module_by_symbol[spec.module_symbol_id] = module_id
             module_specs = tuple(zip(ordered, tuple(self.modules.items())[-len(ordered):])) if ordered else ()
+            declared_exports: dict[int, set[int]] = {}
+            for _, existing_export in self.exports.items():
+                declared_exports.setdefault(
+                    int(existing_export.module_id), set()
+                ).add(existing_export.symbol_id)
+            for spec, (_, module) in module_specs:
+                declared_exports.setdefault(int(module.id), set()).update(
+                    item.symbol_id for item in spec.exports
+                )
             for spec, (_, module) in module_specs:
                 import_first = self.imports.checkpoint()
                 export_first = self.exports.checkpoint()
@@ -427,8 +501,27 @@ class ProgramRegistry:
                     if alias in aliases:
                         raise RegistrationError("S3E_IMPORT_DUPLICATE: duplicate import alias")
                     aliases.add(alias)
-                    if (int(target), item.imported_symbol_id) not in self._function_by_namespace and (int(target), item.imported_symbol_id) not in self._type_by_namespace:
-                        raise RegistrationError("S3E_IMPORT_UNKNOWN_SYMBOL: imported symbol is not registered")
+                    target_key = (int(target), item.imported_symbol_id)
+                    if (
+                        target_key not in self._function_by_namespace
+                        and target_key not in self._type_by_namespace
+                    ):
+                        raise RegistrationError(
+                            "S3E_IMPORT_UNKNOWN_SYMBOL: imported symbol is not registered"
+                        )
+                    if item.imported_symbol_id not in declared_exports.get(
+                        int(target), set()
+                    ):
+                        raise RegistrationError(
+                            "S3E_IMPORT_PRIVATE_SYMBOL: imported symbol is private"
+                        )
+                    if (
+                        item.alias_symbol_id >= 0
+                        and target_key in self._type_by_namespace
+                    ):
+                        raise RegistrationError(
+                            "S3E_SEMANTIC_INVALID_PROGRAM: type import aliases are not supported yet"
+                        )
                     self.imports.append(ImportRecord(self.imports.checkpoint(), module.id, target, item.imported_symbol_id, alias, item.span))
                 exported: set[int] = set()
                 for item in sorted(spec.exports, key=lambda value: (value.ordinal, value.symbol_id, value.kind)):
@@ -444,6 +537,7 @@ class ProgramRegistry:
                     IdRange(import_first, self.imports.checkpoint() - import_first),
                     IdRange(export_first, self.exports.checkpoint() - export_first),
                 )
+            self._validate_import_cycles()
             return tuple(record for _, record in self.modules.items())
         except Exception:
             self.rollback(checkpoint)
@@ -478,6 +572,7 @@ class TypeSpec:
     owner_id: int = -1
     parameter_ordinal: int = -1
     name: str = ""
+    owner_kind: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -493,6 +588,7 @@ class TypeInfo:
     owner_id: int | None = None
     parameter_ordinal: int | None = None
     name: str = ""
+    owner_kind: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -503,7 +599,17 @@ class TypeArenaCheckpoint:
 class TypeArena:
     """Canonical compiler-owned type identity arena."""
 
-    _PRIMITIVES = (TypeKind.TRIT, TypeKind.TRYTE, TypeKind.I64, TypeKind.F64, TypeKind.STRING, TypeKind.BYTES, TypeKind.TEXT)
+    _PRIMITIVES = (
+        TypeKind.TRIT,
+        TypeKind.TRYTE,
+        TypeKind.I64,
+        TypeKind.F64,
+        TypeKind.STRING,
+        TypeKind.BYTES,
+        TypeKind.TEXT,
+        TypeKind.HOST_CAPABILITY,
+        TypeKind.RESOURCE_HANDLE,
+    )
 
     def __init__(self, *, capacity: int | None = None) -> None:
         self.capacity = capacity
@@ -531,7 +637,7 @@ class TypeArena:
         return (
             spec.kind.value, spec.element_type_id, spec.array_length, bool(spec.mutable),
             spec.module_id, spec.nominal_declaration_id, tuple(spec.type_arguments),
-            spec.owner_id, spec.parameter_ordinal, spec.name,
+            spec.owner_id, spec.parameter_ordinal, spec.name, spec.owner_kind,
         )
 
     @staticmethod
@@ -544,7 +650,7 @@ class TypeArena:
             tuple(int(item) for item in info.type_arguments),
             info.owner_id if info.owner_id is not None else -1,
             info.parameter_ordinal if info.parameter_ordinal is not None else -1,
-            info.name,
+            info.name, info.owner_kind,
         )
 
     def _intern(self, spec: TypeSpec) -> TypeId:
@@ -558,8 +664,15 @@ class TypeArena:
             raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: invalid array size")
         if spec.kind in {TypeKind.RECORD, TypeKind.ENUM, TypeKind.INSTANTIATED} and (spec.module_id < 0 or spec.nominal_declaration_id < 0):
             raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: nominal type lacks identity")
-        if spec.kind is TypeKind.TYPE_PARAMETER and (spec.owner_id < 0 or spec.parameter_ordinal < 0):
-            raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: type parameter lacks owner")
+        if spec.kind is TypeKind.TYPE_PARAMETER:
+            if spec.owner_id < 0 or spec.parameter_ordinal < 0:
+                raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: type parameter lacks owner")
+            if spec.owner_kind not in {"function", "nominal"}:
+                raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: type parameter owner kind is invalid")
+        if spec.element_type_id >= 0 and spec.element_type_id not in self.types:
+            raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: structural type references unknown element type")
+        if any(type_id < 0 or type_id not in self.types for type_id in spec.type_arguments):
+            raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: type arguments contain unknown type ID")
         element = TypeId(spec.element_type_id) if spec.element_type_id >= 0 else None
         info = TypeInfo(
             TypeId(self.types.checkpoint()), spec.kind, element,
@@ -571,6 +684,7 @@ class TypeArena:
             spec.owner_id if spec.owner_id >= 0 else None,
             spec.parameter_ordinal if spec.parameter_ordinal >= 0 else None,
             spec.name,
+            spec.owner_kind,
         )
         type_id = self.types.append(info)
         self._keys[key] = type_id
@@ -833,6 +947,14 @@ class PhaseOrchestrator:
         return tuple(f"{record.kind.value.upper()}:{record.status.value.upper()}" for _, record in self.records.items())
 
     @property
+    def next_phase(self) -> PhaseKind | None:
+        if self._active is not None:
+            return self.records.get(int(self._active)).kind
+        if self._next_index >= len(self._ORDER):
+            return None
+        return self._ORDER[self._next_index]
+
+    @property
     def terminal(self) -> bool:
         return self._next_index == len(self._ORDER) and self._active is None
 
@@ -980,17 +1102,34 @@ class WholeProgramContext:
 
 
 def compile_program(source_bundle: SourceBundle, output_sink: OutputSink, *, prepared_artifacts: PreparedProgramArtifacts | None = None) -> WholeProgramCompileResult:
-    """Composition-root contract with an explicit prepared-artifact boundary.
+    """Whole-program composition root.
 
-    No parser or source-to-output implementation is hidden here.  Calling the
-    root without prepared artifacts fails closed and records that the frontend
-    phases are unavailable.
+    With prepared_artifacts, preserve the explicit test-artifact composition
+    path used by the existing architecture tests.
+
+    Without prepared artifacts, real source now executes the independent hosted
+    frontend through INPUT, SYNTAX, REGISTRATION, and canonical TYPE resolution.
+    The root then fails closed at SEMANTIC because expression/declaration
+    semantics, lowering, and emission are not implemented by this generic
+    pipeline yet.
     """
     context = WholeProgramContext(source_bundle, output_capacity=output_sink.capacity)
-    if prepared_artifacts is None:
-        context.diagnostics.append(PhaseKind.INPUT, "S3E_FRONTEND_UNAVAILABLE", "compile_program requires TEST_ARTIFACT_INPUT until lexer/parser/lowering/emitter exist")
-        return WholeProgramCompileResult(False, output_sink.to_bytes(), context.diagnostics.ordered(), ("INPUT:COMMITTED", "SYNTAX:SKIPPED", "REGISTRATION:SKIPPED"), context.structural_digest())
     context.sink = output_sink
+    if prepared_artifacts is None:
+        from .frontend_control_plane import ingest_source_frontend
+
+        frontend = ingest_source_frontend(context)
+        if not frontend.success:
+            return context._failure_result(test_artifact_input=False)
+
+        context.phases.begin(PhaseKind.SEMANTIC)
+        context.phases.fail(
+            "S3E_SEMANTIC_PHASE_UNAVAILABLE",
+            "generic source frontend and declaration types are resolved; "
+            "expression/declaration semantic analysis is not implemented",
+        )
+        return context._failure_result(test_artifact_input=False)
+
     return context.compose(prepared_artifacts)
 
 

@@ -69,6 +69,141 @@ prepared artifacts; lexer, parser, expression semantics, lowering, emitter,
 Stage1 V4, Stage2, and Stage3 remain absent or unauthorized. The Python
 reference compiler remains the default production compiler.
 
+## Source frontend projection (2026-09-18)
+
+The next architecture increment connects real normalized source text to a
+direct-ID `TokenArena` and then projects the existing reference parser's output
+into the generic `SyntaxArena`. Multi-file `SourceBundle` parsing uses one
+shared symbol interner so equal names keep one deterministic identity across the
+bundle.
+
+The compatibility bridge still keeps the production Python lexer/parser as a
+differential oracle, but this branch now also contains a separate hosted
+`GenericLexer` and `GenericParser`.
+
+`GenericLexer` scans normalized source directly into `TokenArena` without
+calling the production `Lexer`/`tokenize` implementation.
+`GenericParser` then consumes `TokenArena` directly and writes the generic
+`SyntaxArena` without constructing hosted AST objects or calling
+`bootstrap.s3.parser`.
+
+This is still not an S3-native frontend. Ordinary-S3 source/token/parser state
+shapes exist, but native lexer/parser execution remains a separate frontier.
+
+The hosted frontend is also connected to the whole-program control plane
+through a syntax-to-registration bridge. A fresh `WholeProgramContext` can
+advance from INPUT through SYNTAX and REGISTRATION using real source, then stop
+with TYPE as the next legal phase. `compile_program` now uses that real-source
+path when no prepared test artifacts are supplied and fails closed at TYPE with
+`S3E_TYPE_PHASE_UNAVAILABLE`. No semantic, lowering, verifier, emitter, or
+output success is fabricated.
+
+The hosted frontend is now also connected through deterministic program
+registration and a canonical TYPE bridge. Registered parameter/result/field/
+variant type syntax resolves into compiler-owned `TypeId` values, owner-sensitive
+type parameters, nominal identities, and function signatures. A TYPE failure
+rolls back post-checkpoint type/semantic associations while preserving the
+already committed ProgramRegistry.
+
+The real-source composition path now reaches:
+
+```text
+INPUT -> SYNTAX -> REGISTRATION -> TYPE
+```
+
+and stops before semantic-expression/declaration analysis. It does not claim
+generic semantic passes, lowering, emission, Stage1, or self-host execution.
+
+`SELFHOST_REENTRY_AUTHORIZED=NO` and `STAGE1_V4=NOT_AUTHORIZED` remain
+unchanged.
+
+## Ordinary-S3 lexer and parser vertical slice (2026-09-19)
+
+The source-frontend increment now includes one bounded ordinary-S3 execution
+slice in `selfhost/substrate/generic_lexer_state.s3`. The slice scans direct
+token identities and byte spans into bounded S3 vectors and returns a
+deterministic digest. Its qualification matrix covers the original
+`fn main`/`return 0` shape, parenthesis classification, and distinct arbitrary
+identifier/integer lexemes (`fn entry()`/`return 42` and `fn worker()`/`return
+7`). A focused test compares each result with the independent hosted
+`GenericLexer` contract. The same S3 source is qualified through the normal
+x86-64 backend on the Linux VM; the Windows validation run records that
+Linux-native test as an expected local platform skip.
+
+The same ordinary-S3 source now also contains a bounded native parser slice.
+It consumes the native token vectors produced by the scanner and accepts the
+minimal `fn <identifier>() -> i64:` function shape with an indented integer
+return. Its expression parser now handles integer literals, `+`, `*`,
+left-associative same-precedence chains, and parenthesized grouping with the
+hosted syntax tree as the independent differential oracle. The structural
+digest includes the parsed tree shape, source spans, operator codes, integer
+payloads, function name bytes, and token-vector length rather than fixture
+names or constants. Valid cases cover precedence, associativity, nested
+grouping, and multiplication; malformed missing-operand, unclosed-group, and
+extra-close inputs are rejected with `-1`. The Linux x86-64 focused
+qualification passed 36 tests, and the native path has no fallback to
+`GenericLexer`, `GenericParser`, or the Python parser.
+
+The parser now also accepts identifier primaries from the same source-derived
+token spans. Identifier leaves preserve their source span and a deterministic
+byte-derived payload, so distinct names remain distinct without symbol
+resolution or semantic name validation. Identifier expressions compose with
+the existing `+`, `*`, and grouping precedence path; consecutive primaries and
+missing operands remain deterministic syntax errors. The hosted syntax parser
+is used only as the independent oracle for these tests.
+
+The native parser slice now also consumes a variable-length statement sequence
+inside the same function body. It preserves statement count and order, records
+the block boundary from the first statement through the final expression, and
+rejects incomplete statements, interleaved garbage, and trailing source. The
+Linux x86-64 focused qualification passed 55 tests on the isolated archive;
+the sequence cases are differential-checked against hosted `NodeKind.BLOCK`
+children and do not introduce a fallback to the hosted parser.
+
+```text
+NATIVE_STATEMENT_SEQUENCE=PASS
+NATIVE_SINGLE_STATEMENT=PASS
+NATIVE_TWO_STATEMENT_SEQUENCE=PASS
+NATIVE_THREE_STATEMENT_SEQUENCE=PASS
+NATIVE_VARIABLE_STATEMENT_COUNT=PASS
+STATEMENT_ORDER_PRESERVED=PASS
+STATEMENT_BLOCK_BOUNDARY=PASS
+NATIVE_STATEMENT_SEQUENCE_NEGATIVES=PASS
+NATIVE_LINUX_STATEMENT_SEQUENCE=PASS
+NEXT_BLOCKER=NATIVE_LOCAL_BINDING
+```
+
+This remains partial ordinary-frontend execution evidence only. It does not
+claim a complete S3-native lexer or parser, semantic analysis, lowering,
+emission, or a self-hosted compiler:
+
+```text
+ORDINARY_S3_LEXER_SLICE=YES_HOSTED_AND_LINUX_NATIVE
+ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_IDENTIFIER_EXPRESSION_SUBSET
+S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
+S3_NATIVE_PARSER=PARTIAL_EXPRESSION_CORE_WITH_IDENTIFIERS
+NATIVE_INTEGER_EXPRESSION=PASS
+NATIVE_BINARY_ADDITION=PASS
+NATIVE_MULTIPLICATION=PASS
+NATIVE_EXPRESSION_PRECEDENCE=PASS
+NATIVE_SAME_LEVEL_ASSOCIATIVITY=PASS
+NATIVE_PARENTHESIZED_EXPRESSION=PASS
+NATIVE_GROUPING_OVERRIDES_PRECEDENCE=PASS
+NATIVE_EXPRESSION_NEGATIVE_CASES=PASS
+NATIVE_IDENTIFIER_PRIMARY=PASS
+NATIVE_IDENTIFIER_BINARY_EXPRESSION=PASS
+NATIVE_IDENTIFIER_PRECEDENCE_INTEGRATION=PASS
+NATIVE_IDENTIFIER_GROUPING_INTEGRATION=PASS
+NATIVE_IDENTIFIER_NEGATIVE_CASES=PASS
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_INTEGER_BINARY_PRECEDENCE_PARENTHESES_IDENTIFIERS_SUBSET
+FINAL_FUNCTIONAL_HEAD=0cceff303f0337fe45db9b80a2e7b6e814ff979e
+FULL_SUITE=PASS
+FULL_SUITE_SHA=0cceff303f0337fe45db9b80a2e7b6e814ff979e
+NEXT_BLOCKER=NATIVE_STATEMENT_SEQUENCE
+HOST_EXECUTION_SUPPORT=PRESENT_AS_EXPECTED
+HOST_SEMANTIC_DECISIONS=DECREASING_BUT_PRESENT
+```
+
 ## Relationship to existing milestones
 
 Existing self-hosting-related milestones and reports remain historical evidence.

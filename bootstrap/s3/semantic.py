@@ -64,6 +64,7 @@ NUMERIC_CONVERSION_BUILTINS = {
 
 _DYNAMIC_BUILTIN_LOCATION = SourceLocation(0, 1, 1)
 _DYNAMIC_BUILTINS: dict[str, tuple[tuple[ast.DeclaredType, ...], ast.TypeName]] = {
+    "sqrt": ((ast.TypeName.F64,), ast.TypeName.F64),
     "bytes_new": ((ast.TypeName.I64,), ast.TypeName.BYTES),
     "bytes_len": ((ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.I64),
     "bytes_capacity": ((ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.I64),
@@ -1739,7 +1740,17 @@ class SemanticAnalyzer:
             self._validate_vector_element(type_name.element_type)
             return
         if isinstance(type_name, ast.ReferenceType):
-            if type_name.target in _DYNAMIC_TYPES or isinstance(type_name.target, ast.VectorType):
+            if (
+                type_name.target in _DYNAMIC_TYPES
+                or isinstance(type_name.target, ast.VectorType)
+                or (
+                    isinstance(type_name.target, ast.NominalType)
+                    and type_name.target.name in self.records
+                    and _type_contains_dynamic(
+                        self.records, self.enums, type_name.target
+                    )
+                )
+            ):
                 self.contains_dynamic = True
             self.contains_references = True
             if isinstance(type_name.target, ast.ReferenceType):
@@ -1748,7 +1759,20 @@ class SemanticAnalyzer:
                     type_name.location,
                     diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_NESTED,
                 )
-            if not isinstance(type_name.target, (ast.TypeName, ast.VectorType)):
+            if isinstance(type_name.target, ast.NominalType):
+                if type_name.target.name not in self.records:
+                    raise SemanticError(
+                        "aggregate reference target must name a record type",
+                        type_name.location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
+                    )
+                if type_name.mutable:
+                    raise SemanticError(
+                        "mutable aggregate references are not supported",
+                        type_name.location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
+                    )
+            elif not isinstance(type_name.target, (ast.TypeName, ast.VectorType)):
                 raise SemanticError(
                     "reference target must be a scalar type",
                     type_name.location,
@@ -2540,7 +2564,20 @@ class SemanticAnalyzer:
                 expression.mutable,
                 expression.location,
             )
-        if not isinstance(binding.type_name, (ast.TypeName, ast.VectorType)):
+        if isinstance(binding.type_name, ast.NominalType):
+            if binding.type_name.name not in self.records:
+                raise SemanticError(
+                    "reference target must be a record type",
+                    expression.operand.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
+                )
+            if expression.mutable:
+                raise SemanticError(
+                    "mutable aggregate references are not supported",
+                    expression.operand.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
+                )
+        elif not isinstance(binding.type_name, (ast.TypeName, ast.VectorType)):
             raise SemanticError(
                 "reference target must be a scalar or composite-vector local or parameter",
                 expression.operand.location,
@@ -2779,6 +2816,14 @@ class SemanticAnalyzer:
             target_type = self._analyze_index_lvalue(expression.target)
         else:
             target_type = self._analyze_expression(expression.target)
+        if isinstance(target_type, ast.ReferenceType):
+            if not isinstance(target_type.target, ast.NominalType) or target_type.target.name not in self.records:
+                raise SemanticError(
+                    "field access requires a record value",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
+                )
+            target_type = target_type.target
         if not isinstance(target_type, ast.NominalType):
             raise SemanticError(
                 "field access requires a record value",
@@ -3732,6 +3777,8 @@ class SemanticAnalyzer:
                 enum, _variant = enum_access
                 return ast.NominalType(enum.name, expression.location)
             target_type = self._known_expression_type(expression.target)
+            if isinstance(target_type, ast.ReferenceType):
+                target_type = target_type.target
             if isinstance(target_type, ast.NominalType):
                 record = self.records.get(target_type.name)
                 if record is not None:
