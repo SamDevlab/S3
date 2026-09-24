@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ctypes
 import hashlib
 import platform
 import subprocess
@@ -25,10 +26,13 @@ from bootstrap.s3.backends.x86_64.backend import (
 from bootstrap.s3.backends.x86_64.diagnostics import NativeBackendError
 from bootstrap.s3.backends.x86_64.emitter import X8664Emitter
 from bootstrap.s3.backends.x86_64.instruction_budget import (
+    MIN_FAST_SEGMENT_WEIGHT,
     InstructionBudgetMode,
     budget_plan_diagnostics,
     plan_budget_segments,
 )
+from bootstrap.s3.backends.x86_64.layout import layout_frame
+from bootstrap.s3.backends.x86_64.liveness import analyze_liveness
 from bootstrap.s3.backends.x86_64.toolchain import NativeToolchain
 from bootstrap.s3.pipeline import compile_source
 
@@ -89,6 +93,99 @@ export fn run() -> i64:
 fn main() -> i64:
     return 0
 """
+
+BOUNDARY_FFI_SOURCE = """\
+export fn work() -> i64:
+    return 2 + 3
+
+fn main() -> i64:
+    return 0
+"""
+
+INSTRUCTION_LIMIT_BOUNDARIES = (
+    0x7FFFFFFE,
+    0x7FFFFFFF,
+    0x80000000,
+    0x80000001,
+    10_000_000_000,
+    NATIVE_MAX_INSTRUCTIONS,
+)
+
+
+def _assert_per_instruction_limit_encoding(assembly: str, limit: int) -> None:
+    if limit <= 0x7FFFFFFF:
+        assert (
+            "cmp qword ptr [rip + __s3_instruction_count], "
+            f"{limit}"
+        ) in assembly
+        return
+
+    assert f"movabs r11, {limit}" in assembly
+    assert "cmp qword ptr [rip + __s3_instruction_count], r11" in assembly
+
+
+def _assert_exact_segment_precharge_encoding(
+    assembly: str,
+    program,
+    limit: int,
+) -> dict[int, set[int]]:
+    observed_weights: dict[int, set[int]] = {}
+    budget_segment_id = 0
+    for function in program.functions:
+        plan = plan_budget_segments(function)
+        segments_by_block = {
+            block.label: [
+                segment
+                for segment in plan.segments
+                if segment.block == block.label
+            ]
+            for block in function.blocks
+        }
+        for block in function.blocks:
+            for segment in segments_by_block[block.label]:
+                if (
+                    segment.logical_weight < MIN_FAST_SEGMENT_WEIGHT
+                    or segment.logical_weight > limit
+                ):
+                    continue
+
+                weight = segment.logical_weight
+                remaining = limit - weight
+                observed_weights.setdefault(remaining, set()).add(weight)
+                slow_label = f".L__s3_budget_{budget_segment_id}_slow"
+                precharge = []
+                if remaining <= 0x7FFFFFFF:
+                    precharge.extend(
+                        (
+                            "    cmp qword ptr [rip + __s3_instruction_count], "
+                            f"{remaining}",
+                        )
+                    )
+                else:
+                    precharge.extend(
+                        (
+                            f"    movabs r11, {remaining}",
+                            "    cmp qword ptr [rip + __s3_instruction_count], r11",
+                        )
+                    )
+                precharge.append(f"    ja {slow_label}")
+                if weight <= 0x7FFFFFFF:
+                    precharge.append(
+                        "    add qword ptr [rip + __s3_instruction_count], "
+                        f"{weight}"
+                    )
+                else:
+                    precharge.extend(
+                        (
+                            f"    movabs r11, {weight}",
+                            "    add qword ptr [rip + __s3_instruction_count], r11",
+                        )
+                    )
+                assert "\n".join(precharge) in assembly
+                budget_segment_id += 1
+
+    assert budget_segment_id > 0
+    return observed_weights
 
 
 def _exact_native(program, *, max_instructions: int) -> str:
@@ -380,6 +477,40 @@ def test_zero_budget_is_rejected_in_both_modes() -> None:
             max_instructions=0,
             instruction_budget_mode=InstructionBudgetMode.EXACT_SEGMENT,
         ).generate(program)
+
+
+@pytest.mark.parametrize(
+    "budget_mode",
+    (InstructionBudgetMode.PER_INSTRUCTION, InstructionBudgetMode.EXACT_SEGMENT),
+)
+@pytest.mark.parametrize(
+    ("limit", "error", "message"),
+    (
+        (-1, NativeBackendError, "max_instructions must be at least 1"),
+        (
+            NATIVE_MAX_INSTRUCTIONS + 1,
+            NativeBackendError,
+            "exceeds physical 64-bit limit",
+        ),
+        (True, TypeError, "max_instructions must be an integer"),
+        (1.5, TypeError, "max_instructions must be an integer"),
+        ("1", TypeError, "max_instructions must be an integer"),
+    ),
+)
+def test_invalid_instruction_limit_domain_is_rejected_in_both_modes(
+    budget_mode: InstructionBudgetMode,
+    limit: object,
+    error: type[Exception],
+    message: str,
+) -> None:
+    program = compile_source("fn main() -> tryte:\n    return 1\n", "O0").assembly
+    backend = X8664Backend(
+        max_instructions=limit,
+        instruction_budget_mode=budget_mode,
+    )
+
+    with pytest.raises(error, match=message):
+        backend.generate(program)
 
 
 @pytest.mark.parametrize("max_instructions", (1, 2, 3, 4, 7, 12, 20, 40, 100))
@@ -687,3 +818,89 @@ def test_u64_maximum_budget_assembles_and_matches_p0(tmp_path: Path) -> None:
         p0.stdout,
         p0.stderr,
     )
+
+
+@pytest.mark.parametrize("limit", INSTRUCTION_LIMIT_BOUNDARIES)
+def test_instruction_limit_boundaries_build_execute_and_match_p0(
+    limit: int,
+    tmp_path: Path,
+) -> None:
+    toolchain = _native_toolchain()
+    source = "fn main() -> tryte:\n    return 1 + 2\n"
+    program = compile_source(source, "O0").assembly
+    outcomes = {}
+
+    for mode in (
+        InstructionBudgetMode.PER_INSTRUCTION,
+        InstructionBudgetMode.EXACT_SEGMENT,
+    ):
+        backend = X8664Backend(
+            max_instructions=limit,
+            instruction_budget_mode=mode,
+        )
+        assembly = backend.generate(program)
+        if mode is InstructionBudgetMode.PER_INSTRUCTION:
+            _assert_per_instruction_limit_encoding(assembly, limit)
+        else:
+            observed = _assert_exact_segment_precharge_encoding(
+                assembly,
+                program,
+                limit,
+            )
+            assert 2 in {weight for weights in observed.values() for weight in weights}
+
+        executable = toolchain.build(
+            assembly,
+            tmp_path / f"{limit}-{mode.value}-program",
+        )
+        outcomes[mode] = toolchain.run(executable)
+
+        ffi_source = compile_source(BOUNDARY_FFI_SOURCE, "O0").assembly
+        ffi_assembly = backend._generate_ffi(ffi_source)
+        shared_library = toolchain.build_shared(
+            ffi_assembly,
+            tmp_path / f"{limit}-{mode.value}.so",
+        )
+        library = ctypes.CDLL(str(shared_library))
+        library.work.restype = ctypes.c_int64
+        assert library.work() == 5
+
+    p0 = outcomes[InstructionBudgetMode.PER_INSTRUCTION]
+    p2 = outcomes[InstructionBudgetMode.EXACT_SEGMENT]
+    assert (p0.returncode, p0.stdout, p0.stderr) == (0, "program returned: 3\n", "")
+    assert (p2.returncode, p2.stdout, p2.stderr) == (
+        p0.returncode,
+        p0.stdout,
+        p0.stderr,
+    )
+
+
+def test_exact_segment_precharge_handles_weight_near_native_maximum() -> None:
+    program = compile_source("fn main() -> tryte:\n    return 1 + 2\n", "O0").assembly
+    function = next(function for function in program.functions if function.name == "main")
+    block = function.blocks[0]
+    weight = NATIVE_MAX_INSTRUCTIONS - 1
+    emitter = X8664Emitter(
+        program,
+        max_frames=100,
+        max_instructions=NATIVE_MAX_INSTRUCTIONS,
+        instruction_budget_mode=InstructionBudgetMode.EXACT_SEGMENT,
+    )
+
+    # Synthetic weight exercises encoding only; this is not an executable plan.
+    lines = emitter._emit_budgeted_segment(
+        function,
+        block,
+        layout_frame(function),
+        analyze_liveness(function),
+        weight,
+        0,
+        len(block.instructions) - 1,
+    )
+
+    assert lines[:4] == [
+        "    cmp qword ptr [rip + __s3_instruction_count], 1",
+        "    ja .L__s3_budget_0_slow",
+        f"    movabs r11, {weight}",
+        "    add qword ptr [rip + __s3_instruction_count], r11",
+    ]
