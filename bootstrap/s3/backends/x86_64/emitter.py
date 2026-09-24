@@ -33,6 +33,12 @@ from .allocation import AllocationPlan, analyze_allocation
 from .liveness import analyze_liveness
 from .residence import analyze_cross_block_residence
 from .register_init_safety import proven_initialized_register_reads
+from .instruction_budget import (
+    MIN_FAST_SEGMENT_WEIGHT,
+    InstructionBudgetMode,
+    parse_instruction_budget_mode,
+    plan_budget_segments,
+)
 
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -143,12 +149,17 @@ class X8664Emitter:
         max_instructions: int,
         register_allocation: bool = False,
         compact_ea_by_function: Mapping[str, bool] | None = None,
+        instruction_budget_mode: InstructionBudgetMode | str | None = None,
     ):
         self.program = program
         self.max_frames = max_frames
         self.max_instructions = max_instructions
         self.register_allocation = register_allocation
         self.compact_ea_by_function = dict(compact_ea_by_function or {})
+        self.instruction_budget_mode = parse_instruction_budget_mode(
+            instruction_budget_mode
+        )
+        self._budget_segment_counter = 0
         self.failure_sites: list[FailureSite] = []
         self.current_function: AssemblyFunction | None = None
         self.current_block: str | None = None
@@ -258,36 +269,213 @@ class X8664Emitter:
         lines.extend(self._initialize_metadata(function, layout))
         lines.append(f"    jmp {mangle_block(function.name, 'entry')}")
         function_liveness = analyze_liveness(function)
-        for block in function.blocks:
-            lines.append(f"{mangle_block(function.name, block.label)}:")
-            instruction_index = 0
-            while instruction_index < len(block.instructions):
-                if self._can_fuse_tcmp_tbr3(
-                    block,
-                    instruction_index,
+        if self.instruction_budget_mode is InstructionBudgetMode.EXACT_SEGMENT:
+            lines.extend(
+                self._emit_exact_segment_blocks(
+                    function,
+                    layout,
                     function_liveness,
-                ):
+                )
+            )
+        else:
+            for block in function.blocks:
+                lines.append(f"{mangle_block(function.name, block.label)}:")
+                instruction_index = 0
+                while instruction_index < len(block.instructions):
+                    if self._can_fuse_tcmp_tbr3(
+                        block,
+                        instruction_index,
+                        function_liveness,
+                    ):
+                        lines.extend(
+                            self._emit_tcmp_tbr3(
+                                function,
+                                block.label,
+                                layout,
+                                block.instructions[instruction_index],
+                                block.instructions[instruction_index + 1],
+                            )
+                        )
+                        instruction_index += 2
+                        continue
                     lines.extend(
-                        self._emit_tcmp_tbr3(
+                        self._emit_instruction(
                             function,
                             block.label,
                             layout,
                             block.instructions[instruction_index],
-                            block.instructions[instruction_index + 1],
                         )
                     )
-                    instruction_index += 2
-                    continue
+                    instruction_index += 1
+        lines.append(f".size {symbol}, .-{symbol}")
+        return lines
+
+    def _emit_exact_segment_blocks(
+        self,
+        function: AssemblyFunction,
+        layout: FrameLayout,
+        function_liveness,
+    ) -> list[str]:
+        plan = plan_budget_segments(function)
+        by_block: dict[str, list] = {}
+        for segment in plan.segments:
+            by_block.setdefault(segment.block, []).append(segment)
+
+        lines: list[str] = []
+        for block in function.blocks:
+            lines.append(f"{mangle_block(function.name, block.label)}:")
+            for segment in by_block.get(block.label, ()):
+                instructions = block.instructions[
+                    segment.first_instruction_index :
+                    segment.last_instruction_index + 1
+                ]
+                if (
+                    segment.logical_weight >= MIN_FAST_SEGMENT_WEIGHT
+                    and segment.logical_weight <= self.max_instructions
+                ):
+                    lines.extend(
+                        self._emit_budgeted_segment(
+                            function,
+                            block,
+                            layout,
+                            function_liveness,
+                            segment.logical_weight,
+                            segment.first_instruction_index,
+                            segment.last_instruction_index,
+                        )
+                    )
+                else:
+                    lines.extend(
+                        self._emit_instruction_sequence(
+                            function,
+                            block,
+                            layout,
+                            function_liveness,
+                            segment.first_instruction_index,
+                            segment.last_instruction_index,
+                            include_budget=True,
+                        )
+                    )
+        return lines
+
+    def _emit_budgeted_segment(
+        self,
+        function: AssemblyFunction,
+        block: AssemblyBlock,
+        layout: FrameLayout,
+        function_liveness,
+        logical_weight: int,
+        first_instruction_index: int,
+        last_instruction_index: int,
+    ) -> list[str]:
+        segment_id = self._budget_segment_counter
+        self._budget_segment_counter += 1
+        slow_label = f".L__s3_budget_{segment_id}_slow"
+        done_label = f".L__s3_budget_{segment_id}_done"
+        remaining = self.max_instructions - logical_weight
+        if remaining < 0:
+            raise NativeBackendError("ineligible segment reached fast-path emitter")
+
+        lines: list[str] = []
+        if remaining <= 0x7FFFFFFF:
+            lines.append(
+                f"    cmp qword ptr [rip + __s3_instruction_count], {remaining}"
+            )
+        else:
+            lines.extend(
+                (
+                    f"    movabs r11, {remaining}",
+                    "    cmp qword ptr [rip + __s3_instruction_count], r11",
+                )
+            )
+        lines.append(f"    ja {slow_label}")
+        if logical_weight <= 0x7FFFFFFF:
+            lines.append(
+                "    add qword ptr [rip + __s3_instruction_count], "
+                f"{logical_weight}"
+            )
+        else:
+            lines.extend(
+                (
+                    f"    movabs r11, {logical_weight}",
+                    "    add qword ptr [rip + __s3_instruction_count], r11",
+                )
+            )
+        lines.extend(
+            self._emit_instruction_sequence(
+                function,
+                block,
+                layout,
+                function_liveness,
+                first_instruction_index,
+                last_instruction_index,
+                include_budget=False,
+            )
+        )
+
+        ends_control = block.instructions[last_instruction_index].is_terminator
+        if not ends_control:
+            lines.append(f"    jmp {done_label}")
+        lines.append(f"{slow_label}:")
+        lines.extend(
+            self._emit_instruction_sequence(
+                function,
+                block,
+                layout,
+                function_liveness,
+                first_instruction_index,
+                last_instruction_index,
+                include_budget=True,
+            )
+        )
+        if not ends_control:
+            lines.append(f"{done_label}:")
+        return lines
+
+    def _emit_instruction_sequence(
+        self,
+        function: AssemblyFunction,
+        block: AssemblyBlock,
+        layout: FrameLayout,
+        function_liveness,
+        first_instruction_index: int,
+        last_instruction_index: int,
+        *,
+        include_budget: bool,
+    ) -> list[str]:
+        lines: list[str] = []
+        instruction_index = first_instruction_index
+        while instruction_index <= last_instruction_index:
+            if (
+                instruction_index + 1 <= last_instruction_index
+                and self._can_fuse_tcmp_tbr3(
+                    block,
+                    instruction_index,
+                    function_liveness,
+                )
+            ):
                 lines.extend(
-                    self._emit_instruction(
+                    self._emit_tcmp_tbr3(
                         function,
                         block.label,
                         layout,
                         block.instructions[instruction_index],
+                        block.instructions[instruction_index + 1],
+                        include_budget=include_budget,
                     )
                 )
-                instruction_index += 1
-        lines.append(f".size {symbol}, .-{symbol}")
+                instruction_index += 2
+                continue
+            lines.extend(
+                self._emit_instruction(
+                    function,
+                    block.label,
+                    layout,
+                    block.instructions[instruction_index],
+                    include_budget=include_budget,
+                )
+            )
+            instruction_index += 1
         return lines
 
     @staticmethod
@@ -351,16 +539,28 @@ class X8664Emitter:
         layout: FrameLayout,
         compare: AssemblyInstruction,
         branch: AssemblyInstruction,
+        *,
+        include_budget: bool = True,
     ) -> list[str]:
+        self.current_function = function
+        self.current_block = block_name
+        self.current_instruction = compare
         _, left, right = compare.registers
-        lines = self._instruction_instrumentation(function, block_name, compare)
+        lines = (
+            self._instruction_instrumentation(function, block_name, compare)
+            if include_budget
+            else []
+        )
         lines.extend(self._read_register(layout, left, "rax"))
         lines.extend(self._read_register(layout, right, "r10"))
 
         # The second instruction's limit check intentionally precedes the
         # native compare. The first instruction has already validated and
         # loaded both operands, and the second check may clobber flags.
-        lines.extend(self._instruction_instrumentation(function, block_name, branch))
+        if include_budget:
+            lines.extend(
+                self._instruction_instrumentation(function, block_name, branch)
+            )
         source_type = function.type_of(left)
         if source_type is AssemblyType.F64:
             lines.extend(
@@ -680,6 +880,8 @@ class X8664Emitter:
         block_name: str,
         layout: FrameLayout,
         instruction: AssemblyInstruction,
+        *,
+        include_budget: bool = True,
     ) -> list[str]:
         self.current_function = function
         self.current_block = block_name
@@ -687,26 +889,28 @@ class X8664Emitter:
         opcode = instruction.opcode
         registers = instruction.registers
 
-        limit_failure = self._instruction_failure(
-            "instruction limit",
-            detail=f"instruction limit {self.max_instructions} exceeded\n",
-        )
-        if 0 <= self.max_instructions <= 0x7FFFFFFF:
-            instrumentation = [
-                f"    cmp qword ptr [rip + __s3_instruction_count], "
-                f"{self.max_instructions}"
-            ]
-        else:
-            instrumentation = [
-                f"    movabs r11, {self.max_instructions}",
-                "    cmp qword ptr [rip + __s3_instruction_count], r11",
-            ]
-        instrumentation.extend(
-            [
-                f"    jae {limit_failure}",
-                "    inc qword ptr [rip + __s3_instruction_count]",
-            ]
-        )
+        instrumentation: list[str] = []
+        if include_budget:
+            limit_failure = self._instruction_failure(
+                "instruction limit",
+                detail=f"instruction limit {self.max_instructions} exceeded\n",
+            )
+            if 0 <= self.max_instructions <= 0x7FFFFFFF:
+                instrumentation = [
+                    f"    cmp qword ptr [rip + __s3_instruction_count], "
+                    f"{self.max_instructions}"
+                ]
+            else:
+                instrumentation = [
+                    f"    movabs r11, {self.max_instructions}",
+                    "    cmp qword ptr [rip + __s3_instruction_count], r11",
+                ]
+            instrumentation.extend(
+                [
+                    f"    jae {limit_failure}",
+                    "    inc qword ptr [rip + __s3_instruction_count]",
+                ]
+            )
 
         if opcode is AssemblyOpcode.TCONST:
             assert instruction.immediate is not None
