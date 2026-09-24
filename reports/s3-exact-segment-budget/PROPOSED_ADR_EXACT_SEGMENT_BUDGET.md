@@ -33,9 +33,11 @@ an exact segment. This proposal formalizes P2; it does not accept or promote it.
    existing serial runtime model. Calls and recursion do not reset it. Frame
    and memory guards remain independent.
 8. Qualify E0 for serial execution and synchronous callback re-entry at call
-   barriers. Same-artifact concurrent host-thread entry remains
-   `NOT_QUALIFIED`; proposed initial support scope excludes it. This exclusion
-   is not accepted until project owners decide the public contract.
+   barriers. Existing public documentation does not specify same-artifact
+   concurrent host-thread entry. The proposed initial support scope requires
+   callers to serialize entry into one loaded artifact and excludes concurrent
+   entry until separately qualified. This is a proposal, not an accepted
+   normative contract; project governance must accept or revise it.
 9. Do not expose PNEG in production. It remains an unsafe benchmark lower bound.
 
 ## E0 Contract and Evidence Mapping
@@ -50,16 +52,21 @@ an exact segment. This proposal formalizes P2; it does not accept or promote it.
 | Callback re-entry observes a complete call segment | `test_foreign_callback_reentry_observes_a_complete_call_segment` |
 | Fused compare/branch guarded reads retain diagnostics | `test_fast_fused_compare_keeps_context_for_guarded_register_reads` |
 | Structure and precharge match exact segment plan | `test_planner_is_block_local_and_splits_after_calls_and_control`; `test_exact_segment_codegen_has_exact_precharge_and_scalar_slow_path` |
+| Six limit values build/execute in both modes and P0/P2 agree | `test_instruction_limit_boundaries_build_execute_and_match_p0` |
+| Invalid configuration values are rejected in both modes | `test_zero_budget_is_rejected_in_both_modes`; `test_invalid_instruction_limit_domain_is_rejected_in_both_modes` |
+| Near-U64 `L-W` arithmetic and wide weight encoding | `test_exact_segment_precharge_handles_weight_near_native_maximum` (synthetic encoding-only segment) |
 
 ### Configuration domain
 
 Proposed native legal domain is `1 <= max_instructions <= 2^64 - 1`, default
 100,000. Zero, negatives, bool, non-integer, and values above U64_MAX are
-rejected. Tests cover zero, values above the signed-32-bit immediate range, and
-U64_MAX. Exact tests at `0x7fffffff` and `0x80000000` remain an
-`UNTESTED_CONTRACT_REQUIREMENT`. The implementation uses immediate operands
-through `0x7fffffff` and a `movabs` path above it. This budget does not change
-`max_frames` semantics.
+rejected. The Linux x86-64 closure matrix tests
+`0x7ffffffe`, `0x7fffffff`, `0x80000000`, `0x80000001`, 10,000,000,000, and
+U64_MAX in both modes, including native executable and FFI build/load/execute.
+P0 selects a direct-limit immediate through `0x7fffffff` and a `movabs` path
+above it. P2's fast segment check uses `L-W`; tests verify its remaining-budget
+encoding, including wide values, and small-budget tests retain exact fallback
+behavior. This budget does not change `max_frames` semantics.
 
 ## Compatibility and Scope
 
@@ -115,7 +122,7 @@ change is required.
 Before any promotion proposal is ready, require:
 
 - accepted concurrency scope, including the same-artifact thread-entry rule;
-- exact-limit tests at `0x7fffffff` and `0x80000000`;
+- retain the exact-limit boundary matrix and small-budget failure gates;
 - clean integration lineage;
 - one valid green S3 CI run with actual executed steps;
 - benchmark validation automation that actually runs;
@@ -123,6 +130,19 @@ Before any promotion proposal is ready, require:
 - focused E0/native tests and full S3 suite on exact source SHA;
 - release RMSD, XSBench, and JSMN evidence with statistically justified
   regression bands and a tested fallback.
+
+## Semantic Closure Evidence
+
+The test-only closure candidate `c07b2c486b98e8408119f44ceedceb46c6d2549b`
+passed the focused native gate (75 passed) and one full Linux x86-64 suite
+(4,390 passed, 1 skipped, 572 subtests passed, exit 0). Its raw transcript is
+preserved in the semantic-closure branch at
+`reports/s3-exact-segment-budget/evidence/full-suite-valid-c07b2c48-linux-x86_64.txt`
+(SHA-256 `6ebbbdc645cb66b3fcfea5b5683b64c416acd15eff11181ab2a99f6473f0e8b0`).
+The single skip is optional `cryptography`, unavailable in the guest Python
+environment. No production/backend implementation changed. Current public
+documentation leaves same-artifact concurrency unspecified; the conservative
+caller-serialized scope remains proposed and unaccepted.
 
 ## Open Questions
 

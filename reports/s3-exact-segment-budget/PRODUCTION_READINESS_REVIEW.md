@@ -13,12 +13,14 @@ layer; `PER_INSTRUCTION` remains the default. This does not establish universal
 S3 speedup or production readiness.
 
 The candidate is **conditionally technically ready for serialized Linux
-x86-64 use**, pending an explicit concurrency scope and product decision about
-the measured code-size increase. Release gates are blocked by the unintegrated
-PR stack, S3 Actions failures before any job steps, and disabled Actions in the
-benchmark repository. The recommended next campaign is
-`S3_NATIVE_BUDGET_CONCURRENCY_CONTRACT`; do not begin promotion until that
-contract is decided.
+x86-64 use**. New exact-limit tests close the numeric boundary gap. The current
+public concurrency contract remains unspecified; a conservative serialized
+entry scope is documented as a proposal but is not yet accepted by project
+governance. The measured code-size increase also needs a product decision.
+Release gates remain blocked by the unintegrated PR stack, S3 Actions failures
+before any job steps, and disabled Actions in the benchmark repository.
+Resolve the concurrency-scope decision before treating the candidate as a
+supported native capability.
 
 ```text
 P2_SELECTED=YES
@@ -73,15 +75,28 @@ to P2.
 
 ## 3. Evidence Provenance
 
-The S3 benchmark repository's `reports/s3-experimental-segment-budget/FINAL_REPORT.md`
-binds the P2 full-suite result to source SHA `1a76e341...`: 4,373 passed,
-1 skipped, 0 failed, exit 0. It records transcript SHA-256
-`1b92f9a4009b7e8f50b91e5ab47fdba1a699acfc6ecdbb1a9af3a27a7f455d4e`.
-That is the inherited full-suite gate; this review did not rerun it. The raw
-transcript matching that digest was not present among the reviewed benchmark
-evidence files, and the available transcript files have different digests.
-Accordingly, the run result and digest are inherited from the report and were
-not independently rehashed in this review.
+The semantic-closure branch adds tests only at
+`c07b2c486b98e8408119f44ceedceb46c6d2549b`; backend implementation content
+remains byte-identical to P2 `1a76e341098b54a639fec22eecea362cc243c46f`.
+The focused Linux x86-64 native gate passed 75 tests in 3.05 seconds with
+`S3_NATIVE_REQUIRED=1` (Python 3.14.4, pytest 9.1.1). One full S3 suite then
+ran on a Git checkout with valid Git metadata at that exact test/evidence
+commit: 4,390 passed, 1 skipped, 572 subtests passed, 0 failed, exit 0, in
+3,698.92 seconds. The sole skip is the optional cryptography-dependent test.
+Its raw transcript is preserved in the semantic-closure PR evidence at
+`reports/s3-exact-segment-budget/evidence/full-suite-valid-c07b2c48-linux-x86_64.txt`
+with SHA-256
+`6ebbbdc645cb66b3fcfea5b5683b64c416acd15eff11181ab2a99f6473f0e8b0`.
+
+An earlier full-suite attempt on a source archive without `.git` failed
+renderer-golden and Git-metadata lookups. It is preserved and explicitly
+classified as an invalid test environment, not as candidate evidence. The
+valid full suite is the only qualifying full-suite gate for this closure.
+
+The original P2 suite record in the S3 benchmark repository remains inherited
+evidence; the newly preserved run independently validates the P2 backend plus
+the test-only semantic-closure change. The raw transcript and its digest are
+now locally available in the semantic-closure branch.
 
 There is a stale record in S3 P2's own
 `EXPERIMENTAL_VALIDATION.md`: it identifies earlier source `f4353c1b...` and
@@ -129,13 +144,19 @@ host-thread entry.
 
 The native backend accepts integer limits in the inclusive range
 `1..2^64-1`; the default remains 100,000. Zero and negatives are rejected,
-booleans are rejected as non-integers, and values above `2^64-1` are rejected.
-`0x7fffffff` and `0x80000000` are both inside the accepted domain; the emitter
-uses immediate operands through `0x7fffffff` and a `movabs` path above it. The
-existing test suite exercises a value above 32-bit signed range (5,000,000,000)
-and the U64 maximum, but does not separately test the exact two adjacent
-boundary values. Record that as an
-`UNTESTED_CONTRACT_REQUIREMENT` before a supported release claim.
+booleans and other non-integers are rejected, and values above `2^64-1` are
+rejected. The new Linux matrix builds, links, executes, and compares P0/P2 at
+`0x7ffffffe`, `0x7fffffff`, `0x80000000`, `0x80000001`, 10,000,000,000, and
+U64_MAX; the FFI artifacts also build and execute at each limit. Static checks
+verify P0's direct-limit immediate/wide selection and P2's `L-W` precharge
+encoding. For the tested P2 W=2 segment, the immediate precharge operands at
+the signed boundary are `0x7ffffffd`, `0x7ffffffe`, and `0x7fffffff`; the
+10-billion and U64_MAX cases exercise a wide remaining-budget value. Existing
+loop/call tests cover real segment weights 3, 4, 5, 7, and 10 at small exact
+limits, and a synthetic emitter check covers `W=U64_MAX-1`, `L=U64_MAX`, and
+`L-W=1`. No limit-boundary bug was found. P2 compares the remaining budget
+`L-W`, so its precharge immediate transition is not identical to the direct
+`L` transition in P0.
 
 The instruction budget is independent of `max_frames` and logical-memory
 checks. Segment precharge changes only instruction-accounting state; each S3
@@ -144,24 +165,35 @@ retain the baseline failure site and context.
 
 ## 5. Concurrency and Reentrancy
 
-The counter is a global artifact-level native symbol and increments are not
-synchronized. Synchronous callback re-entry is qualified because a call is a
-segment barrier and the counter is updated before entering host code. Concurrent
-host-thread entry into the same artifact is neither qualified nor expressly
-excluded by the public native ABI documentation. ADR-0008 describes the ABI and
-runtime but does not promise same-artifact thread safety.
+The instruction and frame counters are aligned writable `.bss` objects in the
+loaded artifact instance. P0 uses ordinary memory `inc`/`dec`; P2 uses ordinary
+memory `add` for fast-segment precharge and ordinary scalar `inc`/`dec`. Neither
+uses a lock-prefixed read-modify-write or thread-local storage. Serial calls
+share the loaded artifact's counter state, as covered by the repeated-serial
+FFI test. Synchronous callback re-entry is qualified because a call is a
+segment barrier and accounting is updated before host code is entered.
+
+ADR-0008 and ADR-0014 contain no same-artifact concurrency promise, and no
+concurrent-entry test was found. The current public contract is therefore
+`UNSPECIFIED`, not explicitly supported or explicitly prohibited. The proposed
+conservative scope is caller-serialized entry into one loaded artifact;
+synchronous re-entry within a serialized call remains qualified. This is
+documented in the proposed ADR but remains unaccepted pending project
+governance. The same lack of synchronization exists in P0, so no pre-existing
+concurrency guarantee was shown to be weakened by P2.
 
 ```text
 SERIAL_EXECUTION=QUALIFIED
 SYNCHRONOUS_CALLBACK_REENTRY=QUALIFIED
 CONCURRENT_FFI_ENTRY=NOT_QUALIFIED
-CONCURRENCY_READINESS=CONDITIONAL
+PROPOSED_SCOPE=NOT_SUPPORTED_UNLESS_EXPLICITLY_QUALIFIED
+PROPOSED_SCOPE_ACCEPTED=NO
+CONCURRENCY_READINESS=CONDITIONAL_PENDING_GOVERNANCE
 ```
 
-Before making this a supported capability, the project must explicitly choose
-and document the contract. The conservative proposal is to exclude concurrent
-entry into one artifact until separately designed and qualified; this review
-does not implement synchronization or declare that proposal accepted.
+No synchronization or concurrent qualification is implemented. Concurrent
+tests are not required under the proposed serialized-only scope; they become
+necessary only if governance requires same-artifact concurrent entry.
 
 ## 6. API, Default, and Compatibility
 
@@ -250,6 +282,9 @@ Live GitHub state on 2026-09-24:
   #23 also remains OPEN Draft. Neither is merged.
 - This review PR is based on #309 so its candidate diff can be reviewed in
   that stack. No parent PR was merged or retargeted.
+- Semantic-closure PR #312 is OPEN Draft, based on the same #309 lineage, at
+  head `6a97b728db9d194f77f5dae15967591d0c4315a7`. It carries the test-only
+  boundary additions and semantic evidence; it is unmerged and is not P2H.
 
 At the tree level, the P2 delta against the #309 tree is limited to the budget
 backend, its focused test, and experiment/review documentation. A clean
@@ -269,6 +304,13 @@ head, the latest observed S3 workflow runs (including run `35955746566`) failed
 within seconds with every job reporting `steps=[]`; the API exposed no job
 steps, and `gh run view --log` returned `log not found`. This is not a source
 failure, but the cause cannot be attributed from available evidence.
+
+The natural workflows on semantic-closure PR #312 head
+`6a97b728db9d194f77f5dae15967591d0c4315a7` showed the same failure pattern:
+Tests run `36001998655` (10 jobs), S3 1.0 candidate gates `36001998616` (2
+jobs), and M1.38 Docker capability closure `36001998615` (1 job) all failed
+before steps, with `steps=[]` on all 13 jobs. Root cause remains unidentified;
+these results are not a CI pass, and no manual rerun was made.
 
 ```text
 S3_CI_ROOT_CAUSE=UNKNOWN
@@ -354,7 +396,8 @@ This defines a proposed regression policy; it is not yet automated.
 
 ## 13. Accepted Limitations and Blockers
 
-Known limitations are explicit: same-artifact concurrent FFI is unqualified;
+Known limitations are explicit: same-artifact concurrent FFI is unqualified and
+its proposed caller-serialized scope is pending governance acceptance;
 native evidence is Linux x86-64 only; `.text` grows 39%-59%; P2H did not
 materially harden code size; QPI is unavailable; the S3 Actions failures have
 no attributed root cause; benchmark Actions are disabled; the PR stack remains
@@ -362,12 +405,12 @@ unmerged; and the P2 S3 report contains a stale earlier full-suite entry.
 
 | Blocking item | Evidence | Required resolution | Owner / next action |
 | --- | --- | --- | --- |
-| Concurrency contract | ADR-0008 has no same-artifact concurrent-entry guarantee; global counter is unsynchronized | Decide and document serialized-only scope or design a separate qualification | S3 project; `S3_NATIVE_BUDGET_CONCURRENCY_CONTRACT` |
+| Concurrency contract governance | ADR-0008/0014 and public API do not define same-artifact concurrent entry; P0 and P2 counters are unsynchronized; caller-serialized scope is proposed, not accepted | Accept or revise the proposed scope; qualify concurrency only if required | S3 project; `S3_NATIVE_EXECUTION_CONCURRENCY_CONTRACT_DECISION` |
 | Integration lineage | #301-#309 remain open Draft; #310 is stacked on #309 and not P2 | Integrate parent stack or review a clean P2 extraction | S3 maintainers; `S3_1_X_PR_STACK_INTEGRATION_CLOSURE` after contract decision |
-| S3 release CI | Recent runs fail before steps; no logs; root cause UNKNOWN | Obtain one real green run after attributable infrastructure/workflow diagnosis | S3 CI owners; `S3_CI_RELEASE_GATE_RECOVERY` |
+| S3 release CI | #310 and #312 natural runs fail before steps; #312 has 13 jobs with `steps=[]`; root cause UNKNOWN | Obtain one real green run after attributable infrastructure/workflow diagnosis | S3 CI owners; `S3_CI_RELEASE_GATE_RECOVERY` |
 | Benchmark CI | Actions permissions `enabled=false`, no run/checks | Re-enable/configure the benchmark repository gate and capture a valid run | S3-Benchmarks maintainers |
 | Product code-size policy | measured `.text` growth, no documented cap found | Decide acceptable product scope/size limit; do not reopen budget architecture | S3 product maintainers |
-| Limit-edge coverage | exact tests for `0x7fffffff` and `0x80000000` are absent | Add boundary tests before calling this portion fully specified | S3 maintainers; semantic contract follow-up |
+| Limit-edge coverage | New Linux test-only matrix covers `0x7ffffffe` through `0x80000001`, 10 billion, and U64_MAX in both modes; P0/P2 results match | Closed for tested Linux x86-64 backend scope | Closed by semantic-closure evidence |
 
 P2's successful performance result remains valid and is not invalidated by
 these promotion blockers.
@@ -389,8 +432,8 @@ R5_RESOURCE_TRADEOFF=CONDITIONAL
 TECHNICAL_CANDIDATE_READINESS=CONDITIONAL
 RELEASE_GATE_READINESS=BLOCKED
 PROMOTION_READINESS=READY_PENDING_MULTIPLE_BLOCKERS
-NEXT_CRITICAL_BLOCKER=UNRESOLVED_SAME_ARTIFACT_CONCURRENCY_CONTRACT
-NEXT_CAMPAIGN=S3_NATIVE_BUDGET_CONCURRENCY_CONTRACT
+NEXT_CRITICAL_BLOCKER=CONCURRENCY_CONTRACT_GOVERNANCE_DECISION
+NEXT_CAMPAIGN=S3_NATIVE_EXECUTION_CONCURRENCY_CONTRACT_DECISION
 
 EVIDENCE_SCORE=89 (research rubric only)
 QUALIFIED_PERFORMANCE_INDEX=NOT_AVAILABLE

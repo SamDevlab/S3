@@ -17,18 +17,24 @@
     ]
   },
   "semantic_contract": {
-    "status": "CONDITIONAL",
+    "status": "CONDITIONAL_PENDING_CONCURRENCY_GOVERNANCE",
     "e0_contract_documented": true,
     "e0_test_mapping_complete": true,
     "qualified_scope": ["serialized native execution", "synchronous callback re-entry"],
-    "untested_contract_requirement": ["exact max_instructions limits 0x7fffffff and 0x80000000"]
+    "limit_boundary_matrix": ["0x7ffffffe", "0x7fffffff", "0x80000000", "0x80000001", "10000000000", "U64_MAX"],
+    "limit_boundary_tests": "PASS_IN_BOTH_MODES_NATIVE_EXECUTABLE_AND_FFI",
+    "semantic_boundary_bug": false
   },
   "concurrency_contract": {
     "serial_execution": "QUALIFIED",
     "synchronous_callback_reentry": "QUALIFIED",
     "concurrent_same_artifact_ffi": "NOT_QUALIFIED",
     "public_contract": "UNSPECIFIED",
-    "status": "CONDITIONAL"
+    "proposed_scope": "NOT_SUPPORTED_UNLESS_EXPLICITLY_QUALIFIED",
+    "proposed_scope_accepted": false,
+    "p0_and_p2_counter_model": "ALIGNED_WRITABLE_BSS; UNSYNCHRONIZED; NO_TLS_OR_LOCKED_RMW",
+    "p2_weakens_existing_concurrency_guarantee": false,
+    "status": "CONDITIONAL_PENDING_GOVERNANCE"
   },
   "api_strategy": {
     "current_default": "PER_INSTRUCTION",
@@ -85,6 +91,22 @@
     "s3": {"status": "BLOCKED_INFRASTRUCTURE", "root_cause": "UNKNOWN", "observed_jobs_have_steps": false, "actions_enabled": true},
     "benchmark": {"status": "BLOCKED", "root_cause": "REPOSITORY_OR_ORG_POLICY", "actions_enabled": false, "checks": "NO_CHECKS_REPORTED", "runs": 0}
   },
+  "semantic_pr": {
+    "number": 312,
+    "url": "https://github.com/SamDevlab/S3/pull/312",
+    "state": "OPEN",
+    "draft": true,
+    "merged": false,
+    "head": "6a97b728db9d194f77f5dae15967591d0c4315a7",
+    "base": "feat/s3-scientific-kernel-rmsd-v01",
+    "natural_ci": {
+      "status": "FAIL_BEFORE_STEPS_CAUSE_UNIDENTIFIED",
+      "runs": [36001998655, 36001998616, 36001998615],
+      "jobs": 13,
+      "jobs_with_steps": 0,
+      "manual_rerun": false
+    }
+  },
   "benchmark_wrapper": {
     "status": "P2H_POST_PYTEST_WRAPPER_FAILURE",
     "summary": "106 passed, 1 skipped; separate pytest exit not captured",
@@ -93,6 +115,8 @@
   "documentation": {
     "proposed_adr": "CREATED_NOT_ACCEPTED",
     "p2_suite_record_reconciled": true,
+    "semantic_closure_report": "reports/s3-exact-segment-budget/SEMANTIC_CLOSURE.md",
+    "semantic_closure_result": "reports/s3-exact-segment-budget/SEMANTIC_CLOSURE_RESULT.json",
     "p2_suite": {
       "source_sha": "1a76e341098b54a639fec22eecea362cc243c46f",
       "result": "4373 passed, 1 skipped, 0 failed, exit 0",
@@ -113,12 +137,11 @@
   "security_resource_review": "PASS_WITH_SERIALIZED_SCOPE",
   "maintenance_complexity": "MODERATE",
   "blocking_items": [
-    "concurrent same-artifact FFI contract and qualification scope",
+    "governance acceptance or revision of proposed same-artifact concurrent FFI scope",
     "unintegrated parent PR stack or reviewed clean extraction",
     "S3 CI pre-step failure with unattributed root cause",
     "benchmark repository Actions disabled and no checks",
-    "product policy for measured code-size increase",
-    "direct tests for 0x7fffffff and 0x80000000"
+    "product policy for measured code-size increase"
   ],
   "nonblocking_items": [
     "QPI unavailable",
@@ -145,6 +168,19 @@
   "host_running_required": true,
   "vm_running_required": true,
   "virtualbox_running_required": true,
-  "next_critical_blocker": "UNRESOLVED_SAME_ARTIFACT_CONCURRENCY_CONTRACT",
-  "recommended_next_campaign": "S3_NATIVE_BUDGET_CONCURRENCY_CONTRACT"
+  "semantic_closure": {
+    "test_source_commit": "c07b2c486b98e8408119f44ceedceb46c6d2549b",
+    "focused_tests": "75 passed, 0 failed; exit 0",
+    "focused_transcript_sha256": "1d078d76ce89cbcfa00ce85c4ed8e9d376524d97ea7381b89d666c6cfdc82406",
+    "full_suite": "4390 passed, 1 skipped, 572 subtests passed, 0 failed; exit 0",
+    "full_suite_head": "c07b2c486b98e8408119f44ceedceb46c6d2549b",
+    "full_suite_transcript_sha256": "6ebbbdc645cb66b3fcfea5b5683b64c416acd15eff11181ab2a99f6473f0e8b0",
+    "full_suite_transcript_path": "reports/s3-exact-segment-budget/evidence/full-suite-valid-c07b2c48-linux-x86_64.txt",
+    "invalid_archive_attempt_preserved_not_counted": true,
+    "backend_implementation_changed": false,
+    "test_source_changed": true,
+    "benchmark_rerun": false
+  },
+  "next_critical_blocker": "CONCURRENCY_CONTRACT_GOVERNANCE_DECISION",
+  "recommended_next_campaign": "S3_NATIVE_EXECUTION_CONCURRENCY_CONTRACT_DECISION"
 }
