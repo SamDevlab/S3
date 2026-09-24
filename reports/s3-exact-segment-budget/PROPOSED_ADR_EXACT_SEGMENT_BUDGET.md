@@ -29,9 +29,11 @@ an exact segment. This proposal formalizes P2; it does not accept or promote it.
 6. If the full segment does not fit, execute the original per-instruction
    checks. The failing logical instruction does not execute and retains its
    function, block, opcode, source context, and error category.
-7. Keep one artifact/process-wide instruction counter consistent with the
-   existing serial runtime model. Calls and recursion do not reset it. Frame
-   and memory guards remain independent.
+7. Keep one instruction counter per loaded native artifact instance,
+   consistent with the existing serial runtime model. Calls and recursion
+   using that instance do not reset it. Do not claim sharing or isolation
+   across separate loader namespaces or mappings without separate evidence.
+   Frame and memory guards remain independent.
 8. Qualify E0 for serial execution and synchronous callback re-entry at call
    barriers. Existing public documentation does not specify same-artifact
    concurrent host-thread entry. The proposed initial support scope requires
