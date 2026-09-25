@@ -13,6 +13,112 @@ export fn sum(values: &f64_vector) -> f64:
         index = index + 1
     return total
 
+export fn sum_squares(values: &f64_vector) -> f64:
+    mut length: i64 = f64_vector_len(values)
+    mut index: i64 = 0
+    mut total: f64 = 0.0
+    while index < length:
+        mut value: f64 = f64_vector_get(values, index)
+        total = total + value * value
+        index = index + 1
+    return total
+
+fn absolute_f64(value: f64) -> f64:
+    match value < 0.0:
+        -1:
+            return -value
+        0:
+            return value
+        1:
+            return value
+
+export fn sum_abs(values: &f64_vector) -> f64:
+    mut length: i64 = f64_vector_len(values)
+    mut index: i64 = 0
+    mut total: f64 = 0.0
+    while index < length:
+        total = total + absolute_f64(f64_vector_get(values, index))
+        index = index + 1
+    return total
+
+export fn l1_norm(values: &f64_vector) -> f64:
+    return sum_abs(values)
+
+fn min_nonempty(values: &f64_vector, length: i64) -> F64Result:
+    mut selected: f64 = f64_vector_get(values, 0)
+    mut index: i64 = 1
+    while index < length:
+        mut value: f64 = f64_vector_get(values, index)
+        match value < selected:
+            -1:
+                selected = value
+            0:
+                selected = selected
+            1:
+                selected = selected
+        index = index + 1
+    return F64Result(status=0, value=selected)
+
+export fn min(values: &f64_vector) -> F64Result:
+    mut length: i64 = f64_vector_len(values)
+    match length == 0:
+        -1:
+            return F64Result(status=2, value=0.0)
+        0:
+            return min_nonempty(values, length)
+        1:
+            return min_nonempty(values, length)
+
+fn max_nonempty(values: &f64_vector, length: i64) -> F64Result:
+    mut selected: f64 = f64_vector_get(values, 0)
+    mut index: i64 = 1
+    while index < length:
+        mut value: f64 = f64_vector_get(values, index)
+        match value > selected:
+            -1:
+                selected = value
+            0:
+                selected = selected
+            1:
+                selected = selected
+        index = index + 1
+    return F64Result(status=0, value=selected)
+
+export fn max(values: &f64_vector) -> F64Result:
+    mut length: i64 = f64_vector_len(values)
+    match length == 0:
+        -1:
+            return F64Result(status=2, value=0.0)
+        0:
+            return max_nonempty(values, length)
+        1:
+            return max_nonempty(values, length)
+
+fn max_abs_nonempty(values: &f64_vector, length: i64) -> F64Result:
+    mut selected: f64 = absolute_f64(f64_vector_get(values, 0))
+    mut index: i64 = 1
+    while index < length:
+        mut value: f64 = absolute_f64(f64_vector_get(values, index))
+        match value > selected:
+            -1:
+                selected = value
+            0:
+                selected = selected
+            1:
+                selected = selected
+        index = index + 1
+    return F64Result(status=0, value=selected)
+
+export fn max_abs(values: &f64_vector) -> F64Result:
+    mut length: i64 = f64_vector_len(values)
+    match length == 0:
+        -1:
+            return F64Result(status=2, value=0.0)
+        0:
+            return max_abs_nonempty(values, length)
+        1:
+            return max_abs_nonempty(values, length)
+
 export fn dot(left: &f64_vector, right: &f64_vector) -> F64Result:
     mut length: i64 = f64_vector_len(left)
     match length == f64_vector_len(right):
@@ -111,3 +217,150 @@ export fn rmsd(left: &f64_vector, right: &f64_vector) -> F64Result:
                     return squared
                 1:
                     return squared
+
+export fn sum_squared_difference(left: &f64_vector, right: &f64_vector) -> F64Result:
+    return squared_distance(left, right)
+
+export fn mae(left: &f64_vector, right: &f64_vector) -> F64Result:
+    mut length: i64 = f64_vector_len(left)
+    match length == f64_vector_len(right):
+        -1:
+            match length == 0:
+                -1:
+                    return F64Result(status=2, value=0.0)
+                0:
+                    return mae_nonempty(left, right, length)
+                1:
+                    return mae_nonempty(left, right, length)
+        0:
+            return F64Result(status=1, value=0.0)
+        1:
+            return F64Result(status=1, value=0.0)
+
+fn mae_nonempty(left: &f64_vector, right: &f64_vector, length: i64) -> F64Result:
+    mut index: i64 = 0
+    mut total: f64 = 0.0
+    while index < length:
+        mut delta: f64 = f64_vector_get(left, index) - f64_vector_get(right, index)
+        total = total + absolute_f64(delta)
+        index = index + 1
+    return F64Result(status=0, value=total / to_f64(length))
+
+export fn mse(left: &f64_vector, right: &f64_vector) -> F64Result:
+    mut length: i64 = f64_vector_len(left)
+    match length == f64_vector_len(right):
+        -1:
+            match length == 0:
+                -1:
+                    return F64Result(status=2, value=0.0)
+                0:
+                    return mse_nonempty(left, right, length)
+                1:
+                    return mse_nonempty(left, right, length)
+        0:
+            return F64Result(status=1, value=0.0)
+        1:
+            return F64Result(status=1, value=0.0)
+
+fn mse_nonempty(left: &f64_vector, right: &f64_vector, length: i64) -> F64Result:
+    mut index: i64 = 0
+    mut total: f64 = 0.0
+    while index < length:
+        mut delta: f64 = f64_vector_get(left, index) - f64_vector_get(right, index)
+        total = total + delta * delta
+        index = index + 1
+    return F64Result(status=0, value=total / to_f64(length))
+
+export fn rmse(left: &f64_vector, right: &f64_vector) -> F64Result:
+    mut squared: F64Result = mse(left, right)
+    match squared.status == 0:
+        -1:
+            return F64Result(status=0, value=sqrt(squared.value))
+        0:
+            return squared
+        1:
+            return squared
+
+export fn standard_deviation(values: &f64_vector) -> F64Result:
+    mut length: i64 = f64_vector_len(values)
+    match length == 0:
+        -1:
+            return F64Result(status=2, value=0.0)
+        0:
+            return F64Result(status=0, value=sqrt(variance(values)))
+        1:
+            return F64Result(status=0, value=sqrt(variance(values)))
+
+export fn covariance(left: &f64_vector, right: &f64_vector) -> F64Result:
+    mut length: i64 = f64_vector_len(left)
+    match length == f64_vector_len(right):
+        -1:
+            match length == 0:
+                -1:
+                    return F64Result(status=2, value=0.0)
+                0:
+                    return covariance_nonempty(left, right, length)
+                1:
+                    return covariance_nonempty(left, right, length)
+        0:
+            return F64Result(status=1, value=0.0)
+        1:
+            return F64Result(status=1, value=0.0)
+
+fn covariance_nonempty(left: &f64_vector, right: &f64_vector, length: i64) -> F64Result:
+    mut left_center: f64 = mean(left)
+    mut right_center: f64 = mean(right)
+    mut index: i64 = 0
+    mut total: f64 = 0.0
+    while index < length:
+        mut left_delta: f64 = f64_vector_get(left, index) - left_center
+        mut right_delta: f64 = f64_vector_get(right, index) - right_center
+        total = total + left_delta * right_delta
+        index = index + 1
+    return F64Result(status=0, value=total / to_f64(length))
+
+export fn correlation(left: &f64_vector, right: &f64_vector) -> F64Result:
+    mut cov: F64Result = covariance(left, right)
+    match cov.status == 0:
+        -1:
+            mut left_variance: f64 = variance(left)
+            mut right_variance: f64 = variance(right)
+            mut denominator: f64 = sqrt(left_variance * right_variance)
+            match denominator == 0.0:
+                -1:
+                    return F64Result(status=3, value=0.0)
+                0:
+                    return F64Result(status=0, value=cov.value / denominator)
+                1:
+                    return F64Result(status=0, value=cov.value / denominator)
+        0:
+            return cov
+        1:
+            return cov
+
+export fn cosine_similarity(left: &f64_vector, right: &f64_vector) -> F64Result:
+    mut product: F64Result = dot(left, right)
+    match product.status == 0:
+        -1:
+            mut left_length: i64 = f64_vector_len(left)
+            match left_length == 0:
+                -1:
+                    return F64Result(status=2, value=0.0)
+                0:
+                    return cosine_nonempty(product, left, right)
+                1:
+                    return cosine_nonempty(product, left, right)
+        0:
+            return product
+        1:
+            return product
+
+fn cosine_nonempty(product: F64Result, left: &f64_vector, right: &f64_vector) -> F64Result:
+    mut denominator: f64 = l2_norm(left) * l2_norm(right)
+    match denominator == 0.0:
+        -1:
+            return F64Result(status=3, value=0.0)
+        0:
+            return F64Result(status=0, value=product.value / denominator)
+        1:
+            return F64Result(status=0, value=product.value / denominator)

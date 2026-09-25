@@ -40,6 +40,23 @@ def test_manifest_is_versioned_sorted_and_capability_explicit() -> None:
     assert next(item for item in manifest if item.module_id == "s3.v1.io").capabilities == (
         "resource",
     )
+    science_exports = set(
+        next(item for item in manifest if item.module_id == "s3.v1.science").exports
+    )
+    assert {
+        "sum_squares",
+        "min",
+        "max",
+        "max_abs",
+        "l1_norm",
+        "mae",
+        "mse",
+        "rmse",
+        "standard_deviation",
+        "covariance",
+        "correlation",
+        "cosine_similarity",
+    }.issubset(science_exports)
     with pytest.raises(ValueError, match="unsupported"):
         standard_library_sources("2")
 
