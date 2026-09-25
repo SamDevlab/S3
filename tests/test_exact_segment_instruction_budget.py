@@ -27,6 +27,7 @@ from bootstrap.s3.backends.x86_64.emitter import X8664Emitter
 from bootstrap.s3.backends.x86_64 import InstructionBudgetMode
 from bootstrap.s3.backends.x86_64.instruction_budget import (
     budget_plan_diagnostics,
+    natural_loop_block_labels,
     plan_budget_segments,
 )
 from bootstrap.s3.backends.x86_64.toolchain import NativeToolchain
@@ -116,13 +117,10 @@ def _run_source(
     max_instructions: int,
 ):
     program = compile_source(source, "O0").assembly
-    if budget_mode is InstructionBudgetMode.PER_INSTRUCTION:
-        assembly = generate_native_assembly(
-            program,
-            max_instructions=max_instructions,
-        )
-    else:
-        assembly = _exact_native(program, max_instructions=max_instructions)
+    assembly = X8664Backend(
+        max_instructions=max_instructions,
+        instruction_budget_mode=budget_mode,
+    ).generate(program)
     executable = toolchain.build(assembly, directory / "program")
     return toolchain.run(executable)
 
@@ -223,6 +221,57 @@ def test_planner_is_block_local_and_splits_after_calls_and_control() -> None:
             for index in range(len(opcodes) - 1)
         )
     assert ["TCMP", "TBR3"] in compare_branch_pairs
+
+
+def test_loop_hybrid_only_uses_exact_precharge_inside_natural_loop() -> None:
+    source = """\
+fn main() -> i64:
+    mut total: i64 = 0
+    total = total + 1
+    total = total + 2
+    total = total + 3
+    mut index: i64 = 0
+    while index < 4:
+        total = total + index
+        index = index + 1
+    return total
+"""
+    program = compile_source(source, "O0").assembly
+    function = next(item for item in program.functions if item.name == "main")
+    loop_blocks = natural_loop_block_labels(function)
+    assert loop_blocks
+
+    exact = X8664Backend(
+        instruction_budget_mode=InstructionBudgetMode.EXACT_SEGMENT,
+    ).generate(program)
+    hybrid = X8664Backend(
+        instruction_budget_mode=InstructionBudgetMode.LOOP_HYBRID,
+    ).generate(program)
+
+    assert len(hybrid.encode("utf-8")) < len(exact.encode("utf-8"))
+    segments = plan_budget_segments(function).segments
+    exact_segment_count = sum(
+        segment.logical_weight >= 2 for segment in segments
+    )
+    hybrid_segment_count = sum(
+        segment.logical_weight >= 2 and segment.block in loop_blocks
+        for segment in segments
+    )
+    assert hybrid_segment_count < exact_segment_count
+    assert exact.count("_slow:") == exact_segment_count
+    assert hybrid.count("_slow:") == hybrid_segment_count
+
+
+def test_loop_hybrid_without_natural_loops_uses_scalar_budget_checks() -> None:
+    program = compile_source("fn main() -> i64:\n    return 1 + 2\n", "O0").assembly
+    function = next(item for item in program.functions if item.name == "main")
+    assert natural_loop_block_labels(function) == frozenset()
+
+    hybrid = X8664Backend(
+        instruction_budget_mode=InstructionBudgetMode.LOOP_HYBRID,
+    ).generate(program)
+    assert "__s3_budget_" not in hybrid
+    assert "inc qword ptr [rip + __s3_instruction_count]" in hybrid
 
 
 def test_plan_diagnostics_apply_the_predeclared_fast_segment_threshold() -> None:
@@ -356,18 +405,22 @@ def test_single_segment_w_minus_one_exact_and_w_plus_one_boundaries(
             budget_mode=InstructionBudgetMode.PER_INSTRUCTION,
             max_instructions=limit,
         )
-        p2 = _run_source(
-            source,
-            tmp_path / f"p2-{limit}",
-            toolchain,
-            budget_mode=InstructionBudgetMode.EXACT_SEGMENT,
-            max_instructions=limit,
-        )
-        assert (p2.returncode, p2.stdout, p2.stderr) == (
-            p0.returncode,
-            p0.stdout,
-            p0.stderr,
-        )
+        for mode in (
+            InstructionBudgetMode.EXACT_SEGMENT,
+            InstructionBudgetMode.LOOP_HYBRID,
+        ):
+            result = _run_source(
+                source,
+                tmp_path / f"{mode.value}-{limit}",
+                toolchain,
+                budget_mode=mode,
+                max_instructions=limit,
+            )
+            assert (result.returncode, result.stdout, result.stderr) == (
+                p0.returncode,
+                p0.stdout,
+                p0.stderr,
+            )
         assert (p0.returncode == 0) is (limit >= weight)
 
 
@@ -396,19 +449,22 @@ def test_loop_calls_and_failure_boundaries_match_p0(
         budget_mode=InstructionBudgetMode.PER_INSTRUCTION,
         max_instructions=max_instructions,
     )
-    p2 = _run_source(
-        LOOP_AND_CALL_SOURCE,
-        tmp_path / "p2",
-        toolchain,
-        budget_mode=InstructionBudgetMode.EXACT_SEGMENT,
-        max_instructions=max_instructions,
-    )
-
-    assert (p2.returncode, p2.stdout, p2.stderr) == (
-        p0.returncode,
-        p0.stdout,
-        p0.stderr,
-    )
+    for mode in (
+        InstructionBudgetMode.EXACT_SEGMENT,
+        InstructionBudgetMode.LOOP_HYBRID,
+    ):
+        result = _run_source(
+            LOOP_AND_CALL_SOURCE,
+            tmp_path / mode.value,
+            toolchain,
+            budget_mode=mode,
+            max_instructions=max_instructions,
+        )
+        assert (result.returncode, result.stdout, result.stderr) == (
+            p0.returncode,
+            p0.stdout,
+            p0.stderr,
+        )
 
 
 def test_non_budget_runtime_failure_inside_fast_path_matches_p0(tmp_path: Path) -> None:

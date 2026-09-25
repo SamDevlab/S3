@@ -1,0 +1,101 @@
+module main
+from s3.v1.science import F64Result
+from s3.v1.science import sum
+from s3.v1.science import mean
+from s3.v1.science import variance
+from s3.v1.science import dot
+from s3.v1.science import squared_distance
+from s3.v1.science import distance
+from s3.v1.science import rmsd
+from s3.v1.science import l2_norm
+
+fn coordinate(phase: i64) -> f64:
+    match phase == 0:
+        -1:
+            match phase == 1:
+                -1:
+                    match phase == 2:
+                        -1:
+                            return 1.0
+                        0:
+                            return 0.5
+                        1:
+                            return 0.5
+                0:
+                    return -0.5
+                1:
+                    return -0.5
+        0:
+            return -1.0
+        1:
+            return -1.0
+
+fn metric_in_range(value: f64, lower: f64, upper: f64) -> i64:
+    match value > lower:
+        -1:
+            return 1
+        0:
+            match value < upper:
+                -1:
+                    return 1
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            match value < upper:
+                -1:
+                    return 1
+                0:
+                    return 0
+                1:
+                    return 0
+fn score_size(length: i64) -> i64:
+    mut left: f64_vector = f64_vector_new(length)
+    mut right: f64_vector = f64_vector_new(length)
+    mut index: i64 = 0
+    mut phase: i64 = 0
+    while index < length:
+        mut value: f64 = coordinate(phase)
+        discard f64_vector_push(&mut left, value)
+        discard f64_vector_push(&mut right, value + 0.5)
+        index = index + 1
+        phase = phase + 1
+        match phase == 4:
+            -1:
+                phase = phase
+            0:
+                phase = 0
+            1:
+                phase = 0
+
+    mut total: f64 = sum(&left)
+    mut average: f64 = mean(&left)
+    mut spread: f64 = variance(&left)
+    mut self_product: F64Result = dot(&left, &left)
+    mut product: F64Result = dot(&left, &right)
+    mut squared: F64Result = squared_distance(&left, &right)
+    mut euclidean: F64Result = distance(&left, &right)
+    mut rms: F64Result = rmsd(&left, &right)
+    mut magnitude: f64 = l2_norm(&left)
+
+    mut failures: i64 = self_product.status + product.status + squared.status + euclidean.status + rms.status
+    failures = failures + metric_in_range(total, -0.01, 0.01)
+    failures = failures + metric_in_range(average, -0.01, 0.01)
+    failures = failures + metric_in_range(spread, 0.62, 0.63)
+    failures = failures + metric_in_range(self_product.value, to_f64(length) * 0.6249, to_f64(length) * 0.6251)
+    failures = failures + metric_in_range(product.value, to_f64(length) * 0.6249, to_f64(length) * 0.6251)
+    failures = failures + metric_in_range(squared.value, to_f64(length) * 0.2499, to_f64(length) * 0.2501)
+    failures = failures + metric_in_range(euclidean.value, sqrt(to_f64(length) * 0.25) - 0.01, sqrt(to_f64(length) * 0.25) + 0.01)
+    failures = failures + metric_in_range(rms.value, 0.49, 0.51)
+    failures = failures + metric_in_range(magnitude, sqrt(to_f64(length) * 0.6249), sqrt(to_f64(length) * 0.6251))
+    match failures == 0:
+        -1:
+            return -1
+        0:
+            return length * 5 + 251
+        1:
+            return length * 5 + 251
+
+fn main() -> i64:
+    return score_size(64) + score_size(256) + score_size(1024) + score_size(8192)

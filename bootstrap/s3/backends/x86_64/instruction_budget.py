@@ -15,6 +15,7 @@ MIN_FAST_SEGMENT_WEIGHT = 2
 class InstructionBudgetMode(str, Enum):
     PER_INSTRUCTION = "per-instruction"
     EXACT_SEGMENT = "exact-segment"
+    LOOP_HYBRID = "loop-hybrid"
 
 
 def parse_instruction_budget_mode(
@@ -31,6 +32,75 @@ def parse_instruction_budget_mode(
         raise ValueError(
             f"instruction budget mode must be one of: {choices}"
         ) from error
+
+
+def natural_loop_block_labels(function: AssemblyFunction) -> frozenset[str]:
+    """Return blocks in natural loops, using CFG reachability and dominance."""
+    blocks = {block.label: block for block in function.blocks}
+    if not function.blocks:
+        return frozenset()
+
+    successors: dict[str, set[str]] = {}
+    predecessors: dict[str, set[str]] = {label: set() for label in blocks}
+    for block in function.blocks:
+        terminator = block.instructions[-1] if block.instructions else None
+        if terminator is None:
+            targets: set[str] = set()
+        elif terminator.opcode is AssemblyOpcode.TJMP:
+            targets = set(terminator.labels[:1])
+        elif terminator.opcode is AssemblyOpcode.TBR3:
+            targets = set(terminator.labels)
+        else:
+            targets = set()
+        targets.intersection_update(blocks)
+        successors[block.label] = targets
+        for target in targets:
+            predecessors[target].add(block.label)
+
+    entry = function.blocks[0].label
+    reachable: set[str] = set()
+    pending = [entry]
+    while pending:
+        label = pending.pop()
+        if label in reachable:
+            continue
+        reachable.add(label)
+        pending.extend(sorted(successors[label] - reachable, reverse=True))
+
+    dominators = {
+        label: ({entry} if label == entry else set(reachable))
+        for label in reachable
+    }
+    changed = True
+    while changed:
+        changed = False
+        for label in sorted(reachable - {entry}):
+            incoming = predecessors[label] & reachable
+            common = set.intersection(*(dominators[item] for item in incoming)) if incoming else set()
+            updated = {label} | common
+            if updated != dominators[label]:
+                dominators[label] = updated
+                changed = True
+
+    loop_blocks: set[str] = set()
+    for tail in sorted(reachable):
+        for header in sorted(successors[tail]):
+            if header not in dominators[tail]:
+                continue
+            loop = {header, tail}
+            worklist = [tail]
+            while worklist:
+                current = worklist.pop()
+                for predecessor in sorted(predecessors[current], reverse=True):
+                    if (
+                        predecessor in reachable
+                        and predecessor not in loop
+                        and header in dominators[predecessor]
+                    ):
+                        loop.add(predecessor)
+                        worklist.append(predecessor)
+            loop_blocks.update(loop)
+    return frozenset(loop_blocks)
 
 
 @dataclass(frozen=True, slots=True)

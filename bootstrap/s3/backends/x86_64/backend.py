@@ -206,6 +206,27 @@ def generate_native_assembly(
     )
 
 
+def _generate_native_assembly_with_budget(
+    program: AssemblyProgram,
+    *,
+    max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
+    max_frames: int = DEFAULT_MAX_FRAMES,
+    max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
+    native_policy: NativeCodegenPolicy | str | None = None,
+    instruction_budget_mode: InstructionBudgetMode | str,
+) -> str:
+    from .._native_assembly import _generate_native_assembly
+
+    return _generate_native_assembly(
+        program,
+        max_memory_trits=max_memory_trits,
+        max_frames=max_frames,
+        max_instructions=max_instructions,
+        native_policy=native_policy,
+        instruction_budget_mode=instruction_budget_mode,
+    )
+
+
 def generate_ffi_assembly(
     program: AssemblyProgram,
     *,

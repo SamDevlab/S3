@@ -1,6 +1,6 @@
 {
   "manifest_version": "1.0.0",
-  "campaign": "1.17-1.19",
+  "campaign": "1.3-scientific-compute-engine",
   "workloads": [
     {
       "benchmark_id": "runtime.scalar.accumulate.v1",
@@ -246,6 +246,85 @@
       "timed_region": "Source load, parse, semantic analysis, lowering, O1, IR, and Assembly generation.",
       "implementations": [
         {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30}
+      ]
+    },
+    {
+      "benchmark_id": "science.structural-comparison.v1",
+      "workload_version": "1.0.0",
+      "category": "scientific-compute",
+      "suite": "portable",
+      "objective": "Compose deterministic coordinate generation with pre-campaign sum, mean, variance, dot, squared-distance, distance, RMSD, and L2-norm APIs; this stable workload is directly comparable between the campaign base and final candidate and makes no domain-validity claims.",
+      "input": {
+        "id": "coordinate-matrix-64-8192",
+        "size": 9536,
+        "scale": "medium",
+        "vector_lengths": [64, 256, 1024, 8192],
+        "kernel_calls": 8,
+        "total_elements_processed": 85824,
+        "reference_seed_policy": "The external references rotate the periodic coordinate pattern by the runtime repetition index; this preserves the same value multiset, traversal count, and checksum while preventing compile-time precomputation of a fixed input.",
+        "element_accounting": "Nine length-equivalent traversals per vector length: sum, mean, variance (mean plus centered pass), two dot products, squared distance, distance, RMSD, and L2 norm. distance and RMSD each perform their own squared-distance traversal; coordinate construction and range checks are excluded."
+      },
+      "expected_checksum": "48684",
+      "timed_region": "Four deterministic structural-comparison cases including vector construction, eight calls to the pre-campaign science API, and checksum composition; process startup and output are excluded where the adapter supports kernel timing.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/scientific/structural_comparison.s3", "timeout_seconds": 60},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/scientific/structural_comparison.s3", "timeout_seconds": 60, "native_max_instructions": 50000000, "native_instruction_budget_mode": "per-instruction"},
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/scientific.py", "timeout_seconds": 60},
+        {"id": "c", "adapter": "c", "execution_mode": "native", "optimization_modes": ["O0", "O2"], "source": "implementations/c/scientific.c", "timeout_seconds": 60, "compiler_flags": {"O0": ["-O0", "-std=c11", "-fno-strict-overflow"], "O2": ["-O2", "-std=c11", "-fno-strict-overflow"]}},
+        {"id": "rust", "adapter": "rust", "execution_mode": "native", "optimization_modes": ["opt-level=0", "opt-level=2"], "source": "implementations/rust/scientific.rs", "timeout_seconds": 60, "compiler_flags": {"opt-level=0": ["-C", "opt-level=0", "-C", "overflow-checks=on", "-C", "panic=abort"], "opt-level=2": ["-C", "opt-level=2", "-C", "overflow-checks=on", "-C", "panic=abort"]}},
+        {"id": "zig", "adapter": "zig", "execution_mode": "native", "optimization_modes": ["Debug", "ReleaseFast"], "source": "implementations/zig/scientific.zig", "timeout_seconds": 60, "compiler_flags": {"Debug": ["-O", "Debug"], "ReleaseFast": ["-O", "ReleaseFast"]}}
+      ]
+    },
+    {
+      "benchmark_id": "science.statistics-matrix.v1",
+      "workload_version": "1.0.0",
+      "category": "scientific-compute",
+      "suite": "portable",
+      "objective": "Exercise population mean, variance, standard deviation, covariance, and correlation over a deterministic vector-size matrix.",
+      "input": {
+        "id": "statistics-matrix-64-8192",
+        "size": 9536,
+        "scale": "medium",
+        "vector_lengths": [64, 256, 1024, 8192],
+        "kernel_calls": 20,
+        "total_elements_processed": 143040,
+      "element_accounting": "15 length-equivalent traversals per vector length across five public statistical operations; coordinate construction excluded."
+      },
+      "expected_checksum": "19916",
+      "timed_region": "Four deterministic statistical cases including vector construction, five science-kernel calls, and checksum composition; process startup and output are excluded where the adapter supports kernel timing.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/scientific/statistics.s3", "timeout_seconds": 60},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/scientific/statistics.s3", "timeout_seconds": 60, "native_max_instructions": 50000000, "native_instruction_budget_mode": "per-instruction"},
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/scientific.py", "timeout_seconds": 60},
+        {"id": "c", "adapter": "c", "execution_mode": "native", "optimization_modes": ["O0", "O2"], "source": "implementations/c/scientific.c", "timeout_seconds": 60, "compiler_flags": {"O0": ["-O0", "-std=c11", "-fno-strict-overflow"], "O2": ["-O2", "-std=c11", "-fno-strict-overflow"]}},
+        {"id": "rust", "adapter": "rust", "execution_mode": "native", "optimization_modes": ["opt-level=0", "opt-level=2"], "source": "implementations/rust/scientific.rs", "timeout_seconds": 60, "compiler_flags": {"opt-level=0": ["-C", "opt-level=0", "-C", "overflow-checks=on", "-C", "panic=abort"], "opt-level=2": ["-C", "opt-level=2", "-C", "overflow-checks=on", "-C", "panic=abort"]}},
+        {"id": "zig", "adapter": "zig", "execution_mode": "native", "optimization_modes": ["Debug", "ReleaseFast"], "source": "implementations/zig/scientific.zig", "timeout_seconds": 60, "compiler_flags": {"Debug": ["-O", "Debug"], "ReleaseFast": ["-O", "ReleaseFast"]}}
+      ]
+    },
+    {
+      "benchmark_id": "science.similarity-distance.v1",
+      "workload_version": "1.0.0",
+      "category": "scientific-compute",
+      "suite": "portable",
+      "objective": "Exercise squared Euclidean distance, Euclidean distance, RMSD, mean absolute error, dot product, and cosine similarity across a deterministic vector-size matrix.",
+      "input": {
+        "id": "similarity-distance-64-8192",
+        "size": 9536,
+        "scale": "medium",
+        "vector_lengths": [64, 256, 1024, 8192],
+        "kernel_calls": 24,
+        "total_elements_processed": 76288,
+        "element_accounting": "Eight length-equivalent traversals per vector length across six public similarity/distance operations; coordinate construction excluded."
+      },
+      "expected_checksum": "29356",
+      "timed_region": "Four deterministic similarity/distance cases including vector construction, six science-kernel calls, and checksum composition; process startup and output are excluded where the adapter supports kernel timing.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/scientific/similarity_distance.s3", "timeout_seconds": 60},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/scientific/similarity_distance.s3", "timeout_seconds": 60, "native_max_instructions": 50000000, "native_instruction_budget_mode": "per-instruction"},
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/scientific.py", "timeout_seconds": 60},
+        {"id": "c", "adapter": "c", "execution_mode": "native", "optimization_modes": ["O0", "O2"], "source": "implementations/c/scientific.c", "timeout_seconds": 60, "compiler_flags": {"O0": ["-O0", "-std=c11", "-fno-strict-overflow"], "O2": ["-O2", "-std=c11", "-fno-strict-overflow"]}},
+        {"id": "rust", "adapter": "rust", "execution_mode": "native", "optimization_modes": ["opt-level=0", "opt-level=2"], "source": "implementations/rust/scientific.rs", "timeout_seconds": 60, "compiler_flags": {"opt-level=0": ["-C", "opt-level=0", "-C", "overflow-checks=on", "-C", "panic=abort"], "opt-level=2": ["-C", "opt-level=2", "-C", "overflow-checks=on", "-C", "panic=abort"]}},
+        {"id": "zig", "adapter": "zig", "execution_mode": "native", "optimization_modes": ["Debug", "ReleaseFast"], "source": "implementations/zig/scientific.zig", "timeout_seconds": 60, "compiler_flags": {"Debug": ["-O", "Debug"], "ReleaseFast": ["-O", "ReleaseFast"]}}
       ]
     }
   ]
