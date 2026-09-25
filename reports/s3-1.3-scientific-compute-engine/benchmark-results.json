@@ -1,0 +1,69 @@
+{
+  "schema_version": "s3-1.3-campaign-benchmark-summary-1.0.0",
+  "campaign": "S3_1_3_SCIENTIFIC_COMPUTE_ENGINE_AND_NATIVE_EXPANSION",
+  "baseline_commit": "2b4970256086e4dba0d498e36b0c42bcfc094ca0",
+  "final_functional_commit": "adaff49a97c242cd00b15fee4ade565ed0768af2",
+  "final_functional_tree": "0836f9d8b178f536493202ce0631e7731b6b6acf",
+  "environment": {
+    "os": "Ubuntu Linux x86-64",
+    "python": "3.14.4",
+    "pytest": "9.1.1",
+    "cc": "GCC 15.2.0",
+    "rustc": "1.93.1",
+    "zig": "0.14.1",
+    "logical_cpus": 3,
+    "memory_bytes": 8634437632
+  },
+  "workloads": [
+    {"id":"science.structural-comparison.v1","vector_lengths":[64,256,1024,8192],"kernel_calls":8,"total_elements_processed":85824,"expected_checksum":"48684"},
+    {"id":"science.statistics-matrix.v1","vector_lengths":[64,256,1024,8192],"kernel_calls":20,"total_elements_processed":143040,"expected_checksum":"19916"},
+    {"id":"science.similarity-distance.v1","vector_lengths":[64,256,1024,8192],"kernel_calls":24,"total_elements_processed":76288,"expected_checksum":"29356"}
+  ],
+  "base_vs_final_structural_process": {
+    "scope": "process",
+    "optimization": "O1",
+    "warmups": 3,
+    "samples": 15,
+    "checksum": "48684",
+    "base": {"commit":"2b4970256086e4dba0d498e36b0c42bcfc094ca0","median_ns":13264578,"cv_percent":20.08,"p95_ns":22165904,"assembly_bytes":956332,"elf_bytes":388680},
+    "final": {"commit":"adaff49a97c242cd00b15fee4ade565ed0768af2","median_ns":13001490,"cv_percent":9.60,"p95_ns":15794356,"assembly_bytes":2098335,"elf_bytes":851896},
+    "median_time_change_percent": -1.98,
+    "classification": "NEUTRAL_INDETERMINATE",
+    "text_section_comparison": "UNAVAILABLE_FROM_THIS_PROTOCOL"
+  },
+  "final_budget_modes_same_workload": {
+    "scope": "process",
+    "optimization": "O1",
+    "warmups": 3,
+    "samples": 15,
+    "checksum": "48684",
+    "default": "PER_INSTRUCTION",
+    "modes": [
+      {"mode":"PER_INSTRUCTION","median_ns":12276743,"cv_percent":4.70,"p95_ns":13394383,"assembly_bytes":2098335,"elf_bytes":851896,"text_bytes":207999},
+      {"mode":"EXACT_SEGMENT","median_ns":5106336,"cv_percent":12.05,"p95_ns":6594322,"assembly_bytes":3195726,"elf_bytes":1276400,"text_bytes":323268},
+      {"mode":"LOOP_HYBRID","median_ns":5502227,"cv_percent":6.38,"p95_ns":6096082,"assembly_bytes":2534020,"elf_bytes":1026024,"text_bytes":252521}
+    ],
+    "exact_vs_per_text_growth_percent": 55.4,
+    "hybrid_vs_per_text_growth_percent": 21.4,
+    "promotion": "NO_SINGLE_WORKLOAD_EVIDENCE_INSUFFICIENT"
+  },
+  "science_verification": {
+    "final_checksums_verified": 33,
+    "final_failures": 0,
+    "initial_attempt": "29 verified; 4 Zig builds hit VM root filesystem NoSpaceLeft",
+    "recovery": "the four Zig configurations passed with cache redirected to available temporary storage; no files deleted"
+  },
+  "full_suite": {
+    "platform": "Linux x86-64",
+    "collected": 4400,
+    "passed": 4399,
+    "skipped": 1,
+    "failed": 0,
+    "exit_code": 0,
+    "start_utc": "2026-09-25T14:28:25Z",
+    "end_utc": "2026-09-25T15:38:28Z",
+    "elapsed_seconds": 4203,
+    "transcript_sha256": "f675f50d18417613e8ef8ee12e9a3479c96ee7e55a92dc07c4d6de95941ad0aa"
+  },
+  "interpretation": "Process-scope S3 and kernel-scope foreign-language measurements are not directly comparable. No energy or perf-counter measurements are claimed."
+}

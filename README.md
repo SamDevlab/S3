@@ -200,12 +200,16 @@ s3 run-native examples/first.s3
 
 Outros targets só devem ser tratados como suportados quando houver evidência de execução correspondente.
 
-A campanha 1.2 em desenvolvimento acrescenta uma superfície source-level
-versionada `s3.v1.science` para reduções `f64`, produto escalar, distâncias,
-norma L2 e RMSD. Os kernels são compostos em S3 sobre vetores, loops e `sqrt`;
-isso não introduz opcodes científicos nem altera os formatos públicos. O modo
-de accounting nativo `exact-segment` permanece uma opção explícita do backend;
-`per-instruction` continua sendo o default.
+A `main` pós-PR #315 inclui a superfície source-level versionada
+`s3.v1.science` e o accounting nativo `EXACT_SEGMENT` como opção explícita;
+`PER_INSTRUCTION` continua sendo o default. Na branch da campanha S3 1.3,
+`s3.v1.science` cresce para reductions, métricas de erro, estatística e
+similaridade em `f64`, acompanhadas por workloads científicos compostos e
+otimização conservadora de comprimentos de vetores invariantes em loops O1.
+Essa expansão está em revisão Draft e ainda não faz parte de `main`. Os modos
+`EXACT_SEGMENT` e `LOOP_HYBRID` continuam explícitos; os dados desta campanha
+não justificam mudar o default. Os contratos públicos de sintaxe, IR,
+Assembly e diagnósticos permanecem inalterados.
 
 ## Self-hosting
 

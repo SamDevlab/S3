@@ -596,3 +596,28 @@ general dynamic spilling, frame compaction, public language/IR/Assembly changes,
 and default enablement are out of scope. Correctness and performance evidence
 must be reported separately; the s3bench execution gate requires a real Linux
 run using the versioned 1.0.0 interface.
+
+## S3 1.3 — Scientific Compute Engine and Native Expansion
+
+Status: implementation validated on Linux x86-64; Draft PR review pending
+
+The campaign branch expands `s3.v1.science` with reductions, error metrics,
+statistical functions and cosine similarity, plus deterministic structural,
+statistics and similarity workloads over vector sizes 64, 256, 1,024 and 8,192.
+The compiler adds conservative O1 hoisting of read-only vector lengths from
+eligible loops and direct native lowering for vector length and checked vector
+access. Unknown or mutating calls prevent hoisting; indexed access continues to
+use bounds checks. O0/O1 and hosted/native correctness are covered by the
+campaign's focused and full validation.
+
+The campaign also provides explicit `PER_INSTRUCTION`, `EXACT_SEGMENT` and
+`LOOP_HYBRID` native accounting modes. `PER_INSTRUCTION` remains the default:
+in the expanded structural workload, exact accounting reduced the process
+median relative to PER but increased measured `.text` by 55.4%; LOOP_HYBRID
+increased `.text` by 21.4%. These single-workload observations do not establish
+a generally superior default. General bounds-check elimination, address
+strength reduction, SIMD and relaxed floating-point reassociation were not
+implemented. See
+[`reports/s3-1.3-scientific-compute-engine/FINAL_REPORT.md`](../reports/s3-1.3-scientific-compute-engine/FINAL_REPORT.md)
+for exact validation and measurement provenance. This work is branch-only
+until the Draft PR is reviewed and merged.

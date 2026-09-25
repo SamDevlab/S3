@@ -5,7 +5,7 @@ Last reviewed: 2026-09-25.
 ## Active track
 
 ```text
-ACTIVE_TRACK=S3_1_2_NATIVE_BACKEND_PRODUCTIONIZATION
+ACTIVE_TRACK=S3_1_3_SCIENTIFIC_COMPUTE_ENGINE_AND_NATIVE_EXPANSION
 CURRENT_PUBLIC_STABLE=v1.0.0
 CURRENT_PRERELEASE=NONE
 STABLE_V1_0_RELEASED=YES
@@ -18,23 +18,32 @@ S3_1_1_TECHNICAL_CLOSURE=PASS_PR294_MERGED
 S3_1_1_RELEASE_PREP=OPEN_DRAFT_PR295_CONFLICTING
 S3_1_1_IMPLEMENTATION_STARTED=YES
 S3_1_1_PHASE=R0_R5_TECHNICAL_CLOSURE_IN_MAIN_RELEASE_DECISION_PENDING
+PR315_MERGED=YES
+P2_IN_MAIN=YES
+EXACT_SEGMENT_AVAILABLE=YES
 S3_1_2_IMPLEMENTATION_STARTED=YES
-S3_1_2_STATE=LOCAL_VALIDATION_COMPLETE_DRAFT_PR_PENDING
-P2_IN_MAIN=NO
-P2_IN_CAMPAIGN_BRANCH=YES
+S3_1_2_STATE=MERGED_PR315
+P2_IN_CAMPAIGN_BRANCH=NO
 P2_DEFAULT=NO
 PER_INSTRUCTION_DEFAULT=YES
-P2_STATUS=PORT_VALIDATED_NOT_PROMOTED
+P2_STATUS=IN_MAIN_NOT_PROMOTED
 P2_PARENT_STACK_BLOCKER=RESOLVED_BY_PR313
 P2_PROMOTION_AUTHORIZED=NO
-SCIENTIFIC_NUMERIC_FOUNDATION=LINUX_X86_64_VALIDATED
+SCIENTIFIC_NUMERIC_FOUNDATION_IN_MAIN=YES
+S3_1_3_IMPLEMENTATION_STARTED=YES
+S3_1_3_STATE=FINAL_VALIDATION_PASS_DRAFT_PR_PENDING
+S3_1_3_FUNCTIONAL_SOURCE_FREEZE=adaff49a97c242cd00b15fee4ade565ed0768af2
+S3_1_3_FULL_SUITE=4399_PASSED_1_SKIPPED_EXIT_0_LINUX_X86_64
+S3_1_3_LINUX_SCIENCE_VERIFY=33_OF_33_CHECKSUMS
+LOOP_HYBRID_AVAILABLE=YES_EXPLICIT
+EXACT_SEGMENT_DEFAULT=NO
 ```
 
 S3 `v1.0.0` remains the public stable release of the Python reference toolchain. PR #313 is merged; its cumulative source baseline brings the #301–#309 capabilities into `main`. This does not change the reference compiler or establish full self-hosting.
 
-The active development track remains **S3 1.2 — Native Backend Productionization**. It now includes a substantial bounded S3-native execution line alongside the Python-hosted generic compiler foundations. The 1.1 reliability line has technical closure in `main`; its separate 1.1.0 release candidate PR #295 remains OPEN/Draft and currently conflicts with `main`, so release preparation is not complete.
+The active development track is **S3 1.3 — Scientific Compute Engine and Native Expansion**. PR #315 merged the selected P2 exact-segment implementation and initial `s3.v1.science` foundation into `main`; `PER_INSTRUCTION` remains the default. The 1.1 reliability line has technical closure in `main`; its separate 1.1.0 release-candidate PR #295 remains OPEN/Draft and conflicts with `main`, so release preparation is not complete.
 
-The 1.2 campaign ports the selected exact-segment P2 candidate onto this post-#313 baseline while preserving `PER_INSTRUCTION` as the default. In the campaign branch, `EXACT_SEGMENT` is an explicit x86-64 backend option and the versioned `s3.v1.science` module adds source-composed f64 reductions and distance kernels. The frozen compiler/source candidate passed its final Linux x86-64 full suite (4,379 passed, 1 skipped) and the three-kernel native characterization completed. The Draft PR is the remaining human review step; neither capability is in `main` or promoted. The characterization favors exact-segment execution on these workloads but shows about 52% larger `.text`, so this campaign keeps the default unchanged. GitHub Actions remains blocked before workflow steps by billing/quota. The historical parent-stack blocker was resolved by #313 and is not being re-investigated.
+The 1.3 campaign branch expands the scientific API, adds three deterministic workloads over vector lengths 64, 256, 1,024 and 8,192, adds conservative O1 loop-invariant vector-length hoisting and direct native vector builtin lowering, and exposes `LOOP_HYBRID` as an explicit budget mode. Its functional freeze is `adaff49a97c242cd00b15fee4ade565ed0768af2`; the Linux x86-64 full suite passed 4,399 tests with 1 skip and exit 0, and final scientific checksum verification passed 33/33 after the VM's full root filesystem was worked around by directing Zig caches to temporary storage. A Draft PR is the intended review state; no merge or release is authorized. In the representative structural workload, the BASE-to-FINAL PER process median was effectively neutral (-1.98%) while assembly source and ELF grew about 119%; the exact-segment `.text` overhead measured +55.4% versus PER for the expanded workload. These results do not justify default promotion. The underlying PR #313 parent-stack blocker was resolved and is not being re-investigated.
 
 Reliability Lab v2 is built incrementally from current `main`: deterministic identities and schemas (R0), killable process isolation (R1), deterministic source generation (R2), differential execution and replay (R3), minimization/triage (R4), then bounded maintenance closure (R5).
 
@@ -70,10 +79,10 @@ GitHub Actions remains blocked before workflow steps by the account billing/quot
 
 ## Immediate priorities
 
-1. Keep this post-#313 capability baseline canonical and preserve historical reports as time-stamped evidence.
+1. Review the S3 1.3 Draft PR and its Linux evidence; do not merge automatically.
 2. Keep runner restoration and `main` protection tracked under #284; do not weaken workflows to obtain a green status.
 3. Resolve the separate 1.1.0 release decision/PR #295 conflict only under its own release authorization.
-4. Review the 1.2 Draft PR for a human merge decision; retain `PER_INSTRUCTION` as default unless a separate decision authorizes a switch.
+4. Keep `PER_INSTRUCTION` as default; revisit budget policy only with broader comparable workload evidence and a separately reviewed decision.
 
 ## Out of scope
 
@@ -94,4 +103,4 @@ GitHub Actions jobs have been failing before any step is assigned (`runner_id=0`
 
 ## Next operational step
 
-The post-#313 integration is the current `main` baseline. Do not treat historical Draft state for PRs #302–#309 as a missing integration prerequisite. The selected P2 port and scientific expansion are in the active campaign branch, not yet integrated; this document records that work without changing `main` state.
+The post-#313 and PR #315 integration is the current `main` baseline. Do not treat historical Draft state for PRs #302–#312 as a missing integration prerequisite; they are superseded or informational provenance and should be closed by a maintainer when convenient, not used as blockers. The 1.3 scientific expansion remains on its campaign branch pending human review; the report records the evidence without implying that branch-only code is in `main`.

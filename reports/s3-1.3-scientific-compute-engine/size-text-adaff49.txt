@@ -1,0 +1,22 @@
+/tmp/s3-1.3-campaign-20260925-075133/size-policy-adaff49/science-structural-comparison-budget-policy-v1-s3-per-native-O1/s3-native-science-structural-comparison-budget-policy-v1-O1  :
+section     size      addr
+.text     207999   4198400
+.rodata   628703   4407296
+.bss          64   5040096
+Total     836766
+
+
+/tmp/s3-1.3-campaign-20260925-075133/size-policy-adaff49/science-structural-comparison-budget-policy-v1-s3-loop-hybrid-native-O1/s3-native-science-structural-comparison-budget-policy-v1-O1  :
+section      size      addr
+.text      252521   4198400
+.rodata    757769   4452352
+.bss           64   5214224
+Total     1010354
+
+
+/tmp/s3-1.3-campaign-20260925-075133/size-policy-adaff49/science-structural-comparison-budget-policy-v1-s3-exact-native-O1/s3-native-science-structural-comparison-budget-policy-v1-O1  :
+section      size      addr
+.text      323268   4198400
+.rodata    938520   4521984
+.bss           64   5464600
+Total     1261852

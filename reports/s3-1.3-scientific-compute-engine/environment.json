@@ -1,0 +1,33 @@
+{
+  "campaign": "S3_1_3_SCIENTIFIC_COMPUTE_ENGINE_AND_NATIVE_EXPANSION",
+  "functional_source_head": "adaff49a97c242cd00b15fee4ade565ed0768af2",
+  "functional_source_tree": "0836f9d8b178f536493202ce0631e7731b6b6acf",
+  "platform": {
+    "operating_system": "Ubuntu Linux",
+    "architecture": "x86_64",
+    "kernel": "Linux 7.0.0-31-generic",
+    "cpu_model": "AMD Ryzen 5 3400G",
+    "logical_cpu_count": 3,
+    "memory_bytes": 8634437632
+  },
+  "toolchain": {
+    "python": "3.14.4",
+    "pytest": "9.1.1",
+    "cc": "GCC 15.2.0",
+    "rustc": "1.93.1",
+    "zig": "0.14.1"
+  },
+  "full_suite": {
+    "exit_code": 0,
+    "passed": 4399,
+    "skipped": 1,
+    "failed": 0,
+    "elapsed_seconds": 4203,
+    "transcript_sha256": "f675f50d18417613e8ef8ee12e9a3479c96ee7e55a92dc07c4d6de95941ad0aa"
+  },
+  "limitations": [
+    "GitHub Actions billing/runner provisioning is external and tracked by issue #284; local Linux certification does not mean GitHub Actions is green.",
+    "The VM root filesystem filled during the first verify-only pass; no files were deleted. Four affected Zig builds passed after redirecting Zig caches to temporary storage.",
+    "No energy or perf-counter measurements were available or claimed."
+  ]
+}

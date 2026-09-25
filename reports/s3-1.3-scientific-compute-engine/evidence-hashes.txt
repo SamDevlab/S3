@@ -1,0 +1,29 @@
+SHA-256 evidence manifest
+All hashes below are SHA-256 of the exact local artifact bytes.
+
+functional source commit: adaff49a97c242cd00b15fee4ade565ed0768af2
+functional source tree:   0836f9d8b178f536493202ce0631e7731b6b6acf
+
+full-suite-linux-x86_64.txt
+f675f50d18417613e8ef8ee12e9a3479c96ee7e55a92dc07c4d6de95941ad0aa
+
+budget-timing-pinned-adaff49.json
+a6f71600f0ea2c89926109d4acf93cc1d93fb724cac9854505c696aa2916eb5b
+
+base-timing.json
+fda53d521e474c99e0f530dbc861da4cc370e27665a9d08ce3e14895a5f684b0
+
+final-timing.json
+264414c3098158f8c8fa7e7f9fe0882e1e5966e52ef1587592b85a3e31dc54e1
+
+science-verify-attempt1-no-space.json (exact final SHA; first pass, before cache-directed retries)
+8089773d6b4cbbee5f02a67a568a4b51194f114713451cabb6c75ea8813cb37da
+
+zig-debug-verify-adaff49.json (exact final SHA; retry after NoSpaceLeft)
+0f1d3983fb4da9dfe31c60b448983dcc020f2e4d119104384717dd737b517a9d
+
+zig-structural-verify-adaff49.json (exact final SHA; retry after NoSpaceLeft)
+9a55063125fcf057673acfe4dadcb71e2fd7317b44a4d6c038a6bd90610b4b1b
+
+science-stats-sim-crosslang-final-adaff49.json
+487231d54858aa80f903ed65b48b6cbc978ea2ff6c1870db4200d4d896f743c5
