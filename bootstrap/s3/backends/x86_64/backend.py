@@ -9,6 +9,10 @@ from ...assembly_verifier import AssemblyVerifier
 from ...emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, DEFAULT_MAX_MEMORY_TRITS
 from .diagnostics import NativeBackendError
 from .emitter import X8664Emitter
+from .instruction_budget import (
+    InstructionBudgetMode,
+    parse_instruction_budget_mode,
+)
 from .experimental_policy import (
     ExperimentalNativePolicyMode,
     parse_experimental_native_policy_mode,
@@ -43,6 +47,10 @@ class X8664Backend:
         default=None,
         kw_only=True,
     )
+    instruction_budget_mode: InstructionBudgetMode | str | None = field(
+        default=None,
+        kw_only=True,
+    )
 
     def __post_init__(self) -> None:
         if self.native_policy is not None and self.experimental_mode is not None:
@@ -60,6 +68,11 @@ class X8664Backend:
         else:
             policy = parse_native_codegen_policy(self.native_policy)
         object.__setattr__(self, "native_policy", policy)
+        object.__setattr__(
+            self,
+            "instruction_budget_mode",
+            parse_instruction_budget_mode(self.instruction_budget_mode),
+        )
 
     def generate(self, program: AssemblyProgram) -> str:
         if isinstance(self.max_instructions, bool) or not isinstance(self.max_instructions, int):
@@ -105,6 +118,7 @@ class X8664Backend:
             max_instructions=self.max_instructions,
             register_allocation=self.register_allocation,
             compact_ea_by_function=compact_ea_by_function,
+            instruction_budget_mode=self.instruction_budget_mode,
         ).emit()
 
     def explain_native_policy(self, program: AssemblyProgram) -> NativePolicySummary:
@@ -159,6 +173,7 @@ class X8664Backend:
             max_frames=self.max_frames,
             max_instructions=self.max_instructions,
             register_allocation=self.register_allocation,
+            instruction_budget_mode=self.instruction_budget_mode,
             compact_ea_by_function=(
                 {
                     name: decision.applied
