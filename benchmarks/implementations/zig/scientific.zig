@@ -117,7 +117,6 @@ fn statisticsScoreSize(length: usize) i64 {
     const leftValues = left[0..length];
     const rightValues = right[0..length];
     const leftMean = mean(leftValues);
-    const rightMean = mean(rightValues);
     const leftVariance = variance(leftValues);
     const deviation = @sqrt(leftVariance);
     const covarianceValue = covariance(leftValues, rightValues);
