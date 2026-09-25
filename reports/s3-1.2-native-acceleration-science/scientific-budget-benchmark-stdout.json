@@ -1,0 +1,167 @@
+{
+  "architecture": "x86_64",
+  "compiler": "/usr/bin/cc",
+  "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "cpu_model": "AMD Ryzen 5 3400G with Radeon Vega Graphics",
+  "kernel_repeats_per_process": 500,
+  "kernels": {
+    "dot": {
+      "assembly_program_sha256": "59d50ea849fe7b50f75d514980c040410f31d1dc4ea0abc21dca4c20a71e7bfb",
+      "correctness_both_modes": true,
+      "expected_accumulated_result": 43680000.0,
+      "median_paired_speedup_exact_over_per": 2.2588205974891746,
+      "modes": {
+        "exact-segment": {
+          "elf_bytes": 407784,
+          "maximum_ns": 2367384,
+          "median_ns": 1371249,
+          "minimum_ns": 1305380,
+          "native_assembly_sha256": "2b87aa251a36ee6dba7ab6ad1d49985e9a66da69083b30bd1d6fdc263454448e",
+          "samples_ns": [
+            1405579,
+            1926060,
+            1312850,
+            1317250,
+            2367384,
+            1552426,
+            1371249,
+            1305380,
+            1344500
+          ],
+          "text_bytes": 104511
+        },
+        "per-instruction": {
+          "elf_bytes": 276056,
+          "maximum_ns": 4350624,
+          "median_ns": 3199031,
+          "minimum_ns": 3021104,
+          "native_assembly_sha256": "6ce7194246bbd8a112e040b9184e2d1a436302aeaecb14ab892731e82d890ea6",
+          "samples_ns": [
+            3034164,
+            4350624,
+            3238431,
+            3021104,
+            4272835,
+            3199031,
+            3062984,
+            3796022,
+            3112113
+          ],
+          "text_bytes": 68898
+        }
+      },
+      "source_sha256": "05e646406c8705d4b51ff6150cc5433d201b0142aaee05cd7df20ae4fc6971d4",
+      "text_delta_exact_minus_per_bytes": 35613,
+      "text_delta_exact_minus_per_percent": 51.68945397544196
+    },
+    "rmsd": {
+      "assembly_program_sha256": "06663c8436f30765b55ca892dee20d7d3de677e7259db78c78d91ff99ee00bc4",
+      "correctness_both_modes": true,
+      "expected_accumulated_result": 500.0,
+      "median_paired_speedup_exact_over_per": 2.3151679656987714,
+      "modes": {
+        "exact-segment": {
+          "elf_bytes": 407784,
+          "maximum_ns": 2670180,
+          "median_ns": 1672524,
+          "minimum_ns": 1491108,
+          "native_assembly_sha256": "87808399d01f55796cad65c37652b4c813aeb0bf851bc421149262e820ecf066",
+          "samples_ns": [
+            2670180,
+            2258409,
+            1491108,
+            1672524,
+            1705084,
+            1613835,
+            1545767,
+            1533706,
+            1701074
+          ],
+          "text_bytes": 104511
+        },
+        "per-instruction": {
+          "elf_bytes": 276056,
+          "maximum_ns": 5000114,
+          "median_ns": 3704454,
+          "minimum_ns": 3550787,
+          "native_assembly_sha256": "cc501157aa7bb42a83db3e4ba7d57294b6f6064d5e3e764b09a74e56d39990db",
+          "samples_ns": [
+            4737824,
+            3801532,
+            3704454,
+            3686584,
+            5000114,
+            3818342,
+            3606735,
+            3550787,
+            3641065
+          ],
+          "text_bytes": 68898
+        }
+      },
+      "source_sha256": "660d44ed0a9e337ce5435258407c63c5823089dfb31ed416332b582332c9336a",
+      "text_delta_exact_minus_per_bytes": 35613,
+      "text_delta_exact_minus_per_percent": 51.68945397544196
+    },
+    "variance": {
+      "assembly_program_sha256": "fe3468237daf7c39379447c60ad7377644fcb5a21b34ce5e360b35a58dfc0ac3",
+      "correctness_both_modes": true,
+      "expected_accumulated_result": 170625.0,
+      "median_paired_speedup_exact_over_per": 2.0947405464029094,
+      "modes": {
+        "exact-segment": {
+          "elf_bytes": 407120,
+          "maximum_ns": 3484447,
+          "median_ns": 2602951,
+          "minimum_ns": 2290165,
+          "native_assembly_sha256": "2fc242d5b86cf7b939d707d45a67b0a037f292656535c37e9a02215694a86bed",
+          "samples_ns": [
+            2602951,
+            2776437,
+            3147522,
+            3484447,
+            3453658,
+            2580511,
+            2362534,
+            2290165,
+            2417623
+          ],
+          "text_bytes": 104214
+        },
+        "per-instruction": {
+          "elf_bytes": 275648,
+          "maximum_ns": 5839591,
+          "median_ns": 5452507,
+          "minimum_ns": 5292680,
+          "native_assembly_sha256": "a32ce5a2601175a5a64fff907cf4eee2206256aab029b95702342fabf96f8be4",
+          "samples_ns": [
+            5452507,
+            5292680,
+            5425938,
+            5639355,
+            5457957,
+            5405658,
+            5494266,
+            5357789,
+            5839591
+          ],
+          "text_bytes": 68722
+        }
+      },
+      "source_sha256": "b985820cb3596d6249fbce3628cca262289f80ed72b70db70ab03fc047e10a31",
+      "text_delta_exact_minus_per_bytes": 35492,
+      "text_delta_exact_minus_per_percent": 51.645761182736244
+    }
+  },
+  "max_instructions": 100000000,
+  "optimization": "O1",
+  "os": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "output": "/dev/shm/s3-science-benchmark-20260924/scientific-budget-benchmark.json",
+  "paired_samples_per_mode_kernel": 9,
+  "protocol": "same O1 AssemblyProgram; only instruction_budget_mode varies",
+  "python": "3.14.4",
+  "source_head": "7ae48ce88b7ca8648feea7a79674f8cc46edb9a8",
+  "timing_scope": "external wall-clock around one native process; each process executes repeated kernel calls",
+  "vector_length": 64,
+  "warmups_per_mode_kernel": 2
+}

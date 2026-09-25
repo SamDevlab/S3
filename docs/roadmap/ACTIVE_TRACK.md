@@ -1,6 +1,6 @@
 # Active S3 project track
 
-Last reviewed: 2026-09-24.
+Last reviewed: 2026-09-25.
 
 ## Active track
 
@@ -19,22 +19,22 @@ S3_1_1_RELEASE_PREP=OPEN_DRAFT_PR295_CONFLICTING
 S3_1_1_IMPLEMENTATION_STARTED=YES
 S3_1_1_PHASE=R0_R5_TECHNICAL_CLOSURE_IN_MAIN_RELEASE_DECISION_PENDING
 S3_1_2_IMPLEMENTATION_STARTED=YES
-S3_1_2_STATE=ACTIVE_NATIVE_ACCELERATION_AND_SCIENTIFIC_EXPANSION
+S3_1_2_STATE=LOCAL_VALIDATION_COMPLETE_DRAFT_PR_PENDING
 P2_IN_MAIN=NO
 P2_IN_CAMPAIGN_BRANCH=YES
 P2_DEFAULT=NO
 PER_INSTRUCTION_DEFAULT=YES
-P2_STATUS=SELECTED_PORT_UNDER_VALIDATION_NOT_PROMOTED
+P2_STATUS=PORT_VALIDATED_NOT_PROMOTED
 P2_PARENT_STACK_BLOCKER=RESOLVED_BY_PR313
 P2_PROMOTION_AUTHORIZED=NO
-SCIENTIFIC_NUMERIC_FOUNDATION=IN_CAMPAIGN_VALIDATION
+SCIENTIFIC_NUMERIC_FOUNDATION=LINUX_X86_64_VALIDATED
 ```
 
 S3 `v1.0.0` remains the public stable release of the Python reference toolchain. PR #313 is merged; its cumulative source baseline brings the #301–#309 capabilities into `main`. This does not change the reference compiler or establish full self-hosting.
 
 The active development track remains **S3 1.2 — Native Backend Productionization**. It now includes a substantial bounded S3-native execution line alongside the Python-hosted generic compiler foundations. The 1.1 reliability line has technical closure in `main`; its separate 1.1.0 release candidate PR #295 remains OPEN/Draft and currently conflicts with `main`, so release preparation is not complete.
 
-The active 1.2 campaign ports the selected exact-segment P2 candidate onto this post-#313 baseline while preserving `PER_INSTRUCTION` as the default. In the campaign branch, `EXACT_SEGMENT` is an explicit x86-64 backend option and the versioned `s3.v1.science` module adds source-composed f64 reductions and distance kernels. Neither capability is in `main` or promoted yet; final Linux full-suite, benchmark/code-size characterization, and review remain open. The historical parent-stack blocker was resolved by #313 and is not being re-investigated.
+The 1.2 campaign ports the selected exact-segment P2 candidate onto this post-#313 baseline while preserving `PER_INSTRUCTION` as the default. In the campaign branch, `EXACT_SEGMENT` is an explicit x86-64 backend option and the versioned `s3.v1.science` module adds source-composed f64 reductions and distance kernels. The frozen compiler/source candidate passed its final Linux x86-64 full suite (4,379 passed, 1 skipped) and the three-kernel native characterization completed. The Draft PR is the remaining human review step; neither capability is in `main` or promoted. The characterization favors exact-segment execution on these workloads but shows about 52% larger `.text`, so this campaign keeps the default unchanged. GitHub Actions remains blocked before workflow steps by billing/quota. The historical parent-stack blocker was resolved by #313 and is not being re-investigated.
 
 Reliability Lab v2 is built incrementally from current `main`: deterministic identities and schemas (R0), killable process isolation (R1), deterministic source generation (R2), differential execution and replay (R3), minimization/triage (R4), then bounded maintenance closure (R5).
 
@@ -73,7 +73,7 @@ GitHub Actions remains blocked before workflow steps by the account billing/quot
 1. Keep this post-#313 capability baseline canonical and preserve historical reports as time-stamped evidence.
 2. Keep runner restoration and `main` protection tracked under #284; do not weaken workflows to obtain a green status.
 3. Resolve the separate 1.1.0 release decision/PR #295 conflict only under its own release authorization.
-4. Complete the 1.2 campaign's source-freeze validation and scientific-kernel characterization before a human merge decision; retain `PER_INSTRUCTION` as default unless a separate decision authorizes a switch.
+4. Review the 1.2 Draft PR for a human merge decision; retain `PER_INSTRUCTION` as default unless a separate decision authorizes a switch.
 
 ## Out of scope
 
