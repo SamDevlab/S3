@@ -224,8 +224,6 @@ class S3NativeAdapter:
         native_instruction_limit = _native_instruction_limit(case)
         native_budget_mode = _native_instruction_budget_mode(case)
         native_options = {"max_instructions": native_instruction_limit}
-        if native_budget_mode is not InstructionBudgetMode.PER_INSTRUCTION:
-            native_options["instruction_budget_mode"] = native_budget_mode
         if native_budget_mode is InstructionBudgetMode.PER_INSTRUCTION:
             native_assembly = generate_native_assembly(
                 compilation.assembly,
@@ -234,7 +232,7 @@ class S3NativeAdapter:
         else:
             native_assembly = _generate_native_assembly_with_budget(
                 compilation.assembly,
-                **native_options,
+                max_instructions=native_instruction_limit,
                 instruction_budget_mode=native_budget_mode,
             )
         compile_duration = time.perf_counter_ns() - compile_started

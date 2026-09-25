@@ -14,6 +14,8 @@ from pathlib import Path
 
 import pytest
 
+import benchmarks.s3bench.adapters as s3bench_adapters
+
 pytestmark = pytest.mark.s3_benchmark
 
 from benchmarks.s3bench import (
@@ -80,6 +82,72 @@ def test_native_instruction_budget_mode_is_explicit_and_backward_compatible() ->
             _native_instruction_budget_mode(
                 replace(case, configuration={"native_instruction_budget_mode": value})
             )
+
+
+@pytest.mark.parametrize("budget_mode", ("exact-segment", "loop-hybrid"))
+def test_native_adapter_routes_nondefault_budget_mode_once(
+    monkeypatch, tmp_path, budget_mode: str
+) -> None:
+    source_path = tmp_path / "budget-mode.s3"
+    source_path.write_text(
+        "fn main() -> tryte:\n    return 6\n",
+        encoding="utf-8",
+    )
+    case = replace(
+        _case(),
+        benchmark_id="test.native-budget-mode.v1",
+        implementation="s3",
+        adapter="s3-native",
+        execution_mode="native",
+        optimization_mode="O1",
+        expected_checksum="6",
+        source=source_path,
+        configuration={
+            "native_max_instructions": 1234,
+            "native_instruction_budget_mode": budget_mode,
+        },
+    )
+    routed: list[tuple[int, object]] = []
+    built_assembly: list[str] = []
+
+    def route_budget_mode(program, *, max_instructions, instruction_budget_mode):
+        del program
+        routed.append((max_instructions, instruction_budget_mode))
+        return "native assembly\n"
+
+    class RecordingToolchain:
+        compiler = "cc"
+        linker = "ld"
+
+        def build(self, assembly: str, output: Path) -> Path:
+            built_assembly.append(assembly)
+            output.write_bytes(b"ELF")
+            return output
+
+    toolchain = RecordingToolchain()
+    monkeypatch.setattr(s3bench_adapters.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(s3bench_adapters.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(
+        s3bench_adapters,
+        "_generate_native_assembly_with_budget",
+        route_budget_mode,
+    )
+    monkeypatch.setattr(s3bench_adapters, "_tool_version", lambda command: "cc test")
+    monkeypatch.setattr(
+        s3bench_adapters.NativeToolchain,
+        "detect",
+        classmethod(lambda cls: toolchain),
+    )
+
+    artifact = S3NativeAdapter().build(case, tmp_path / "build")
+
+    assert len(routed) == 1
+    assert routed[0][0] == 1234
+    assert routed[0][1].value == budget_mode
+    assert built_assembly == ["native assembly\n"]
+    assert artifact.path is not None
+    assert artifact.path.read_bytes() == b"ELF"
+    assert artifact.artifact_metrics["native_instruction_budget_mode"] == budget_mode
 
 
 class ProcessCountingAdapter:
