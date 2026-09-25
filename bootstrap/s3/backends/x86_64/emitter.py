@@ -36,6 +36,7 @@ from .register_init_safety import proven_initialized_register_reads
 from .instruction_budget import (
     MIN_FAST_SEGMENT_WEIGHT,
     InstructionBudgetMode,
+    natural_loop_block_labels,
     parse_instruction_budget_mode,
     plan_budget_segments,
 )
@@ -269,7 +270,10 @@ class X8664Emitter:
         lines.extend(self._initialize_metadata(function, layout))
         lines.append(f"    jmp {mangle_block(function.name, 'entry')}")
         function_liveness = analyze_liveness(function)
-        if self.instruction_budget_mode is InstructionBudgetMode.EXACT_SEGMENT:
+        if self.instruction_budget_mode in {
+            InstructionBudgetMode.EXACT_SEGMENT,
+            InstructionBudgetMode.LOOP_HYBRID,
+        }:
             lines.extend(
                 self._emit_exact_segment_blocks(
                     function,
@@ -317,6 +321,11 @@ class X8664Emitter:
         function_liveness,
     ) -> list[str]:
         plan = plan_budget_segments(function)
+        loop_blocks = (
+            natural_loop_block_labels(function)
+            if self.instruction_budget_mode is InstructionBudgetMode.LOOP_HYBRID
+            else None
+        )
         by_block: dict[str, list] = {}
         for segment in plan.segments:
             by_block.setdefault(segment.block, []).append(segment)
@@ -332,6 +341,7 @@ class X8664Emitter:
                 if (
                     segment.logical_weight >= MIN_FAST_SEGMENT_WEIGHT
                     and segment.logical_weight <= self.max_instructions
+                    and (loop_blocks is None or segment.block in loop_blocks)
                 ):
                     lines.extend(
                         self._emit_budgeted_segment(
@@ -1426,6 +1436,29 @@ class X8664Emitter:
         """Lower an internal dynamic-buffer call using the logical descriptor ABI."""
 
         assert instruction.callee is not None
+        vector_len_shifts = {
+            "tryte_vector_len": 1,
+            "i64_vector_len": 3,
+            "f64_vector_len": 3,
+        }
+        if instruction.callee in vector_len_shifts:
+            return self._emit_primitive_vector_len(
+                layout,
+                instruction,
+                byte_shift=vector_len_shifts[instruction.callee],
+            )
+        vector_get_shifts = {
+            "tryte_vector_get": 1,
+            "i64_vector_get": 3,
+            "f64_vector_get": 3,
+        }
+        if instruction.callee in vector_get_shifts:
+            return self._emit_checked_primitive_vector_get(
+                layout,
+                instruction,
+                byte_shift=vector_get_shifts[instruction.callee],
+                sign_extend=instruction.callee == "tryte_vector_get",
+            )
         composite_signature = composite_vector_runtime_signature(instruction.callee)
         if composite_signature is not None:
             operation = self._composite_operation(instruction.callee)
@@ -1472,6 +1505,87 @@ class X8664Emitter:
         if self.register_allocation:
             lines.extend(self._restore_caller_saved(layout, survivor_physicals))
         lines.extend(self._write_register(layout, instruction.result_registers[0], "rax"))
+        return lines
+
+    def _emit_primitive_vector_len(
+        self,
+        layout: FrameLayout,
+        instruction: AssemblyInstruction,
+        *,
+        byte_shift: int,
+    ) -> list[str]:
+        """Read the primitive vector's stored byte length without a runtime call."""
+
+        if len(instruction.argument_registers) != 1 or len(instruction.result_registers) != 1:
+            raise NativeBackendError("vector length lowering requires one argument and result")
+        argument = instruction.argument_registers[0]
+        destination = instruction.result_registers[0]
+        survivor_physicals = self._call_survivor_physicals(instruction)
+        lines: list[str] = []
+        if self._physical_residence_active:
+            lines.extend(self._snapshot_register(layout, argument))
+            lines.extend(self._save_caller_saved(layout, survivor_physicals))
+            lines.extend(self._load_snapshot(layout, argument, "r10"))
+        else:
+            lines.extend(self._read_register(layout, argument, "r10"))
+        lines.extend(
+            (
+                "    mov r11, qword ptr [r10]",
+                "    mov rax, qword ptr [r11 + 8]",
+                f"    sar rax, {byte_shift}",
+            )
+        )
+        if self._physical_residence_active:
+            lines.extend(self._restore_caller_saved(layout, survivor_physicals))
+        lines.extend(self._write_register(layout, destination, "rax"))
+        return lines
+
+    def _emit_checked_primitive_vector_get(
+        self,
+        layout: FrameLayout,
+        instruction: AssemblyInstruction,
+        *,
+        byte_shift: int,
+        sign_extend: bool,
+    ) -> list[str]:
+        """Inline the checked descriptor lookup and load for primitive vectors."""
+
+        if len(instruction.argument_registers) != 2 or len(instruction.result_registers) != 1:
+            raise NativeBackendError("vector get lowering requires two arguments and one result")
+        vector_register, index_register = instruction.argument_registers
+        destination = instruction.result_registers[0]
+        survivor_physicals = self._call_survivor_physicals(instruction)
+        lines: list[str] = []
+        if self._physical_residence_active:
+            for register in (vector_register, index_register):
+                lines.extend(self._snapshot_register(layout, register))
+            lines.extend(self._save_caller_saved(layout, survivor_physicals))
+            lines.extend(self._load_snapshot(layout, vector_register, "rdi"))
+            lines.extend(self._load_snapshot(layout, index_register, "rsi"))
+        else:
+            lines.extend(self._read_register(layout, vector_register, "rdi"))
+            lines.extend(self._read_register(layout, index_register, "rsi"))
+        lines.extend(
+            (
+                "    mov r10, qword ptr [rdi]",
+                "    test rsi, rsi",
+                "    js __s3_fail_bounds",
+                "    mov rax, rsi",
+                f"    shl rax, {byte_shift}",
+                "    jc __s3_fail_bounds",
+                "    cmp rax, qword ptr [r10 + 8]",
+                "    jae __s3_fail_bounds",
+                "    mov r11, qword ptr [r10]",
+                (
+                    "    movsx eax, word ptr [r11 + rax]"
+                    if sign_extend
+                    else "    mov rax, qword ptr [r11 + rax]"
+                ),
+            )
+        )
+        if self._physical_residence_active:
+            lines.extend(self._restore_caller_saved(layout, survivor_physicals))
+        lines.extend(self._write_register(layout, destination, "rax"))
         return lines
 
     def _emit_dynamic_call_with_wrapper(

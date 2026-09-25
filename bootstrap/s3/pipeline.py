@@ -25,7 +25,7 @@ from .ir_serialization import IR_FORMAT_VERSION
 from .lexer import SyntaxMode, Token
 from .lowering import lower
 from .module_compilation import SourceCollection, prepare_module_compilation
-from .optimizer import OptimizationLevel, optimize_ir
+from .optimizer import OptimizationLevel, optimize_dynamic_ir, optimize_ir
 from .semantic import SemanticModel, analyze
 
 
@@ -144,11 +144,9 @@ def compile_sources(
     executable = specialize_async_executable(async_preparation.executable)
     ordinary_ir_available = not _contains_async_select(executable)
     ir_program = lower(syntax_tree, semantic_model) if ordinary_ir_available else None
-    if ir_program is not None and not semantic_model.contains_dynamic:
-        ir_program = optimize_ir(
-            ir_program,
-            context.optimization,
-        )
+    if ir_program is not None:
+        optimizer = optimize_dynamic_ir if semantic_model.contains_dynamic else optimize_ir
+        ir_program = optimizer(ir_program, context.optimization)
     assembly_program = generate_assembly(ir_program) if ir_program is not None else None
     return CompilationResult(
         plan.tokens,
@@ -177,12 +175,15 @@ def _compile_source_with_context(
     semantic_model = analyze(syntax_tree)
     ordinary_ir_available = not _contains_async_select(executable)
     ir_program = lower(syntax_tree, semantic_model) if ordinary_ir_available else None
-    if ir_program is not None and not semantic_model.contains_dynamic:
-        ir_program = optimize_ir(
-            ir_program,
-            context.optimization,
-            preserve_memory_observability=preserve_memory_observability,
-        )
+    if ir_program is not None:
+        if semantic_model.contains_dynamic:
+            ir_program = optimize_dynamic_ir(ir_program, context.optimization)
+        else:
+            ir_program = optimize_ir(
+                ir_program,
+                context.optimization,
+                preserve_memory_observability=preserve_memory_observability,
+            )
     assembly_program = generate_assembly(ir_program) if ir_program is not None else None
     return CompilationResult(parsed.tokens, syntax_tree, semantic_model, ir_program, assembly_program, parsed.syntax, async_state_machines, async_ir)
 

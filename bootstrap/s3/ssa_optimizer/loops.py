@@ -6,9 +6,10 @@ from dataclasses import replace
 from typing import Dict, List, Set, Tuple
 
 from ..alias_analysis import AliasAnalysis
+from ..builtin_effects import BuiltinEffect, builtin_effect
 from ..cfg import ControlFlowGraph
 from ..dominance import DominatorTree
-from ..ir import IROpcode, IRType
+from ..ir import IRBasicBlock, IRFunction, IRInstruction, IROpcode, IRType
 from ..ssa import SSABlock, SSAFunction, SSAInstruction, SSAPhiNode, SSAValue
 from ..ternary import (
     TernaryRangeError,
@@ -21,12 +22,139 @@ from ..ternary import (
 from .common import _FOLDABLE_OPCODES, _PURE_REMOVABLE_OPCODES, _width
 from .lowering import _cfg_from_ssa
 
+
+def hoist_readonly_vector_length_queries(function: IRFunction) -> tuple[IRFunction, int]:
+    """Hoist immutable parameter length queries from canonical loop headers."""
+    cfg = ControlFlowGraph.build(function)
+    dom_tree = DominatorTree.build(cfg)
+    blocks_by_name = {block.name: block for block in function.blocks}
+    parameters_by_register = {
+        parameter.register: parameter for parameter in function.parameters
+    }
+    back_edges = [
+        (tail, head)
+        for tail in sorted(cfg.nodes)
+        for head in sorted(cfg.nodes[tail].successors)
+        if dom_tree.dominates(head, tail)
+    ]
+    if not back_edges:
+        return function, 0
+
+    moves: dict[tuple[str, int], str] = {}
+    moved_calls: set[IRInstruction] = set()
+    vector_length_builtins = {
+        "tryte_vector_len",
+        "i64_vector_len",
+        "f64_vector_len",
+    }
+
+    for tail, header in back_edges:
+        loop_blocks = {header, tail}
+        worklist = [tail]
+        while worklist:
+            current = worklist.pop()
+            for predecessor in sorted(cfg.nodes[current].predecessors, reverse=True):
+                if (
+                    predecessor not in loop_blocks
+                    and dom_tree.dominates(header, predecessor)
+                ):
+                    loop_blocks.add(predecessor)
+                    worklist.append(predecessor)
+
+        loop_calls = [
+            instruction
+            for name in loop_blocks
+            for instruction in blocks_by_name[name].instructions
+            if instruction.opcode is IROpcode.CALL
+        ]
+        if any(
+            builtin_effect(instruction.callee)
+            not in {BuiltinEffect.PURE, BuiltinEffect.READ_ONLY}
+            for instruction in loop_calls
+        ):
+            continue
+        if any(
+            instruction.opcode in {IROpcode.REFERENCE_STORE, IROpcode.SLICE_STORE}
+            for name in loop_blocks
+            for instruction in blocks_by_name[name].instructions
+        ):
+            continue
+
+        outside_predecessors = sorted(
+            predecessor
+            for predecessor in cfg.nodes[header].predecessors
+            if predecessor not in loop_blocks
+        )
+        if len(outside_predecessors) != 1:
+            continue
+        preheader = outside_predecessors[0]
+        if not dom_tree.dominates(preheader, header):
+            continue
+        preheader_instructions = blocks_by_name[preheader].instructions
+        if (
+            not preheader_instructions
+            or preheader_instructions[-1].opcode is not IROpcode.JUMP
+            or preheader_instructions[-1].targets != (header,)
+        ):
+            continue
+
+        header_block = blocks_by_name[header]
+        for index, instruction in enumerate(header_block.instructions):
+            if (
+                instruction in moved_calls
+                or instruction.opcode is not IROpcode.CALL
+                or instruction.callee not in vector_length_builtins
+                or len(instruction.operands) != 1
+                or len(instruction.results) != 1
+            ):
+                continue
+            parameter = parameters_by_register.get(instruction.operands[0])
+            if (
+                parameter is None
+                or parameter.type is not IRType.REFERENCE
+                or parameter.reference_mutable
+            ):
+                continue
+            moves[(header, index)] = preheader
+            moved_calls.add(instruction)
+
+    if not moves:
+        return function, 0
+
+    removed: dict[str, set[int]] = {}
+    insertions: dict[str, list[IRInstruction]] = {}
+    for (source, index), destination in moves.items():
+        removed.setdefault(source, set()).add(index)
+        insertions.setdefault(destination, []).append(
+            blocks_by_name[source].instructions[index]
+        )
+
+    updated_blocks: list[IRBasicBlock] = []
+    for block in function.blocks:
+        retained = [
+            instruction
+            for index, instruction in enumerate(block.instructions)
+            if index not in removed.get(block.name, set())
+        ]
+        hoisted = insertions.get(block.name)
+        if hoisted:
+            terminator = retained.pop()
+            retained.extend(hoisted)
+            retained.append(terminator)
+        updated_blocks.append(replace(block, instructions=tuple(retained)))
+
+    return replace(function, blocks=tuple(updated_blocks)), len(moves)
+
 # -----------------------------------------------------------------------------
 # Milestone 0.87: Loop Invariant Code Motion (LICM)
 # -----------------------------------------------------------------------------
 
-def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
-    """Hoists pure loop-invariant computations out of loops into pre-headers."""
+def run_ssa_licm(
+    ssa_fn: SSAFunction,
+    *,
+    hoist_pure_instructions: bool = True,
+) -> Tuple[SSAFunction, int]:
+    """Hoist safe invariants through a proven natural-loop preheader."""
     cfg = _cfg_from_ssa(ssa_fn)
     dom_tree = DominatorTree.build(cfg)
 
@@ -42,6 +170,7 @@ def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
 
     hoisted_count = 0
     ssa_block_dict = {b.name: b for b in ssa_fn.blocks}
+    parameter_values = {parameter.value.name for parameter in ssa_fn.parameters}
 
     for tail_name, head_name in back_edges:
         loop_blocks: Set[str] = {head_name, tail_name}
@@ -50,9 +179,32 @@ def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
             curr = worklist.pop()
             if curr in cfg.nodes:
                 for pred in sorted(cfg.nodes[curr].predecessors, reverse=True):
-                    if pred not in loop_blocks:
+                    if pred not in loop_blocks and dom_tree.dominates(head_name, pred):
                         loop_blocks.add(pred)
                         worklist.append(pred)
+
+        loop_instructions = [
+            inst
+            for block_name in loop_blocks
+            if block_name in ssa_block_dict
+            for inst in ssa_block_dict[block_name].instructions
+        ]
+        calls_are_read_only = all(
+            inst.opcode is not IROpcode.CALL
+            or builtin_effect(
+                str(inst.immediate) if inst.immediate is not None else None
+            )
+            in {BuiltinEffect.PURE, BuiltinEffect.READ_ONLY}
+            for inst in loop_instructions
+        )
+        loop_has_store = any(
+            inst.opcode
+            in {
+                IROpcode.REFERENCE_STORE,
+                IROpcode.SLICE_STORE,
+            }
+            for inst in loop_instructions
+        )
 
         defined_in_loop = {
             inst.result.name
@@ -60,6 +212,11 @@ def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
             if b_name in ssa_block_dict
             for inst in ssa_block_dict[b_name].instructions
             if inst.result is not None
+        } | {
+            phi.target.name
+            for b_name in loop_blocks
+            if b_name in ssa_block_dict
+            for phi in ssa_block_dict[b_name].phis
         }
 
         invariant_defs: Set[str] = set()
@@ -71,12 +228,54 @@ def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
             for b_name in sorted(loop_blocks):
                 block = ssa_block_dict[b_name]
                 for inst in block.instructions:
+                    is_safe_call = (
+                        inst.opcode is IROpcode.CALL
+                        and calls_are_read_only
+                        and not loop_has_store
+                        and builtin_effect(
+                            str(inst.immediate) if inst.immediate is not None else None
+                        ) is BuiltinEffect.READ_ONLY
+                        and inst.immediate
+                        in {
+                            "tryte_vector_len",
+                            "i64_vector_len",
+                            "f64_vector_len",
+                        }
+                        and len(inst.operands) == 1
+                        and inst.operands[0].type is IRType.REFERENCE
+                        and not inst.operands[0].reference_mutable
+                        and inst.operands[0].name in parameter_values
+                    )
+                    is_safe_pure_op = (
+                        hoist_pure_instructions
+                        and
+                        inst.opcode in _PURE_REMOVABLE_OPCODES
+                        and inst.opcode
+                        not in {
+                            IROpcode.JUMP,
+                            IROpcode.BRANCH3,
+                            IROpcode.CALL,
+                            IROpcode.STORE,
+                            IROpcode.LOAD,
+                        }
+                        and not (
+                            inst.result is not None
+                            and (
+                                (
+                                    inst.opcode is IROpcode.ADD
+                                    and inst.result.type is not IRType.F64
+                                )
+                                or (
+                                    inst.opcode is IROpcode.INVERT
+                                    and inst.result.type is IRType.I64
+                                )
+                            )
+                        )
+                    )
                     if (
                         inst.result is not None
                         and inst.result.name not in invariant_defs
-                        and inst.opcode in _PURE_REMOVABLE_OPCODES
-                        and inst.opcode not in {IROpcode.JUMP, IROpcode.BRANCH3, IROpcode.CALL, IROpcode.STORE, IROpcode.LOAD}
-
+                        and (is_safe_call or is_safe_pure_op)
                     ):
                         if all(
                             (op.name not in defined_in_loop or op.name in invariant_defs)
@@ -94,8 +293,11 @@ def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
             for p in cfg.nodes[head_name].predecessors
             if p not in loop_blocks
         ) if head_name in cfg.nodes else []
-
-        target_pre_header = pre_header_candidates[0] if pre_header_candidates else ssa_fn.blocks[0].name
+        if len(pre_header_candidates) != 1:
+            continue
+        target_pre_header = pre_header_candidates[0]
+        if not dom_tree.dominates(target_pre_header, head_name):
+            continue
 
         hoist_inst_set = {inst for _, inst in hoistable_insts}
         hoisted_count += len(hoist_inst_set)

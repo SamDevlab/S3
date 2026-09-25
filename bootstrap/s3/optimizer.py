@@ -286,7 +286,13 @@ def _run_ssa_optimizations(
         function_has_memory_effects(function)
         and function_has_alias_observable_memory(function)
     ):
-        return function
+        # Avoid broad SSA rewrites here: memory-observable loops can have
+        # incomplete undef inputs in the current out-of-SSA representation.
+        # This IR-level pass moves only proven immutable vector-length queries.
+        from .ssa_optimizer.loops import hoist_readonly_vector_length_queries
+
+        optimized, _hoisted = hoist_readonly_vector_length_queries(function)
+        return optimized
     from .ssa import SSABuilder
     from .ssa_opt import run_fixpoint_pipeline
 
@@ -354,6 +360,31 @@ def optimize_ir(
     optimized = _PassManager(
         _o1_passes(preserve_memory_observability=preserve_memory_observability)
     ).run(module)
+    verify_ir(optimized)
+    analyze_initialization(optimized)
+    return optimized
+
+
+def optimize_dynamic_ir(
+    module: IRModule,
+    level: OptimizationLevel | str = OptimizationLevel.O0,
+) -> IRModule:
+    """Run only transformations proven safe for dynamic/reference-bearing IR."""
+    selected = OptimizationLevel.parse(level)
+    verify_ir(module)
+    analyze_initialization(module)
+    if selected is OptimizationLevel.O0:
+        return module
+
+    from .ssa_optimizer.loops import hoist_readonly_vector_length_queries
+
+    optimized = replace(
+        module,
+        functions=tuple(
+            hoist_readonly_vector_length_queries(function)[0]
+            for function in module.functions
+        ),
+    )
     verify_ir(optimized)
     analyze_initialization(optimized)
     return optimized
