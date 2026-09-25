@@ -49,6 +49,23 @@ _MODULES = (
         ("resource",),
     ),
     StandardLibraryModule(
+        "s3.v1.science",
+        STANDARD_LIBRARY_VERSION,
+        "s3/v1/science.s3",
+        (
+            "F64Result",
+            "sum",
+            "dot",
+            "mean",
+            "variance",
+            "squared_distance",
+            "distance",
+            "l2_norm",
+            "rmsd",
+        ),
+        (),
+    ),
+    StandardLibraryModule(
         "s3.v1.text",
         STANDARD_LIBRARY_VERSION,
         "s3/v1/text.s3",

@@ -1,0 +1,113 @@
+module s3.v1.science
+
+export record F64Result:
+    status: i64
+    value: f64
+
+export fn sum(values: &f64_vector) -> f64:
+    mut length: i64 = f64_vector_len(values)
+    mut index: i64 = 0
+    mut total: f64 = 0.0
+    while index < length:
+        total = total + f64_vector_get(values, index)
+        index = index + 1
+    return total
+
+export fn dot(left: &f64_vector, right: &f64_vector) -> F64Result:
+    mut length: i64 = f64_vector_len(left)
+    match length == f64_vector_len(right):
+        -1:
+            mut index: i64 = 0
+            mut total: f64 = 0.0
+            while index < length:
+                total = total + f64_vector_get(left, index) * f64_vector_get(right, index)
+                index = index + 1
+            return F64Result(status=0, value=total)
+        0:
+            return F64Result(status=1, value=0.0)
+        1:
+            return F64Result(status=1, value=0.0)
+
+export fn mean(values: &f64_vector) -> f64:
+    mut length: i64 = f64_vector_len(values)
+    match length == 0:
+        -1:
+            return 0.0
+        0:
+            return sum(values) / to_f64(length)
+        1:
+            return sum(values) / to_f64(length)
+
+export fn variance(values: &f64_vector) -> f64:
+    mut length: i64 = f64_vector_len(values)
+    match length == 0:
+        -1:
+            return 0.0
+        0:
+            return population_variance_nonempty(values, length)
+        1:
+            return population_variance_nonempty(values, length)
+
+fn population_variance_nonempty(values: &f64_vector, length: i64) -> f64:
+    mut center: f64 = mean(values)
+    mut index: i64 = 0
+    mut total: f64 = 0.0
+    while index < length:
+        mut delta: f64 = f64_vector_get(values, index) - center
+        total = total + delta * delta
+        index = index + 1
+    return total / to_f64(length)
+
+export fn squared_distance(left: &f64_vector, right: &f64_vector) -> F64Result:
+    mut length: i64 = f64_vector_len(left)
+    match length == f64_vector_len(right):
+        -1:
+            mut index: i64 = 0
+            mut total: f64 = 0.0
+            while index < length:
+                mut delta: f64 = f64_vector_get(left, index) - f64_vector_get(right, index)
+                total = total + delta * delta
+                index = index + 1
+            return F64Result(status=0, value=total)
+        0:
+            return F64Result(status=1, value=0.0)
+        1:
+            return F64Result(status=1, value=0.0)
+
+export fn distance(left: &f64_vector, right: &f64_vector) -> F64Result:
+    mut squared: F64Result = squared_distance(left, right)
+    match squared.status == 0:
+        -1:
+            return F64Result(status=0, value=sqrt(squared.value))
+        0:
+            return squared
+        1:
+            return squared
+
+export fn l2_norm(values: &f64_vector) -> f64:
+    mut squared: F64Result = dot(values, values)
+    return sqrt(squared.value)
+
+export fn rmsd(left: &f64_vector, right: &f64_vector) -> F64Result:
+    mut length: i64 = f64_vector_len(left)
+    match length == 0:
+        -1:
+            return F64Result(status=2, value=0.0)
+        0:
+            mut squared: F64Result = squared_distance(left, right)
+            match squared.status == 0:
+                -1:
+                    return F64Result(status=0, value=sqrt(squared.value / to_f64(length)))
+                0:
+                    return squared
+                1:
+                    return squared
+        1:
+            mut squared: F64Result = squared_distance(left, right)
+            match squared.status == 0:
+                -1:
+                    return F64Result(status=0, value=sqrt(squared.value / to_f64(length)))
+                0:
+                    return squared
+                1:
+                    return squared

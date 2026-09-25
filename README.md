@@ -200,6 +200,13 @@ s3 run-native examples/first.s3
 
 Outros targets só devem ser tratados como suportados quando houver evidência de execução correspondente.
 
+A campanha 1.2 em desenvolvimento acrescenta uma superfície source-level
+versionada `s3.v1.science` para reduções `f64`, produto escalar, distâncias,
+norma L2 e RMSD. Os kernels são compostos em S3 sobre vetores, loops e `sqrt`;
+isso não introduz opcodes científicos nem altera os formatos públicos. O modo
+de accounting nativo `exact-segment` permanece uma opção explícita do backend;
+`per-instruction` continua sendo o default.
+
 ## Self-hosting
 
 O repositório preserva componentes experimentais escritos em S3, mas **full compiler self-hosting está fora do caminho crítico**. Python continua sendo o compilador de referência e default.
