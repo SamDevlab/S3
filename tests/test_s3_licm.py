@@ -87,17 +87,17 @@ def _shape(ssa_fn: SSAFunction) -> list[tuple[str, list[tuple[str, str | None, t
     ]
 
 
-def test_licm_selects_a_deterministic_preheader() -> None:
+def test_licm_keeps_invariant_when_header_has_ambiguous_preheaders() -> None:
     optimized, hoisted = run_ssa_licm(_ambiguous_preheader_fixture())
 
-    assert hoisted == 1
+    assert hoisted == 0
     locations = {
         instruction.result.name: block.name
         for block in optimized.blocks
         for instruction in block.instructions
         if instruction.result is not None
     }
-    assert locations["invariant"] == "left"
+    assert locations["invariant"] == "header"
 
 
 def test_licm_moves_invariant_and_keeps_variant_in_loop() -> None:

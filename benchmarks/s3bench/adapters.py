@@ -28,6 +28,7 @@ from typing import Mapping, Sequence
 from bootstrap.s3.backends._hosted_execution import _execute_hosted_assembly
 from bootstrap.s3.backends.x86_64.backend import (
     NATIVE_MAX_INSTRUCTIONS,
+    _generate_native_assembly_with_budget,
     generate_native_assembly,
 )
 from bootstrap.s3.backends.x86_64.instruction_budget import (
@@ -225,10 +226,17 @@ class S3NativeAdapter:
         native_options = {"max_instructions": native_instruction_limit}
         if native_budget_mode is not InstructionBudgetMode.PER_INSTRUCTION:
             native_options["instruction_budget_mode"] = native_budget_mode
-        native_assembly = generate_native_assembly(
-            compilation.assembly,
-            **native_options,
-        )
+        if native_budget_mode is InstructionBudgetMode.PER_INSTRUCTION:
+            native_assembly = generate_native_assembly(
+                compilation.assembly,
+                **native_options,
+            )
+        else:
+            native_assembly = _generate_native_assembly_with_budget(
+                compilation.assembly,
+                **native_options,
+                instruction_budget_mode=native_budget_mode,
+            )
         compile_duration = time.perf_counter_ns() - compile_started
         toolchain = NativeToolchain.detect()
         executable = build_dir / _artifact_name(case, "s3-native")

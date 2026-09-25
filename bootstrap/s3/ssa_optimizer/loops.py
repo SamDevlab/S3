@@ -258,19 +258,6 @@ def run_ssa_licm(
                             IROpcode.STORE,
                             IROpcode.LOAD,
                         }
-                        and not (
-                            inst.result is not None
-                            and (
-                                (
-                                    inst.opcode is IROpcode.ADD
-                                    and inst.result.type is not IRType.F64
-                                )
-                                or (
-                                    inst.opcode is IROpcode.INVERT
-                                    and inst.result.type is IRType.I64
-                                )
-                            )
-                        )
                     )
                     if (
                         inst.result is not None

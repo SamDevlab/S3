@@ -128,8 +128,89 @@ static int64_t run_workload(size_t seed) {
     return checksum;
 }
 
+static int64_t statistics_score_size(size_t length) {
+    static const double pattern[4] = {-1.0, -0.5, 0.5, 1.0};
+    double left[8192];
+    double right[8192];
+    for (size_t index = 0; index < length; ++index) {
+        left[index] = pattern[index % 4];
+        right[index] = left[index] + 0.5;
+    }
+
+    const double left_mean = mean_values(left, length);
+    const double right_mean = mean_values(right, length);
+    const double left_variance = variance(left, length);
+    const double deviation = sqrt_newton(left_variance);
+    const double covariance_value = covariance(left, right, length);
+    const double right_variance = variance(right, length);
+    const double correlation = covariance_value /
+        sqrt_newton(left_variance * right_variance);
+    if (!(-0.01 < left_mean && left_mean < 0.01 &&
+          left_variance > 0.62 && left_variance < 0.63 &&
+          deviation > 0.79 && deviation < 0.80 &&
+          covariance_value > 0.62 && covariance_value < 0.63 &&
+          correlation > 0.99 && correlation < 1.01)) {
+        return -1;
+    }
+    return (int64_t)length * 2 + 211;
+}
+
+static int64_t statistics_workload(size_t unused_seed) {
+    (void)unused_seed;
+    static const size_t lengths[] = {64, 256, 1024, 8192};
+    int64_t checksum = 0;
+    for (size_t index = 0; index < sizeof(lengths) / sizeof(lengths[0]); ++index) {
+        checksum += statistics_score_size(lengths[index]);
+    }
+    return checksum;
+}
+
+static int64_t similarity_score_size(size_t length) {
+    static const double pattern[4] = {-1.0, -0.5, 0.5, 1.0};
+    double left[8192];
+    double right[8192];
+    for (size_t index = 0; index < length; ++index) {
+        left[index] = pattern[index % 4];
+        right[index] = left[index] + 0.5;
+    }
+
+    const double squared = squared_distance(left, right, length);
+    const double euclidean = sqrt_newton(squared);
+    const double rmsd = sqrt_newton(squared / (double)length);
+    const double mae = mean_absolute_error(left, right, length);
+    const double product = dot(left, right, length);
+    const double cosine = product / (norm(left, length) * norm(right, length));
+    if (!(fabs(squared - (double)length * 0.25) < 0.01 &&
+          fabs(euclidean - sqrt_newton((double)length * 0.25)) < 0.01 &&
+          rmsd > 0.49 && rmsd < 0.51 &&
+          mae > 0.49 && mae < 0.51 &&
+          fabs(product - (double)length * 0.625) < 0.01 &&
+          cosine > 0.84 && cosine < 0.85)) {
+        return -1;
+    }
+    return (int64_t)length * 3 + 187;
+}
+
+static int64_t similarity_workload(size_t unused_seed) {
+    (void)unused_seed;
+    static const size_t lengths[] = {64, 256, 1024, 8192};
+    int64_t checksum = 0;
+    for (size_t index = 0; index < sizeof(lengths) / sizeof(lengths[0]); ++index) {
+        checksum += similarity_score_size(lengths[index]);
+    }
+    return checksum;
+}
+
 int main(int argc, char **argv) {
-    if (argc != 3 || strcmp(argv[1], "science.structural-comparison.v1") != 0) {
+    if (argc != 3) {
+        fputs("unsupported benchmark invocation\n", stderr);
+        return 2;
+    }
+    int64_t (*run)(size_t) = NULL;
+    if (strcmp(argv[1], "science.structural-comparison.v1") == 0) run = run_workload;
+    else if (strcmp(argv[1], "science.statistics-matrix.v1") == 0) run = statistics_workload;
+    else if (strcmp(argv[1], "science.similarity-distance.v1") == 0) run = similarity_workload;
+    else {
         fputs("unsupported benchmark invocation\n", stderr);
         return 2;
     }
@@ -137,7 +218,7 @@ int main(int argc, char **argv) {
     long long loops = strtoll(argv[2], &end, 10);
     if (end == argv[2] || *end != '\0' || loops <= 0) return 2;
     volatile int64_t checksum = 0;
-    for (long long loop = 0; loop < loops; ++loop) checksum = run_workload((size_t)loop);
+    for (long long loop = 0; loop < loops; ++loop) checksum = run((size_t)loop);
     if (checksum < 0) return 1;
     printf("checksum=%lld\n", (long long)checksum);
     return 0;
