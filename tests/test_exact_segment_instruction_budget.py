@@ -117,11 +117,10 @@ def _run_source(
     max_instructions: int,
 ):
     program = compile_source(source, "O0").assembly
-    assembly = generate_native_assembly(
-        program,
+    assembly = X8664Backend(
         max_instructions=max_instructions,
         instruction_budget_mode=budget_mode,
-    )
+    ).generate(program)
     executable = toolchain.build(assembly, directory / "program")
     return toolchain.run(executable)
 
