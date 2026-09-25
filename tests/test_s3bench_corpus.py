@@ -7,6 +7,9 @@ import sys
 from pathlib import Path
 
 from bootstrap.s3.pipeline import run_source
+from bootstrap.s3.ir_emulator import execute_ir
+from bootstrap.s3.pipeline import compile_sources
+from bootstrap.s3.stdlib import standard_library_sources
 from benchmarks.s3bench import load_manifest
 from benchmarks.s3bench.cli import _load_historical_baseline
 
@@ -35,6 +38,7 @@ def test_corpus_covers_required_runtime_and_compiler_categories():
         "frontend-parser",
         "frontend-candidate",
         "compiler-pipeline",
+        "scientific-compute",
     }.issubset(categories)
 
 
@@ -58,8 +62,67 @@ def test_s3_sources_preserve_o0_o1_checksum_parity():
             expected_by_source[case.source] = case.expected_checksum
     for source_path, expected in expected_by_source.items():
         source = source_path.read_text(encoding="utf-8")
-        assert str(run_source(source, optimization="O0")) == expected
-        assert str(run_source(source, optimization="O1")) == expected
+        if "from s3.v1.science import " in source:
+            for optimization in ("O0", "O1"):
+                sources = standard_library_sources(modules=("s3.v1.science",))
+                sources["main.s3"] = source
+                compilation = compile_sources(sources, optimization=optimization)
+                assert str(execute_ir(compilation.ir)) == expected
+        else:
+            assert str(run_source(source, optimization="O0")) == expected
+            assert str(run_source(source, optimization="O1")) == expected
+
+
+def test_scientific_workload_declares_its_size_and_work_matrix():
+    document, cases = _document_and_cases()
+    expected = {
+        "science.structural-comparison.v1": (8, 9),
+        "science.statistics-matrix.v1": (20, 15),
+        "science.similarity-distance.v1": (24, 8),
+    }
+    by_id = {
+        item["benchmark_id"]: item
+        for item in document["workloads"]
+        if item["benchmark_id"] in expected
+    }
+    assert set(by_id) == set(expected)
+    for benchmark_id, (kernel_calls, traversals) in expected.items():
+        workload = by_id[benchmark_id]
+        lengths = workload["input"]["vector_lengths"]
+        assert lengths == [64, 256, 1024, 8192]
+        assert workload["input"]["size"] == sum(lengths)
+        assert workload["input"]["kernel_calls"] == kernel_calls
+        assert workload["input"]["total_elements_processed"] == traversals * sum(lengths)
+        assert any(
+            case.adapter == "s3-native"
+            for case in cases
+            if case.benchmark_id == benchmark_id
+        )
+
+
+def test_budget_policy_manifest_uses_one_identical_scientific_workload():
+    _, cases = load_manifest(
+        ROOT / "benchmarks" / "manifests" / "s3bench-1.3-budget-policy.json"
+    )
+    assert len(cases) == 3
+    assert {case.implementation for case in cases} == {
+        "s3-per",
+        "s3-exact",
+        "s3-loop-hybrid",
+    }
+    assert {case.source for case in cases} == {
+        ROOT / "benchmarks" / "workloads" / "scientific" / "structural_comparison.s3"
+    }
+    assert {case.optimization_mode for case in cases} == {"O1"}
+    assert {case.expected_checksum for case in cases} == {"48684"}
+    assert {case.input_id for case in cases} == {"coordinate-matrix-64-8192"}
+    assert {case.input_size for case in cases} == {9536}
+    assert {
+        case.configuration["native_instruction_budget_mode"] for case in cases
+    } == {"per-instruction", "exact-segment", "loop-hybrid"}
+    assert {case.configuration["native_max_instructions"] for case in cases} == {
+        50_000_000
+    }
 
 
 def test_python_reference_checksums_match_manifest():

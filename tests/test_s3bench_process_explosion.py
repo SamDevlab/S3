@@ -29,8 +29,10 @@ from benchmarks.s3bench.adapters import (
     S3EmulatorAdapter,
     PythonReferenceAdapter,
     ExternalCompilerAdapter,
+    _native_instruction_limit,
+    _native_instruction_budget_mode,
 )
-from benchmarks.s3bench.core import CommandResult
+from benchmarks.s3bench.core import BenchmarkError, CommandResult
 
 
 # ---------------------------------------------------------------------------
@@ -47,6 +49,37 @@ def _case():
         adapter="fake",
         expected_checksum="7",
     )
+
+
+def test_native_instruction_limit_is_explicit_bounded_and_backward_compatible() -> None:
+    case = _case()
+    assert _native_instruction_limit(case) == 100_000
+    assert _native_instruction_limit(
+        replace(case, configuration={"native_max_instructions": 50_000_000})
+    ) == 50_000_000
+
+    for value in (True, 0, -1, 1.5, "50000000", 1 << 64):
+        with pytest.raises(BenchmarkError, match="native_max_instructions"):
+            _native_instruction_limit(
+                replace(case, configuration={"native_max_instructions": value})
+            )
+
+
+def test_native_instruction_budget_mode_is_explicit_and_backward_compatible() -> None:
+    case = _case()
+    assert _native_instruction_budget_mode(case).value == "per-instruction"
+    assert _native_instruction_budget_mode(
+        replace(case, configuration={"native_instruction_budget_mode": "loop-hybrid"})
+    ).value == "loop-hybrid"
+    assert _native_instruction_budget_mode(
+        replace(case, configuration={"native_instruction_budget_mode": "exact-segment"})
+    ).value == "exact-segment"
+
+    for value in (True, 1, None, "unknown"):
+        with pytest.raises(BenchmarkError, match="native_instruction_budget_mode"):
+            _native_instruction_budget_mode(
+                replace(case, configuration={"native_instruction_budget_mode": value})
+            )
 
 
 class ProcessCountingAdapter:
@@ -265,6 +298,44 @@ class TestAdapterClassification:
         adapter = ExternalCompilerAdapter("c", tc)
         assert adapter.measurement_scope == MEASUREMENT_SCOPE_KERNEL
         assert adapter.process_launches_per_sample == 1
+
+
+class TestS3EmulatorUnrenderableAssembly:
+    def test_tmul_executes_without_claiming_text_or_artifact_size(self, tmp_path):
+        source_path = tmp_path / "tmul.s3"
+        source_path.write_text(
+            "fn multiply(left: f64, right: f64) -> f64:\n"
+            "    return left * right\n\n"
+            "fn main() -> f64:\n    return multiply(6.0, 7.0)\n",
+            encoding="utf-8",
+        )
+        case = replace(
+            _case(),
+            benchmark_id="test.s3-emulator-tmul.v1",
+            implementation="s3",
+            adapter="s3-emulator",
+            execution_mode="emulator",
+            optimization_mode="O0",
+            expected_checksum="42.0",
+            source=source_path,
+        )
+
+        adapter = S3EmulatorAdapter()
+        artifact = adapter.build(case, tmp_path / "build")
+
+        assert artifact.artifact_size_bytes is None
+        assert "assembly_bytes" not in artifact.artifact_metrics
+        assert artifact.artifact_metrics["assembly_instruction_count"] > 0
+        assert any("opcode TMUL" in note for note in artifact.notes)
+        assert any(
+            instruction.opcode.value == "TMUL"
+            for function in artifact.payload.assembly.functions
+            for block in function.blocks
+            for instruction in block.instructions
+        )
+
+        observation = adapter.execute(case, artifact, loops=1, timeout_seconds=1.0)
+        assert observation.checksum == "42.0"
 
 
 # ---------------------------------------------------------------------------

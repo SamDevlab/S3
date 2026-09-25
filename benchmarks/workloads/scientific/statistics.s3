@@ -1,0 +1,90 @@
+module main
+from s3.v1.science import F64Result
+from s3.v1.science import mean
+from s3.v1.science import variance
+from s3.v1.science import standard_deviation
+from s3.v1.science import covariance
+from s3.v1.science import correlation
+
+fn coordinate(phase: i64) -> f64:
+    match phase == 0:
+        -1:
+            match phase == 1:
+                -1:
+                    match phase == 2:
+                        -1:
+                            return 1.0
+                        0:
+                            return 0.5
+                        1:
+                            return 0.5
+                0:
+                    return -0.5
+                1:
+                    return -0.5
+        0:
+            return -1.0
+        1:
+            return -1.0
+
+fn metric_in_range(value: f64, lower: f64, upper: f64) -> i64:
+    match value > lower:
+        -1:
+            return 1
+        0:
+            match value < upper:
+                -1:
+                    return 1
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            match value < upper:
+                -1:
+                    return 1
+                0:
+                    return 0
+                1:
+                    return 0
+
+fn score_size(length: i64) -> i64:
+    mut left: f64_vector = f64_vector_new(length)
+    mut right: f64_vector = f64_vector_new(length)
+    mut index: i64 = 0
+    mut phase: i64 = 0
+    while index < length:
+        mut value: f64 = coordinate(phase)
+        discard f64_vector_push(&mut left, value)
+        discard f64_vector_push(&mut right, value + 0.5)
+        index = index + 1
+        phase = phase + 1
+        match phase == 4:
+            -1:
+                phase = phase
+            0:
+                phase = 0
+            1:
+                phase = 0
+
+    mut average: f64 = mean(&left)
+    mut spread: f64 = variance(&left)
+    mut deviation: F64Result = standard_deviation(&left)
+    mut cov: F64Result = covariance(&left, &right)
+    mut corr: F64Result = correlation(&left, &right)
+    mut failures: i64 = deviation.status + cov.status + corr.status
+    failures = failures + metric_in_range(average, -0.01, 0.01)
+    failures = failures + metric_in_range(spread, 0.62, 0.63)
+    failures = failures + metric_in_range(deviation.value, 0.79, 0.80)
+    failures = failures + metric_in_range(cov.value, 0.62, 0.63)
+    failures = failures + metric_in_range(corr.value, 0.99, 1.01)
+    match failures == 0:
+        -1:
+            return -1
+        0:
+            return length * 2 + 211
+        1:
+            return length * 2 + 211
+
+fn main() -> i64:
+    return score_size(64) + score_size(256) + score_size(1024) + score_size(8192)

@@ -1,0 +1,93 @@
+module main
+from s3.v1.science import F64Result
+from s3.v1.science import squared_distance
+from s3.v1.science import distance
+from s3.v1.science import rmsd
+from s3.v1.science import mae
+from s3.v1.science import dot
+from s3.v1.science import cosine_similarity
+
+fn coordinate(phase: i64) -> f64:
+    match phase == 0:
+        -1:
+            match phase == 1:
+                -1:
+                    match phase == 2:
+                        -1:
+                            return 1.0
+                        0:
+                            return 0.5
+                        1:
+                            return 0.5
+                0:
+                    return -0.5
+                1:
+                    return -0.5
+        0:
+            return -1.0
+        1:
+            return -1.0
+
+fn metric_in_range(value: f64, lower: f64, upper: f64) -> i64:
+    match value > lower:
+        -1:
+            return 1
+        0:
+            match value < upper:
+                -1:
+                    return 1
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            match value < upper:
+                -1:
+                    return 1
+                0:
+                    return 0
+                1:
+                    return 0
+
+fn score_size(length: i64) -> i64:
+    mut left: f64_vector = f64_vector_new(length)
+    mut right: f64_vector = f64_vector_new(length)
+    mut index: i64 = 0
+    mut phase: i64 = 0
+    while index < length:
+        mut value: f64 = coordinate(phase)
+        discard f64_vector_push(&mut left, value)
+        discard f64_vector_push(&mut right, value + 0.5)
+        index = index + 1
+        phase = phase + 1
+        match phase == 4:
+            -1:
+                phase = phase
+            0:
+                phase = 0
+            1:
+                phase = 0
+
+    mut squared: F64Result = squared_distance(&left, &right)
+    mut euclidean: F64Result = distance(&left, &right)
+    mut root_mean_square: F64Result = rmsd(&left, &right)
+    mut absolute_error: F64Result = mae(&left, &right)
+    mut product: F64Result = dot(&left, &right)
+    mut cosine: F64Result = cosine_similarity(&left, &right)
+    mut failures: i64 = squared.status + euclidean.status + root_mean_square.status + absolute_error.status + product.status + cosine.status
+    failures = failures + metric_in_range(squared.value, to_f64(length) * 0.25 - 0.01, to_f64(length) * 0.25 + 0.01)
+    failures = failures + metric_in_range(euclidean.value, sqrt(to_f64(length) * 0.25) - 0.01, sqrt(to_f64(length) * 0.25) + 0.01)
+    failures = failures + metric_in_range(root_mean_square.value, 0.49, 0.51)
+    failures = failures + metric_in_range(absolute_error.value, 0.49, 0.51)
+    failures = failures + metric_in_range(product.value, to_f64(length) * 0.625 - 0.01, to_f64(length) * 0.625 + 0.01)
+    failures = failures + metric_in_range(cosine.value, 0.84, 0.85)
+    match failures == 0:
+        -1:
+            return -1
+        0:
+            return length * 3 + 187
+        1:
+            return length * 3 + 187
+
+fn main() -> i64:
+    return score_size(64) + score_size(256) + score_size(1024) + score_size(8192)

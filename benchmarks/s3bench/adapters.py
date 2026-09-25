@@ -26,10 +26,21 @@ from pathlib import Path
 from typing import Mapping, Sequence
 
 from bootstrap.s3.backends._hosted_execution import _execute_hosted_assembly
-from bootstrap.s3.backends.x86_64.backend import generate_native_assembly
+from bootstrap.s3.backends.x86_64.backend import (
+    NATIVE_MAX_INSTRUCTIONS,
+    generate_native_assembly,
+)
+from bootstrap.s3.backends.x86_64.instruction_budget import (
+    InstructionBudgetMode,
+    parse_instruction_budget_mode,
+)
 from bootstrap.s3.backends.x86_64.toolchain import NativeToolchain
-from bootstrap.s3.pipeline import compile_source
+from bootstrap.s3.assembly_program_text_adapter import AssemblyProgramTextAdapterError
+from bootstrap.s3.pipeline import compile_source, compile_sources
 from bootstrap.s3.ir_serialization import serialize_ir
+from bootstrap.s3.ir_emulator import execute_ir
+from bootstrap.s3.stdlib import standard_library_sources
+from bootstrap.s3.emulator import DEFAULT_MAX_INSTRUCTIONS
 
 from .core import (
     Adapter,
@@ -42,6 +53,14 @@ from .core import (
     extract_native_checksum,
     run_command,
 )
+
+
+def _compile_s3bench_source(source: str, optimization_mode: str):
+    if "from s3.v1.science import " not in source:
+        return compile_source(source, optimization_mode)
+    sources = standard_library_sources(modules=("s3.v1.science",))
+    sources["main.s3"] = source
+    return compile_sources(sources, optimization=optimization_mode)
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,30 +122,50 @@ class S3EmulatorAdapter:
             raise BenchmarkError("S3 emulator case has no source")
         source = case.source.read_text(encoding="utf-8")
         started = time.perf_counter_ns()
-        compilation = compile_source(source, case.optimization_mode)
+        compilation = _compile_s3bench_source(source, case.optimization_mode)
         duration = time.perf_counter_ns() - started
-        assembly_size = len(compilation.assembly_text.encode("utf-8"))
+        assembly_bytes: int | None = None
+        notes = ["in-process compile; no executable artifact is emitted"]
+        if compilation.semantic_model.contains_dynamic:
+            notes.append(
+                "execution uses the verified S3 IR emulator for dynamic runtime builtins"
+            )
+        try:
+            assembly_bytes = len(compilation.assembly_text.encode("utf-8"))
+        except AssemblyProgramTextAdapterError as error:
+            notes.append(
+                "text Assembly rendering unavailable; benchmark execution uses its "
+                f"selected in-process engine ({error})"
+            )
         ir_size = len(serialize_ir(compilation.ir).encode("utf-8"))
         instruction_count = sum(
             len(block.instructions)
             for function in compilation.ir.functions
             for block in function.blocks
         )
+        assembly_instruction_count = sum(
+            len(block.instructions)
+            for function in compilation.assembly.functions
+            for block in function.blocks
+        )
+        metrics = {
+            "source_bytes": len(source.encode("utf-8")),
+            "ir_bytes": ir_size,
+            "function_count": len(compilation.ir.functions),
+            "instruction_count": instruction_count,
+            "assembly_instruction_count": assembly_instruction_count,
+        }
+        if assembly_bytes is not None:
+            metrics["assembly_bytes"] = assembly_bytes
         return BuildArtifact(
             compile_duration_ns=duration,
-            artifact_size_bytes=assembly_size,
-            artifact_metrics={
-                "source_bytes": len(source.encode("utf-8")),
-                "ir_bytes": ir_size,
-                "assembly_bytes": assembly_size,
-                "function_count": len(compilation.ir.functions),
-                "instruction_count": instruction_count,
-            },
+            artifact_size_bytes=None,
+            artifact_metrics=metrics,
             compiler_name="s3-bootstrap-python",
             compiler_version=None,
             compiler_flags=(case.optimization_mode,),
             payload=compilation,
-            notes=("in-process compile; link phase is not applicable",),
+            notes=tuple(notes),
         )
 
     def execute(
@@ -143,7 +182,10 @@ class S3EmulatorAdapter:
         started = time.perf_counter_ns()
         result = 0
         for _ in range(loops):
-            result = _execute_hosted_assembly(compilation.assembly, "main")
+            if compilation.semantic_model.contains_dynamic:
+                result = execute_ir(compilation.ir, "main")
+            else:
+                result = _execute_hosted_assembly(compilation.assembly, "main")
         duration = time.perf_counter_ns() - started
         return ExecutionObservation(
             checksum=str(result),
@@ -177,8 +219,16 @@ class S3NativeAdapter:
         build_dir.mkdir(parents=True, exist_ok=True)
         source = case.source.read_text(encoding="utf-8")
         compile_started = time.perf_counter_ns()
-        compilation = compile_source(source, case.optimization_mode)
-        native_assembly = generate_native_assembly(compilation.assembly)
+        compilation = _compile_s3bench_source(source, case.optimization_mode)
+        native_instruction_limit = _native_instruction_limit(case)
+        native_budget_mode = _native_instruction_budget_mode(case)
+        native_options = {"max_instructions": native_instruction_limit}
+        if native_budget_mode is not InstructionBudgetMode.PER_INSTRUCTION:
+            native_options["instruction_budget_mode"] = native_budget_mode
+        native_assembly = generate_native_assembly(
+            compilation.assembly,
+            **native_options,
+        )
         compile_duration = time.perf_counter_ns() - compile_started
         toolchain = NativeToolchain.detect()
         executable = build_dir / _artifact_name(case, "s3-native")
@@ -194,13 +244,18 @@ class S3NativeAdapter:
                 "source_bytes": len(source.encode("utf-8")),
                 "assembly_bytes": len(native_assembly.encode("utf-8")),
                 "elf_bytes": executable.stat().st_size,
+                "native_max_instructions": native_instruction_limit,
+                "native_instruction_budget_mode": native_budget_mode.value,
             },
             compiler_name=Path(toolchain.compiler).name,
             compiler_version=_tool_version((toolchain.compiler, "--version")),
-            compiler_flags=(case.optimization_mode,),
+            compiler_flags=(
+                case.optimization_mode,
+                f"native-max-instructions={native_instruction_limit}",
+                f"native-instruction-budget-mode={native_budget_mode.value}",
+            ),
             linker=toolchain.linker,
         )
-
     def execute(
         self,
         case: Case,
@@ -232,6 +287,30 @@ class S3NativeAdapter:
             )
         checksum = extract_native_checksum(result.stdout)
         return _observation_from_command(result, checksum=checksum)
+
+
+def _native_instruction_limit(case: Case) -> int:
+    value = case.configuration.get("native_max_instructions", DEFAULT_MAX_INSTRUCTIONS)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise BenchmarkError("native_max_instructions must be an integer")
+    if value < 1 or value > NATIVE_MAX_INSTRUCTIONS:
+        raise BenchmarkError(
+            f"native_max_instructions must be in [1, {NATIVE_MAX_INSTRUCTIONS}]"
+        )
+    return value
+
+
+def _native_instruction_budget_mode(case: Case) -> InstructionBudgetMode:
+    value = case.configuration.get(
+        "native_instruction_budget_mode",
+        InstructionBudgetMode.PER_INSTRUCTION.value,
+    )
+    if not isinstance(value, str):
+        raise BenchmarkError("native_instruction_budget_mode must be a string")
+    try:
+        return parse_instruction_budget_mode(value)
+    except ValueError as error:
+        raise BenchmarkError(f"native_instruction_budget_mode: {error}") from error
 
 
 class PythonReferenceAdapter:

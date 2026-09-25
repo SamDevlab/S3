@@ -1,0 +1,56 @@
+{
+  "manifest_version": "1.0.0",
+  "campaign": "1.3-scientific-compute-engine-budget-policy",
+  "workloads": [
+    {
+      "benchmark_id": "science.structural-comparison-budget-policy.v1",
+      "workload_version": "1.0.0",
+      "category": "scientific-compute-budget-policy",
+      "suite": "portable",
+      "objective": "Compare exact instruction-budget policies over the same O1 structural-comparison workload, input matrix, instruction ceiling, and expected checksum.",
+      "input": {
+        "id": "coordinate-matrix-64-8192",
+        "size": 9536,
+        "scale": "medium",
+        "vector_lengths": [64, 256, 1024, 8192],
+        "kernel_calls": 8,
+        "total_elements_processed": 85824,
+        "reference_seed_policy": "The external references rotate the periodic coordinate pattern by the runtime repetition index; this preserves the same value multiset, traversal count, and checksum while preventing compile-time precomputation of a fixed input."
+      },
+      "expected_checksum": "48684",
+      "timed_region": "Same native S3 O1 program and structural workload for every policy; process startup and output are excluded from adapter timing. Build and artifact sizes are recorded separately.",
+      "implementations": [
+        {
+          "id": "s3-per",
+          "adapter": "s3-native",
+          "execution_mode": "native",
+          "optimization_modes": ["O1"],
+          "source": "workloads/scientific/structural_comparison.s3",
+          "timeout_seconds": 120,
+          "native_max_instructions": 50000000,
+          "native_instruction_budget_mode": "per-instruction"
+        },
+        {
+          "id": "s3-exact",
+          "adapter": "s3-native",
+          "execution_mode": "native",
+          "optimization_modes": ["O1"],
+          "source": "workloads/scientific/structural_comparison.s3",
+          "timeout_seconds": 120,
+          "native_max_instructions": 50000000,
+          "native_instruction_budget_mode": "exact-segment"
+        },
+        {
+          "id": "s3-loop-hybrid",
+          "adapter": "s3-native",
+          "execution_mode": "native",
+          "optimization_modes": ["O1"],
+          "source": "workloads/scientific/structural_comparison.s3",
+          "timeout_seconds": 120,
+          "native_max_instructions": 50000000,
+          "native_instruction_budget_mode": "loop-hybrid"
+        }
+      ]
+    }
+  ]
+}
