@@ -1,0 +1,88 @@
+fn absolute_f64(value: f64) -> f64:
+    match value < 0.0:
+        -1:
+            return 0.0 - value
+        0:
+            return value
+        1:
+            return value
+
+export fn energy_series_aggregation(
+    ac_power_w: &[f64],
+    load_w: &[f64],
+    capacity_w: f64,
+    output: &mut [f64]
+) -> i64:
+    mut period_count: i64 = len(ac_power_w)
+    mut load_count: i64 = len(load_w)
+    mut output_count: i64 = len(output)
+    match period_count > 364:
+        -1:
+            period_count = 0
+        0:
+            period_count = period_count
+        1:
+            period_count = period_count
+    match period_count <= 0:
+        -1:
+            return 1
+        0:
+            match load_count == period_count:
+                -1:
+                    match output_count == 5:
+                        -1:
+                            match capacity_w <= 0.0:
+                                -1:
+                                    return 1
+                                0:
+                                    mut period: i64 = 0
+                                    mut ac_energy: f64 = 0.0
+                                    mut net_energy: f64 = 0.0
+                                    mut peak: f64 = 0.0
+                                    mut first_period: i64 = 1
+                                    mut absolute_balance: f64 = 0.0
+                                    while period < period_count:
+                                        mut period_index: tryte = to_tryte(period)
+                                        mut ac: f64 = ac_power_w[period_index]
+                                        mut load: f64 = load_w[period_index]
+                                        ac_energy = ac_energy + ac
+                                        net_energy = net_energy + ac - load
+                                        absolute_balance = absolute_balance + absolute_f64(ac - load)
+                                        match first_period == 1:
+                                            -1:
+                                                peak = ac
+                                                first_period = 0
+                                            0:
+                                                first_period = first_period
+                                            1:
+                                                first_period = first_period
+                                        match peak < ac:
+                                            -1:
+                                                peak = ac
+                                            0:
+                                                peak = peak
+                                            1:
+                                                peak = peak
+                                        period = period + 1
+                                    mut periods_f64: f64 = to_f64(period_count)
+                                    output[0] = ac_energy
+                                    output[1] = peak
+                                    output[2] = net_energy
+                                    output[3] = ac_energy / (capacity_w * periods_f64)
+                                    output[4] = absolute_balance / periods_f64
+                                    return 0
+                                1:
+                                    return 1
+                        0:
+                            return 2
+                        1:
+                            return 2
+                0:
+                    return 2
+                1:
+                    return 2
+        1:
+            return 1
+
+fn main() -> i64:
+    return 0

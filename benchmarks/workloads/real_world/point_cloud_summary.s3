@@ -1,0 +1,121 @@
+export fn point_cloud_summary(
+    coordinates: &[f64],
+    point_count: i64,
+    output: &mut [f64]
+) -> i64:
+    mut bounded_point_count: i64 = point_count
+    match point_count > 121:
+        -1:
+            bounded_point_count = 0
+        0:
+            bounded_point_count = point_count
+        1:
+            bounded_point_count = point_count
+    mut coordinate_count: i64 = len(coordinates)
+    mut output_count: i64 = len(output)
+    match bounded_point_count <= 0:
+        -1:
+            return 1
+        0:
+            match coordinate_count == bounded_point_count * 3:
+                -1:
+                    match output_count == 10:
+                        -1:
+                            mut minimum_x: f64 = coordinates[0]
+                            mut minimum_y: f64 = coordinates[1]
+                            mut minimum_z: f64 = coordinates[2]
+                            mut maximum_x: f64 = minimum_x
+                            mut maximum_y: f64 = minimum_y
+                            mut maximum_z: f64 = minimum_z
+                            mut total_x: f64 = 0.0
+                            mut total_y: f64 = 0.0
+                            mut total_z: f64 = 0.0
+                            mut point: i64 = 0
+                            while point < bounded_point_count:
+                                mut base: tryte = to_tryte(point * 3)
+                                mut x: f64 = coordinates[base]
+                                mut y: f64 = coordinates[base + 1]
+                                mut z: f64 = coordinates[base + 2]
+                                total_x = total_x + x
+                                total_y = total_y + y
+                                total_z = total_z + z
+                                match x < minimum_x:
+                                    -1:
+                                        minimum_x = x
+                                    0:
+                                        minimum_x = minimum_x
+                                    1:
+                                        minimum_x = minimum_x
+                                match y < minimum_y:
+                                    -1:
+                                        minimum_y = y
+                                    0:
+                                        minimum_y = minimum_y
+                                    1:
+                                        minimum_y = minimum_y
+                                match z < minimum_z:
+                                    -1:
+                                        minimum_z = z
+                                    0:
+                                        minimum_z = minimum_z
+                                    1:
+                                        minimum_z = minimum_z
+                                match maximum_x < x:
+                                    -1:
+                                        maximum_x = x
+                                    0:
+                                        maximum_x = maximum_x
+                                    1:
+                                        maximum_x = maximum_x
+                                match maximum_y < y:
+                                    -1:
+                                        maximum_y = y
+                                    0:
+                                        maximum_y = maximum_y
+                                    1:
+                                        maximum_y = maximum_y
+                                match maximum_z < z:
+                                    -1:
+                                        maximum_z = z
+                                    0:
+                                        maximum_z = maximum_z
+                                    1:
+                                        maximum_z = maximum_z
+                                point = point + 1
+                            mut count_as_f64: f64 = to_f64(bounded_point_count)
+                            mut center_x: f64 = total_x / count_as_f64
+                            mut center_y: f64 = total_y / count_as_f64
+                            mut center_z: f64 = total_z / count_as_f64
+                            mut squared_radius_sum: f64 = 0.0
+                            point = 0
+                            while point < bounded_point_count:
+                                mut base: tryte = to_tryte(point * 3)
+                                mut dx: f64 = coordinates[base] - center_x
+                                mut dy: f64 = coordinates[base + 1] - center_y
+                                mut dz: f64 = coordinates[base + 2] - center_z
+                                squared_radius_sum = squared_radius_sum + dx * dx + dy * dy + dz * dz
+                                point = point + 1
+                            output[0] = center_x
+                            output[1] = center_y
+                            output[2] = center_z
+                            output[3] = minimum_x
+                            output[4] = minimum_y
+                            output[5] = minimum_z
+                            output[6] = maximum_x
+                            output[7] = maximum_y
+                            output[8] = maximum_z
+                            output[9] = sqrt(squared_radius_sum / count_as_f64)
+                            return 0
+                        0:
+                            return 2
+                        1:
+                            return 2
+                0:
+                    return 2
+                1:
+                    return 2
+        1:
+            return 1
+
+fn main() -> i64:
+    return 0

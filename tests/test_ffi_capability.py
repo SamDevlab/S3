@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.s3.backends.x86_64 import generate_ffi_assembly
+from bootstrap.s3.backends.x86_64 import InstructionBudgetMode, generate_ffi_assembly
 from bootstrap.s3.pipeline import compile_source
 from bootstrap.s3.ffi import build_shared_library
 from bootstrap.s3.pipeline import compile_source
@@ -47,6 +47,53 @@ fn main() -> i64:
     exported = next(function for function in result.assembly.functions if function.name == "sum")
     assert exported.exported is True
     assert [parameter.type.value for parameter in exported.parameters] == ["reference", "i64"]
+
+
+def test_o1_ssa_round_trip_preserves_exported_function_metadata() -> None:
+    source = """\
+fn absolute(value: f64) -> f64:
+    match value < 0.0:
+        -1:
+            return 0.0 - value
+        0:
+            return value
+        1:
+            return value
+export fn magnitude(value: f64) -> f64:
+    return absolute(value)
+fn main() -> i64:
+    return 0
+"""
+
+    result = compile_source(source, optimization="O1")
+    ir_function = next(function for function in result.ir.functions if function.name == "magnitude")
+    assembly_function = next(function for function in result.assembly.functions if function.name == "magnitude")
+
+    assert ir_function.exported is True
+    assert assembly_function.exported is True
+    assert ".globl magnitude" in generate_ffi_assembly(result.assembly)
+
+
+def test_ffi_assembly_accepts_explicit_budget_modes_and_keeps_per_default() -> None:
+    source = """\
+export fn count(limit: i64) -> i64:
+    mut value: i64 = 0
+    while value < limit:
+        value = value + 1
+    return value
+fn main() -> i64:
+    return 0
+"""
+    program = compile_source(source, optimization="O1").assembly
+
+    per = generate_ffi_assembly(program)
+    per_explicit = generate_ffi_assembly(program, instruction_budget_mode=InstructionBudgetMode.PER_INSTRUCTION)
+    exact = generate_ffi_assembly(program, instruction_budget_mode=InstructionBudgetMode.EXACT_SEGMENT)
+    hybrid = generate_ffi_assembly(program, instruction_budget_mode=InstructionBudgetMode.LOOP_HYBRID)
+
+    assert per == per_explicit
+    assert exact != per
+    assert hybrid != per
 
 
 @pytest.mark.skipif(platform.system() != "Linux", reason="requires Linux shared linker")
