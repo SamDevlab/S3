@@ -1,0 +1,106 @@
+module agent_energy_residual
+
+export fn agent_energy_residual(actual: &[f64], load: &[f64], count: i64, output: &mut [f64]) -> i64:
+    mut status: i64 = 0
+    match count <= 0:
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+    match count > 364:
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match status == 0:
+        -1:
+            match len(actual) == count:
+                -1:
+                    status = status
+                0:
+                    status = 1
+                1:
+                    status = 1
+            match len(load) == count:
+                -1:
+                    status = status
+                0:
+                    status = 1
+                1:
+                    status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match len(output) < to_i64(3):
+        -1:
+            match status == 0:
+                -1:
+                    status = 2
+                0:
+                    status = status
+                1:
+                    status = status
+        0:
+            status = status
+        1:
+            status = status
+    match len(output) > to_i64(3):
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match status == 0:
+        -1:
+            mut signed_sum: f64 = 0.0
+            mut absolute_sum: f64 = 0.0
+            mut maximum_absolute: f64 = 0.0
+            mut index: i64 = 0
+            while index < count:
+                mut difference: f64 = actual[index] - load[index]
+                mut magnitude: f64 = difference
+                match difference < 0.0:
+                    -1:
+                        magnitude = 0.0 - difference
+                    0:
+                        magnitude = difference
+                    1:
+                        magnitude = difference
+
+                signed_sum = signed_sum + difference
+                absolute_sum = absolute_sum + magnitude
+                match magnitude > maximum_absolute:
+                    -1:
+                        maximum_absolute = magnitude
+                    0:
+                        maximum_absolute = maximum_absolute
+                    1:
+                        maximum_absolute = maximum_absolute
+                index = index + 1
+
+            mut divisor: f64 = 0.0
+            mut divisor_index: i64 = 0
+            while divisor_index < count:
+                divisor = divisor + 1.0
+                divisor_index = divisor_index + 1
+
+            output[0] = signed_sum
+            output[1] = maximum_absolute
+            output[2] = absolute_sum / divisor
+            return 0
+        0:
+            return status
+        1:
+            return status
+
+fn main() -> i64:
+    return 0

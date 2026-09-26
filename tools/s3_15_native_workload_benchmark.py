@@ -252,7 +252,16 @@ def _binary_metrics(path: Path, symbol: str) -> dict[str, int]:
             parts = fields[2].strip().split(None, 1)
             if parts:
                 instructions.append((parts[0], parts[1] if len(parts) > 1 else ""))
-    budget_refs = sum("__s3_instruction_count" in operands for _, operands in instructions)
+    budget_refs = sum(
+        any(
+            symbol in operands
+            for symbol in (
+                "__s3_instruction_count",
+                "__s3_instruction_remaining",
+            )
+        )
+        for _, operands in instructions
+    )
     stack_frame_bytes = 0
     for mnemonic, operands in instructions:
         if mnemonic == "sub":

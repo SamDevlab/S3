@@ -134,19 +134,56 @@ def test_default_mode_matches_explicit_per_instruction_output() -> None:
     ).generate(program)
 
 
-def test_default_mode_matches_frozen_e07_native_assembly_bytes() -> None:
+def test_per_instruction_uses_register_resident_remaining_budget() -> None:
+    program = compile_source(LOOP_AND_CALL_SOURCE, "O0").assembly
+    assembly = X8664Backend(max_instructions=100).generate(program)
+
+    assert ".local __s3_instruction_remaining" in assembly
+    assert "__s3_instruction_remaining:\n    .quad 100" in assembly
+    assert "    dec r15\n    js .L__s3_failure_" in assembly
+    assert "cmp qword ptr [rip + __s3_instruction_count]" not in assembly
+    assert "inc qword ptr [rip + __s3_instruction_count]" not in assembly
+
+    call_index = assembly.index("    call s3_helper")
+    sync_store = assembly.rfind(
+        "mov qword ptr [rip + __s3_instruction_remaining], r15",
+        0,
+        call_index,
+    )
+    sync_load = assembly.find(
+        "mov r15, qword ptr [rip + __s3_instruction_remaining]",
+        call_index,
+    )
+    assert sync_store >= 0
+    assert sync_load > call_index
+
+
+def test_register_resident_budget_falls_back_for_unsupported_codegen_paths() -> None:
+    program = compile_source("fn main() -> i64:\n    return 6\n", "O0").assembly
+    no_allocation = X8664Backend(
+        register_allocation=False,
+        max_instructions=100,
+    ).generate(program)
+    wide_limit = X8664Backend(max_instructions=NATIVE_MAX_INSTRUCTIONS).generate(program)
+
+    for assembly in (no_allocation, wide_limit):
+        assert "__s3_instruction_remaining:" not in assembly
+        assert "__s3_instruction_count]" in assembly
+
+
+def test_default_mode_matches_frozen_register_resident_native_assembly_bytes() -> None:
     expected = {
         "linear": (
-            50_066,
-            "a3de7a61c09cca2d3d8807aed3fe0f80025cb726215e69990d661c4ba8ec485d",
+            50_164,
+            "a7dcff9f819854145a3e0e220d06b72e206f5eb58325add590b3b1bd57a5936d",
         ),
         "loop_call": (
-            100_099,
-            "252d92b5f153d707691ca3367f49ec0feee89fbfb0aa1f216a343dd4c31b8b95",
+            95_939,
+            "61fe0e73c629cd1f0807a8dc91e4e420c3221667645f9943479a60d3d0826d1f",
         ),
         "bounds": (
-            69_723,
-            "3f6932ecf7bd67c4e2f378fa9e56e97f65e978b7cd3bc612272fb153c7a87b64",
+            68_603,
+            "eb77dfd5ac4347f6389a5120964b0c6a52cced8dcee6a0c55d529e8bb92b33e0",
         ),
     }
     sources = {
@@ -657,6 +694,84 @@ def test_foreign_callback_reentry_observes_a_complete_call_segment(
     p2_limit = outcomes[(InstructionBudgetMode.EXACT_SEGMENT, dynamic_path_length - 1)]
     assert p0_limit.returncode == p2_limit.returncode == 1
     assert (p2_limit.stdout, p2_limit.stderr) == (p0_limit.stdout, p0_limit.stderr)
+
+
+def test_register_resident_budget_preserves_sysv_r15_on_scalar_and_f64_returns(
+    tmp_path: Path,
+) -> None:
+    toolchain = _native_toolchain()
+    source = (
+        "export fn scalar() -> i64:\n"
+        "    return 41\n\n"
+        "export fn floating() -> f64:\n"
+        "    return 2.5\n\n"
+        "fn main() -> i64:\n"
+        "    return scalar()\n"
+    )
+    program = compile_source(source, "O0").assembly
+    assembly = X8664Backend(max_instructions=100).generate(program)
+    caller_source = tmp_path / "r15_caller.c"
+    caller_source.write_text(
+        "#include <stdint.h>\n"
+        "extern int64_t scalar(void);\n"
+        "extern double floating(void);\n"
+        "int check_scalar_r15(void) {\n"
+        "    int64_t observed;\n"
+        "    __asm__ volatile (\n"
+        "        \"push %%r15\\n\\t\"\n"
+        "        \"mov $0x123456789abcdef, %%r15\\n\\t\"\n"
+        "        \"call scalar\\n\\t\"\n"
+        "        \"mov %%r15, %0\\n\\t\"\n"
+        "        \"pop %%r15\\n\\t\"\n"
+        "        : \"=m\" (observed)\n"
+        "        :\n"
+        "        : \"rax\", \"rcx\", \"rdx\", \"rsi\", \"rdi\",\n"
+        "          \"r8\", \"r9\", \"r10\", \"r11\", \"memory\", \"cc\");\n"
+        "    return observed == INT64_C(0x123456789abcdef);\n"
+        "}\n"
+        "int check_floating_r15(void) {\n"
+        "    int64_t observed;\n"
+        "    __asm__ volatile (\n"
+        "        \"push %%r15\\n\\t\"\n"
+        "        \"mov $0x23456789abcdef1, %%r15\\n\\t\"\n"
+        "        \"call floating\\n\\t\"\n"
+        "        \"mov %%r15, %0\\n\\t\"\n"
+        "        \"pop %%r15\\n\\t\"\n"
+        "        : \"=m\" (observed)\n"
+        "        :\n"
+        "        : \"rax\", \"rcx\", \"rdx\", \"rsi\", \"rdi\",\n"
+        "          \"r8\", \"r9\", \"r10\", \"r11\", \"memory\", \"cc\");\n"
+        "    return observed == INT64_C(0x23456789abcdef1);\n"
+        "}\n",
+        encoding="ascii",
+    )
+    caller_object = tmp_path / "r15_caller.o"
+    subprocess.run(
+        [toolchain.compiler, "-fPIC", "-c", str(caller_source), "-o", str(caller_object)],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    library_path = toolchain.build_shared(
+        assembly,
+        tmp_path / "r15_abi.so",
+        extra_objects=(caller_object,),
+    )
+    driver = (
+        "import ctypes, sys\n"
+        "library = ctypes.CDLL(sys.argv[1])\n"
+        "assert library.check_scalar_r15() == 1\n"
+        "assert library.check_floating_r15() == 1\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", driver, str(library_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=10,
+    )
+    assert (result.returncode, result.stdout, result.stderr) == (0, "", "")
 
 
 def test_side_effect_boundary_before_and_after_budget_exhaustion_matches_p0(

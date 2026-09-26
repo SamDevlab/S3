@@ -23,8 +23,22 @@ followed by `TBR3` still consumes two logical instructions. Calls and
 re-entrant FFI callbacks share the same generated counter according to the
 existing process-budget lifetime contract.
 
-`PER_INSTRUCTION` checks the counter immediately before each logical
-instruction. `EXACT_SEGMENT` partitions each basic block into contiguous
+`PER_INSTRUCTION` charges one logical instruction immediately before it
+executes. With register allocation enabled and a limit no greater than
+`INT64_MAX`, native code keeps the remaining process budget in a reserved
+callee-saved register and uses a decrement/sign check for each instruction.
+It synchronizes the remaining budget at S3 and foreign call boundaries, so
+serial calls and synchronous FFI re-entry share the same artifact-local
+budget. The register is saved/restored according to the System V ABI. When
+register allocation is disabled or the configured limit exceeds
+`INT64_MAX`, code generation retains the original memory-counter sequence.
+Concurrent entry into the same loaded artifact from multiple host threads is
+not currently supported or qualified. This clarifies the current execution
+contract; it does not permanently prohibit concurrency. Future support requires
+an explicit contract for execution context, budget ownership, frame accounting,
+and synchronization.
+
+`EXACT_SEGMENT` partitions each basic block into contiguous
 segments and never crosses a block boundary, call, branch, or return. A fast
 segment is eligible only when it has at least two instructions and its total
 weight does not exceed the configured limit. The fast path checks and
