@@ -13,6 +13,7 @@ LINUX_FULL_SUITE=4461_PASSED_1_SKIPPED_EXIT_0
 NATIVE_BENCHMARK=PASS
 PR=318
 PR_STATE=DRAFT
+GITHUB_ACTIONS=REMOTE_CI_UNAVAILABLE
 MERGE=NO
 RELEASE=NO
 TAG=NO
@@ -123,6 +124,11 @@ Focused Linux validation on the frozen candidate: 61 passed; Linux
 `2026-09-26T15:38:58Z` (64m59s). The raw progress transcript has 4,461 pass
 markers and one skip marker.
 
+PR #318's supplemental GitHub Actions jobs were provisioned with
+`runner_id=0` and `steps=[]` and failed before executing workflow steps. This
+is classified as `REMOTE_CI_UNAVAILABLE`, not as a compiler/test failure; no
+Actions rerun was requested.
+
 An earlier attempted suite is retained as
 `evidence/full-suite-invalid-archive.txt` but is **not** counted as candidate
 validation: its `git archive` snapshot had no `.git` and its manifest/corpus
@@ -164,6 +170,7 @@ AGENT_KERNEL_CORPUS=3_BOUNDED_PREAUTHORED_TASKS_PASS
 S3_AGENT_COMPUTE_TARGET=QUALIFIED_WITH_SCOPE_LIMITS
 LOOP_0004=QUALIFIED_WITH_SCOPE_LIMITS
 GITHUB_ACTIONS_REQUIRED=NO
+GITHUB_ACTIONS=REMOTE_CI_UNAVAILABLE_RUNNER_0_STEPS_0
 MERGE=NO
 RELEASE=NO
 TAG=NO
