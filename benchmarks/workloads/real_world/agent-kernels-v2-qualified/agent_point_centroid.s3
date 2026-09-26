@@ -1,0 +1,83 @@
+module agent_point_centroid
+
+export fn agent_point_centroid(coordinates: &[f64], point_count: i64, output: &mut [f64]) -> i64:
+    mut status: i64 = 0
+    match point_count <= 0:
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+    match point_count > 121:
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match status == 0:
+        -1:
+            match len(coordinates) == point_count * to_i64(3):
+                -1:
+                    status = status
+                0:
+                    status = 1
+                1:
+                    status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match len(output) < to_i64(3):
+        -1:
+            match status == 0:
+                -1:
+                    status = 2
+                0:
+                    status = status
+                1:
+                    status = status
+        0:
+            status = status
+        1:
+            status = status
+    match len(output) > to_i64(3):
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match status == 0:
+        -1:
+            mut sum_x: f64 = 0.0
+            mut sum_y: f64 = 0.0
+            mut sum_z: f64 = 0.0
+            mut base: i64 = 0
+            while base < point_count * to_i64(3):
+                sum_x = sum_x + coordinates[base]
+                sum_y = sum_y + coordinates[base + to_i64(1)]
+                sum_z = sum_z + coordinates[base + to_i64(2)]
+                base = base + 3
+
+            mut divisor: f64 = 0.0
+            mut divisor_index: i64 = 0
+            while divisor_index < point_count:
+                divisor = divisor + 1.0
+                divisor_index = divisor_index + 1
+
+            output[0] = sum_x / divisor
+            output[1] = sum_y / divisor
+            output[2] = sum_z / divisor
+            return 0
+        0:
+            return status
+        1:
+            return status
+
+fn main() -> i64:
+    return 0

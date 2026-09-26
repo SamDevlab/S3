@@ -24,11 +24,13 @@ The primary intended user of the S3 toolchain is an AI agent generating, inspect
 - **Fixed Arrays**: Static 1D arrays of `trit`/`tryte` with constant bounds. Static `len(arr)` expressions.
 - **Records**: Nominal struct types (`record Name { field: Type }`), depth-first scalar leaf layout. Local, imported, and acyclic nested records.
 - **Enums**: Nominal enums (`enum Name { Variant }` or tag-first payload enums `Variant(Type)`), exhaustive `match` expressions.
-- **Control Flow**: `if`/`else`, `while`, `for` loops, `break`, `continue`, tail calls, recursion, and functions.
-- **Modules**: Multi-file deterministic compilation with `module name;`, `from mod import sym;`, and `export fn`.
+- **Control Flow**: ternary `match` arms (`-1`, `0`, `1`), `while`/`for` loops, `break`, `continue`, tail calls, recursion, and functions. V0.6 does not accept Python-style indented `if`/`else` blocks; use `match condition:` for branching.
+- **Comparison results**: Boolean comparisons are ternary truth values: `-1` means true and `0` means false (`1` is not normally produced). The three-way `<=>` operator is different: it returns `-1` for less, `0` for equal, and `1` for greater. For example, `match count <= 0:` uses the `-1` arm for non-positive counts and the `0` arm for positive counts; do not treat `0` as an equality arm for ordinary Boolean comparisons.
+- **Modules**: Multi-file deterministic compilation with `module name;`, `from mod import sym;`, and `export fn`. A standalone source passed to `s3 check` or `s3 ffi-build` must also declare `fn main`; exported kernels can coexist with a trivial `main` entry point.
 - **Optimization**: O0 (default) and O1 (SSA optimizations including SCCP, DCE, GVN, DSE, and Memory SSA). The 1.4 campaign candidate additionally evaluates conservative loop/range proofs and BCE; branch-only status is recorded in `docs/ai-capabilities.json`.
 - **Scientific library**: `s3.v1.science` is integrated. The 1.4 candidate branch adds `s3.v1.geometry`; candidate APIs are not part of `main` until merged.
 - **Typed references**: `&T`, `&mut T`, and bounded borrowed slices are supported in their documented contexts. These are typed references, not raw pointers; raw pointer arithmetic and reference/integer casts are unsupported.
+- **Numeric slice kernels**: A function can accept read-only `&[f64]` or `&[i64]` inputs and mutable `&mut [f64]` or `&mut [i64]` outputs. `len(slice)` returns an `i64`. Check scalar bounds and every input/output length before indexing; then keep loops within the validated count. Use `to_i64(n)` when a fixed integer literal participates in an `i64` expression whose type cannot be inferred, such as comparing `len(output)` with a fixed width or adding a fixed offset to an `i64` index: `len(output) < to_i64(3)`, `coordinates[base + to_i64(1)]`. The signature does not grant unbounded access: native execution still uses the configured instruction budget.
 - **Closed generic collections**: `map<i64, i64>`, `map<text, i64>`, and `set<i64>` use explicit deterministic specializations; this is not open-ended type erasure.
 - **Compiler substrate V1**: hosted deterministic text-keyed maps, symbol interning, direct-ID arenas, lexical environment state, source bundle/cursors, and bounded transactional output are available as substrate contracts. They do not constitute a self-hosted compiler.
 - **Generic syntax/IR substrate**: a flat indexed `SyntaxArena`, an arena-backed generic IR program, a transactional IR builder, and an independent structured verifier are available as hosted V1 contracts. They do not implement parsing, lowering, emission, or self-hosting.
@@ -69,6 +71,43 @@ If clean, generate Assembly or IR:
 ```bash
 s3 asm path/to/program.s3 -O1
 ```
+
+## Bounded numeric slice example
+
+This V0.6 example documents the slice signature and the required validation order. It deliberately keeps its status-return contract explicit for FFI callers.
+
+```s3
+export fn sum_prefix(values: &[f64], count: i64, output: &mut [f64]) -> i64:
+    mut input_length: i64 = len(values)
+    mut output_length: i64 = len(output)
+    match count < to_i64(1):
+        -1:
+            return 1
+        0:
+            match count > input_length:
+                -1:
+                    match output_length < to_i64(1):
+                        -1:
+                            mut index: i64 = 0
+                            mut total: f64 = 0.0
+                            while index < count:
+                                total = total + values[index]
+                                index = index + 1
+                            output[0] = total
+                            return 0
+                        0:
+                            return 2
+                        1:
+                            return 2
+                0:
+                    return 1
+                1:
+                    return 1
+        1:
+            return 1
+```
+
+Status `1` denotes invalid input shape and status `2` denotes insufficient output capacity. The loop and output write occur only after both checks succeed. Use the compiler checker on generated source rather than assuming that syntax from another language is accepted.
 
 ## Test loop
 
