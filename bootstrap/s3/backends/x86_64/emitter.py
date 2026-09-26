@@ -32,7 +32,7 @@ from .runtime import render_runtime
 from .allocation import AllocationPlan, analyze_allocation
 from .liveness import analyze_liveness
 from .residence import analyze_cross_block_residence
-from .register_init_safety import proven_initialized_register_reads
+from .register_init_safety import analyze_register_initialization
 from .instruction_budget import (
     MIN_FAST_SEGMENT_WEIGHT,
     InstructionBudgetMode,
@@ -178,6 +178,7 @@ class X8664Emitter:
         self._physical_residence_active = False
         self._entry_live_registers: frozenset[int] = frozenset()
         self._safe_register_reads: frozenset[tuple[str, int, int]] = frozenset()
+        self._initialization_tracking_registers: frozenset[int] = frozenset()
         self._current_instruction_sites: dict[int, tuple[str, int]] = {}
         self._compact_ea_active = False
         self._composite_builtins = tuple(
@@ -224,7 +225,9 @@ class X8664Emitter:
         if function.external:
             return []
         self._compact_ea_active = self.compact_ea_by_function.get(function.name, False)
-        self._safe_register_reads = proven_initialized_register_reads(function)
+        initialization = analyze_register_initialization(function)
+        self._safe_register_reads = initialization.safe_reads
+        self._initialization_tracking_registers = initialization.tracked_registers
         self._current_instruction_sites = {
             id(instruction): (block.label, index)
             for block in function.blocks
@@ -733,9 +736,10 @@ class X8664Emitter:
         if preserve_metadata_scratch:
             lines.extend(("    mov r10, rdi", "    mov r11, rcx"))
         for slot in layout.registers:
-            lines.append(
-                f"    mov byte ptr {_address(slot.initialized)}, 0"
-            )
+            if slot.index in self._initialization_tracking_registers:
+                lines.append(
+                    f"    mov byte ptr {_address(slot.initialized)}, 0"
+                )
         for memory in layout.memories:
             lines.extend(
                 (
@@ -748,6 +752,8 @@ class X8664Emitter:
         if preserve_metadata_scratch:
             lines.extend(("    mov rdi, r10", "    mov rcx, r11"))
         for parameter in function.parameters:
+            if parameter.register not in self._initialization_tracking_registers:
+                continue
             slot = layout.register(parameter.register)
             lines.append(
                 f"    mov byte ptr {_address(slot.initialized)}, 1"
@@ -765,6 +771,10 @@ class X8664Emitter:
             site is not None
             and (site[0], site[1], register) in self._safe_register_reads
         )
+        if not skip_initialization_check and register not in self._initialization_tracking_registers:
+            raise NativeBackendError(
+                f"register r{register} has an unproven read without initialization tracking"
+            )
         slot = layout.register(register)
         if skip_initialization_check:
             phys = (
@@ -800,6 +810,10 @@ class X8664Emitter:
         site = self._current_instruction_sites.get(id(self.current_instruction))
         if site is not None and (site[0], site[1], register) in self._safe_register_reads:
             return []
+        if register not in self._initialization_tracking_registers:
+            raise NativeBackendError(
+                f"register r{register} has an unproven check without initialization tracking"
+            )
         slot = layout.register(register)
         failure = self._instruction_failure(
             "uninitialized register",
@@ -823,11 +837,16 @@ class X8664Emitter:
             lines.append(f"    mov qword ptr {_address(slot.value)}, {source}")
         elif phys != source:
             lines.append(f"    mov {phys}, {source}")
-        lines.append(f"    mov byte ptr {_address(slot.initialized)}, 1")
+        if register in self._initialization_tracking_registers:
+            lines.append(f"    mov byte ptr {_address(slot.initialized)}, 1")
         return lines
 
     def _snapshot_register(self, layout: FrameLayout, register: int) -> list[str]:
         """Validate and snapshot a logical argument before ABI registers change."""
+        if register not in self._initialization_tracking_registers:
+            raise NativeBackendError(
+                f"register r{register} has a call snapshot without initialization tracking"
+            )
         slot = layout.register(register)
         failure = self._instruction_failure(
             "uninitialized register",

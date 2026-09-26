@@ -5,7 +5,7 @@ Last reviewed: 2026-09-26.
 ## Active track
 
 ```text
-ACTIVE_TRACK=S3_1_5_REAL_WORLD_COMPUTE_QUALIFICATION_AND_NATIVE_GAP_CLOSURE
+ACTIVE_TRACK=S3_1_7_NATIVE_LOWERING_CODEGEN_INTELLIGENCE_AND_INDEPENDENT_COMPUTE_LAB
 CURRENT_PUBLIC_STABLE=v1.0.0
 CURRENT_PRERELEASE=NONE
 STABLE_V1_0_RELEASED=YES
@@ -39,22 +39,32 @@ S3_1_4_IMPLEMENTATION_STARTED=YES
 S3_1_4_STATE=MERGED_PR317
 S3_1_4_MERGE_COMMIT=506108a679f586b5786d0ab020de4e9f10f964f0
 S3_1_5_IMPLEMENTATION_STARTED=YES
-S3_1_5_STATE=OPEN_DRAFT_PR318
+S3_1_5_STATE=MERGED_PR318
 S3_1_5_BRANCH=codex/s3-1.5-real-world-compute
 S3_1_5_BASE=506108a679f586b5786d0ab020de4e9f10f964f0
 S3_1_5_FUNCTIONAL_SOURCE_FREEZE=c924148c6d95948778351c7dd1362259caff670c
 S3_1_5_FULL_SUITE=4461_PASSED_1_SKIPPED_EXIT_0_LINUX_X86_64
-S3_1_5_DRAFT_PR=318
+S3_1_5_PR=318
 S3_1_5_GITHUB_ACTIONS=REMOTE_CI_UNAVAILABLE_RUNNER_0_STEPS_0
+S3_1_5_MERGE_COMMIT=92b59bd20d7a35103789fdbd3358faa18237977b
+S3_1_6_STATE=MERGED_PR320
+S3_1_6_MERGE_COMMIT=4ddc7a64a4c395460181db0e8957f085d8bb12a
+S3_1_7_IMPLEMENTATION_STARTED=YES
+S3_1_7_STATE=IN_PROGRESS
+S3_1_7_BRANCH=feat/s3-1.7-native-lowering-codegen-expansion
+S3_1_7_BASE=4ddc7a64a4c395460181db0e8957f085d8bb12a
+S3_1_7_BENCHMARK_MAIN=e5f3236f868d5522e1e0e92e245a51c7b3e91064
+S3_1_7_PUBLIC_DEFAULT_CHANGE=NO
+S3_1_7_MERGE_AUTHORIZED=NO
 LOOP_HYBRID_AVAILABLE=YES_EXPLICIT
 EXACT_SEGMENT_DEFAULT=NO
 ```
 
-S3 `v1.0.0` remains the public stable release of the Python reference toolchain. PR #313 is merged; its cumulative source baseline brings the #301–#309 capabilities into `main`. This does not change the reference compiler or establish full self-hosting.
+S3 `v1.0.0` remains the public stable release of the Python reference toolchain. PR #313 is merged; its cumulative source baseline brings the #301–#309 capabilities into `main`. This does not change the reference compiler or establish full self-hosting. PR #318 merged 1.5 through `92b59bd20d7a35103789fdbd3358faa18237977b`; PR #320 merged 1.6 through `4ddc7a64a4c395460181db0e8957f085d8bb12a9`, which is the 1.7 S3 base.
 
-The active development track is **S3 1.5 — Real-World Compute Qualification and Native Gap Closure**. S3 1.4 is integrated through PR #317 at `506108a679f586b5786d0ab020de4e9f10f964f0`. S3 1.3 is integrated through PR #316 at `da6efaf0a97c8cef08aea2f196aca37199311332`; its certified Linux full suite and 33/33 scientific checksum record remain historical evidence. The selected P2 and `s3.v1.science` are in `main`; `PER_INSTRUCTION` remains the default.
+The active development track is **S3 1.7 — Native Lowering, Codegen Intelligence and Independent Compute Lab**. S3 1.4 is integrated through PR #317 at `506108a679f586b5786d0ab020de4e9f10f964f0`; S3 1.5 is integrated through PR #318; S3 1.6 is integrated through PR #320. S3 1.3 is integrated through PR #316 at `da6efaf0a97c8cef08aea2f196aca37199311332`; its certified Linux full suite and 33/33 scientific checksum record remain historical evidence. The selected P2 and `s3.v1.science` are in `main`; `PER_INSTRUCTION` remains the default.
 
-The 1.4 optimizer and geometry capabilities described above are integrated through PR #317. The 1.5 candidate is based on that merge and has a frozen functional source at `c924148c6d95948778351c7dd1362259caff670c`. Three bounded domain workloads have reference, hosted/native, and paired native benchmark evidence; Linux full-suite validation completed with 4461 passed, 1 skipped, and exit 0. The final report/evidence package is published in Draft PR #318 for human review. This candidate does not change public defaults.
+The 1.5 source freeze `c924148c6d95948778351c7dd1362259caff670c` and its historical Linux full-suite result (4461 passed, 1 skipped, exit 0) remain recorded evidence. PR #318 is merged. The 1.7 experiment starts from the post-1.6 S3 base above and a separate S3-Benchmarks main base; it investigates native initialization-marker traffic with a proof-gated, fail-closed lowering change. No public default changes are proposed, and no speedup is claimed without independent correctness and measurement evidence.
 
 The 1.3 performance record remains unchanged: in its representative structural workload, the BASE-to-FINAL PER process median was effectively neutral (-1.98%) while assembly source and ELF grew about 119%; exact-segment `.text` overhead measured +55.4% versus PER for that workload. These results do not justify default promotion. The underlying PR #313 parent-stack blocker was resolved and is not being re-investigated.
 
@@ -92,7 +102,7 @@ GitHub Actions remains blocked before workflow steps by the account billing/quot
 
 ## Immediate priorities
 
-1. Finish the 1.5 report and immutable evidence package, then publish one Draft PR for human review.
+1. Complete the 1.7 compiler experiment and independent benchmark-lab evidence, then publish one Draft PR per repository.
 2. Keep `PER_INSTRUCTION` as default; exact-segment and loop-hybrid remain opt-in despite measured gains.
 3. Do not merge, release, tag, publish to PyPI, or promote a default in this campaign.
 
@@ -115,4 +125,4 @@ GitHub Actions jobs have been failing before any step is assigned (`runner_id=0`
 
 ## Next operational step
 
-The post-#313 and PR #316 integration is the current `main` baseline. Do not treat historical Draft state for PRs #302–#312 as a missing integration prerequisite; they are superseded or informational provenance and should be closed by a maintainer when convenient, not used as blockers. The 1.4 optimizer/geometry work remains branch-only until a future reviewed merge; local evidence and documentation must not imply that it is already in `main`.
+The post-PR #320 integration at `4ddc7a64a4c395460181db0e8957f085d8bb12a9` is the S3 1.7 base. The S3-Benchmarks campaign is independently based on `e5f3236f868d5522e1e0e92e245a51c7b3e91064`; do not stack it on open Draft PRs #15, #23, or #24, and do not import S3 compiler internals into that repository. The next operational step is to finish the proof-gated native experiment, validate correctness before timing, and preserve exact source pins and raw evidence. Both campaign PRs remain Draft; no merge, release, tag, publication, or default promotion is authorized.
