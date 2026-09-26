@@ -1,0 +1,44 @@
+{
+  "manifest_version": "1.0.0",
+  "campaign": "1.4-scientific-optimizer-domain-compute",
+  "workloads": [
+    {
+      "benchmark_id": "geometry.point-cloud-mesh.v1",
+      "workload_version": "1.0.0",
+      "category": "scientific-geometry",
+      "suite": "s3-specific",
+      "objective": "Validate a deterministic 64-point cloud and tetrahedral mesh through centroid, bounds, radius-of-gyration, and surface-area kernels.",
+      "input": {
+        "id": "point-cloud-64-and-tetrahedron-v1",
+        "size": 64,
+        "point_count": 64,
+        "coordinate_values": 192,
+        "triangle_count": 4,
+        "index_values": 12,
+        "kernel_calls": 4,
+        "point_visits": 256,
+        "vector_elements_read": 816
+      },
+      "expected_checksum": "64041",
+      "timed_region": "Construct deterministic point and mesh vectors, run four geometry kernels, validate structured results, and return the stable checksum; build is outside the measured execution phase.",
+      "implementations": [
+        {
+          "id": "s3",
+          "adapter": "s3-emulator",
+          "execution_mode": "emulator",
+          "optimization_modes": ["O0", "O1"],
+          "source": "workloads/geometry/point_cloud_mesh.s3",
+          "timeout_seconds": 60
+        },
+        {
+          "id": "s3",
+          "adapter": "s3-native",
+          "execution_mode": "native",
+          "optimization_modes": ["O0", "O1"],
+          "source": "workloads/geometry/point_cloud_mesh.s3",
+          "timeout_seconds": 60
+        }
+      ]
+    }
+  ]
+}

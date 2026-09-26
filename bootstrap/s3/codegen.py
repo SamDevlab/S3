@@ -113,6 +113,7 @@ def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
             callee=instruction.callee,
             source=instruction.location,
             result_width=len(instruction.results),
+            bounds_proven=instruction.bounds_proven,
         )
     if opcode in {AssemblyOpcode.TJMP, AssemblyOpcode.TBR3}:
         return AssemblyInstruction(

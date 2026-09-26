@@ -200,16 +200,20 @@ s3 run-native examples/first.s3
 
 Outros targets só devem ser tratados como suportados quando houver evidência de execução correspondente.
 
-A `main` pós-PR #315 inclui a superfície source-level versionada
-`s3.v1.science` e o accounting nativo `EXACT_SEGMENT` como opção explícita;
-`PER_INSTRUCTION` continua sendo o default. Na branch da campanha S3 1.3,
-`s3.v1.science` cresce para reductions, métricas de erro, estatística e
-similaridade em `f64`, acompanhadas por workloads científicos compostos e
-otimização conservadora de comprimentos de vetores invariantes em loops O1.
-Essa expansão está em revisão Draft e ainda não faz parte de `main`. Os modos
-`EXACT_SEGMENT` e `LOOP_HYBRID` continuam explícitos; os dados desta campanha
-não justificam mudar o default. Os contratos públicos de sintaxe, IR,
-Assembly e diagnósticos permanecem inalterados.
+A `main` pós-PR #316 inclui a superfície source-level versionada
+`s3.v1.science`, workloads científicos determinísticos, hoisting conservador
+de comprimentos invariantes em loops O1 e accounting nativo
+`EXACT_SEGMENT`/`LOOP_HYBRID` como opções explícitas. `PER_INSTRUCTION`
+continua sendo o default; a caracterização da 1.3 não justificou promoção.
+Os contratos públicos de sintaxe, IR, Assembly e diagnósticos permanecem
+inalterados.
+
+A campanha S3 1.4 está em desenvolvimento em branch própria. Seu candidato
+investiga análise de loops, indução/range facts, BCE somente com prova,
+geometria e medição nativa de escopo kernel. Essas capacidades de branch não
+devem ser tratadas como parte de `main` nem como defaults antes da revisão e
+integração. Veja [`docs/roadmap/ACTIVE_TRACK.md`](docs/roadmap/ACTIVE_TRACK.md)
+para o estado operacional.
 
 ## Self-hosting
 

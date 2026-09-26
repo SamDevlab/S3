@@ -162,6 +162,9 @@ class X8664Emitter:
         )
         self._budget_segment_counter = 0
         self.failure_sites: list[FailureSite] = []
+        self._failure_site_indexes: dict[
+            tuple[str, str | None, str | None], int
+        ] = {}
         self.current_function: AssemblyFunction | None = None
         self.current_block: str | None = None
         self.current_instruction: AssemblyInstruction | None = None
@@ -1565,21 +1568,30 @@ class X8664Emitter:
         else:
             lines.extend(self._read_register(layout, vector_register, "rdi"))
             lines.extend(self._read_register(layout, index_register, "rsi"))
+        lines.append("    mov r10, qword ptr [rdi]")
+        if not instruction.bounds_proven:
+            lines.extend(
+                (
+                    "    test rsi, rsi",
+                    "    js __s3_fail_bounds",
+                    "    mov rax, rsi",
+                    f"    shl rax, {byte_shift}",
+                    "    jc __s3_fail_bounds",
+                    "    cmp rax, qword ptr [r10 + 8]",
+                    "    jae __s3_fail_bounds",
+                )
+            )
+            lines.append("    mov r11, qword ptr [r10]")
+            load_address = "[r11 + rax]"
+        else:
+            lines.append("    mov r11, qword ptr [r10]")
+            load_address = f"[r11 + rsi*{1 << byte_shift}]"
         lines.extend(
             (
-                "    mov r10, qword ptr [rdi]",
-                "    test rsi, rsi",
-                "    js __s3_fail_bounds",
-                "    mov rax, rsi",
-                f"    shl rax, {byte_shift}",
-                "    jc __s3_fail_bounds",
-                "    cmp rax, qword ptr [r10 + 8]",
-                "    jae __s3_fail_bounds",
-                "    mov r11, qword ptr [r10]",
                 (
-                    "    movsx eax, word ptr [r11 + rax]"
+                    f"    movsx eax, word ptr {load_address}"
                     if sign_extend
-                    else "    mov rax, qword ptr [r11 + rax]"
+                    else f"    mov rax, qword ptr {load_address}"
                 ),
             )
         )
@@ -2215,17 +2227,27 @@ class X8664Emitter:
         )
         if value_register is None:
             assert detail is not None
-            site = FailureSite(len(self.failure_sites), context + detail)
+            prefix = context + detail
+            suffix = None
         else:
             assert detail_prefix is not None
             assert detail_suffix is not None
-            site = FailureSite(
-                len(self.failure_sites),
-                context + detail_prefix,
-                detail_suffix,
-                value_register,
-            )
+            prefix = context + detail_prefix
+            suffix = detail_suffix
+
+        key = (prefix, suffix, value_register)
+        can_reuse = (
+            self.instruction_budget_mode is not InstructionBudgetMode.PER_INSTRUCTION
+        )
+        if can_reuse:
+            existing_index = self._failure_site_indexes.get(key)
+            if existing_index is not None:
+                return self.failure_sites[existing_index].label
+
+        site = FailureSite(len(self.failure_sites), prefix, suffix, value_register)
         self.failure_sites.append(site)
+        if can_reuse:
+            self._failure_site_indexes[key] = site.index
         return site.label
 
     def _render_failure_handlers(self) -> list[str]:

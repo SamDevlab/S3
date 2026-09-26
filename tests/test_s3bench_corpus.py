@@ -11,6 +11,7 @@ from bootstrap.s3.ir_emulator import execute_ir
 from bootstrap.s3.pipeline import compile_sources
 from bootstrap.s3.stdlib import standard_library_sources
 from benchmarks.s3bench import load_manifest
+from benchmarks.s3bench.adapters import _compile_s3bench_source
 from benchmarks.s3bench.cli import _load_historical_baseline
 
 import pytest
@@ -123,6 +124,30 @@ def test_budget_policy_manifest_uses_one_identical_scientific_workload():
     assert {case.configuration["native_max_instructions"] for case in cases} == {
         50_000_000
     }
+
+
+def test_geometry_campaign_manifest_uses_the_existing_s3bench_pipeline():
+    geometry_manifest = ROOT / "benchmarks" / "manifests" / "s3bench-1.4-geometry.json"
+    document, cases = load_manifest(geometry_manifest)
+    workload = document["workloads"][0]
+
+    assert workload["benchmark_id"] == "geometry.point-cloud-mesh.v1"
+    assert workload["workload_version"] == "1.0.0"
+    assert workload["input"]["point_count"] == 64
+    assert workload["input"]["triangle_count"] == 4
+    assert workload["input"]["point_visits"] == 256
+    assert workload["input"]["vector_elements_read"] == 816
+    assert {case.adapter for case in cases} == {"s3-emulator", "s3-native"}
+    assert {case.expected_checksum for case in cases} == {"64041"}
+    assert {case.optimization_mode for case in cases} == {"O0", "O1"}
+    assert {case.source for case in cases} == {
+        ROOT / "benchmarks" / "workloads" / "geometry" / "point_cloud_mesh.s3"
+    }
+
+    source = cases[0].source.read_text(encoding="utf-8")
+    for optimization in ("O0", "O1"):
+        compilation = _compile_s3bench_source(source, optimization)
+        assert str(execute_ir(compilation.ir)) == "64041"
 
 
 def test_python_reference_checksums_match_manifest():

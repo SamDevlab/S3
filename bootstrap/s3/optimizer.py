@@ -305,6 +305,12 @@ def _run_ssa_optimizations(
     return optimized
 
 
+def _mark_proven_vector_bounds_checks(function: IRFunction) -> IRFunction:
+    from .ssa_optimizer.loops import mark_proven_vector_bounds_checks
+
+    return mark_proven_vector_bounds_checks(function)
+
+
 def _has_undefined_register_use(function: IRFunction) -> bool:
     defined = {parameter.register for parameter in function.parameters}
     for block in function.blocks:
@@ -325,6 +331,10 @@ _O1_PASSES = (
         "eliminate-dead-pure-instructions",
         _eliminate_dead_pure_instructions,
     ),
+    _FunctionPass(
+        "bounded-vector-bounds-elimination",
+        _mark_proven_vector_bounds_checks,
+    ),
 )
 
 
@@ -343,6 +353,7 @@ def _o1_passes(*, preserve_memory_observability: bool = False) -> tuple[_Functio
         ),
         _O1_PASSES[3],
         _O1_PASSES[4],
+        _O1_PASSES[5],
     )
 
 
@@ -376,12 +387,17 @@ def optimize_dynamic_ir(
     if selected is OptimizationLevel.O0:
         return module
 
-    from .ssa_optimizer.loops import hoist_readonly_vector_length_queries
+    from .ssa_optimizer.loops import (
+        hoist_readonly_vector_length_queries,
+        mark_proven_vector_bounds_checks,
+    )
 
     optimized = replace(
         module,
         functions=tuple(
-            hoist_readonly_vector_length_queries(function)[0]
+            mark_proven_vector_bounds_checks(
+                hoist_readonly_vector_length_queries(function)[0]
+            )
             for function in module.functions
         ),
     )
