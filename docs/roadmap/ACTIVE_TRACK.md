@@ -39,12 +39,12 @@ S3_1_4_IMPLEMENTATION_STARTED=YES
 S3_1_4_STATE=MERGED_PR317
 S3_1_4_MERGE_COMMIT=506108a679f586b5786d0ab020de4e9f10f964f0
 S3_1_5_IMPLEMENTATION_STARTED=YES
-S3_1_5_STATE=IN_PROGRESS_LOCAL_CANDIDATE
+S3_1_5_STATE=OPEN_DRAFT_PR318
 S3_1_5_BRANCH=codex/s3-1.5-real-world-compute
 S3_1_5_BASE=506108a679f586b5786d0ab020de4e9f10f964f0
 S3_1_5_FUNCTIONAL_SOURCE_FREEZE=c924148c6d95948778351c7dd1362259caff670c
 S3_1_5_FULL_SUITE=4461_PASSED_1_SKIPPED_EXIT_0_LINUX_X86_64
-S3_1_5_DRAFT_PR=READY_TO_CREATE
+S3_1_5_DRAFT_PR=318
 LOOP_HYBRID_AVAILABLE=YES_EXPLICIT
 EXACT_SEGMENT_DEFAULT=NO
 ```
@@ -53,7 +53,7 @@ S3 `v1.0.0` remains the public stable release of the Python reference toolchain.
 
 The active development track is **S3 1.5 — Real-World Compute Qualification and Native Gap Closure**. S3 1.4 is integrated through PR #317 at `506108a679f586b5786d0ab020de4e9f10f964f0`. S3 1.3 is integrated through PR #316 at `da6efaf0a97c8cef08aea2f196aca37199311332`; its certified Linux full suite and 33/33 scientific checksum record remain historical evidence. The selected P2 and `s3.v1.science` are in `main`; `PER_INSTRUCTION` remains the default.
 
-The 1.4 optimizer and geometry capabilities described above are integrated through PR #317. The 1.5 local candidate is based on that merge and has a frozen functional source at `c924148c6d95948778351c7dd1362259caff670c`. Three bounded domain workloads have reference, hosted/native, and paired native benchmark evidence; Linux full-suite validation completed with 4461 passed, 1 skipped, and exit 0. Final report/evidence publication and a Draft PR for human review are in progress. This candidate does not change public defaults.
+The 1.4 optimizer and geometry capabilities described above are integrated through PR #317. The 1.5 candidate is based on that merge and has a frozen functional source at `c924148c6d95948778351c7dd1362259caff670c`. Three bounded domain workloads have reference, hosted/native, and paired native benchmark evidence; Linux full-suite validation completed with 4461 passed, 1 skipped, and exit 0. The final report/evidence package is published in Draft PR #318 for human review. This candidate does not change public defaults.
 
 The 1.3 performance record remains unchanged: in its representative structural workload, the BASE-to-FINAL PER process median was effectively neutral (-1.98%) while assembly source and ELF grew about 119%; exact-segment `.text` overhead measured +55.4% versus PER for that workload. These results do not justify default promotion. The underlying PR #313 parent-stack blocker was resolved and is not being re-investigated.
 
