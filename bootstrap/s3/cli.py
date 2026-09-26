@@ -222,7 +222,7 @@ def _parser() -> argparse.ArgumentParser:
             p.add_argument("--write", action="store_true", help="write canonical source in place")
         if cmd == "docs":
             p.add_argument("--json", action="store_true", help="emit machine-readable documentation")
-        if cmd in ("run", "native-asm", "build", "run-native"):
+        if cmd in ("run", "native-asm", "build", "run-native", "ffi-build"):
             p.add_argument(
                 "--max-instructions",
                 type=int,
@@ -415,7 +415,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
 
-    if args.command in ("run", "native-asm", "build", "run-native") and args.max_instructions < 1:
+    if args.command in ("run", "native-asm", "build", "run-native", "ffi-build") and args.max_instructions < 1:
         _usage_error = _CLIUsageError("--max-instructions must be at least 1")
         if args.diagnostic_format == "json":
             _emit_error(_usage_error, args.diagnostic_format)
@@ -583,6 +583,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 source,
                 output,
                 keep_assembly=args.keep_assembly,
+                max_instructions=args.max_instructions,
                 native_policy=args.native_policy,
             )
             print(output)

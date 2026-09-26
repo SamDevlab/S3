@@ -49,6 +49,45 @@ def test_native_policy_is_explicitly_forwarded_by_native_asm_cli(
     assert received == ["compact-ea"]
 
 
+def test_ffi_build_forwards_explicit_instruction_limit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = _write_source(
+        tmp_path / "ffi-budget.s3",
+        "fn main() -> tryte:\n    return 0\n",
+    )
+    received: list[dict[str, object]] = []
+
+    def fake_build_shared_library(_source, output, **kwargs: object) -> Path:
+        received.append(kwargs)
+        return output
+
+    monkeypatch.setattr(cli, "build_shared_library", fake_build_shared_library)
+
+    assert cli.main(
+        ["ffi-build", str(source), "--max-instructions", "100000000"]
+    ) == 0
+    assert received[0]["max_instructions"] == 100_000_000
+    assert capsys.readouterr().out.endswith("libffi-budget.so\n")
+
+
+def test_ffi_build_rejects_nonpositive_instruction_limit(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = _write_source(
+        tmp_path / "ffi-budget.s3",
+        "fn main() -> tryte:\n    return 0\n",
+    )
+
+    assert cli.main(
+        ["ffi-build", str(source), "--max-instructions", "0"]
+    ) == 2
+    assert "--max-instructions must be at least 1" in capsys.readouterr().err
+
+
 def test_text_is_default_and_explicit_text_preserves_the_same_message(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
