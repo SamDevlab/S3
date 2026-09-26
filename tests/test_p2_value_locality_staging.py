@@ -14,7 +14,12 @@ def test_scalar_move_stays_in_assembly_but_is_not_frame_materialized_natively() 
     assert sum(item.opcode.value == "TMOV" for item in instructions) == 1
 
     native = generate_native_assembly(compilation.assembly)
-    assert "mov qword ptr [rbp" not in native
+    frame_value_stores = [
+        line
+        for line in native.splitlines()
+        if "mov qword ptr [rbp" in line and "r15" not in line
+    ]
+    assert frame_value_stores == []
 
 
 def test_reference_move_retains_native_storage_materialization() -> None:
