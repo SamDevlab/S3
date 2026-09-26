@@ -9,6 +9,8 @@ from enum import Enum
 from threading import Lock
 
 from .emulator import DEFAULT_MAX_INSTRUCTIONS
+from .lexer import SyntaxMode
+from .optimizer import OptimizationLevel
 
 
 class FFIError(ValueError):
@@ -130,13 +132,15 @@ def build_shared_library(
     keep_assembly: Path | None = None,
     max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
     native_policy: str | None = None,
+    optimization: OptimizationLevel | str = OptimizationLevel.O0,
+    mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> Path:
     """Compile ordinary S3 source into a real Linux FFI shared object."""
 
     from .backends.x86_64 import NativeToolchain, generate_ffi_assembly
     from .pipeline import compile_source
 
-    result = compile_source(source)
+    result = compile_source(source, optimization, mode=mode)
     _, ordinary_assembly = result.require_ordinary_artifacts()
     assembly = generate_ffi_assembly(
         ordinary_assembly,

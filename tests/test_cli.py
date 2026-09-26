@@ -56,7 +56,7 @@ def test_ffi_build_forwards_explicit_instruction_limit(
 ) -> None:
     source = _write_source(
         tmp_path / "ffi-budget.s3",
-        "fn main() -> tryte:\n    return 0\n",
+        "fn main() -> tryte { return 0; }\n",
     )
     received: list[dict[str, object]] = []
 
@@ -67,9 +67,20 @@ def test_ffi_build_forwards_explicit_instruction_limit(
     monkeypatch.setattr(cli, "build_shared_library", fake_build_shared_library)
 
     assert cli.main(
-        ["ffi-build", str(source), "--max-instructions", "100000000"]
+        [
+            "ffi-build",
+            str(source),
+            "--max-instructions",
+            "100000000",
+            "-O",
+            "1",
+            "--source-syntax",
+            "0.5",
+        ]
     ) == 0
     assert received[0]["max_instructions"] == 100_000_000
+    assert received[0]["optimization"] == cli.OptimizationLevel.O1
+    assert received[0]["mode"] is cli.SyntaxMode.V0_5
     assert capsys.readouterr().out.endswith("libffi-budget.so\n")
 
 

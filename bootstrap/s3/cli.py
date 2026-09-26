@@ -585,6 +585,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 keep_assembly=args.keep_assembly,
                 max_instructions=args.max_instructions,
                 native_policy=args.native_policy,
+                optimization=optimization,
+                mode=mode,
             )
             print(output)
         elif args.command == "run-native":
