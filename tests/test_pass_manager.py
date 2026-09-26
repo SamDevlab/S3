@@ -138,6 +138,7 @@ def test_o1_pass_order_is_explicit_and_stable() -> None:
         "ssa-optimizations",
         "fold-constants",
         "eliminate-dead-pure-instructions",
+        "bounded-vector-bounds-elimination",
     )
 
 
