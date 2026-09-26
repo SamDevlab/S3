@@ -30,6 +30,7 @@ X, Y, Z = 1.125, -2.5, 3.25
 DEFAULT_ITERATIONS = 1_000
 DEFAULT_WARMUPS = 3
 DEFAULT_SAMPLES = 21
+MAX_INSTRUCTIONS = 100_000_000
 BOOTSTRAP_SEED = 1401
 BOOTSTRAP_REPLICATES = 5_000
 MATERIALITY = 0.05
@@ -225,7 +226,10 @@ def run_benchmark(
     started = time.perf_counter_ns()
     s3_compilation = compile_source(S3_SOURCE, optimization=OptimizationLevel.O1)
     _, s3_ordinary_assembly = s3_compilation.require_ordinary_artifacts()
-    s3_native_assembly = generate_ffi_assembly(s3_ordinary_assembly)
+    s3_native_assembly = generate_ffi_assembly(
+        s3_ordinary_assembly,
+        max_instructions=MAX_INSTRUCTIONS,
+    )
     s3_toolchain = NativeToolchain.detect()
     s3_toolchain.build_shared(s3_native_assembly, s3_path, keep_assembly=s3_assembly)
     build_metadata["s3"] = {
@@ -237,6 +241,7 @@ def run_benchmark(
         "source_sha256": hashlib.sha256(S3_SOURCE.encode()).hexdigest(),
         "source_bytes": len(S3_SOURCE.encode()),
         "assembly_bytes": s3_assembly.stat().st_size,
+        "max_instructions": MAX_INSTRUCTIONS,
         "flags": [OptimizationLevel.O1.value, "x86-64 FFI shared-library mode"],
     }
     artifacts["s3"] = s3_path
@@ -364,6 +369,7 @@ def run_benchmark(
         "kernel": "repeat squared-radius accumulation in the same left-to-right order",
         "kernel_iterations": iterations,
         "elements_processed_per_sample": iterations,
+        "s3_max_instructions": MAX_INSTRUCTIONS,
         "timing_scope": "one in-process C ABI kernel call; build/load/setup outside timer",
         "ffi_call_included": True,
         "startup_in_timed_region": False,
