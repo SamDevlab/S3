@@ -10,7 +10,11 @@ from bootstrap.s3.assembly import (
     AssemblyProgram,
     AssemblyType,
 )
-from bootstrap.s3.backends.x86_64 import NativeBackendError, generate_native_assembly
+from bootstrap.s3.backends.x86_64 import (
+    NativeBackendError,
+    X8664Backend,
+    generate_native_assembly,
+)
 from bootstrap.s3.cli import main
 
 
@@ -71,17 +75,21 @@ def test_instrumentation_structural_elements():
     )
     asm = generate_native_assembly(program, max_instructions=100000)
 
-    # 8-byte alignment in .bss
-    assert "\n    .align 8\n__s3_instruction_count:\n    .zero 8\n" in asm
-
-    # symbol of counter different from frame counter
+    # The eligible PER path stores the shared remaining budget in data.
+    assert "__s3_instruction_remaining:\n    .quad 100000" in asm
     assert "__s3_frame_count" in asm
     assert "__s3_instruction_count" in asm
 
-    # no increment inside the handler itself (runtime fail handlers do not increment)
-    assert "inc qword ptr [rip + __s3_instruction_count]" in asm
-    # 2 opcodes, so exactly 2 increments
-    assert asm.count("inc qword ptr [rip + __s3_instruction_count]") == 2
+    # Each of the two logical instructions is charged before execution.
+    assert asm.count("\n    dec r15\n") == 2
+    assert asm.count("    inc qword ptr [rip + __s3_instruction_count]") == 0
+
+    # The non-RA compatibility path keeps its memory counter.
+    stack_asm = X8664Backend(
+        max_instructions=100000,
+        register_allocation=False,
+    ).generate(program)
+    assert stack_asm.count("inc qword ptr [rip + __s3_instruction_count]") == 2
 
 
 def test_instrumentation_64_bit_limit():
@@ -111,10 +119,44 @@ def test_instrumentation_64_bit_limit():
             )
         ]
     )
-    limit = 5000000000  # greater than 2**31 - 1
+    limit = 5000000000  # greater than 2**31 - 1, still representable by r15
     asm = generate_native_assembly(program, max_instructions=limit)
 
-    # Check for temporary register usage and jae
+    assert f"    .quad {limit}" in asm
+    assert asm.count("\n    dec r15\n") == 2
+    assert f"movabs r11, {limit}" not in asm
+
+
+def test_instrumentation_above_signed_64_bit_limit_uses_memory_counter():
+    program = AssemblyProgram(
+        [
+            AssemblyFunction(
+                "main",
+                AssemblyType.TRYTE,
+                (),
+                ((0, AssemblyType.TRYTE), (1, AssemblyType.TRYTE)),
+                [
+                    AssemblyBlock(
+                        "entry",
+                        [
+                            AssemblyInstruction(
+                                AssemblyOpcode.TCONST,
+                                [0],
+                                immediate=42,
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TRET,
+                                [0],
+                            ),
+                        ],
+                    )
+                ],
+            )
+        ]
+    )
+    limit = (1 << 63) + 17
+    asm = X8664Backend(max_instructions=limit).generate(program)
+
     instrumentation = (
         f"    movabs r11, {limit}\n"
         "    cmp qword ptr [rip + __s3_instruction_count], r11\n"

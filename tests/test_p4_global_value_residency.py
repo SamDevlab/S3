@@ -39,7 +39,12 @@ def test_native_default_uses_global_residency_and_explicit_stack_opt_out() -> No
 
     assert default == allocated
     assert default != stack
-    assert "mov qword ptr [rbp" not in default
+    default_frame_value_stores = [
+        line
+        for line in default.splitlines()
+        if "mov qword ptr [rbp" in line and "r15" not in line
+    ]
+    assert default_frame_value_stores == []
     assert "mov qword ptr [rbp" in stack
 
 
