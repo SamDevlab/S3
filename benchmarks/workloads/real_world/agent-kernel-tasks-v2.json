@@ -1,0 +1,93 @@
+{
+  "schema_version": "1.0.0",
+  "corpus_id": "s3-1.6-agent-kernel-tasks-v2",
+  "language": "S3 V0.6",
+  "status_codes": {
+    "success": 0,
+    "invalid_input_or_shape": 1,
+    "insufficient_output_capacity": 2
+  },
+  "allowed_features": [
+    "i64 and f64 scalar values",
+    "read-only and mutable bounded slices",
+    "len(slice)",
+    "to_i64(tryte) for explicit fixed-width literals in i64 expressions",
+    "while loops with validated bounded counts",
+    "match expressions",
+    "checked slice indexing"
+  ],
+  "execution_contract": {
+    "validate_all_lengths_and_scalar_bounds_before_indexing": true,
+    "compile_and_execute_on_linux_x86_64": true,
+    "native_budget_mode": "PER_INSTRUCTION default",
+    "input_count_limits_bound_loop_work": true
+  },
+  "tasks": [
+    {
+      "task_id": "point-cloud-centroid-xyz",
+      "source": "agent-kernels-v2-qualified/agent_point_centroid.s3",
+      "symbol": "agent_point_centroid",
+      "input_contract": [
+        "coordinates: read-only f64 slice containing interleaved XYZ triples",
+        "all coordinate values are finite",
+        "point_count: i64 in [1, 121]",
+        "coordinates length equals 3 * point_count"
+      ],
+      "output_contract": "exactly three f64 values in XYZ order",
+      "reference": "point_cloud.expected.centroid_xyz in public-fixtures-v1/s3-1.6-public-compute-samples-v1.json"
+    },
+    {
+      "task_id": "point-cloud-aabb-xyz",
+      "source": "agent-kernels-v2-qualified/agent_point_bounds.s3",
+      "symbol": "agent_point_bounds",
+      "input_contract": [
+        "coordinates: read-only f64 slice containing interleaved XYZ triples",
+        "all coordinate values are finite",
+        "point_count: i64 in [1, 121]",
+        "coordinates length equals 3 * point_count"
+      ],
+      "output_contract": "exactly six f64 values: minimum XYZ followed by maximum XYZ",
+      "reference": "point_cloud.expected.minimum_xyz and maximum_xyz in public-fixtures-v1/s3-1.6-public-compute-samples-v1.json"
+    },
+    {
+      "task_id": "raster-valid-threshold-count",
+      "source": "agent-kernels-v2-qualified/agent_raster_threshold_count.s3",
+      "symbol": "agent_raster_threshold_count",
+      "input_contract": [
+        "values: read-only f64 slice",
+        "all values and threshold are finite",
+        "valid_mask: read-only i64 slice; value 1 marks a valid cell",
+        "cell_count: i64 in [1, 364]; both input lengths equal cell_count",
+        "threshold: f64; count valid cells strictly greater than threshold"
+      ],
+      "output_contract": "exactly one i64 count",
+      "reference": "raster.expected.count_greater_than_threshold in public-fixtures-v1/s3-1.6-public-compute-samples-v1.json"
+    },
+    {
+      "task_id": "raster-valid-cell-mean",
+      "source": "agent-kernels-v2-qualified/agent_raster_valid_mean.s3",
+      "symbol": "agent_raster_valid_mean",
+      "input_contract": [
+        "values: read-only f64 slice",
+        "all values are finite",
+        "valid_mask: read-only i64 slice; value 1 marks a valid cell",
+        "cell_count: i64 in [1, 364]; both input lengths equal cell_count"
+      ],
+      "output_contract": "exactly one f64 mean; return status 1 if no cells are valid",
+      "reference": "raster.expected.valid_mean in public-fixtures-v1/s3-1.6-public-compute-samples-v1.json"
+    },
+    {
+      "task_id": "energy-residual-summary",
+      "source": "agent-kernels-v2-qualified/agent_energy_residual.s3",
+      "symbol": "agent_energy_residual",
+      "input_contract": [
+        "actual and load: read-only f64 slices of equal length",
+        "all input values are finite",
+        "count: i64 in [1, 364]; both input lengths equal count",
+        "difference is actual minus load for every sample"
+      ],
+      "output_contract": "exactly three f64 values: signed sum, maximum absolute difference, mean absolute difference",
+      "reference": "math.fsum over the deterministic bounded vectors in tests/test_s3_16_public_dataset_agent_kernels.py"
+    }
+  ]
+}

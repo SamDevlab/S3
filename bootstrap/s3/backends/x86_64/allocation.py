@@ -38,7 +38,11 @@ class AllocationPlan:
         return self.call_survivors.get(id(instruction), frozenset())
 
 
-def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
+def analyze_allocation(
+    function: AssemblyFunction,
+    *,
+    reserved_registers: frozenset[str] = frozenset(),
+) -> AllocationPlan:
     """Perform deterministic physical register allocation on an AssemblyFunction."""
     # 1. Run liveness analysis
     liveness = analyze_liveness(function)
@@ -123,6 +127,10 @@ def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
             (*CALLEE_SAVED_ALLOCATABLE_REGISTERS, *CALLER_SAVED_ALLOCATABLE_REGISTERS)
             if node in call_crossing
             else (*CALLER_SAVED_ALLOCATABLE_REGISTERS, *CALLEE_SAVED_ALLOCATABLE_REGISTERS)
+        )
+        physical_pool = tuple(
+            register for register in physical_pool
+            if register not in reserved_registers
         )
         # Select the first available physical register in the call-aware pool
         chosen_phys = None

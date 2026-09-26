@@ -133,3 +133,59 @@ def test_ai_authoring_contract_corpus():
             except (SemanticError, Exception) as exc:
                 if "expected_diagnostic" in case:
                     assert hasattr(exc, "code") or isinstance(exc, SemanticError), f"Case {case_id} missing diagnostic code"
+
+
+def test_documented_bounded_numeric_slice_example_compiles() -> None:
+    source = """\
+export fn sum_prefix(values: &[f64], count: i64, output: &mut [f64]) -> i64:
+    mut input_length: i64 = len(values)
+    mut output_length: i64 = len(output)
+    match count < to_i64(1):
+        -1:
+            return 1
+        0:
+            match count > input_length:
+                -1:
+                    match output_length < to_i64(1):
+                        -1:
+                            mut index: i64 = 0
+                            mut total: f64 = 0.0
+                            while index < count:
+                                total = total + values[index]
+                                index = index + 1
+                            output[0] = total
+                            return 0
+                        0:
+                            return 2
+                        1:
+                            return 2
+                0:
+                    return 1
+                1:
+                    return 1
+        1:
+            return 1
+
+fn main() -> i64:
+    return 0
+"""
+
+    compile_source(source, OptimizationLevel.O0)
+
+
+def test_boolean_comparison_match_uses_zero_for_false_not_order_equality() -> None:
+    source = """\
+fn classify(value: i64) -> i64:
+    match value <= 0:
+        -1:
+            return 1
+        0:
+            return 0
+        1:
+            return 2
+
+fn main() -> i64:
+    return classify(-1) * 100 + classify(0) * 10 + classify(1)
+"""
+    compilation = compile_source(source, OptimizationLevel.O0)
+    assert Emulator().execute(compilation.assembly, "main") == 110

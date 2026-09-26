@@ -1,0 +1,89 @@
+module agent_raster_threshold_count
+
+export fn agent_raster_threshold_count(values: &[f64], valid_mask: &[i64], cell_count: i64, threshold: f64, output: &mut [i64]) -> i64:
+    mut status: i64 = 0
+    match cell_count <= 0:
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+    match cell_count > 364:
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match status == 0:
+        -1:
+            match len(values) == cell_count:
+                -1:
+                    status = status
+                0:
+                    status = 1
+                1:
+                    status = 1
+            match len(valid_mask) == cell_count:
+                -1:
+                    status = status
+                0:
+                    status = 1
+                1:
+                    status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match len(output) < to_i64(1):
+        -1:
+            match status == 0:
+                -1:
+                    status = 2
+                0:
+                    status = status
+                1:
+                    status = status
+        0:
+            status = status
+        1:
+            status = status
+    match len(output) > to_i64(1):
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match status == 0:
+        -1:
+            mut count: i64 = 0
+            mut index: i64 = 0
+            while index < cell_count:
+                match valid_mask[index] == 1:
+                    -1:
+                        match values[index] > threshold:
+                            -1:
+                                count = count + 1
+                            0:
+                                count = count
+                            1:
+                                count = count
+                    0:
+                        count = count
+                    1:
+                        count = count
+                index = index + 1
+            output[0] = count
+            return 0
+        0:
+            return status
+        1:
+            return status
+
+fn main() -> i64:
+    return 0
