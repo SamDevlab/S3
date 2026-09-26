@@ -181,7 +181,7 @@ FULL_SUITE_EXIT=0
 
 The final stdout transcript and status are preserved under `evidence/full-suite-final-894e7329.*`; the diagnostic transcript is preserved byte-for-byte as `evidence/full-suite-diagnostic-71e1d1ac.log.gz`, with its status alongside it. Linux `compileall` passed on the initial source freeze; after the narrow test-only correction, local `compileall`, the affected Linux focused matrix, and the final Linux full suite passed on `894e7329`. No compiler/runtime/test changes followed `FUNCTIONAL_SOURCE_FREEZE=894e7329...`; only this report and its evidence files are added afterward.
 
-GitHub Actions are supplemental and not required for this campaign; local Linux validation is authoritative. Their post-publication state is recorded in the PR conversation/status and is not used to replace the local full-suite evidence.
+GitHub Actions are supplemental and not required for this campaign; local Linux validation is authoritative. For PR #319, the observed jobs in runs `36271102551`, `36271102602`, and `36271102585` completed with `runner_id=0` and zero steps. GitHub displayed those checks as failures, but no runner executed a test or build step; classify this as `REMOTE_CI_UNAVAILABLE`, not a compiler/test failure. No jobs were rerun. This remote status does not replace or weaken the authoritative local Linux full-suite result above.
 
 ## Remaining Bottlenecks and Next Direction
 
@@ -226,7 +226,9 @@ FULL_SUITE=4474 passed, 1 skipped, 0 failed, 0 errors
 NATIVE_LINUX=PASS
 CHECKSUMS=PRESERVED_IN_evidence/SHA256SUMS.txt
 GITHUB_ACTIONS_REQUIRED=NO
+GITHUB_ACTIONS=REMOTE_CI_UNAVAILABLE (PR #319; runner_id=0; steps=0; no reruns)
 SOURCE_CHANGED_AFTER_FREEZE=NO
+PR=319
 PR_STATE=DRAFT
 MERGE_PERFORMED=NO
 RELEASE_CREATED=NO
