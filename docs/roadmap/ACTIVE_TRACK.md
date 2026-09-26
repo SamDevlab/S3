@@ -1,11 +1,11 @@
 # Active S3 project track
 
-Last reviewed: 2026-09-25.
+Last reviewed: 2026-09-26.
 
 ## Active track
 
 ```text
-ACTIVE_TRACK=S3_1_4_SCIENTIFIC_OPTIMIZER_AND_DOMAIN_COMPUTE_EXPANSION
+ACTIVE_TRACK=S3_1_5_REAL_WORLD_COMPUTE_QUALIFICATION_AND_NATIVE_GAP_CLOSURE
 CURRENT_PUBLIC_STABLE=v1.0.0
 CURRENT_PRERELEASE=NONE
 STABLE_V1_0_RELEASED=YES
@@ -36,21 +36,24 @@ S3_1_3_MERGED_HEAD=da6efaf0a97c8cef08aea2f196aca37199311332
 S3_1_3_FULL_SUITE=4399_PASSED_1_SKIPPED_EXIT_0_LINUX_X86_64
 S3_1_3_LINUX_SCIENCE_VERIFY=33_OF_33_CHECKSUMS
 S3_1_4_IMPLEMENTATION_STARTED=YES
-S3_1_4_STATE=IN_PROGRESS_LOCAL_CANDIDATE
-S3_1_4_BRANCH=feat/s3-1.4-scientific-optimizer-domain-compute
-S3_1_4_BASE=13a5a8308064e8277887fecc6052cde6b22115f3
-S3_1_4_DRAFT_PR=NOT_CREATED
-S3_1_4_FUNCTIONAL_SOURCE_FREEZE=NOT_FROZEN
-S3_1_4_LINUX_NATIVE=NOT_YET_QUALIFIED
+S3_1_4_STATE=MERGED_PR317
+S3_1_4_MERGE_COMMIT=506108a679f586b5786d0ab020de4e9f10f964f0
+S3_1_5_IMPLEMENTATION_STARTED=YES
+S3_1_5_STATE=IN_PROGRESS_LOCAL_CANDIDATE
+S3_1_5_BRANCH=codex/s3-1.5-real-world-compute
+S3_1_5_BASE=506108a679f586b5786d0ab020de4e9f10f964f0
+S3_1_5_FUNCTIONAL_SOURCE_FREEZE=c924148c6d95948778351c7dd1362259caff670c
+S3_1_5_FULL_SUITE=4461_PASSED_1_SKIPPED_EXIT_0_LINUX_X86_64
+S3_1_5_DRAFT_PR=READY_TO_CREATE
 LOOP_HYBRID_AVAILABLE=YES_EXPLICIT
 EXACT_SEGMENT_DEFAULT=NO
 ```
 
 S3 `v1.0.0` remains the public stable release of the Python reference toolchain. PR #313 is merged; its cumulative source baseline brings the #301–#309 capabilities into `main`. This does not change the reference compiler or establish full self-hosting.
 
-The active development track is **S3 1.4 — Scientific Optimizer and Domain Compute Expansion**. S3 1.3 is integrated through PR #316 at `da6efaf0a97c8cef08aea2f196aca37199311332`; its certified Linux full suite and 33/33 scientific checksum record remain historical evidence. The selected P2 and `s3.v1.science` are in `main`; `PER_INSTRUCTION` remains the default.
+The active development track is **S3 1.5 — Real-World Compute Qualification and Native Gap Closure**. S3 1.4 is integrated through PR #317 at `506108a679f586b5786d0ab020de4e9f10f964f0`. S3 1.3 is integrated through PR #316 at `da6efaf0a97c8cef08aea2f196aca37199311332`; its certified Linux full suite and 33/33 scientific checksum record remain historical evidence. The selected P2 and `s3.v1.science` are in `main`; `PER_INSTRUCTION` remains the default.
 
-The 1.4 candidate is being developed on `feat/s3-1.4-scientific-optimizer-domain-compute`, based on `13a5a8308064e8277887fecc6052cde6b22115f3`. Local work includes conservative natural-loop/induction/range facts, proof-gated vector BCE, scaled addressing for proven accesses, metadata-only ordered reduction recognition, and the experimental `s3.v1.geometry` module. Kernel-scope native measurement and expanded PER/EXACT/HYBRID section characterization are being prepared; neither has final Linux evidence yet. This is a local, unmerged candidate with no source freeze or PR at this checkpoint. These branch-only changes do not alter public defaults or the main-branch capability claim.
+The 1.4 optimizer and geometry capabilities described above are integrated through PR #317. The 1.5 local candidate is based on that merge and has a frozen functional source at `c924148c6d95948778351c7dd1362259caff670c`. Three bounded domain workloads have reference, hosted/native, and paired native benchmark evidence; Linux full-suite validation completed with 4461 passed, 1 skipped, and exit 0. Final report/evidence publication and a Draft PR for human review are in progress. This candidate does not change public defaults.
 
 The 1.3 performance record remains unchanged: in its representative structural workload, the BASE-to-FINAL PER process median was effectively neutral (-1.98%) while assembly source and ELF grew about 119%; exact-segment `.text` overhead measured +55.4% versus PER for that workload. These results do not justify default promotion. The underlying PR #313 parent-stack blocker was resolved and is not being re-investigated.
 
@@ -88,10 +91,9 @@ GitHub Actions remains blocked before workflow steps by the account billing/quot
 
 ## Immediate priorities
 
-1. Complete and locally validate the 1.4 candidate, including BCE negative cases and geometry contracts.
-2. Freeze functional source before Linux native, fair kernel-scope, code-size, and full-suite evidence.
-3. Publish one Draft PR for human review only; no merge, release, tag, PyPI publication, or default promotion is authorized by the campaign.
-4. Keep `PER_INSTRUCTION` as default; revisit budget policy only with broader comparable workload evidence and a separately reviewed decision.
+1. Finish the 1.5 report and immutable evidence package, then publish one Draft PR for human review.
+2. Keep `PER_INSTRUCTION` as default; exact-segment and loop-hybrid remain opt-in despite measured gains.
+3. Do not merge, release, tag, publish to PyPI, or promote a default in this campaign.
 
 ## Out of scope
 

@@ -1,0 +1,56 @@
+{
+  "campaign": "S3_1_5_REAL_WORLD_COMPUTE_QUALIFICATION_AND_NATIVE_GAP_CLOSURE",
+  "campaign_base": "506108a679f586b5786d0ab020de4e9f10f964f0",
+  "functional_source_freeze": "c924148c6d95948778351c7dd1362259caff670c",
+  "functional_source_tree": "b54be6f1dc9de47a788f26468c5eb30f7266a646",
+  "source_changed_after_freeze": false,
+  "host": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "cpu": "AMD Ryzen 5 3400G with Radeon Vega Graphics",
+    "kernel": "7.0.0-31-generic",
+    "python": "3.14.4"
+  },
+  "external_reference_environment": {
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "open3d": "0.20.0",
+    "rasterio": "1.4.4",
+    "pvlib": "0.15.2"
+  },
+  "compiler": {
+    "reference": "Python",
+    "c_compiler": "cc (Ubuntu 15.2.0-16ubuntu1)",
+    "binutils": "2.46",
+    "c_flags": [
+      "-O1",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-fno-tree-vectorize"
+    ]
+  },
+  "benchmark_protocol": {
+    "warmups": 3,
+    "samples": 21,
+    "iterations_per_sample": 1000,
+    "paired_bootstrap_resamples": 10000,
+    "material_change_threshold": 0.05,
+    "timed_scope": "same-process scalar C ABI calls; equal ctypes dispatch included; build/input setup excluded"
+  },
+  "hardware_counters": {
+    "status": "UNAVAILABLE_BY_POLICY",
+    "perf_event_paranoid": 4,
+    "probe_exit": 1
+  },
+  "full_suite": {
+    "started_utc": "2026-09-26T14:33:59+00:00",
+    "ended_utc": "2026-09-26T15:38:58+00:00",
+    "selected": 4462,
+    "passed": 4461,
+    "skipped": 1,
+    "failed": 0,
+    "errors": 0,
+    "exit": 0,
+    "transcript": "full-suite-valid.txt"
+  }
+}

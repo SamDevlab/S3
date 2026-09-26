@@ -1,0 +1,11 @@
+0d704b54eee14e09008e27c82c6278c323dce31da3b4c39ff42f5e7f1370ac66  reports/s3-1.5-real-world-compute-qualification/evidence/full-suite-invalid-archive.txt
+207b0aff64e3b5d1e84811fd07658637ac4d2bd5e977ddab36c9e858931085ec  reports/s3-1.5-real-world-compute-qualification/evidence/full-suite-valid.txt
+38a4f4016c1a117a533ed1dce4d640d8394400fa3e5c050171a3fdd7156a04f5  reports/s3-1.5-real-world-compute-qualification/evidence/linux-focused-validation.txt
+c4adfc2d86581f5772f727eaf9323e9d5673da9a49cea594add57930430fb986  reports/s3-1.5-real-world-compute-qualification/evidence/native-workload-benchmark-run.txt
+9c4a6b294f5dcf1bd7f1fbf44f5b4bf3c06df9e83d7cc374dfb685b0b3f1b6b8  reports/s3-1.5-real-world-compute-qualification/evidence/native-workload-benchmark-v1.json
+de705285e7f9d081abce1fc6db018ec4f46bb34c7ef6cbd7d62a90ab2dd93eb8  reports/s3-1.5-real-world-compute-qualification/evidence/python-launch-attempt.txt
+2884d73fb1e59ee00672f95234685c053f4bf8e73cfddf75ef39b62488f9965c  reports/s3-1.5-real-world-compute-qualification/evidence/environment.json
+ba0204f30be6fdcfcd7e644c76ec142bb815c1d31af0d2e66ed165f12d5f1d83  benchmarks/workloads/real_world/datasets-v1.json
+380bceb0b09970f6b8758b372b902dbfa5408f7f987e3ea1af0eeac591166f17  benchmarks/workloads/real_world/agent-kernel-corpus-v1.json
+07174cf606de3524b76f4d2c9a43edda1fc499a43e88763e3c73c4c8035aa201  benchmarks/references/s3-1.5/reference-results-v1.json
+243db1b7fba87e6a089abd607e35dc32de8e428a80854c261ebf0531da1b7e98  benchmarks/manifests/s3bench-1.5-real-world.json

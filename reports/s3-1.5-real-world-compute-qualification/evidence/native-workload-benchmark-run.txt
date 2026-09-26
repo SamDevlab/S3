@@ -1,0 +1,6 @@
+BENCHMARK_JSON=/tmp/s3-1.5-benchmark-final-c924148c/native-workload-benchmark-v1.json
+engineering.point-cloud-summary.v1 S3_O1/C_O1=21.1515x PER/EXACT=2.8019x PER/HYBRID=2.7700x compact_applied=False
+geospatial.raster-window-statistics.v1 S3_O1/C_O1=10.2373x PER/EXACT=2.3850x PER/HYBRID=2.2925x compact_applied=False
+energy.pv-timeseries-aggregation.v1 S3_O1/C_O1=17.8333x PER/EXACT=2.3522x PER/HYBRID=2.4957x compact_applied=False
+
+FINAL_NATIVE_BENCHMARK_EXIT=0
