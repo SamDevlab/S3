@@ -1,0 +1,125 @@
+module agent_point_bounds
+
+export fn agent_point_bounds(coordinates: &[f64], point_count: i64, output: &mut [f64]) -> i64:
+    mut status: i64 = 0
+    match point_count <= 0:
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+    match point_count > 121:
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match status == 0:
+        -1:
+            match len(coordinates) == point_count * to_i64(3):
+                -1:
+                    status = status
+                0:
+                    status = 1
+                1:
+                    status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match len(output) < to_i64(6):
+        -1:
+            match status == 0:
+                -1:
+                    status = 2
+                0:
+                    status = status
+                1:
+                    status = status
+        0:
+            status = status
+        1:
+            status = status
+    match len(output) > to_i64(6):
+        -1:
+            status = 1
+        0:
+            status = status
+        1:
+            status = status
+
+    match status == 0:
+        -1:
+            mut min_x: f64 = coordinates[0]
+            mut min_y: f64 = coordinates[1]
+            mut min_z: f64 = coordinates[2]
+            mut max_x: f64 = coordinates[0]
+            mut max_y: f64 = coordinates[1]
+            mut max_z: f64 = coordinates[2]
+
+            mut base: i64 = 3
+            while base < point_count * to_i64(3):
+                match coordinates[base] < min_x:
+                    -1:
+                        min_x = coordinates[base]
+                    0:
+                        min_x = min_x
+                    1:
+                        min_x = min_x
+                match coordinates[base] > max_x:
+                    -1:
+                        max_x = coordinates[base]
+                    0:
+                        max_x = max_x
+                    1:
+                        max_x = max_x
+
+                match coordinates[base + to_i64(1)] < min_y:
+                    -1:
+                        min_y = coordinates[base + to_i64(1)]
+                    0:
+                        min_y = min_y
+                    1:
+                        min_y = min_y
+                match coordinates[base + to_i64(1)] > max_y:
+                    -1:
+                        max_y = coordinates[base + to_i64(1)]
+                    0:
+                        max_y = max_y
+                    1:
+                        max_y = max_y
+
+                match coordinates[base + to_i64(2)] < min_z:
+                    -1:
+                        min_z = coordinates[base + to_i64(2)]
+                    0:
+                        min_z = min_z
+                    1:
+                        min_z = min_z
+                match coordinates[base + to_i64(2)] > max_z:
+                    -1:
+                        max_z = coordinates[base + to_i64(2)]
+                    0:
+                        max_z = max_z
+                    1:
+                        max_z = max_z
+                base = base + 3
+
+            output[0] = min_x
+            output[1] = min_y
+            output[2] = min_z
+            output[3] = max_x
+            output[4] = max_y
+            output[5] = max_z
+            return 0
+        0:
+            return status
+        1:
+            return status
+
+fn main() -> i64:
+    return 0

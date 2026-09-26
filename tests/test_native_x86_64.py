@@ -64,19 +64,21 @@ def test_native_generation_is_deterministic() -> None:
     assert generate_native_assembly(program) == generate_native_assembly(program)
 
 
-def test_instruction_limit_guard_uses_compact_immediate_when_representable() -> None:
+def test_instruction_limit_guard_uses_register_resident_budget_when_supported() -> None:
     program = compile_source(
         "fn main() -> tryte:\n    return 6\n",
         mode=SyntaxMode.V0_6,
     ).assembly
 
     compact = generate_native_assembly(program, max_instructions=100_000)
-    assert "cmp qword ptr [rip + __s3_instruction_count], 100000" in compact
-    assert "movabs r11, 100000" not in compact
+    assert "__s3_instruction_remaining:\n    .quad 100000" in compact
+    assert "    dec r15\n    js .L__s3_failure_" in compact
+    assert "__s3_instruction_count]" not in compact
 
     wide = generate_native_assembly(program, max_instructions=0x80000000)
-    assert "movabs r11, 2147483648" in wide
-    assert "cmp qword ptr [rip + __s3_instruction_count], r11" in wide
+    assert "__s3_instruction_remaining:\n    .quad 2147483648" in wide
+    assert "    dec r15\n    js .L__s3_failure_" in wide
+    assert "movabs r11, 2147483648" not in wide
 
 
 def test_small_integer_constant_is_written_directly_to_its_destination() -> None:
@@ -102,9 +104,9 @@ def test_dead_tcmp_result_branches_directly_without_materializing_trit() -> None
         assert "cmovl r11, rax" not in body
         assert "cmovg r11, rax" not in body
         assert "mov rax, r11" not in body
-        assert body.count(
-            "cmp qword ptr [rip + __s3_instruction_count], 100000"
-        ) >= 2
+        assert body.count("    dec r15\n") >= 2
+        assert body.count("    js .L__s3_failure_") >= 2
+        assert "__s3_instruction_count]" not in body
         assert "    jl .L_s3_" in body
         assert "    jg .L_s3_" in body
 

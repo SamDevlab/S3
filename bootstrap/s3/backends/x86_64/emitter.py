@@ -160,6 +160,11 @@ class X8664Emitter:
         self.instruction_budget_mode = parse_instruction_budget_mode(
             instruction_budget_mode
         )
+        self._budget_register_enabled = (
+            self.register_allocation
+            and self.instruction_budget_mode is InstructionBudgetMode.PER_INSTRUCTION
+            and self.max_instructions <= (1 << 63) - 1
+        )
         self._budget_segment_counter = 0
         self.failure_sites: list[FailureSite] = []
         self._failure_site_indexes: dict[
@@ -210,6 +215,8 @@ class X8664Emitter:
         lines.extend(self._render_static_string_data())
         lines.extend(self._render_failure_data())
         lines.extend(self._render_composite_vector_metadata())
+        if self._budget_register_enabled:
+            lines.extend(self._render_budget_state())
         lines.append(render_runtime().rstrip())
         return "\n".join(lines) + "\n"
 
@@ -229,9 +236,17 @@ class X8664Emitter:
             else frozenset()
         )
         if self.register_allocation:
-            plan = analyze_allocation(function)
+            plan = analyze_allocation(
+                function,
+                reserved_registers=(
+                    frozenset({"r15"}) if self._budget_register_enabled else frozenset()
+                ),
+            )
             self.current_plan = plan
-            layout = layout_frame(function, plan.used_physical_registers)
+            physical_registers = plan.used_physical_registers
+            if self._budget_register_enabled:
+                physical_registers = (*physical_registers, "r15")
+            layout = layout_frame(function, physical_registers)
         else:
             plan = analyze_cross_block_residence(function)
             self.current_plan = plan if plan.used_physical_registers else None
@@ -269,8 +284,15 @@ class X8664Emitter:
                     continue
                 slot = layout.callee_saved_slot(phys)
                 lines.append(f"    mov qword ptr {_address(slot.region)}, {phys}")
+        if self._budget_register_enabled:
+            budget_slot = layout.callee_saved_slot("r15")
+            lines.append(
+                f"    mov qword ptr {_address(budget_slot.region)}, r15"
+            )
         lines.extend(self._save_parameters(function, layout))
         lines.extend(self._initialize_metadata(function, layout))
+        if self._budget_register_enabled:
+            lines.extend(self._load_budget_remaining())
         lines.append(f"    jmp {mangle_block(function.name, 'entry')}")
         function_liveness = analyze_liveness(function)
         if self.instruction_budget_mode in {
@@ -527,6 +549,8 @@ class X8664Emitter:
             "instruction limit",
             detail=f"instruction limit {self.max_instructions} exceeded\n",
         )
+        if self._budget_register_enabled:
+            return ["    dec r15", f"    js {limit_failure}"]
         if 0 <= self.max_instructions <= 0x7FFFFFFF:
             instrumentation = [
                 f"    cmp qword ptr [rip + __s3_instruction_count], "
@@ -904,25 +928,10 @@ class X8664Emitter:
 
         instrumentation: list[str] = []
         if include_budget:
-            limit_failure = self._instruction_failure(
-                "instruction limit",
-                detail=f"instruction limit {self.max_instructions} exceeded\n",
-            )
-            if 0 <= self.max_instructions <= 0x7FFFFFFF:
-                instrumentation = [
-                    f"    cmp qword ptr [rip + __s3_instruction_count], "
-                    f"{self.max_instructions}"
-                ]
-            else:
-                instrumentation = [
-                    f"    movabs r11, {self.max_instructions}",
-                    "    cmp qword ptr [rip + __s3_instruction_count], r11",
-                ]
-            instrumentation.extend(
-                [
-                    f"    jae {limit_failure}",
-                    "    inc qword ptr [rip + __s3_instruction_count]",
-                ]
+            instrumentation = self._instruction_instrumentation(
+                function,
+                block_name,
+                instruction,
             )
 
         if opcode is AssemblyOpcode.TCONST:
@@ -1331,7 +1340,18 @@ class X8664Emitter:
                 f"    jmp {invalid_trit}",
             ]
         if opcode is AssemblyOpcode.TCALL:
-            return instrumentation + self._emit_call(function, layout, instruction)
+            call_lines = self._emit_call(function, layout, instruction)
+            if (
+                self._budget_register_enabled
+                and self._call_crosses_s3_budget_boundary(instruction)
+            ):
+                return [
+                    *instrumentation,
+                    *self._store_budget_remaining(),
+                    *call_lines,
+                    *self._load_budget_remaining(),
+                ]
+            return instrumentation + call_lines
         if opcode is AssemblyOpcode.TRET:
             if function.result_width > 1:
                 return instrumentation + self._emit_multi_return(
@@ -1344,14 +1364,18 @@ class X8664Emitter:
                 return instrumentation + [
                     *self._read_register(layout, registers[0], "rax"),
                     "    movq xmm0, rax",
+                    *self._store_budget_remaining(),
                     *self._restore_callee_saved(layout),
+                    *self._restore_budget_register(layout),
                     "    dec qword ptr [rip + __s3_frame_count]",
                     "    leave",
                     "    ret",
                 ]
             return instrumentation + [
                 *self._read_register(layout, registers[0], "rax"),
+                *self._store_budget_remaining(),
                 *self._restore_callee_saved(layout),
+                *self._restore_budget_register(layout),
                 "    dec qword ptr [rip + __s3_frame_count]",
                 "    leave",
                 "    ret",
@@ -2032,6 +2056,8 @@ class X8664Emitter:
             lines.extend(self._read_register(layout, register, "rax"))
             lines.append(f"    mov qword ptr [r11 + {index * 8}], rax")
         lines.extend(self._restore_callee_saved(layout))
+        lines.extend(self._store_budget_remaining())
+        lines.extend(self._restore_budget_register(layout))
         lines.extend(
             (
                 "    dec qword ptr [rip + __s3_frame_count]",
@@ -2194,6 +2220,44 @@ class X8664Emitter:
             detail_suffix=detail_suffix,
             value_register=value_register,
         )
+
+    @staticmethod
+    def _call_crosses_s3_budget_boundary(instruction: AssemblyInstruction) -> bool:
+        assert instruction.callee is not None
+        return (
+            instruction.callee not in DYNAMIC_BUILTIN_SIGNATURES
+            and composite_vector_runtime_signature(instruction.callee) is None
+        )
+
+    def _load_budget_remaining(self) -> list[str]:
+        if not self._budget_register_enabled:
+            return []
+        return [
+            "    mov r15, qword ptr [rip + __s3_instruction_remaining]"
+        ]
+
+    def _store_budget_remaining(self) -> list[str]:
+        if not self._budget_register_enabled:
+            return []
+        return [
+            "    mov qword ptr [rip + __s3_instruction_remaining], r15"
+        ]
+
+    def _restore_budget_register(self, layout: FrameLayout) -> list[str]:
+        if not self._budget_register_enabled:
+            return []
+        slot = layout.callee_saved_slot("r15")
+        return [f"    mov r15, qword ptr {_address(slot.region)}"]
+
+    def _render_budget_state(self) -> list[str]:
+        return [
+            ".section .data",
+            ".align 8",
+            ".local __s3_instruction_remaining",
+            "__s3_instruction_remaining:",
+            f"    .quad {self.max_instructions}",
+            "",
+        ]
 
     def _new_failure_site(
         self,
