@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0.0",
+  "corpus_id": "s3-agent-kernel-real-world-v1",
+  "authorship": "deterministic human-authored qualification kernels; no online model generation claimed",
+  "execution_contract": {
+    "pipeline": [
+      "task specification",
+      "s3 check",
+      "O1 ffi-build",
+      "bounded native C ABI invocation",
+      "reference comparison within declared tolerance"
+    ],
+    "resource_bound": "S3 instruction counter enabled; workload-specific shape limits are checked before indexing",
+    "default_instruction_budget_mode": "per-instruction"
+  },
+  "tasks": [
+    {
+      "task_id": "agent.compute.point-cloud-summary.v1",
+      "task_specification": "For a bounded flat XYZ point list, return centroid, axis-aligned bounds, and radius of gyration.",
+      "workload_id": "engineering.point-cloud-summary.v1",
+      "source": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "reference_result_sha256": "1c691995fe68ccfb436ae2b328f8773da2d6b5d6c88211fee2976f8bcb18208b",
+      "check_command": "python -m bootstrap.s3.cli check <source>",
+      "compile_command": "python -m bootstrap.s3.cli ffi-build <source> -O 1 --native-policy baseline -o <library>",
+      "native_symbol": "point_cloud_summary",
+      "bounded_execution": "point_count in [1,121], coordinate_count == 3*point_count, output_count == 10"
+    },
+    {
+      "task_id": "agent.compute.raster-window-statistics.v1",
+      "task_specification": "For a bounded raster window and valid-data mask, calculate summary statistics, threshold count, and horizontal valid-neighbor absolute gradient.",
+      "workload_id": "geospatial.raster-window-statistics.v1",
+      "source": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "reference_result_sha256": "ed1cf70e041bbd6cdfa61956a938d8ed1dac3379b42e8240cfbb5ecae8cc4608",
+      "check_command": "python -m bootstrap.s3.cli check <source>",
+      "compile_command": "python -m bootstrap.s3.cli ffi-build <source> -O 1 --native-policy baseline -o <library>",
+      "native_symbol": "raster_window_statistics",
+      "bounded_execution": "positive width and height; width*height in [1,364]; lengths match; output_count == 6"
+    },
+    {
+      "task_id": "agent.compute.energy-series-aggregation.v1",
+      "task_specification": "For bounded AC-generation and load series, calculate generation, peak, capacity factor, and balance statistics.",
+      "workload_id": "energy.pv-timeseries-aggregation.v1",
+      "source": "benchmarks/workloads/real_world/energy_series_aggregation.s3",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "reference_result_sha256": "fcf43e0a094641708be98a8a81329639b5279b5b7015d1c7d31a0380e9e2de79",
+      "check_command": "python -m bootstrap.s3.cli check <source>",
+      "compile_command": "python -m bootstrap.s3.cli ffi-build <source> -O 1 --native-policy baseline -o <library>",
+      "native_symbol": "energy_series_aggregation",
+      "bounded_execution": "period_count in [1,364]; load_count matches; capacity positive; output_count == 5"
+    }
+  ]
+}

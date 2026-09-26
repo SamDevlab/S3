@@ -43,6 +43,10 @@ def instruction_memory_effect(function: IRFunction, instruction: IRInstruction) 
         return MemoryEffect.READ
     if instruction.opcode is IROpcode.STORE:
         return MemoryEffect.WRITE
+    if instruction.opcode is IROpcode.SLICE_LOAD:
+        return MemoryEffect.READ
+    if instruction.opcode is IROpcode.SLICE_STORE:
+        return MemoryEffect.WRITE
     if instruction.opcode is IROpcode.REFERENCE_LOAD:
         return MemoryEffect.READ
     if instruction.opcode in {IROpcode.AGGREGATE_FIELD_LOAD, IROpcode.AGGREGATE_FIELD_ADDRESS}:
@@ -83,6 +87,8 @@ def function_has_alias_observable_memory(function: IRFunction) -> bool:
             IROpcode.AGGREGATE_FIELD_ADDRESS,
             IROpcode.REFERENCE_LOAD,
             IROpcode.REFERENCE_STORE,
+            IROpcode.SLICE_LOAD,
+            IROpcode.SLICE_STORE,
         }:
             return True
         if instruction.opcode is IROpcode.CALL and any(

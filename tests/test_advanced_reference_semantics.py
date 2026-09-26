@@ -3,7 +3,15 @@ from __future__ import annotations
 import pytest
 
 from bootstrap.s3.ir_emulator import IRExecutionError, execute_ir
-from bootstrap.s3.memory_effects import MemoryEffect, MemoryRegion, may_alias
+from bootstrap.s3.ir import IROpcode
+from bootstrap.s3.memory_effects import (
+    MemoryEffect,
+    MemoryRegion,
+    function_has_alias_observable_memory,
+    function_has_memory_effects,
+    instruction_memory_effect,
+    may_alias,
+)
 from bootstrap.s3.pipeline import compile_source
 
 
@@ -82,3 +90,23 @@ def test_memory_effect_and_alias_queries_are_explicit_and_conservative() -> None
     assert may_alias(first, first)
     assert may_alias(first, dynamic)
     assert not may_alias(first, other)
+
+
+def test_mutable_slice_stores_are_alias_observable_o1_effects() -> None:
+    result = compile_source(
+        """export fn update(values: &mut [i64], index: i64, value: i64) -> i64:
+    values[index] = value
+    return values[index]
+fn main() -> i64:
+    return 0
+""",
+        "O1",
+    )
+    function = next(item for item in result.ir.functions if item.name == "update")
+    store = next(item for item in function.instructions if item.opcode is IROpcode.SLICE_STORE)
+    load = next(item for item in function.instructions if item.opcode is IROpcode.SLICE_LOAD)
+
+    assert instruction_memory_effect(function, store) is MemoryEffect.WRITE
+    assert instruction_memory_effect(function, load) is MemoryEffect.READ
+    assert function_has_memory_effects(function)
+    assert function_has_alias_observable_memory(function)

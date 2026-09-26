@@ -1,0 +1,5 @@
+numpy==2.5.3
+pandas==3.0.6
+open3d==0.20.0
+rasterio==1.4.4
+pvlib==0.15.2

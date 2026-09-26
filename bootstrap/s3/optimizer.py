@@ -302,7 +302,11 @@ def _run_ssa_optimizations(
     optimized = ssa_fn.to_ir()
     if _has_undefined_register_use(optimized):
         return function
-    return optimized
+    return replace(
+        optimized,
+        external=function.external,
+        exported=function.exported,
+    )
 
 
 def _mark_proven_vector_bounds_checks(function: IRFunction) -> IRFunction:

@@ -1,0 +1,165 @@
+fn absolute_f64(value: f64) -> f64:
+    match value < 0.0:
+        -1:
+            return 0.0 - value
+        0:
+            return value
+        1:
+            return value
+
+export fn raster_window_statistics(
+    values: &[f64],
+    valid_mask: &[i64],
+    width: i64,
+    height: i64,
+    threshold: f64,
+    output: &mut [f64]
+) -> i64:
+    mut bounded_width: i64 = width
+    mut bounded_height: i64 = height
+    mut cell_count: i64 = len(values)
+    mut mask_count: i64 = len(valid_mask)
+    mut output_count: i64 = len(output)
+    match width > 364:
+        -1:
+            bounded_width = 0
+        0:
+            bounded_width = width
+        1:
+            bounded_width = width
+    match height > 364:
+        -1:
+            bounded_height = 0
+        0:
+            bounded_height = height
+        1:
+            bounded_height = height
+    match cell_count > 364:
+        -1:
+            bounded_width = 0
+        0:
+            bounded_width = bounded_width
+        1:
+            bounded_width = bounded_width
+    match bounded_width <= 0:
+        -1:
+            return 1
+        0:
+            match bounded_height <= 0:
+                -1:
+                    return 1
+                0:
+                    match cell_count == bounded_width * bounded_height:
+                        -1:
+                            match mask_count == cell_count:
+                                -1:
+                                    match output_count == 6:
+                                        -1:
+                                            mut first_valid: i64 = 0
+                                            mut row: i64 = 0
+                                            mut valid_count: i64 = 0
+                                            mut gradient_count: i64 = 0
+                                            mut total: f64 = 0.0
+                                            mut minimum: f64 = 0.0
+                                            mut maximum: f64 = 0.0
+                                            mut threshold_count: i64 = 0
+                                            mut gradient_total: f64 = 0.0
+                                            while row < bounded_height:
+                                                mut column: i64 = 0
+                                                while column < bounded_width:
+                                                    mut index: tryte = to_tryte(row * bounded_width + column)
+                                                    match valid_mask[index] == 1:
+                                                        -1:
+                                                            mut value: f64 = values[index]
+                                                            match first_valid == 0:
+                                                                -1:
+                                                                    minimum = value
+                                                                    maximum = value
+                                                                    first_valid = 1
+                                                                0:
+                                                                    first_valid = first_valid
+                                                                1:
+                                                                    first_valid = first_valid
+                                                            total = total + value
+                                                            valid_count = valid_count + 1
+                                                            match value > threshold:
+                                                                -1:
+                                                                    threshold_count = threshold_count + 1
+                                                                0:
+                                                                    threshold_count = threshold_count
+                                                                1:
+                                                                    threshold_count = threshold_count
+                                                            match value < minimum:
+                                                                -1:
+                                                                    minimum = value
+                                                                0:
+                                                                    minimum = minimum
+                                                                1:
+                                                                    minimum = minimum
+                                                            match maximum < value:
+                                                                -1:
+                                                                    maximum = value
+                                                                0:
+                                                                    maximum = maximum
+                                                                1:
+                                                                    maximum = maximum
+                                                            match to_tryte(column + 1) < to_tryte(bounded_width):
+                                                                -1:
+                                                                    match valid_mask[index + 1] == 1:
+                                                                        -1:
+                                                                            gradient_total = gradient_total + absolute_f64(values[index + 1] - value)
+                                                                            gradient_count = gradient_count + 1
+                                                                        0:
+                                                                            gradient_count = gradient_count
+                                                                        1:
+                                                                            gradient_count = gradient_count
+                                                                0:
+                                                                    gradient_count = gradient_count
+                                                                1:
+                                                                    gradient_count = gradient_count
+                                                        0:
+                                                            valid_count = valid_count
+                                                        1:
+                                                            valid_count = valid_count
+                                                    column = column + 1
+                                                row = row + 1
+                                            match valid_count <= 0:
+                                                -1:
+                                                    return 3
+                                                0:
+                                                    match gradient_count <= 0:
+                                                        -1:
+                                                            return 3
+                                                        0:
+                                                            mut valid_count_f64: f64 = to_f64(valid_count)
+                                                            mut gradient_count_f64: f64 = to_f64(gradient_count)
+                                                            output[0] = total
+                                                            output[1] = total / valid_count_f64
+                                                            output[2] = minimum
+                                                            output[3] = maximum
+                                                            output[4] = to_f64(threshold_count)
+                                                            output[5] = gradient_total / gradient_count_f64
+                                                            return 0
+                                                        1:
+                                                            return 3
+                                                1:
+                                                    return 3
+                                        0:
+                                            return 2
+                                        1:
+                                            return 2
+                                0:
+                                    return 2
+                                1:
+                                    return 2
+                        0:
+                            return 2
+                        1:
+                            return 2
+                1:
+                    return 1
+        1:
+            return 1
+
+fn main() -> i64:
+    return 0

@@ -1,0 +1,59 @@
+{
+  "manifest_version": "1.0.0",
+  "campaign": "1.5-real-world-compute-qualification",
+  "reference_results": "references/s3-1.5/reference-results-v1.json",
+  "dataset_manifest": "workloads/real_world/datasets-v1.json",
+  "workloads": [
+    {
+      "workload_id": "engineering.point-cloud-summary.v1",
+      "workload_version": "1.0.0",
+      "domain": "point-cloud-geometry",
+      "dataset_id": "synthetic-regular-point-cloud-64-v1",
+      "dataset_sha256": "346178eab37077a8bd7989d60836a2b54fb27948c36dabd18e7a58b2e41042f8",
+      "reference_engine": "Open3D",
+      "reference_engine_version": "0.20.0",
+      "reference_method": "Open3D PointCloud.get_center and AxisAlignedBoundingBox; radius of gyration is NumPy squared-distance reduction about the Open3D center",
+      "logical_operations": ["centroid", "axis-aligned-bounds", "radius-of-gyration"],
+      "input_shape": {"points": 64, "coordinates": 192},
+      "tolerance": {"absolute": 1e-9, "relative": 1e-9},
+      "expected_output_sha256": "1c691995fe68ccfb436ae2b328f8773da2d6b5d6c88211fee2976f8bcb18208b",
+      "checksum_semantics": "SHA-256 of canonical sorted-key JSON expected_output",
+      "timing_scope": "one in-process C ABI call; build and input construction excluded",
+      "s3_source": "workloads/real_world/point_cloud_summary.s3"
+    },
+    {
+      "workload_id": "geospatial.raster-window-statistics.v1",
+      "workload_version": "1.0.0",
+      "domain": "raster-geospatial",
+      "dataset_id": "synthetic-projected-raster-8x8-v1",
+      "dataset_sha256": "3a182a6f587c30c9f38c0c25dba394729ea4563568dc00e9c3999091a4593f3c",
+      "reference_engine": "Rasterio",
+      "reference_engine_version": "1.4.4",
+      "reference_method": "Rasterio in-memory GeoTIFF read with CRS, affine transform and nodata mask; NumPy masked reductions and valid horizontal-neighbor gradient",
+      "logical_operations": ["nodata-mask", "sum", "mean", "min", "max", "threshold-count", "horizontal-absolute-gradient"],
+      "input_shape": {"width": 8, "height": 8, "cells": 64},
+      "tolerance": {"absolute": 1e-9, "relative": 1e-9},
+      "expected_output_sha256": "ed1cf70e041bbd6cdfa61956a938d8ed1dac3379b42e8240cfbb5ecae8cc4608",
+      "checksum_semantics": "SHA-256 of canonical sorted-key JSON expected_output",
+      "timing_scope": "one in-process C ABI call; build and input construction excluded",
+      "s3_source": "workloads/real_world/raster_window_statistics.s3"
+    },
+    {
+      "workload_id": "energy.pv-timeseries-aggregation.v1",
+      "workload_version": "1.0.0",
+      "domain": "energy-solar-time-series",
+      "dataset_id": "pvlib-denver-synthetic-week-v1",
+      "dataset_sha256": "dcf7e356a75be9597f2732c1739a2f93f73d657bfdaa4207634aff2e5481afca",
+      "reference_engine": "pvlib",
+      "reference_engine_version": "0.15.2",
+      "reference_method": "pvlib PV model for hourly AC generation; NumPy aggregation and deterministic synthetic load balance",
+      "logical_operations": ["PV-model-input aggregation", "peak", "capacity-factor", "power-balance"],
+      "input_shape": {"hours": 168, "series": 2},
+      "tolerance": {"absolute": 1e-6, "relative": 1e-9},
+      "expected_output_sha256": "fcf43e0a094641708be98a8a81329639b5279b5b7015d1c7d31a0380e9e2de79",
+      "checksum_semantics": "SHA-256 of canonical sorted-key JSON expected_output",
+      "timing_scope": "one in-process C ABI call; build and input construction excluded",
+      "s3_source": "workloads/real_world/energy_series_aggregation.s3"
+    }
+  ]
+}
