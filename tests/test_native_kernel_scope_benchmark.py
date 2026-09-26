@@ -3,10 +3,18 @@ from __future__ import annotations
 import pytest
 
 from tools.benchmark_native_kernel_scope import (
+    _kernel_symbol,
     classify_paired_speedup,
     expected_result,
     summarize,
 )
+
+
+def test_native_artifact_symbols_match_each_toolchain_abi() -> None:
+    assert _kernel_symbol("s3") == "s3_kernel"
+    assert _kernel_symbol("c") == "kernel"
+    assert _kernel_symbol("rust") == "kernel"
+    assert _kernel_symbol("zig") == "kernel"
 
 
 def test_kernel_reference_checksum_is_deterministic() -> None:

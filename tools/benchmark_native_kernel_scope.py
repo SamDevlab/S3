@@ -92,6 +92,10 @@ def expected_result(iterations: int) -> float:
     return total
 
 
+def _kernel_symbol(implementation: str) -> str:
+    return "s3_kernel" if implementation == "s3" else "kernel"
+
+
 def summarize(samples: list[int]) -> dict[str, float | int]:
     if len(samples) < 3 or any(value <= 0 for value in samples):
         raise ValueError("at least three positive timing samples are required")
@@ -292,7 +296,7 @@ def run_benchmark(
     libraries = {name: ctypes.CDLL(str(path)) for name, path in artifacts.items()}
     functions = {}
     for name, library in libraries.items():
-        function = getattr(library, "kernel")
+        function = getattr(library, _kernel_symbol(name))
         function.argtypes = [
             ctypes.c_double,
             ctypes.c_double,
