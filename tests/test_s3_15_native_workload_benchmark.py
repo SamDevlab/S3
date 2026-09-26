@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from tools.s3_15_native_workload_benchmark import _paired_ratio_summary
+from tools.s3_15_native_workload_benchmark import _paired_ratio_summary, _source_provenance
 
 
 def test_paired_ratio_summary_classifies_material_improvement_deterministically() -> None:
@@ -22,3 +22,19 @@ def test_paired_ratio_summary_rejects_unpaired_or_too_small_samples() -> None:
         _paired_ratio_summary([1.0, 2.0], [1.0], seed=1)
     with pytest.raises(ValueError, match="equal sample counts >= 3"):
         _paired_ratio_summary([1.0, 2.0], [1.0, 2.0], seed=1)
+
+
+def test_source_provenance_accepts_complete_explicit_archive_identity() -> None:
+    result = _source_provenance("abc123", "tree456", "clean")
+
+    assert result == {
+        "git_commit": "abc123",
+        "git_tree": "tree456",
+        "worktree_clean": True,
+        "identity_source": "explicit_source_checkout_provenance",
+    }
+
+
+def test_source_provenance_rejects_incomplete_explicit_identity() -> None:
+    with pytest.raises(ValueError, match="requires commit, tree, and worktree state"):
+        _source_provenance("abc123", None, "clean")

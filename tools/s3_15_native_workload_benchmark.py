@@ -85,6 +85,37 @@ def _perf_capability() -> dict[str, object]:
     }
 
 
+def _source_provenance(
+    revision: str | None,
+    tree: str | None,
+    worktree_state: str | None,
+) -> dict[str, object]:
+    explicit_values = (revision, tree, worktree_state)
+    if any(value is not None for value in explicit_values):
+        if not all(value is not None for value in explicit_values):
+            raise ValueError("explicit source provenance requires commit, tree, and worktree state")
+        if worktree_state not in {"clean", "dirty"}:
+            raise ValueError("explicit worktree state must be clean or dirty")
+        return {
+            "git_commit": revision,
+            "git_tree": tree,
+            "worktree_clean": worktree_state == "clean",
+            "identity_source": "explicit_source_checkout_provenance",
+        }
+    try:
+        revision = _run(["git", "rev-parse", "HEAD"]).strip()
+        tree = _run(["git", "rev-parse", "HEAD^{tree}"]).strip()
+        worktree_clean = not bool(_run(["git", "status", "--porcelain"]).strip())
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError("run inside a Git checkout or supply explicit source provenance") from exc
+    return {
+        "git_commit": revision,
+        "git_tree": tree,
+        "worktree_clean": worktree_clean,
+        "identity_source": "local_git_checkout",
+    }
+
+
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -300,7 +331,16 @@ def _measure(call: Callable[[], int], iterations: int) -> float:
     return (time.perf_counter_ns() - start) / iterations
 
 
-def run(output_dir: Path, *, iterations: int, warmups: int, samples: int) -> dict[str, object]:
+def run(
+    output_dir: Path,
+    *,
+    iterations: int,
+    warmups: int,
+    samples: int,
+    source_revision: str | None = None,
+    source_tree: str | None = None,
+    source_worktree_state: str | None = None,
+) -> dict[str, object]:
     if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
         raise RuntimeError("native workload characterization requires Linux x86-64")
     if iterations < 1 or warmups < 1 or samples < 3:
@@ -457,14 +497,12 @@ def run(output_dir: Path, *, iterations: int, warmups: int, samples: int) -> dic
     )
     size_version = _run(["size", "--version"]).splitlines()[0]
     objdump_version = _run(["objdump", "--version"]).splitlines()[0]
-    git_revision = _run(["git", "rev-parse", "HEAD"]).strip()
-    git_tree = _run(["git", "rev-parse", "HEAD^{tree}"]).strip()
-    worktree_clean = not bool(_run(["git", "status", "--porcelain"]).strip())
+    source_identity = _source_provenance(source_revision, source_tree, source_worktree_state)
     return {
         "schema_version": "1.0.0",
         "campaign": "S3_1_5_REAL_WORLD_COMPUTE_QUALIFICATION_AND_NATIVE_GAP_CLOSURE",
         "started_at_utc": started_at_utc,
-        "source_revision": {"git_commit": git_revision, "git_tree": git_tree, "worktree_clean": worktree_clean},
+        "source_revision": source_identity,
         "host": host,
         "cpu_model": cpu_model,
         "hardware_counter_capability": _perf_capability(),
@@ -507,8 +545,19 @@ def main() -> int:
     parser.add_argument("--iterations", type=int, default=DEFAULT_ITERATIONS)
     parser.add_argument("--warmups", type=int, default=DEFAULT_WARMUPS)
     parser.add_argument("--samples", type=int, default=DEFAULT_SAMPLES)
+    parser.add_argument("--source-revision")
+    parser.add_argument("--source-tree")
+    parser.add_argument("--source-worktree-state", choices=("clean", "dirty"))
     args = parser.parse_args()
-    result = run(args.output_dir, iterations=args.iterations, warmups=args.warmups, samples=args.samples)
+    result = run(
+        args.output_dir,
+        iterations=args.iterations,
+        warmups=args.warmups,
+        samples=args.samples,
+        source_revision=args.source_revision,
+        source_tree=args.source_tree,
+        source_worktree_state=args.source_worktree_state,
+    )
     output = args.output_dir / "native-workload-benchmark-v1.json"
     output.write_bytes(_json_bytes(result))
     print(f"BENCHMARK_JSON={output}")
