@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/tmp/s3-1.4-final-11f42d8e0e3fca0a49b7f0484efd65c2c154f3ae/tools/benchmark_native_kernel_scope.py", line 421, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/tmp/s3-1.4-final-11f42d8e0e3fca0a49b7f0484efd65c2c154f3ae/tools/benchmark_native_kernel_scope.py", line 410, in main
+    result = run_benchmark(
+        args.output,
+    ...<2 lines>...
+        samples=args.samples,
+    )
+  File "/tmp/s3-1.4-final-11f42d8e0e3fca0a49b7f0484efd65c2c154f3ae/tools/benchmark_native_kernel_scope.py", line 295, in run_benchmark
+    function = getattr(library, "kernel")
+  File "/tmp/s3-1.4-python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13/ctypes/__init__.py", line 414, in __getattr__
+    func = self.__getitem__(name)
+  File "/tmp/s3-1.4-python/cpython-3.13.15-linux-x86_64-gnu/lib/python3.13/ctypes/__init__.py", line 419, in __getitem__
+    func = self._FuncPtr((name_or_ordinal, self))
+AttributeError: /tmp/s3-1.4-11f42-evidence/native-kernel-scope/libs3_kernel.so: undefined symbol: kernel

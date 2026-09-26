@@ -355,6 +355,9 @@ class IRInstruction:
     reference_aggregate: str | None = None
     aggregate_field_paths: tuple[tuple[str, ...], ...] = ()
     aggregate_field_path: tuple[str, ...] = ()
+    # Compiler-only fact produced by bounded loop analysis. It is deliberately
+    # omitted from the serialized IR contract; parsed IR always retains checks.
+    bounds_proven: bool = False
 
     def __post_init__(self) -> None:
         if self.results and self.result is not None and self.results != (self.result,):

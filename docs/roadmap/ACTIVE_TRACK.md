@@ -5,7 +5,7 @@ Last reviewed: 2026-09-25.
 ## Active track
 
 ```text
-ACTIVE_TRACK=S3_1_3_SCIENTIFIC_COMPUTE_ENGINE_AND_NATIVE_EXPANSION
+ACTIVE_TRACK=S3_1_4_SCIENTIFIC_OPTIMIZER_AND_DOMAIN_COMPUTE_EXPANSION
 CURRENT_PUBLIC_STABLE=v1.0.0
 CURRENT_PRERELEASE=NONE
 STABLE_V1_0_RELEASED=YES
@@ -31,19 +31,28 @@ P2_PARENT_STACK_BLOCKER=RESOLVED_BY_PR313
 P2_PROMOTION_AUTHORIZED=NO
 SCIENTIFIC_NUMERIC_FOUNDATION_IN_MAIN=YES
 S3_1_3_IMPLEMENTATION_STARTED=YES
-S3_1_3_STATE=FINAL_VALIDATION_PASS_DRAFT_PR_PENDING
-S3_1_3_FUNCTIONAL_SOURCE_FREEZE=adaff49a97c242cd00b15fee4ade565ed0768af2
+S3_1_3_STATE=MERGED_PR316
+S3_1_3_MERGED_HEAD=da6efaf0a97c8cef08aea2f196aca37199311332
 S3_1_3_FULL_SUITE=4399_PASSED_1_SKIPPED_EXIT_0_LINUX_X86_64
 S3_1_3_LINUX_SCIENCE_VERIFY=33_OF_33_CHECKSUMS
+S3_1_4_IMPLEMENTATION_STARTED=YES
+S3_1_4_STATE=IN_PROGRESS_LOCAL_CANDIDATE
+S3_1_4_BRANCH=feat/s3-1.4-scientific-optimizer-domain-compute
+S3_1_4_BASE=13a5a8308064e8277887fecc6052cde6b22115f3
+S3_1_4_DRAFT_PR=NOT_CREATED
+S3_1_4_FUNCTIONAL_SOURCE_FREEZE=NOT_FROZEN
+S3_1_4_LINUX_NATIVE=NOT_YET_QUALIFIED
 LOOP_HYBRID_AVAILABLE=YES_EXPLICIT
 EXACT_SEGMENT_DEFAULT=NO
 ```
 
 S3 `v1.0.0` remains the public stable release of the Python reference toolchain. PR #313 is merged; its cumulative source baseline brings the #301–#309 capabilities into `main`. This does not change the reference compiler or establish full self-hosting.
 
-The active development track is **S3 1.3 — Scientific Compute Engine and Native Expansion**. PR #315 merged the selected P2 exact-segment implementation and initial `s3.v1.science` foundation into `main`; `PER_INSTRUCTION` remains the default. The 1.1 reliability line has technical closure in `main`; its separate 1.1.0 release-candidate PR #295 remains OPEN/Draft and conflicts with `main`, so release preparation is not complete.
+The active development track is **S3 1.4 — Scientific Optimizer and Domain Compute Expansion**. S3 1.3 is integrated through PR #316 at `da6efaf0a97c8cef08aea2f196aca37199311332`; its certified Linux full suite and 33/33 scientific checksum record remain historical evidence. The selected P2 and `s3.v1.science` are in `main`; `PER_INSTRUCTION` remains the default.
 
-The 1.3 campaign branch expands the scientific API, adds three deterministic workloads over vector lengths 64, 256, 1,024 and 8,192, adds conservative O1 loop-invariant vector-length hoisting and direct native vector builtin lowering, and exposes `LOOP_HYBRID` as an explicit budget mode. Its functional freeze is `adaff49a97c242cd00b15fee4ade565ed0768af2`; the Linux x86-64 full suite passed 4,399 tests with 1 skip and exit 0, and final scientific checksum verification passed 33/33 after the VM's full root filesystem was worked around by directing Zig caches to temporary storage. A Draft PR is the intended review state; no merge or release is authorized. In the representative structural workload, the BASE-to-FINAL PER process median was effectively neutral (-1.98%) while assembly source and ELF grew about 119%; the exact-segment `.text` overhead measured +55.4% versus PER for the expanded workload. These results do not justify default promotion. The underlying PR #313 parent-stack blocker was resolved and is not being re-investigated.
+The 1.4 candidate is being developed on `feat/s3-1.4-scientific-optimizer-domain-compute`, based on `13a5a8308064e8277887fecc6052cde6b22115f3`. Local work includes conservative natural-loop/induction/range facts, proof-gated vector BCE, scaled addressing for proven accesses, metadata-only ordered reduction recognition, and the experimental `s3.v1.geometry` module. Kernel-scope native measurement and expanded PER/EXACT/HYBRID section characterization are being prepared; neither has final Linux evidence yet. This is a local, unmerged candidate with no source freeze or PR at this checkpoint. These branch-only changes do not alter public defaults or the main-branch capability claim.
+
+The 1.3 performance record remains unchanged: in its representative structural workload, the BASE-to-FINAL PER process median was effectively neutral (-1.98%) while assembly source and ELF grew about 119%; exact-segment `.text` overhead measured +55.4% versus PER for that workload. These results do not justify default promotion. The underlying PR #313 parent-stack blocker was resolved and is not being re-investigated.
 
 Reliability Lab v2 is built incrementally from current `main`: deterministic identities and schemas (R0), killable process isolation (R1), deterministic source generation (R2), differential execution and replay (R3), minimization/triage (R4), then bounded maintenance closure (R5).
 
@@ -79,9 +88,9 @@ GitHub Actions remains blocked before workflow steps by the account billing/quot
 
 ## Immediate priorities
 
-1. Review the S3 1.3 Draft PR and its Linux evidence; do not merge automatically.
-2. Keep runner restoration and `main` protection tracked under #284; do not weaken workflows to obtain a green status.
-3. Resolve the separate 1.1.0 release decision/PR #295 conflict only under its own release authorization.
+1. Complete and locally validate the 1.4 candidate, including BCE negative cases and geometry contracts.
+2. Freeze functional source before Linux native, fair kernel-scope, code-size, and full-suite evidence.
+3. Publish one Draft PR for human review only; no merge, release, tag, PyPI publication, or default promotion is authorized by the campaign.
 4. Keep `PER_INSTRUCTION` as default; revisit budget policy only with broader comparable workload evidence and a separately reviewed decision.
 
 ## Out of scope
@@ -103,4 +112,4 @@ GitHub Actions jobs have been failing before any step is assigned (`runner_id=0`
 
 ## Next operational step
 
-The post-#313 and PR #315 integration is the current `main` baseline. Do not treat historical Draft state for PRs #302–#312 as a missing integration prerequisite; they are superseded or informational provenance and should be closed by a maintainer when convenient, not used as blockers. The 1.3 scientific expansion remains on its campaign branch pending human review; the report records the evidence without implying that branch-only code is in `main`.
+The post-#313 and PR #316 integration is the current `main` baseline. Do not treat historical Draft state for PRs #302–#312 as a missing integration prerequisite; they are superseded or informational provenance and should be closed by a maintainer when convenient, not used as blockers. The 1.4 optimizer/geometry work remains branch-only until a future reviewed merge; local evidence and documentation must not imply that it is already in `main`.

@@ -1,0 +1,571 @@
+module s3.v1.geometry
+
+export record Vec2:
+    x: f64
+    y: f64
+
+export record Vec3:
+    x: f64
+    y: f64
+    z: f64
+
+export record GeometryScalarResult:
+    status: i64
+    value: f64
+
+export record GeometryVec2Result:
+    status: i64
+    value: Vec2
+
+export record GeometryVec3Result:
+    status: i64
+    value: Vec3
+
+export record GeometryBounds3:
+    status: i64
+    minimum: Vec3
+    maximum: Vec3
+
+export fn add_vec2(left: Vec2, right: Vec2) -> Vec2:
+    return Vec2(x=left.x + right.x, y=left.y + right.y)
+
+export fn subtract_vec2(left: Vec2, right: Vec2) -> Vec2:
+    return Vec2(x=left.x - right.x, y=left.y - right.y)
+
+export fn scale_vec2(value: Vec2, factor: f64) -> Vec2:
+    return Vec2(x=value.x * factor, y=value.y * factor)
+
+export fn dot_vec2(left: Vec2, right: Vec2) -> f64:
+    return left.x * right.x + left.y * right.y
+
+export fn length_squared_vec2(value: Vec2) -> f64:
+    return dot_vec2(value, value)
+
+export fn length_vec2(value: Vec2) -> f64:
+    return sqrt(length_squared_vec2(value))
+
+export fn squared_distance_vec2(left: Vec2, right: Vec2) -> f64:
+    mut difference: Vec2 = subtract_vec2(left, right)
+    return length_squared_vec2(difference)
+
+export fn distance_vec2(left: Vec2, right: Vec2) -> f64:
+    return sqrt(squared_distance_vec2(left, right))
+
+export fn normalize_vec2(value: Vec2) -> GeometryVec2Result:
+    mut squared: f64 = length_squared_vec2(value)
+    match squared == 0.0:
+        -1:
+            return GeometryVec2Result(status=1, value=Vec2(x=0.0, y=0.0))
+        0:
+            mut magnitude: f64 = sqrt(squared)
+            return GeometryVec2Result(
+                status=0,
+                value=scale_vec2(value, 1.0 / magnitude)
+            )
+        1:
+            mut magnitude: f64 = sqrt(squared)
+            return GeometryVec2Result(
+                status=0,
+                value=scale_vec2(value, 1.0 / magnitude)
+            )
+
+export fn add_vec3(left: Vec3, right: Vec3) -> Vec3:
+    return Vec3(x=left.x + right.x, y=left.y + right.y, z=left.z + right.z)
+
+export fn subtract_vec3(left: Vec3, right: Vec3) -> Vec3:
+    return Vec3(x=left.x - right.x, y=left.y - right.y, z=left.z - right.z)
+
+export fn scale_vec3(value: Vec3, factor: f64) -> Vec3:
+    return Vec3(x=value.x * factor, y=value.y * factor, z=value.z * factor)
+
+export fn dot_vec3(left: Vec3, right: Vec3) -> f64:
+    return left.x * right.x + left.y * right.y + left.z * right.z
+
+export fn cross_vec3(left: Vec3, right: Vec3) -> Vec3:
+    return Vec3(
+        x=left.y * right.z - left.z * right.y,
+        y=left.z * right.x - left.x * right.z,
+        z=left.x * right.y - left.y * right.x
+    )
+
+export fn length_squared_vec3(value: Vec3) -> f64:
+    return dot_vec3(value, value)
+
+export fn length_vec3(value: Vec3) -> f64:
+    return sqrt(length_squared_vec3(value))
+
+export fn squared_distance_vec3(left: Vec3, right: Vec3) -> f64:
+    mut difference: Vec3 = subtract_vec3(left, right)
+    return length_squared_vec3(difference)
+
+export fn distance_vec3(left: Vec3, right: Vec3) -> f64:
+    return sqrt(squared_distance_vec3(left, right))
+
+export fn normalize_vec3(value: Vec3) -> GeometryVec3Result:
+    mut squared: f64 = length_squared_vec3(value)
+    match squared == 0.0:
+        -1:
+            return GeometryVec3Result(
+                status=1,
+                value=Vec3(x=0.0, y=0.0, z=0.0)
+            )
+        0:
+            mut magnitude: f64 = sqrt(squared)
+            return GeometryVec3Result(
+                status=0,
+                value=scale_vec3(value, 1.0 / magnitude)
+            )
+        1:
+            mut magnitude: f64 = sqrt(squared)
+            return GeometryVec3Result(
+                status=0,
+                value=scale_vec3(value, 1.0 / magnitude)
+            )
+
+export fn triangle_area(a: Vec3, b: Vec3, c: Vec3) -> f64:
+    mut ab: Vec3 = subtract_vec3(b, a)
+    mut ac: Vec3 = subtract_vec3(c, a)
+    mut normal: Vec3 = cross_vec3(ab, ac)
+    return length_vec3(normal) * 0.5
+
+export fn triangle_normal(a: Vec3, b: Vec3, c: Vec3) -> GeometryVec3Result:
+    mut ab: Vec3 = subtract_vec3(b, a)
+    mut ac: Vec3 = subtract_vec3(c, a)
+    mut normal: Vec3 = cross_vec3(ab, ac)
+    return normalize_vec3(normal)
+
+fn geometry_count_is_valid(count: i64) -> trit:
+    match count < 0:
+        -1:
+            return 1
+        0:
+            match count > 3074457345618258602:
+                -1:
+                    return 1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return 1
+
+fn minimum_f64(left: f64, right: f64) -> f64:
+    match left < right:
+        -1:
+            return left
+        0:
+            return left
+        1:
+            return right
+
+fn maximum_f64(left: f64, right: f64) -> f64:
+    match left < right:
+        -1:
+            return right
+        0:
+            return left
+        1:
+            return left
+
+fn point_cloud_bounds_validated(
+    points: &f64_vector,
+    point_count: i64
+) -> GeometryBounds3:
+    mut min_x: f64 = f64_vector_get(points, 0)
+    mut min_y: f64 = f64_vector_get(points, 1)
+    mut min_z: f64 = f64_vector_get(points, 2)
+    mut max_x: f64 = min_x
+    mut max_y: f64 = min_y
+    mut max_z: f64 = min_z
+    mut point: i64 = 1
+    while point < point_count:
+        mut base: i64 = point * 3
+        mut x: f64 = f64_vector_get(points, base)
+        mut y: f64 = f64_vector_get(points, base + 1)
+        mut z: f64 = f64_vector_get(points, base + 2)
+        min_x = minimum_f64(min_x, x)
+        min_y = minimum_f64(min_y, y)
+        min_z = minimum_f64(min_z, z)
+        max_x = maximum_f64(max_x, x)
+        max_y = maximum_f64(max_y, y)
+        max_z = maximum_f64(max_z, z)
+        point = point + 1
+    return GeometryBounds3(
+        status=0,
+        minimum=Vec3(x=min_x, y=min_y, z=min_z),
+        maximum=Vec3(x=max_x, y=max_y, z=max_z)
+    )
+
+export fn point_cloud_bounds(
+    points: &f64_vector,
+    point_count: i64
+) -> GeometryBounds3:
+    match geometry_count_is_valid(point_count):
+        -1:
+            match point_count == 0:
+                -1:
+                    return GeometryBounds3(
+                        status=1,
+                        minimum=Vec3(x=0.0, y=0.0, z=0.0),
+                        maximum=Vec3(x=0.0, y=0.0, z=0.0)
+                    )
+                0:
+                    match f64_vector_len(points) == point_count * 3:
+                        -1:
+                            return point_cloud_bounds_validated(points, point_count)
+                        0:
+                            return GeometryBounds3(
+                                status=2,
+                                minimum=Vec3(x=0.0, y=0.0, z=0.0),
+                                maximum=Vec3(x=0.0, y=0.0, z=0.0)
+                            )
+                        1:
+                            return GeometryBounds3(
+                                status=2,
+                                minimum=Vec3(x=0.0, y=0.0, z=0.0),
+                                maximum=Vec3(x=0.0, y=0.0, z=0.0)
+                            )
+                1:
+                    match f64_vector_len(points) == point_count * 3:
+                        -1:
+                            return point_cloud_bounds_validated(points, point_count)
+                        0:
+                            return GeometryBounds3(
+                                status=2,
+                                minimum=Vec3(x=0.0, y=0.0, z=0.0),
+                                maximum=Vec3(x=0.0, y=0.0, z=0.0)
+                            )
+                        1:
+                            return GeometryBounds3(
+                                status=2,
+                                minimum=Vec3(x=0.0, y=0.0, z=0.0),
+                                maximum=Vec3(x=0.0, y=0.0, z=0.0)
+                            )
+        0:
+            return GeometryBounds3(
+                status=2,
+                minimum=Vec3(x=0.0, y=0.0, z=0.0),
+                maximum=Vec3(x=0.0, y=0.0, z=0.0)
+            )
+        1:
+            return GeometryBounds3(
+                status=2,
+                minimum=Vec3(x=0.0, y=0.0, z=0.0),
+                maximum=Vec3(x=0.0, y=0.0, z=0.0)
+            )
+
+fn point_cloud_squared_radius_sum_validated(
+    points: &f64_vector,
+    point_count: i64,
+    center: Vec3
+) -> GeometryScalarResult:
+    mut point: i64 = 0
+    mut total: f64 = 0.0
+    while point < point_count:
+        mut base: i64 = point * 3
+        mut dx: f64 = f64_vector_get(points, base) - center.x
+        mut dy: f64 = f64_vector_get(points, base + 1) - center.y
+        mut dz: f64 = f64_vector_get(points, base + 2) - center.z
+        total = total + dx * dx + dy * dy + dz * dz
+        point = point + 1
+    return GeometryScalarResult(status=0, value=total)
+
+fn point_cloud_shape_is_valid(points: &f64_vector, point_count: i64) -> trit:
+    match f64_vector_len(points) == point_count * 3:
+        -1:
+            return -1
+        0:
+            return 1
+        1:
+            return 1
+
+export fn point_cloud_squared_radius_sum(
+    points: &f64_vector,
+    point_count: i64,
+    center: Vec3
+) -> GeometryScalarResult:
+    match geometry_count_is_valid(point_count):
+        -1:
+            match point_count == 0:
+                -1:
+                    return GeometryScalarResult(status=1, value=0.0)
+                0:
+                    match point_cloud_shape_is_valid(points, point_count):
+                        -1:
+                            return point_cloud_squared_radius_sum_validated(
+                                points, point_count, center
+                            )
+                        0:
+                            return GeometryScalarResult(status=2, value=0.0)
+                        1:
+                            return GeometryScalarResult(status=2, value=0.0)
+                1:
+                    match point_cloud_shape_is_valid(points, point_count):
+                        -1:
+                            return point_cloud_squared_radius_sum_validated(
+                                points, point_count, center
+                            )
+                        0:
+                            return GeometryScalarResult(status=2, value=0.0)
+                        1:
+                            return GeometryScalarResult(status=2, value=0.0)
+        0:
+            return GeometryScalarResult(status=2, value=0.0)
+        1:
+            return GeometryScalarResult(status=2, value=0.0)
+
+export fn point_cloud_radius_of_gyration(
+    points: &f64_vector,
+    point_count: i64
+) -> GeometryScalarResult:
+    mut center: GeometryVec3Result = point_cloud_centroid(points, point_count)
+    match center.status == 0:
+        -1:
+            mut squared_radii: GeometryScalarResult = point_cloud_squared_radius_sum(
+                points, point_count, center.value
+            )
+            match squared_radii.status == 0:
+                -1:
+                    mut count_as_f64: f64 = to_f64(point_count)
+                    return GeometryScalarResult(
+                        status=0,
+                        value=sqrt(squared_radii.value / count_as_f64)
+                    )
+                0:
+                    return GeometryScalarResult(
+                        status=squared_radii.status,
+                        value=0.0
+                    )
+                1:
+                    return GeometryScalarResult(
+                        status=squared_radii.status,
+                        value=0.0
+                    )
+        0:
+            return GeometryScalarResult(status=center.status, value=0.0)
+        1:
+            return GeometryScalarResult(status=center.status, value=0.0)
+
+fn valid_vertex_index(index: i64, vertex_count: i64) -> trit:
+    match index < 0:
+        -1:
+            return 1
+        0:
+            match index < vertex_count:
+                -1:
+                    return -1
+                0:
+                    return 1
+                1:
+                    return 1
+        1:
+            return 1
+
+fn point_cloud_centroid_validated(
+    points: &f64_vector,
+    point_count: i64
+) -> GeometryVec3Result:
+    mut point: i64 = 0
+    mut x_total: f64 = 0.0
+    mut y_total: f64 = 0.0
+    mut z_total: f64 = 0.0
+    while point < point_count:
+        mut base: i64 = point * 3
+        x_total = x_total + f64_vector_get(points, base)
+        y_total = y_total + f64_vector_get(points, base + 1)
+        z_total = z_total + f64_vector_get(points, base + 2)
+        point = point + 1
+    mut divisor: f64 = to_f64(point_count)
+    return GeometryVec3Result(
+        status=0,
+        value=Vec3(
+            x=x_total / divisor,
+            y=y_total / divisor,
+            z=z_total / divisor
+        )
+    )
+
+export fn point_cloud_centroid(
+    points: &f64_vector,
+    point_count: i64
+) -> GeometryVec3Result:
+    match geometry_count_is_valid(point_count):
+        -1:
+            match point_count == 0:
+                -1:
+                    return GeometryVec3Result(status=1, value=Vec3(x=0.0, y=0.0, z=0.0))
+                0:
+                    match f64_vector_len(points) == point_count * 3:
+                        -1:
+                            return point_cloud_centroid_validated(points, point_count)
+                        0:
+                            return GeometryVec3Result(status=2, value=Vec3(x=0.0, y=0.0, z=0.0))
+                        1:
+                            return GeometryVec3Result(status=2, value=Vec3(x=0.0, y=0.0, z=0.0))
+                1:
+                    match f64_vector_len(points) == point_count * 3:
+                        -1:
+                            return point_cloud_centroid_validated(points, point_count)
+                        0:
+                            return GeometryVec3Result(status=2, value=Vec3(x=0.0, y=0.0, z=0.0))
+                        1:
+                            return GeometryVec3Result(status=2, value=Vec3(x=0.0, y=0.0, z=0.0))
+        0:
+            return GeometryVec3Result(status=2, value=Vec3(x=0.0, y=0.0, z=0.0))
+        1:
+            return GeometryVec3Result(status=2, value=Vec3(x=0.0, y=0.0, z=0.0))
+
+fn triangle_mesh_area_validated(
+    vertices: &f64_vector,
+    indices: &i64_vector,
+    vertex_count: i64,
+    triangle_count: i64
+) -> GeometryScalarResult:
+    mut triangle: i64 = 0
+    mut total: f64 = 0.0
+    while triangle < triangle_count:
+        mut base: i64 = triangle * 3
+        mut ia: i64 = i64_vector_get(indices, base)
+        mut ib: i64 = i64_vector_get(indices, base + 1)
+        mut ic: i64 = i64_vector_get(indices, base + 2)
+        match valid_vertex_index(ia, vertex_count):
+            -1:
+                match valid_vertex_index(ib, vertex_count):
+                    -1:
+                        match valid_vertex_index(ic, vertex_count):
+                            -1:
+                                mut a_base: i64 = ia * 3
+                                mut b_base: i64 = ib * 3
+                                mut c_base: i64 = ic * 3
+                                mut a: Vec3 = Vec3(
+                                    x=f64_vector_get(vertices, a_base),
+                                    y=f64_vector_get(vertices, a_base + 1),
+                                    z=f64_vector_get(vertices, a_base + 2)
+                                )
+                                mut b: Vec3 = Vec3(
+                                    x=f64_vector_get(vertices, b_base),
+                                    y=f64_vector_get(vertices, b_base + 1),
+                                    z=f64_vector_get(vertices, b_base + 2)
+                                )
+                                mut c: Vec3 = Vec3(
+                                    x=f64_vector_get(vertices, c_base),
+                                    y=f64_vector_get(vertices, c_base + 1),
+                                    z=f64_vector_get(vertices, c_base + 2)
+                                )
+                                total = total + triangle_area(a, b, c)
+                            0:
+                                return GeometryScalarResult(status=3, value=0.0)
+                            1:
+                                return GeometryScalarResult(status=3, value=0.0)
+                    0:
+                        return GeometryScalarResult(status=3, value=0.0)
+                    1:
+                        return GeometryScalarResult(status=3, value=0.0)
+            0:
+                return GeometryScalarResult(status=3, value=0.0)
+            1:
+                return GeometryScalarResult(status=3, value=0.0)
+        triangle = triangle + 1
+    return GeometryScalarResult(status=0, value=total)
+
+fn triangle_mesh_lengths_valid(
+    vertices: &f64_vector,
+    indices: &i64_vector,
+    vertex_count: i64,
+    triangle_count: i64
+) -> trit:
+    match f64_vector_len(vertices) == vertex_count * 3:
+        -1:
+            match i64_vector_len(indices) == triangle_count * 3:
+                -1:
+                    return -1
+                0:
+                    return 1
+                1:
+                    return 1
+        0:
+            return 1
+        1:
+            return 1
+
+fn triangle_mesh_shape_valid(
+    vertices: &f64_vector,
+    indices: &i64_vector,
+    vertex_count: i64,
+    triangle_count: i64
+) -> trit:
+    match vertex_count > f64_vector_len(vertices):
+        -1:
+            return 1
+        0:
+            match triangle_count > i64_vector_len(indices):
+                -1:
+                    return 1
+                0:
+                    return triangle_mesh_lengths_valid(
+                        vertices,
+                        indices,
+                        vertex_count,
+                        triangle_count
+                    )
+                1:
+                    return triangle_mesh_lengths_valid(
+                        vertices,
+                        indices,
+                        vertex_count,
+                        triangle_count
+                    )
+        1:
+            match triangle_count > i64_vector_len(indices):
+                -1:
+                    return 1
+                0:
+                    return triangle_mesh_lengths_valid(
+                        vertices,
+                        indices,
+                        vertex_count,
+                        triangle_count
+                    )
+                1:
+                    return triangle_mesh_lengths_valid(
+                        vertices,
+                        indices,
+                        vertex_count,
+                        triangle_count
+                    )
+
+export fn triangle_mesh_surface_area(
+    vertices: &f64_vector,
+    indices: &i64_vector,
+    vertex_count: i64,
+    triangle_count: i64
+) -> GeometryScalarResult:
+    match geometry_count_is_valid(vertex_count):
+        -1:
+            match geometry_count_is_valid(triangle_count):
+                -1:
+                    match triangle_mesh_shape_valid(
+                        vertices,
+                        indices,
+                        vertex_count,
+                        triangle_count
+                    ):
+                        -1:
+                            return triangle_mesh_area_validated(
+                                vertices,
+                                indices,
+                                vertex_count,
+                                triangle_count
+                            )
+                        0:
+                            return GeometryScalarResult(status=2, value=0.0)
+                        1:
+                            return GeometryScalarResult(status=2, value=0.0)
+                0:
+                    return GeometryScalarResult(status=2, value=0.0)
+                1:
+                    return GeometryScalarResult(status=2, value=0.0)
+        0:
+            return GeometryScalarResult(status=2, value=0.0)
+        1:
+            return GeometryScalarResult(status=2, value=0.0)

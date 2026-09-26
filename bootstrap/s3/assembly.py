@@ -163,6 +163,7 @@ class AssemblyInstruction:
     reference_aggregate: str | None = None
     aggregate_field_paths: tuple[tuple[str, ...], ...] = ()
     aggregate_field_path: tuple[str, ...] = ()
+    bounds_proven: bool = field(default=False, compare=False, repr=False)
 
     def __post_init__(self) -> None:
         if self.result_width < 0:

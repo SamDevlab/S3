@@ -179,5 +179,6 @@ def test_pass_manager_contract_stays_private_and_function_major() -> None:
         "ssa-optimizations",
         "fold-constants",
         "eliminate-dead-pure-instructions",
+        "bounded-vector-bounds-elimination",
     )
 

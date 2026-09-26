@@ -682,6 +682,7 @@ def test_current_o1_pass_inventory_is_explicit() -> None:
         "ssa-optimizations",
         "fold-constants",
         "eliminate-dead-pure-instructions",
+        "bounded-vector-bounds-elimination",
     )
     assert _FIXPOINT_PASSES == {
         "gvn",

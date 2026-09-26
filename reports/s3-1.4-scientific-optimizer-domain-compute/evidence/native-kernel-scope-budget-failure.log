@@ -1,0 +1,2 @@
+runtime error [instruction limit] in function 'kernel'
+at source 6:21 (block while_body_1, TLOAD): instruction limit 100000 exceeded

@@ -19,14 +19,16 @@ The primary intended user of the S3 toolchain is an AI agent generating, inspect
 
 ## Supported language subset
 
-- **Scalar Types**: `trit` (-1, 0, 1), `tryte` (-364 to +364 / 9 trits), overflow-detectable signed operations (`+`, `-`, `*`), no unsigned types.
+- **Scalar Types**: `trit` (-1, 0, 1), `tryte` (-364 to +364 / 9 trits), signed `i64`, and `f64`; integer overflow is checked.
 - **Static Text**: Static `string` literals, compile-time static text evaluation (`len`, concatenation, equality, slicing, indexing). Text values in records/payloads are fixed scalar handles.
 - **Fixed Arrays**: Static 1D arrays of `trit`/`tryte` with constant bounds. Static `len(arr)` expressions.
 - **Records**: Nominal struct types (`record Name { field: Type }`), depth-first scalar leaf layout. Local, imported, and acyclic nested records.
 - **Enums**: Nominal enums (`enum Name { Variant }` or tag-first payload enums `Variant(Type)`), exhaustive `match` expressions.
 - **Control Flow**: `if`/`else`, `while`, `for` loops, `break`, `continue`, tail calls, recursion, and functions.
 - **Modules**: Multi-file deterministic compilation with `module name;`, `from mod import sym;`, and `export fn`.
-- **Optimization**: O0 (default, unoptimized CFG) and O1 (local SSA optimizations: SCCP, DCE, GVN, DSE, Memory SSA).
+- **Optimization**: O0 (default) and O1 (SSA optimizations including SCCP, DCE, GVN, DSE, and Memory SSA). The 1.4 campaign candidate additionally evaluates conservative loop/range proofs and BCE; branch-only status is recorded in `docs/ai-capabilities.json`.
+- **Scientific library**: `s3.v1.science` is integrated. The 1.4 candidate branch adds `s3.v1.geometry`; candidate APIs are not part of `main` until merged.
+- **Typed references**: `&T`, `&mut T`, and bounded borrowed slices are supported in their documented contexts. These are typed references, not raw pointers; raw pointer arithmetic and reference/integer casts are unsupported.
 - **Closed generic collections**: `map<i64, i64>`, `map<text, i64>`, and `set<i64>` use explicit deterministic specializations; this is not open-ended type erasure.
 - **Compiler substrate V1**: hosted deterministic text-keyed maps, symbol interning, direct-ID arenas, lexical environment state, source bundle/cursors, and bounded transactional output are available as substrate contracts. They do not constitute a self-hosted compiler.
 - **Generic syntax/IR substrate**: a flat indexed `SyntaxArena`, an arena-backed generic IR program, a transactional IR builder, and an independent structured verifier are available as hosted V1 contracts. They do not implement parsing, lowering, emission, or self-hosting.
@@ -35,7 +37,7 @@ The primary intended user of the S3 toolchain is an AI agent generating, inspect
 ## Unsupported features
 
 - No raw or unbounded host heap access; owned runtime collections use explicit bounded allocation APIs.
-- No raw pointers, address-of (`&`), or pointer arithmetic.
+- No raw pointers, pointer arithmetic, or reference/integer casts. The source-level `&value` and `&mut value` forms create typed references and are distinct from raw pointers.
 - No dynamic arrays or resizing lists.
 - No dynamic text construction or runtime string parsing.
 - No cyclic or self-referential record layouts.
@@ -87,8 +89,10 @@ When compilation produces an error, parse the diagnostic code and span:
 
 ## Optimization modes
 
-- `-O0`: Preserves literal CFG structure without transformation. Default for predictable step-by-step debugging.
-- `-O1`: Applies SSA optimizations (constant folding, dead code elimination, global value numbering). Preserves exact execution semantics and output determinism.
+- `-O0`: Uses the baseline optimizer pipeline. Default for predictable step-by-step debugging.
+- `-O1`: Applies semantics-preserving SSA optimizations. In the 1.4 candidate, canonical counted-loop facts may prove selected immutable-vector accesses safe; otherwise runtime bounds checks remain. Proof does not weaken language-level checked indexing.
+- Scalar reduction recognition in the 1.4 candidate is metadata-only and ordered. It does not enable floating-point reassociation, fast-math, or SIMD.
+- `PER_INSTRUCTION` remains the native instruction-budget default. `EXACT_SEGMENT` and `LOOP_HYBRID` are explicit modes.
 
 ## Emulator versus native
 
@@ -114,7 +118,8 @@ Agents can inspect toolchain capabilities programmatically by reading `docs/ai-c
 
 - **DO NOT** assume S3 has unsigned integers (e.g., `uint32`).
 - **DO NOT** assume S3 has string concatenation at runtime for dynamic input.
-- **DO NOT** assume S3 supports heap pointers or references.
+- **DO NOT** confuse typed `&T` / `&mut T` references with raw pointers.
+- **DO NOT** assume branch-only S3 1.4 optimizer or geometry capabilities are already in `main`.
 - **DO NOT** use C-style casting `(int)x`. Use ternary conversion functions or explicit match patterns.
 - **DO NOT** assume Windows can run native ELF binaries directly without Linux CI.
 

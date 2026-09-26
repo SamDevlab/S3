@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import platform
 import statistics
 import subprocess
@@ -25,6 +26,7 @@ from bootstrap.s3.backends.x86_64 import (  # noqa: E402
 from bootstrap.s3.optimizer import OptimizationLevel  # noqa: E402
 from bootstrap.s3.pipeline import compile_sources  # noqa: E402
 from bootstrap.s3.stdlib import standard_library_sources  # noqa: E402
+from tools.benchmark_native_kernel_scope import classify_paired_speedup  # noqa: E402
 
 
 VECTOR_LENGTH = 64
@@ -116,7 +118,7 @@ def _workload_source(kernel: str, repeats: int) -> tuple[str, float]:
     return source, expected_total
 
 
-def _text_section_bytes(executable: Path) -> int:
+def _section_sizes(executable: Path) -> dict[str, int]:
     size = subprocess.run(
         ["size", "-A", str(executable)],
         capture_output=True,
@@ -124,11 +126,42 @@ def _text_section_bytes(executable: Path) -> int:
         check=True,
         timeout=10,
     )
+    sections: dict[str, int] = {}
     for line in size.stdout.splitlines():
         fields = line.split()
-        if len(fields) >= 2 and fields[0] == ".text":
-            return int(fields[1])
-    raise RuntimeError(f"could not find .text section in {executable}")
+        if len(fields) >= 2 and fields[0].startswith("."):
+            try:
+                sections[fields[0]] = int(fields[1])
+            except ValueError:
+                continue
+    if ".text" not in sections:
+        raise RuntimeError(f"could not find .text section in {executable}")
+    return sections
+
+
+def _assert_frozen_source(source_head: str) -> None:
+    actual_head = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
+    ).stdout.strip()
+    if actual_head != source_head:
+        raise RuntimeError(
+            f"source_head mismatch: requested {source_head}, actual {actual_head}"
+        )
+    status = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
+    ).stdout
+    if status:
+        raise RuntimeError("native budget benchmark requires a clean frozen source tree")
 
 
 def _run_once(toolchain: NativeToolchain, executable: Path) -> int:
@@ -172,6 +205,7 @@ def run_benchmark(
     if repeats < 1 or warmups < 0 or runs < 3:
         raise ValueError("repeats must be positive, warmups nonnegative, and runs >= 3")
 
+    _assert_frozen_source(source_head)
     output.mkdir(parents=True, exist_ok=True)
     toolchain = NativeToolchain.detect()
     compiler_version = subprocess.run(
@@ -184,6 +218,7 @@ def run_benchmark(
     results: dict[str, object] = {
         "protocol": "same O1 AssemblyProgram; only instruction_budget_mode varies",
         "source_head": source_head,
+        "source_tree_clean_at_start": True,
         "timing_scope": (
             "external wall-clock around one native process; each process executes "
             "repeated kernel calls"
@@ -206,6 +241,7 @@ def run_benchmark(
     modes = (
         InstructionBudgetMode.PER_INSTRUCTION,
         InstructionBudgetMode.EXACT_SEGMENT,
+        InstructionBudgetMode.LOOP_HYBRID,
     )
     for kernel in ("rmsd", "dot", "variance"):
         source, expected_total = _workload_source(kernel, repeats)
@@ -231,12 +267,21 @@ def run_benchmark(
                 keep_assembly=mode_dir / "kernel.s",
             )
             artifacts[mode] = executable
+            sections = _section_sizes(executable)
             mode_metadata[mode.value] = {
                 "native_assembly_sha256": hashlib.sha256(
                     native_assembly.encode("utf-8")
                 ).hexdigest(),
+                "native_assembly_bytes": len(native_assembly.encode("utf-8")),
                 "elf_bytes": executable.stat().st_size,
-                "text_bytes": _text_section_bytes(executable),
+                "text_bytes": sections[".text"],
+                "rodata_bytes": sections.get(".rodata", 0),
+                "other_section_bytes": sum(
+                    value
+                    for name, value in sections.items()
+                    if name not in {".text", ".rodata"}
+                ),
+                "section_bytes": sections,
                 "samples_ns": [],
             }
             _run_once(toolchain, executable)
@@ -246,33 +291,39 @@ def run_benchmark(
                 _run_once(toolchain, artifacts[mode])
 
         for sample_index in range(runs):
-            order = modes if sample_index % 2 == 0 else tuple(reversed(modes))
+            rotation = sample_index % len(modes)
+            order = modes[rotation:] + modes[:rotation]
             for mode in order:
                 elapsed = _run_once(toolchain, artifacts[mode])
                 mode_metadata[mode.value]["samples_ns"].append(elapsed)
 
         per_samples = mode_metadata[InstructionBudgetMode.PER_INSTRUCTION.value]["samples_ns"]
-        exact_samples = mode_metadata[InstructionBudgetMode.EXACT_SEGMENT.value]["samples_ns"]
-        paired_speedups = [
-            per / exact
-            for per, exact in zip(per_samples, exact_samples, strict=True)
-        ]
-        for sample_values in (per_samples, exact_samples):
+        for sample_values in (
+            mode_metadata[mode.value]["samples_ns"] for mode in modes
+        ):
             ordered = sorted(sample_values)
+            mean = statistics.fmean(ordered)
             sample_values_summary = {
                 "median_ns": statistics.median(ordered),
                 "minimum_ns": ordered[0],
                 "maximum_ns": ordered[-1],
+                "p95_ns": ordered[math.ceil(0.95 * len(ordered)) - 1],
+                "coefficient_of_variation": (
+                    statistics.stdev(ordered) / mean if mean else 0.0
+                ),
             }
-            key = (
-                InstructionBudgetMode.PER_INSTRUCTION.value
-                if sample_values is per_samples
-                else InstructionBudgetMode.EXACT_SEGMENT.value
+            key = next(
+                mode.value
+                for mode in modes
+                if mode_metadata[mode.value]["samples_ns"] is sample_values
             )
             mode_metadata[key].update(sample_values_summary)
 
         per_text = int(mode_metadata[InstructionBudgetMode.PER_INSTRUCTION.value]["text_bytes"])
         exact_text = int(mode_metadata[InstructionBudgetMode.EXACT_SEGMENT.value]["text_bytes"])
+        hybrid_text = int(mode_metadata[InstructionBudgetMode.LOOP_HYBRID.value]["text_bytes"])
+        exact_samples = mode_metadata[InstructionBudgetMode.EXACT_SEGMENT.value]["samples_ns"]
+        hybrid_samples = mode_metadata[InstructionBudgetMode.LOOP_HYBRID.value]["samples_ns"]
         kernel_result = {
             "source_sha256": source_hash,
             "assembly_program_sha256": assembly_hash,
@@ -280,11 +331,26 @@ def run_benchmark(
             "correctness_both_modes": True,
             "modes": mode_metadata,
             "median_paired_speedup_exact_over_per": statistics.median(
-                paired_speedups
+                per / exact
+                for per, exact in zip(per_samples, exact_samples, strict=True)
+            ),
+            "exact_vs_per_performance": classify_paired_speedup(
+                per_samples, exact_samples
             ),
             "text_delta_exact_minus_per_bytes": exact_text - per_text,
             "text_delta_exact_minus_per_percent": (
                 (exact_text - per_text) * 100.0 / per_text if per_text else None
+            ),
+            "median_paired_speedup_hybrid_over_per": statistics.median(
+                per / hybrid
+                for per, hybrid in zip(per_samples, hybrid_samples, strict=True)
+            ),
+            "hybrid_vs_per_performance": classify_paired_speedup(
+                per_samples, hybrid_samples
+            ),
+            "text_delta_hybrid_minus_per_bytes": hybrid_text - per_text,
+            "text_delta_hybrid_minus_per_percent": (
+                (hybrid_text - per_text) * 100.0 / per_text if per_text else None
             ),
         }
         results["kernels"][kernel] = kernel_result

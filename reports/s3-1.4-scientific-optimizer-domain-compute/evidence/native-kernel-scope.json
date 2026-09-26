@@ -1,0 +1,314 @@
+{
+  "architecture": "x86_64",
+  "benchmark_id": "geometry.point-radius-reduction.native-kernel.v1",
+  "builds": {
+    "c": {
+      "build_duration_ns": 44050221,
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "flags": [
+        "-O1",
+        "-fno-fast-math",
+        "-ffp-contract=off",
+        "-fPIC",
+        "-shared"
+      ],
+      "optimization": "-O1",
+      "source_bytes": 282,
+      "source_sha256": "8b664f64ddaff81b89724e8366fb4184a1a7ec4d21f440f3820115c59ba04536"
+    },
+    "rust": {
+      "build_duration_ns": 220879110,
+      "compiler": "/usr/bin/rustc",
+      "compiler_version": "rustc 1.93.1 (01f6ddf75 2026-02-11) (built from a source tarball)",
+      "flags": [
+        "--crate-type",
+        "cdylib",
+        "--edition=2021",
+        "-C",
+        "opt-level=1",
+        "-C",
+        "overflow-checks=yes"
+      ],
+      "optimization": "opt-level=1",
+      "source_bytes": 285,
+      "source_sha256": "dcac028d1ae40a6b94aacf27206d8842b132ba3d4351bc4a7fc4401aa20ef812"
+    },
+    "s3": {
+      "assembly_bytes": 88068,
+      "build_duration_ns": 60084990,
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "flags": [
+        "O1",
+        "x86-64 FFI shared-library mode"
+      ],
+      "max_instructions": 100000000,
+      "optimization": "O1",
+      "s3_compiler": "Python reference compiler",
+      "source_bytes": 280,
+      "source_sha256": "5021f29ceba2c410c80d617afa65bb25b0a17254a40cc1a2c46c63ab4ad183ad"
+    },
+    "zig": {
+      "build_duration_ns": 13248797386,
+      "compiler": "/usr/bin/zig",
+      "compiler_version": "0.14.1",
+      "flags": [
+        "build-lib",
+        "/tmp/s3-1.4-b24b17d-evidence/native-kernel-scope/kernel.zig",
+        "-dynamic",
+        "-O",
+        "ReleaseSafe",
+        "-femit-bin=/tmp/s3-1.4-b24b17d-evidence/native-kernel-scope/libzig_kernel.so"
+      ],
+      "optimization": "ReleaseSafe",
+      "source_bytes": 247,
+      "source_sha256": "56017c9f7647cec067e8d46ba92dc9c600c528d225f8cdbbd5d3201c43718244"
+    }
+  },
+  "campaign_tree_clean": true,
+  "comparison_method": {
+    "bootstrap_replicates": 5000,
+    "bootstrap_seed": 1401,
+    "classification": "paired bootstrap median interval with predeclared 5% materiality threshold",
+    "paired_ratio": "reference_duration / S3_duration"
+  },
+  "comparisons_to_s3": {
+    "c": {
+      "bootstrap_replicates": 5000,
+      "bootstrap_seed": 1401,
+      "classification": "REGRESSION",
+      "materiality_threshold_percent": 5.0,
+      "paired_bootstrap_95_percent_interval": [
+        0.08423975931497339,
+        0.08568250136097896
+      ],
+      "speedup_reference_over_candidate_median": 0.08492415402567094
+    },
+    "rust": {
+      "bootstrap_replicates": 5000,
+      "bootstrap_seed": 1401,
+      "classification": "REGRESSION",
+      "materiality_threshold_percent": 5.0,
+      "paired_bootstrap_95_percent_interval": [
+        0.08375376070354085,
+        0.08520798707834921
+      ],
+      "speedup_reference_over_candidate_median": 0.08456165759536546
+    },
+    "zig": {
+      "bootstrap_replicates": 5000,
+      "bootstrap_seed": 1401,
+      "classification": "REGRESSION",
+      "materiality_threshold_percent": 5.0,
+      "paired_bootstrap_95_percent_interval": [
+        0.08377690349456145,
+        0.08548209559942856
+      ],
+      "speedup_reference_over_candidate_median": 0.08502033594521934
+    }
+  },
+  "cpu_affinity": [
+    0,
+    1,
+    2
+  ],
+  "cpu_model": "AMD Ryzen 5 3400G with Radeon Vega Graphics",
+  "dataset": {
+    "identity": "one immutable point (1.125,-2.5,3.25)",
+    "point_count": 1
+  },
+  "elements_processed_per_sample": 1000,
+  "expected_checksum": 18078.125,
+  "ffi_call_included": true,
+  "implementations": {
+    "c": {
+      "artifact_bytes": 15104,
+      "assembly_source_bytes": null,
+      "checksum": 18078.125,
+      "checksum_matches_reference": true,
+      "measurement_scope": "kernel",
+      "process_launches_in_timed_region": 0,
+      "rodata_bytes": null,
+      "section_bytes": {
+        ".bss": 8,
+        ".comment": 38,
+        ".data": 8,
+        ".dynamic": 336,
+        ".dynstr": 92,
+        ".dynsym": 144,
+        ".eh_frame": 112,
+        ".eh_frame_hdr": 36,
+        ".fini": 13,
+        ".fini_array": 8,
+        ".gnu.hash": 36,
+        ".got": 32,
+        ".got.plt": 24,
+        ".init": 27,
+        ".init_array": 8,
+        ".note.gnu.build-id": 36,
+        ".note.gnu.property": 32,
+        ".plt": 16,
+        ".plt.got": 16,
+        ".rela.dyn": 168,
+        ".text": 283
+      },
+      "text_bytes": 283,
+      "timings": {
+        "coefficient_of_variation": 0.07380770044391043,
+        "maximum_ns": 4850,
+        "median_ns": 3640,
+        "minimum_ns": 3600,
+        "p95_ns": 4050,
+        "sample_count": 21
+      },
+      "warmups": 3
+    },
+    "rust": {
+      "artifact_bytes": 11342464,
+      "assembly_source_bytes": null,
+      "checksum": 18078.125,
+      "checksum_matches_reference": true,
+      "measurement_scope": "kernel",
+      "process_launches_in_timed_region": 0,
+      "rodata_bytes": null,
+      "section_bytes": {
+        ".bss": 24,
+        ".comment": 112,
+        ".data": 8,
+        ".debug_abbrev": 74322,
+        ".debug_aranges": 50928,
+        ".debug_info": 4168996,
+        ".debug_line": 668838,
+        ".debug_loc": 3551694,
+        ".debug_ranges": 773248,
+        ".debug_str": 2035950,
+        ".dynamic": 480,
+        ".dynstr": 167,
+        ".dynsym": 144,
+        ".eh_frame": 148,
+        ".eh_frame_hdr": 44,
+        ".fini": 13,
+        ".fini_array": 8,
+        ".gnu.hash": 36,
+        ".gnu.version": 12,
+        ".gnu.version_r": 32,
+        ".got": 56,
+        ".init": 27,
+        ".init_array": 16,
+        ".note.gnu.build-id": 36,
+        ".plt": 16,
+        ".plt.got": 8,
+        ".rela.dyn": 192,
+        ".text": 375
+      },
+      "text_bytes": 375,
+      "timings": {
+        "coefficient_of_variation": 0.018252091286010786,
+        "maximum_ns": 3910,
+        "median_ns": 3640,
+        "minimum_ns": 3600,
+        "p95_ns": 3750,
+        "sample_count": 21
+      },
+      "warmups": 3
+    },
+    "s3": {
+      "artifact_bytes": 37512,
+      "assembly_source_bytes": 88068,
+      "checksum": 18078.125,
+      "checksum_matches_reference": true,
+      "measurement_scope": "kernel",
+      "process_launches_in_timed_region": 0,
+      "rodata_bytes": 9852,
+      "section_bytes": {
+        ".bss": 64,
+        ".dynamic": 240,
+        ".dynstr": 26,
+        ".dynsym": 96,
+        ".eh_frame": 0,
+        ".gnu.hash": 48,
+        ".got.plt": 32,
+        ".plt": 32,
+        ".rela.plt": 24,
+        ".rodata": 9852,
+        ".text": 10515
+      },
+      "text_bytes": 10515,
+      "timings": {
+        "coefficient_of_variation": 0.11138225476033067,
+        "maximum_ns": 65369,
+        "median_ns": 42830,
+        "minimum_ns": 42190,
+        "p95_ns": 44169,
+        "sample_count": 21
+      },
+      "warmups": 3
+    },
+    "zig": {
+      "artifact_bytes": 2577232,
+      "assembly_source_bytes": null,
+      "checksum": 18078.125,
+      "checksum_matches_reference": true,
+      "measurement_scope": "kernel",
+      "process_launches_in_timed_region": 0,
+      "rodata_bytes": 42488,
+      "section_bytes": {
+        ".bss": 4224,
+        ".comment": 26,
+        ".data": 32,
+        ".data.rel.ro": 2584,
+        ".debug_abbrev": 2472,
+        ".debug_info": 452881,
+        ".debug_line": 246807,
+        ".debug_loc": 963898,
+        ".debug_pubnames": 47591,
+        ".debug_pubtypes": 36109,
+        ".debug_ranges": 175472,
+        ".debug_str": 142504,
+        ".dynamic": 288,
+        ".dynstr": 6322,
+        ".dynsym": 11880,
+        ".eh_frame": 28972,
+        ".eh_frame_hdr": 5852,
+        ".gnu.hash": 3500,
+        ".got": 24,
+        ".got.plt": 912,
+        ".hash": 3968,
+        ".plt": 1792,
+        ".rela.dyn": 3936,
+        ".rela.plt": 2664,
+        ".relro_padding": 480,
+        ".rodata": 42488,
+        ".tbss": 13,
+        ".text": 346538
+      },
+      "text_bytes": 346538,
+      "timings": {
+        "coefficient_of_variation": 0.04805141853962929,
+        "maximum_ns": 4440,
+        "median_ns": 3640,
+        "minimum_ns": 3610,
+        "p95_ns": 3760,
+        "sample_count": 21
+      },
+      "warmups": 3
+    }
+  },
+  "kernel": "repeat squared-radius accumulation in the same left-to-right order",
+  "kernel_iterations": 1000,
+  "native_speedup_claim": false,
+  "optimization_policy": "S3 O1; C -O1 strict FP; Rust opt-level=1 strict FP; Zig ReleaseSafe if installed",
+  "os": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "paired_samples": 21,
+  "python_version": "3.13.15",
+  "s3_max_instructions": 100000000,
+  "sample_order": "rotating implementation order by sample index",
+  "schema_version": "1.0.0",
+  "source_head": "b24b17dabf692352baabfcd0ebc85f207fad5ab8",
+  "started_at_utc": "2026-09-26T05:05:38.193541+00:00",
+  "startup_in_timed_region": false,
+  "timing_scope": "one in-process C ABI kernel call; build/load/setup outside timer",
+  "warmups": 3,
+  "zig_status": "MEASURED"
+}

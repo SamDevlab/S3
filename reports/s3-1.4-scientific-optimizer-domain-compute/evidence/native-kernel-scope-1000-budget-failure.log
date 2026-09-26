@@ -1,0 +1,2 @@
+runtime error [instruction limit] in function 'kernel'
+at source 4:5 (block while_body_1, TJMP): instruction limit 100000 exceeded

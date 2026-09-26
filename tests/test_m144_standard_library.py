@@ -57,6 +57,21 @@ def test_manifest_is_versioned_sorted_and_capability_explicit() -> None:
         "correlation",
         "cosine_similarity",
     }.issubset(science_exports)
+    geometry_exports = set(
+        next(item for item in manifest if item.module_id == "s3.v1.geometry").exports
+    )
+    assert {
+        "Vec2",
+        "Vec3",
+        "GeometryBounds3",
+        "squared_distance_vec2",
+        "distance_vec3",
+        "triangle_normal",
+        "point_cloud_bounds",
+        "point_cloud_squared_radius_sum",
+        "point_cloud_radius_of_gyration",
+        "triangle_mesh_surface_area",
+    }.issubset(geometry_exports)
     with pytest.raises(ValueError, match="unsupported"):
         standard_library_sources("2")
 

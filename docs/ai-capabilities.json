@@ -35,8 +35,18 @@
   "supported_features": {
     "scalar_types": [
       "trit",
-      "tryte"
+      "tryte",
+      "i64",
+      "f64"
     ],
+    "typed_references": {
+      "shared": true,
+      "mutable": true,
+      "borrowed_slices": true,
+      "raw_pointers": false,
+      "pointer_arithmetic": false,
+      "reference_integer_casts": false
+    },
     "records": {
       "nominal": true,
       "nested_acyclic": true,
@@ -106,6 +116,17 @@
       "O0",
       "O1"
     ],
+    "standard_library_modules": {
+      "s3.v1.science": "IN_MAIN",
+      "s3.v1.geometry": "CAMPAIGN_BRANCH_CANDIDATE_NOT_IN_MAIN"
+    },
+    "native_instruction_budget_modes": {
+      "default": "PER_INSTRUCTION",
+      "explicit": [
+        "EXACT_SEGMENT",
+        "LOOP_HYBRID"
+      ]
+    },
     "emulator": {
       "hosted": true,
       "instruction_limit_default": 100000,
@@ -129,6 +150,77 @@
     "exceptions": false,
     "concurrency": false,
     "windows_native_execution": false
+  },
+  "candidate_features": {
+    "status": "S3_1_4_CAMPAIGN_BRANCH_UNMERGED",
+    "loop_analysis": {
+      "status": "IMPLEMENTED_CONSERVATIVE_CANDIDATE",
+      "shape": "single-preheader natural counted loop with one backedge and canonical relation flow",
+      "induction": "nonnegative constant start and positive constant step; address escapes and ambiguous writes reject analysis",
+      "range_facts": "access-point facts for immutable vector parameters only"
+    },
+    "bounds_check_elimination": {
+      "status": "IMPLEMENTED_PROOF_GATED_CANDIDATE",
+      "language_indexing_remains_checked": true,
+      "unknown_or_mutating_calls_reject_proof": true,
+      "induction_reference_escape_rejects_proof": true
+    },
+    "address_lowering": {
+      "status": "PARTIAL",
+      "description": "proven indexed accesses use scaled x86-64 addressing; loop-carried pointer/cursor rewriting is not implemented"
+    },
+    "reduction_recognition": {
+      "status": "IMPLEMENTED_METADATA_ONLY",
+      "operations": [
+        "ordered add",
+        "ordered multiply",
+        "ordered tryte tritwise minimum",
+        "ordered tryte tritwise maximum"
+      ],
+      "floating_point_reassociation": false,
+      "fast_math": false,
+      "vectorization": false
+    },
+    "geometry": {
+      "status": "EXPERIMENTAL_CANDIDATE",
+      "module": "s3.v1.geometry",
+      "operations": [
+        "Vec2 and Vec3 arithmetic",
+        "dot and cross products",
+        "length and distance",
+        "normalization with explicit zero status",
+        "triangle area and normal",
+        "point-cloud centroid, bounds, and squared-radius sum",
+        "point-cloud radius of gyration",
+        "triangle-mesh surface area"
+      ]
+    },
+    "native_kernel_benchmark": {
+      "status": "PROTOCOL_IMPLEMENTED_NOT_YET_QUALIFIED",
+      "timing_scope": "in-process scalar FFI call with compilation and setup outside timer",
+      "languages": [
+        "S3",
+        "C",
+        "Rust",
+        "Zig when toolchain is available"
+      ]
+    },
+    "budget_size_characterization": {
+      "status": "PROTOCOL_EXPANDED_NOT_YET_MEASURED",
+      "modes": [
+        "PER_INSTRUCTION",
+        "EXACT_SEGMENT",
+        "LOOP_HYBRID"
+      ],
+      "sections": [
+        ".text",
+        ".rodata",
+        "other sections",
+        "ELF total",
+        "native assembly source"
+      ],
+      "default_changed": false
+    }
   },
   "roadmap_provider_status": {
     "m1.61": {

@@ -302,6 +302,28 @@ def test_exact_segment_codegen_has_exact_precharge_and_scalar_slow_path() -> Non
     assert "inc qword ptr [rip + __s3_instruction_count]" in exact
 
 
+def test_exact_segment_reuses_identical_failure_handlers() -> None:
+    program = compile_source(LOOP_AND_CALL_SOURCE, "O0").assembly
+    emitter = X8664Emitter(
+        program,
+        max_frames=100,
+        max_instructions=100,
+        instruction_budget_mode=InstructionBudgetMode.EXACT_SEGMENT,
+    )
+
+    assembly = emitter.emit()
+    payloads = [
+        (site.prefix, site.suffix, site.value_register)
+        for site in emitter.failure_sites
+    ]
+    labels = [site.label for site in emitter.failure_sites]
+
+    assert len(payloads) == len(set(payloads))
+    assert len(labels) == len(set(labels))
+    assert all(assembly.count(f"{label}:") == 1 for label in labels)
+    assert "runtime error [instruction limit]" in assembly
+
+
 def test_fast_fused_compare_keeps_context_for_guarded_register_reads() -> None:
     compare = AssemblyFunction(
         "compare",

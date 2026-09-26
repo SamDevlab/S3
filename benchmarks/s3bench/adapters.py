@@ -57,9 +57,17 @@ from .core import (
 
 
 def _compile_s3bench_source(source: str, optimization_mode: str):
-    if "from s3.v1.science import " not in source:
+    modules = tuple(
+        module
+        for module, import_prefix in (
+            ("s3.v1.science", "from s3.v1.science import "),
+            ("s3.v1.geometry", "from s3.v1.geometry import "),
+        )
+        if import_prefix in source
+    )
+    if not modules:
         return compile_source(source, optimization_mode)
-    sources = standard_library_sources(modules=("s3.v1.science",))
+    sources = standard_library_sources(modules=modules)
     sources["main.s3"] = source
     return compile_sources(sources, optimization=optimization_mode)
 

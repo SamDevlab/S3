@@ -31,10 +31,25 @@ def test_ai_capabilities_json_validity_and_consistency():
     # Supported and unsupported sections
     supported = data.get("supported_features", {})
     assert "trit" in supported.get("scalar_types", [])
+    assert "i64" in supported.get("scalar_types", [])
+    assert "f64" in supported.get("scalar_types", [])
     assert "O0" in supported.get("optimizer_levels", [])
     assert "O1" in supported.get("optimizer_levels", [])
+    assert supported["typed_references"]["shared"] is True
+    assert supported["typed_references"]["raw_pointers"] is False
+    assert supported["standard_library_modules"]["s3.v1.science"] == "IN_MAIN"
+    assert (
+        supported["standard_library_modules"]["s3.v1.geometry"]
+        == "CAMPAIGN_BRANCH_CANDIDATE_NOT_IN_MAIN"
+    )
 
     unsupported = data.get("unsupported_features", {})
     assert unsupported.get("heap_allocation") is False
     assert unsupported.get("raw_pointers") is False
     assert unsupported.get("dynamic_arrays") is False
+
+    candidate = data["candidate_features"]
+    assert candidate["status"] == "S3_1_4_CAMPAIGN_BRANCH_UNMERGED"
+    assert candidate["bounds_check_elimination"]["language_indexing_remains_checked"] is True
+    assert candidate["reduction_recognition"]["floating_point_reassociation"] is False
+    assert candidate["budget_size_characterization"]["default_changed"] is False

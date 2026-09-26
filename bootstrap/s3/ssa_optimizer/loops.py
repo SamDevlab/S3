@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from typing import Dict, List, Set, Tuple
 
 from ..alias_analysis import AliasAnalysis
@@ -21,6 +21,834 @@ from ..ternary import (
 )
 from .common import _FOLDABLE_OPCODES, _PURE_REMOVABLE_OPCODES, _width
 from .lowering import _cfg_from_ssa
+
+
+@dataclass(frozen=True, slots=True)
+class LoopInfo:
+    """Natural-loop structure derived from CFG backedges and dominance."""
+
+    header: str
+    blocks: frozenset[str]
+    backedges: tuple[str, ...]
+    preheaders: tuple[str, ...]
+    exits: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class InductionInfo:
+    """A scalar memory recurrence with constant initialization and stride."""
+
+    memory: int
+    initial_value: int
+    step: int
+    update_block: str
+    update_index: int
+
+
+@dataclass(frozen=True, slots=True)
+class RangeFact:
+    """An access-point fact established by a monotonic counted-loop test."""
+
+    induction_memory: int
+    lower_bound: int
+    step: int
+    upper_bound_vector: int
+    upper_bound_exclusive: bool
+    access_block: str
+    access_index: int
+
+
+@dataclass(frozen=True, slots=True)
+class VectorBoundsProof:
+    """A conservative proof for one vector access in a canonical counted loop."""
+
+    loop: LoopInfo
+    induction: InductionInfo
+    range_fact: RangeFact
+    element_type: IRType
+    vector_register: int
+    access_block: str
+    access_index: int
+
+    @property
+    def header(self) -> str:
+        return self.loop.header
+
+    @property
+    def body(self) -> str:
+        return self.induction.update_block
+
+    @property
+    def latch(self) -> str:
+        return self.induction.update_block
+
+
+@dataclass(frozen=True, slots=True)
+class ReductionInfo:
+    """An ordered scalar recurrence; recognition never permits reassociation."""
+
+    loop_header: str
+    accumulator_memory: int
+    element_type: IRType
+    operation: str
+    initial_register: int
+    initial_constant: int | float | None
+    recurrence_register: int
+    update_block: str
+    update_index: int
+    ordered: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class LoopAnalysisMetrics:
+    loops_seen: int
+    inductions_recognized: int
+    range_facts_derived: int
+    bounds_checks_seen: int
+    bounds_checks_proven_safe: int
+    bounds_checks_eliminated: int
+    bounds_checks_retained: int
+
+
+@dataclass(frozen=True, slots=True)
+class ReductionAnalysisMetrics:
+    loops_seen: int
+    reductions_recognized: int
+    add_reductions: int
+    multiply_reductions: int
+    min_reductions: int
+    max_reductions: int
+    unsupported_reductions: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class LoopAnalysisResult:
+    loops: tuple[LoopInfo, ...]
+    inductions: tuple[InductionInfo, ...]
+    range_facts: tuple[RangeFact, ...]
+    proofs: tuple[VectorBoundsProof, ...]
+    metrics: LoopAnalysisMetrics
+    reductions: tuple[ReductionInfo, ...]
+    reduction_metrics: ReductionAnalysisMetrics
+
+
+_VECTOR_ELEMENT_TYPES = {
+    "tryte": IRType.TRYTE,
+    "i64": IRType.I64,
+    "f64": IRType.F64,
+}
+
+
+def _constant_register(
+    register: int,
+    definitions: dict[int, IRInstruction],
+    seen: set[int] | None = None,
+) -> int | float | None:
+    visited = set() if seen is None else seen
+    if register in visited:
+        return None
+    visited.add(register)
+    instruction = definitions.get(register)
+    if instruction is None:
+        return None
+    if instruction.opcode is IROpcode.CONST:
+        return instruction.immediate
+    if instruction.opcode is IROpcode.MOVE and len(instruction.operands) == 1:
+        return _constant_register(instruction.operands[0], definitions, visited)
+    return None
+
+
+def _copy_source(register: int, definitions: dict[int, IRInstruction]) -> int:
+    seen: set[int] = set()
+    current = register
+    while current not in seen:
+        seen.add(current)
+        instruction = definitions.get(current)
+        if (
+            instruction is None
+            or instruction.opcode is not IROpcode.MOVE
+            or len(instruction.operands) != 1
+        ):
+            break
+        current = instruction.operands[0]
+    return current
+
+
+def _natural_loop_blocks(
+    cfg: ControlFlowGraph,
+    dominators: DominatorTree,
+    header: str,
+    tail: str,
+) -> set[str]:
+    blocks = {header, tail}
+    pending = [tail]
+    while pending:
+        current = pending.pop()
+        for predecessor in sorted(cfg.nodes[current].predecessors, reverse=True):
+            if predecessor not in blocks and dominators.dominates(header, predecessor):
+                blocks.add(predecessor)
+                pending.append(predecessor)
+    return blocks
+
+
+def discover_loop_info(function: IRFunction) -> tuple[LoopInfo, ...]:
+    """Discover natural loops and their external CFG boundaries."""
+
+    cfg = ControlFlowGraph.build(function)
+    dominators = DominatorTree.build(cfg)
+    backedges: dict[str, list[str]] = {}
+    for tail, node in cfg.nodes.items():
+        for header in node.successors:
+            if dominators.dominates(header, tail):
+                backedges.setdefault(header, []).append(tail)
+
+    loops: list[LoopInfo] = []
+    for header in sorted(backedges):
+        tails = tuple(sorted(backedges[header]))
+        blocks = {header}
+        for tail in tails:
+            blocks.update(_natural_loop_blocks(cfg, dominators, header, tail))
+        preheaders = tuple(sorted(cfg.nodes[header].predecessors - blocks))
+        exits = tuple(
+            sorted(
+                {
+                    successor
+                    for name in blocks
+                    for successor in cfg.nodes[name].successors
+                    if successor not in blocks
+                }
+            )
+        )
+        loops.append(
+            LoopInfo(
+                header=header,
+                blocks=frozenset(blocks),
+                backedges=tails,
+                preheaders=preheaders,
+                exits=exits,
+            )
+        )
+    return tuple(loops)
+
+
+@dataclass(frozen=True, slots=True)
+class _LoopCondition:
+    body: str
+    join: str
+    condition_memory: int
+    relation_arms: tuple[str, ...]
+
+
+def _condition_body_for_less_than(
+    function: IRFunction,
+    header: str,
+    definitions: dict[int, IRInstruction],
+) -> _LoopCondition | None:
+    blocks = {block.name: block for block in function.blocks}
+    block = blocks[header]
+    if not block.instructions or block.instructions[-1].opcode is not IROpcode.BRANCH3:
+        return None
+    branch = block.instructions[-1]
+    if len(branch.operands) != 1 or len(branch.targets) != 3:
+        return None
+    compare_instruction = definitions.get(branch.operands[0])
+    if (
+        compare_instruction is None
+        or compare_instruction.opcode is not IROpcode.COMPARE
+        or len(compare_instruction.operands) != 2
+    ):
+        return None
+
+    relation_arms = [blocks.get(name) for name in branch.targets]
+    if any(arm is None or not arm.instructions for arm in relation_arms):
+        return None
+    joins: set[str] = set()
+    condition_memory: int | None = None
+    values: list[int | float | None] = []
+    for arm in relation_arms:
+        assert arm is not None
+        terminator = arm.instructions[-1]
+        stores = [
+            instruction
+            for instruction in arm.instructions
+            if instruction.opcode is IROpcode.STORE
+        ]
+        if (
+            terminator.opcode is not IROpcode.JUMP
+            or len(terminator.targets) != 1
+            or len(stores) != 1
+            or len(stores[0].operands) != 2
+            or stores[0].memory is None
+        ):
+            return None
+        joins.add(terminator.targets[0])
+        memory = stores[0].memory
+        if condition_memory is None:
+            condition_memory = memory
+        elif condition_memory != memory:
+            return None
+        values.append(_constant_register(stores[0].operands[1], definitions))
+    if len(joins) != 1 or condition_memory is None or values != [-1, 0, 0]:
+        return None
+
+    join = blocks.get(next(iter(joins)))
+    if join is None or not join.instructions:
+        return None
+    join_branch = join.instructions[-1]
+    if (
+        join_branch.opcode is not IROpcode.BRANCH3
+        or len(join_branch.operands) != 1
+        or len(join_branch.targets) != 3
+    ):
+        return None
+    condition_load = definitions.get(join_branch.operands[0])
+    if (
+        condition_load is None
+        or condition_load.opcode is not IROpcode.LOAD
+        or condition_load.memory != condition_memory
+    ):
+        return None
+    return _LoopCondition(
+        body=join_branch.targets[0],
+        join=join.name,
+        condition_memory=condition_memory,
+        relation_arms=tuple(branch.targets),
+    )
+
+
+def _recognize_induction(
+    function: IRFunction,
+    loop: LoopInfo,
+    body: str,
+    definitions: dict[int, IRInstruction],
+    blocks: dict[str, IRBasicBlock],
+) -> InductionInfo | None:
+    if (
+        len(loop.backedges) != 1
+        or loop.backedges[0] != body
+        or len(loop.preheaders) != 1
+        or not loop.exits
+    ):
+        return None
+    preheader = loop.preheaders[0]
+    preheader_block = blocks[preheader]
+    body_block = blocks[body]
+    if (
+        not preheader_block.instructions
+        or preheader_block.instructions[-1].opcode is not IROpcode.JUMP
+        or preheader_block.instructions[-1].targets != (loop.header,)
+        or not body_block.instructions
+        or body_block.instructions[-1].opcode is not IROpcode.JUMP
+        or body_block.instructions[-1].targets != (loop.header,)
+        or any(
+            instruction.opcode
+            in {IROpcode.JUMP, IROpcode.BRANCH3, IROpcode.RETURN}
+            for instruction in body_block.instructions[:-1]
+        )
+    ):
+        return None
+
+    header_block = blocks[loop.header]
+    if (
+        not header_block.instructions
+        or header_block.instructions[-1].opcode is not IROpcode.BRANCH3
+    ):
+        return None
+    branch = header_block.instructions[-1]
+    comparison = definitions.get(branch.operands[0]) if branch.operands else None
+    if (
+        comparison is None
+        or comparison.opcode is not IROpcode.COMPARE
+        or len(comparison.operands) != 2
+    ):
+        return None
+    index_load = definitions.get(_copy_source(comparison.operands[0], definitions))
+    if index_load is None or index_load.opcode is not IROpcode.LOAD:
+        return None
+    induction_memory = index_load.memory
+    if induction_memory is None:
+        return None
+    if any(
+        instruction.opcode is IROpcode.ADDRESS_OF
+        and instruction.memory == induction_memory
+        for block in function.blocks
+        for instruction in block.instructions
+    ):
+        return None
+
+    initializers = [
+        instruction
+        for instruction in preheader_block.instructions
+        if instruction.opcode is IROpcode.STORE
+        and instruction.memory == induction_memory
+    ]
+    all_stores = [
+        instruction
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.STORE
+        and instruction.memory == induction_memory
+    ]
+    if (
+        len(initializers) != 1
+        or len(initializers[0].operands) != 2
+        or len(all_stores) != 2
+    ):
+        return None
+    initial = _constant_register(initializers[0].operands[1], definitions)
+    if isinstance(initial, bool) or not isinstance(initial, int) or initial < 0:
+        return None
+    updates: list[tuple[int, IRInstruction, int]] = []
+    for instruction_index, instruction in enumerate(body_block.instructions[:-1]):
+        if instruction.opcode is not IROpcode.ADD or len(instruction.operands) != 2:
+            continue
+        for load_register, step_register in (
+            (instruction.operands[0], instruction.operands[1]),
+            (instruction.operands[1], instruction.operands[0]),
+        ):
+            load = definitions.get(_copy_source(load_register, definitions))
+            step = _constant_register(step_register, definitions)
+            if (
+                load is not None
+                and load.opcode is IROpcode.LOAD
+                and load.memory == induction_memory
+                and isinstance(step, int)
+                and not isinstance(step, bool)
+                and step > 0
+            ):
+                updates.append((instruction_index, instruction, step))
+                break
+    induction_stores = [
+        (index, instruction)
+        for index, instruction in enumerate(body_block.instructions)
+        if instruction.opcode is IROpcode.STORE
+        and instruction.memory == induction_memory
+    ]
+    if len(updates) != 1 or len(induction_stores) != 1:
+        return None
+    update_index, update, step = updates[0]
+    store_index, induction_store = induction_stores[0]
+    if (
+        store_index <= update_index
+        or len(induction_store.operands) != 2
+        or induction_store.operands[1] not in update.results
+    ):
+        return None
+    return InductionInfo(
+        memory=induction_memory,
+        initial_value=initial,
+        step=step,
+        update_block=body,
+        update_index=store_index,
+    )
+
+
+def _recognize_ordered_reduction(
+    function: IRFunction,
+    loop: LoopInfo,
+    body: str,
+    definitions: dict[int, IRInstruction],
+    definition_sites: dict[int, tuple[str, int, IRInstruction]],
+    blocks: dict[str, IRBasicBlock],
+) -> tuple[ReductionInfo, ...]:
+    if len(loop.preheaders) != 1 or len(loop.backedges) != 1 or loop.backedges[0] != body:
+        return ()
+    preheader = loop.preheaders[0]
+    preheader_block = blocks[preheader]
+    body_block = blocks[body]
+    if (
+        not preheader_block.instructions
+        or preheader_block.instructions[-1].opcode is not IROpcode.JUMP
+        or preheader_block.instructions[-1].targets != (loop.header,)
+        or not body_block.instructions
+        or body_block.instructions[-1].opcode is not IROpcode.JUMP
+        or body_block.instructions[-1].targets != (loop.header,)
+    ):
+        return ()
+    loop_instructions = [
+        instruction
+        for name in loop.blocks
+        for instruction in blocks[name].instructions
+    ]
+    if any(
+        instruction.opcode in {IROpcode.REFERENCE_STORE, IROpcode.SLICE_STORE}
+        or (
+            instruction.opcode is IROpcode.CALL
+            and builtin_effect(instruction.callee)
+            not in {BuiltinEffect.PURE, BuiltinEffect.READ_ONLY}
+        )
+        for instruction in loop_instructions
+    ):
+        return ()
+
+    result: list[ReductionInfo] = []
+    for memory in function.memory_objects:
+        if memory.element_type not in {IRType.TRYTE, IRType.I64, IRType.F64} or memory.length != 1:
+            continue
+        memory_index = memory.index
+        initializers = [
+            instruction
+            for instruction in preheader_block.instructions
+            if instruction.opcode is IROpcode.STORE and instruction.memory == memory_index
+        ]
+        stores = [
+            (block.name, index, instruction)
+            for block in function.blocks
+            for index, instruction in enumerate(block.instructions)
+            if instruction.opcode is IROpcode.STORE and instruction.memory == memory_index
+        ]
+        loads = [
+            (block.name, index, instruction)
+            for block in function.blocks
+            if block.name in loop.blocks
+            for index, instruction in enumerate(block.instructions)
+            if instruction.opcode is IROpcode.LOAD and instruction.memory == memory_index
+        ]
+        updates = [item for item in stores if item[0] == body]
+        if len(initializers) != 1 or len(stores) != 2 or len(updates) != 1 or len(loads) != 1:
+            continue
+        initializer = initializers[0]
+        update_block, store_index, store = updates[0]
+        if len(initializer.operands) != 2 or len(store.operands) != 2:
+            continue
+        update_register = _copy_source(store.operands[1], definitions)
+        update = definitions.get(update_register)
+        update_site = definition_sites.get(update_register)
+        if (
+            update is None
+            or update.opcode
+            not in {
+                IROpcode.ADD,
+                IROpcode.MULTIPLY,
+                IROpcode.MINIMUM,
+                IROpcode.MAXIMUM,
+            }
+            or len(update.operands) != 2
+            or (
+                update.opcode in {IROpcode.MINIMUM, IROpcode.MAXIMUM}
+                and memory.element_type is not IRType.TRYTE
+            )
+            or update_site is None
+            or update_site[0] != update_block
+            or update_site[1] >= store_index
+        ):
+            continue
+        accumulator_operands: list[tuple[int, IRInstruction, tuple[str, int, IRInstruction]]] = []
+        recurrence_operands: list[int] = []
+        for operand in update.operands:
+            source = _copy_source(operand, definitions)
+            definition = definitions.get(source)
+            site = definition_sites.get(source)
+            if definition is not None and definition.opcode is IROpcode.LOAD and definition.memory == memory_index:
+                if site is not None:
+                    accumulator_operands.append((source, definition, site))
+            else:
+                recurrence_operands.append(operand)
+        if len(accumulator_operands) != 1 or len(recurrence_operands) != 1:
+            continue
+        load_register, _, load_site = accumulator_operands[0]
+        if load_site[0] != update_block or load_site[1] >= update_site[1]:
+            continue
+        initial_register = initializer.operands[1]
+        operation = {
+            IROpcode.ADD: "add",
+            IROpcode.MULTIPLY: "multiply",
+            IROpcode.MINIMUM: "tritwise_minimum",
+            IROpcode.MAXIMUM: "tritwise_maximum",
+        }[update.opcode]
+        result.append(
+            ReductionInfo(
+                loop_header=loop.header,
+                accumulator_memory=memory_index,
+                element_type=memory.element_type,
+                operation=operation,
+                initial_register=initial_register,
+                initial_constant=_constant_register(initial_register, definitions),
+                recurrence_register=recurrence_operands[0],
+                update_block=update_block,
+                update_index=store_index,
+            )
+        )
+    return tuple(result)
+
+
+def analyze_loop_facts(
+    function: IRFunction,
+) -> LoopAnalysisResult:
+    """Derive conservative natural-loop, induction and vector-range facts.
+
+    This deliberately accepts only a single-block, positive-stride loop body
+    and an immutable vector parameter. The recurrence accepts any non-negative
+    constant start and positive constant step; unknown calls, vector mutation,
+    alternate induction writes, and non-canonical control flow produce no fact.
+    """
+
+    blocks = {block.name: block for block in function.blocks}
+    definitions = {
+        result: instruction
+        for block in function.blocks
+        for instruction in block.instructions
+        for result in instruction.results
+    }
+    memory_by_index = {memory.index: memory for memory in function.memory_objects}
+    parameters = {parameter.register: parameter for parameter in function.parameters}
+    definition_sites = {
+        result: (block.name, index, instruction)
+        for block in function.blocks
+        for index, instruction in enumerate(block.instructions)
+        for result in instruction.results
+    }
+    loops = discover_loop_info(function)
+    proofs: list[VectorBoundsProof] = []
+    inductions: list[InductionInfo] = []
+    range_facts: list[RangeFact] = []
+    reductions: list[ReductionInfo] = []
+
+    for loop in loops:
+        condition = _condition_body_for_less_than(
+            function, loop.header, definitions
+        )
+        if (
+            condition is None
+            or condition.body not in loop.blocks
+            or condition.join not in loop.blocks
+            or any(arm not in loop.blocks for arm in condition.relation_arms)
+        ):
+            continue
+        induction = _recognize_induction(
+            function, loop, condition.body, definitions, blocks
+        )
+        if induction is None:
+            continue
+        reductions.extend(
+            _recognize_ordered_reduction(
+                function,
+                loop,
+                condition.body,
+                definitions,
+                definition_sites,
+                blocks,
+            )
+        )
+
+        branch = blocks[loop.header].instructions[-1]
+        comparison = definitions.get(branch.operands[0])
+        assert comparison is not None
+        compare_block, _, _ = definition_sites.get(
+            comparison.results[0], (None, None, None)
+        ) if comparison.results else (None, None, None)
+        if compare_block != loop.header:
+            continue
+        index_register = _copy_source(comparison.operands[0], definitions)
+        index_load = definitions.get(index_register)
+        memory = memory_by_index.get(induction.memory)
+        if (
+            index_load is None
+            or index_load.opcode is not IROpcode.LOAD
+            or index_load.memory != induction.memory
+            or memory is None
+            or memory.element_type is not IRType.I64
+            or memory.length != 1
+        ):
+            continue
+        index_site = definition_sites.get(index_register)
+        if index_site is None or index_site[0] != loop.header:
+            continue
+
+        length_register = _copy_source(comparison.operands[1], definitions)
+        length_call = definitions.get(length_register)
+        if (
+            length_call is None
+            or length_call.opcode is not IROpcode.CALL
+            or length_call.callee not in {f"{kind}_vector_len" for kind in _VECTOR_ELEMENT_TYPES}
+            or len(length_call.operands) != 1
+        ):
+            continue
+        vector_register = _copy_source(length_call.operands[0], definitions)
+        length_site = definition_sites.get(length_register)
+        if (
+            length_site is None
+            or length_site[0] not in {*loop.preheaders, loop.header}
+        ):
+            continue
+        vector_parameter = parameters.get(vector_register)
+        if (
+            vector_parameter is None
+            or vector_parameter.type is not IRType.REFERENCE
+            or vector_parameter.reference_target is not IRType.VECTOR
+            or vector_parameter.reference_mutable
+        ):
+            continue
+        element_name = length_call.callee.removesuffix("_vector_len")
+        element_type = _VECTOR_ELEMENT_TYPES[element_name]
+
+        condition_stores = [
+            (block.name, index)
+            for block in function.blocks
+            for index, instruction in enumerate(block.instructions)
+            if instruction.opcode is IROpcode.STORE
+            and instruction.memory == condition.condition_memory
+        ]
+        expected_condition_stores = [
+            (arm, index)
+            for arm in condition.relation_arms
+            for index, instruction in enumerate(blocks[arm].instructions)
+            if instruction.opcode is IROpcode.STORE
+            and instruction.memory == condition.condition_memory
+        ]
+        if len(condition_stores) != 3 or sorted(condition_stores) != sorted(expected_condition_stores):
+            continue
+
+        loop_instructions = [
+            instruction
+            for name in loop.blocks
+            for instruction in blocks[name].instructions
+        ]
+        if any(
+            instruction.opcode in {IROpcode.REFERENCE_STORE, IROpcode.SLICE_STORE}
+            for instruction in loop_instructions
+        ):
+            continue
+        if any(
+            instruction.opcode is IROpcode.CALL
+            and builtin_effect(instruction.callee)
+            not in {BuiltinEffect.PURE, BuiltinEffect.READ_ONLY}
+            for instruction in loop_instructions
+        ):
+            continue
+
+        vector_get = f"{element_name}_vector_get"
+        body_block = blocks[condition.body]
+        induction_stores = [
+            index
+            for index, instruction in enumerate(body_block.instructions)
+            if instruction.opcode is IROpcode.STORE
+            and instruction.memory == induction.memory
+        ]
+        if len(induction_stores) != 1:
+            continue
+        inductions.append(induction)
+        for access_index, instruction in enumerate(body_block.instructions):
+            if (
+                instruction.opcode is not IROpcode.CALL
+                or instruction.callee != vector_get
+                or len(instruction.operands) != 2
+                or _copy_source(instruction.operands[0], definitions) != vector_register
+            ):
+                continue
+            access_index_register = _copy_source(instruction.operands[1], definitions)
+            access_index_load = definitions.get(access_index_register)
+            access_load_site = definition_sites.get(access_index_register)
+            if (
+                access_index_load is None
+                or access_index_load.opcode is not IROpcode.LOAD
+                or access_index_load.memory != induction.memory
+                or access_load_site is None
+                or access_load_site[0] != condition.body
+                or access_load_site[1] >= access_index
+                or access_index >= induction_stores[0]
+            ):
+                continue
+            fact = RangeFact(
+                induction_memory=induction.memory,
+                lower_bound=induction.initial_value,
+                step=induction.step,
+                upper_bound_vector=vector_register,
+                upper_bound_exclusive=True,
+                access_block=condition.body,
+                access_index=access_index,
+            )
+            range_facts.append(fact)
+            proofs.append(
+                VectorBoundsProof(
+                    loop=loop,
+                    induction=induction,
+                    range_fact=fact,
+                    element_type=element_type,
+                    vector_register=vector_register,
+                    access_block=condition.body,
+                    access_index=access_index,
+                )
+            )
+
+    checks_seen = sum(
+        1
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.CALL
+        and instruction.callee is not None
+        and instruction.callee.endswith("_vector_get")
+    )
+    proven_sites = {(proof.access_block, proof.access_index) for proof in proofs}
+    proven_count = len(proven_sites)
+    eliminated_count = sum(
+        1
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.CALL
+        and instruction.callee is not None
+        and instruction.callee.endswith("_vector_get")
+        and instruction.bounds_proven
+    )
+    metrics = LoopAnalysisMetrics(
+        loops_seen=len(loops),
+        inductions_recognized=len({item.memory for item in inductions}),
+        range_facts_derived=proven_count,
+        bounds_checks_seen=checks_seen,
+        bounds_checks_proven_safe=proven_count,
+        bounds_checks_eliminated=eliminated_count,
+        bounds_checks_retained=checks_seen - eliminated_count,
+    )
+    reduction_metrics = ReductionAnalysisMetrics(
+        loops_seen=len(loops),
+        reductions_recognized=len(reductions),
+        add_reductions=sum(item.operation == "add" for item in reductions),
+        multiply_reductions=sum(item.operation == "multiply" for item in reductions),
+        min_reductions=sum(item.operation == "tritwise_minimum" for item in reductions),
+        max_reductions=sum(item.operation == "tritwise_maximum" for item in reductions),
+        unsupported_reductions=None,
+    )
+    return LoopAnalysisResult(
+        loops=loops,
+        inductions=tuple(inductions),
+        range_facts=tuple(range_facts),
+        proofs=tuple(proofs),
+        metrics=metrics,
+        reductions=tuple(reductions),
+        reduction_metrics=reduction_metrics,
+    )
+
+
+def analyze_canonical_vector_get_ranges(
+    function: IRFunction,
+) -> tuple[VectorBoundsProof, ...]:
+    """Return only accesses with a complete loop-derived safety proof."""
+
+    return analyze_loop_facts(function).proofs
+
+
+def mark_proven_vector_bounds_checks(function: IRFunction) -> IRFunction:
+    """Attach compiler-only proof facts to accepted canonical vector gets."""
+
+    proofs = analyze_canonical_vector_get_ranges(function)
+    if not proofs:
+        return function
+    proven = {(proof.access_block, proof.access_index) for proof in proofs}
+    return replace(
+        function,
+        blocks=tuple(
+            replace(
+                block,
+                instructions=tuple(
+                    replace(instruction, bounds_proven=True)
+                    if (block.name, index) in proven
+                    else instruction
+                    for index, instruction in enumerate(block.instructions)
+                ),
+            )
+            for block in function.blocks
+        ),
+    )
 
 
 def hoist_readonly_vector_length_queries(function: IRFunction) -> tuple[IRFunction, int]:

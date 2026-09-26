@@ -599,7 +599,7 @@ run using the versioned 1.0.0 interface.
 
 ## S3 1.3 — Scientific Compute Engine and Native Expansion
 
-Status: implementation validated on Linux x86-64; Draft PR review pending
+Status: integrated through PR #316; historical campaign evidence is preserved
 
 The campaign branch expands `s3.v1.science` with reductions, error metrics,
 statistical functions and cosine similarity, plus deterministic structural,
@@ -608,7 +608,9 @@ The compiler adds conservative O1 hoisting of read-only vector lengths from
 eligible loops and direct native lowering for vector length and checked vector
 access. Unknown or mutating calls prevent hoisting; indexed access continues to
 use bounds checks. O0/O1 and hosted/native correctness are covered by the
-campaign's focused and full validation.
+campaign's focused and full validation. PR #316 merged this capability at
+`da6efaf0a97c8cef08aea2f196aca37199311332`; see the report below for the
+historical candidate and validation provenance.
 
 The campaign also provides explicit `PER_INSTRUCTION`, `EXACT_SEGMENT` and
 `LOOP_HYBRID` native accounting modes. `PER_INSTRUCTION` remains the default:
@@ -619,5 +621,20 @@ a generally superior default. General bounds-check elimination, address
 strength reduction, SIMD and relaxed floating-point reassociation were not
 implemented. See
 [`reports/s3-1.3-scientific-compute-engine/FINAL_REPORT.md`](../reports/s3-1.3-scientific-compute-engine/FINAL_REPORT.md)
-for exact validation and measurement provenance. This work is branch-only
-until the Draft PR is reviewed and merged.
+for exact validation and measurement provenance. The integrated capability is
+in `main`; this report retains the historical campaign provenance.
+
+## S3 1.4 — Scientific Optimizer and Domain Compute Expansion
+
+Status: implementation in progress on a branch-only candidate based on
+`13a5a8308064e8277887fecc6052cde6b22115f3`.
+
+The candidate adds conservative natural-loop, induction, and access-point range
+facts; proof-gated bounds-check elimination for immutable vector parameters;
+scaled native addressing for proven accesses; metadata-only ordered scalar
+reduction recognition; and the experimental `s3.v1.geometry` module. A
+deterministic point-cloud/mesh case is being integrated into the existing
+`s3bench` pipeline. No public format or default-policy change is made. Linux
+native qualification, final kernel-scope measurements, code-size analysis, and
+the full-suite gate remain pending; branch-only behavior is not a `main`
+capability until reviewed and merged.

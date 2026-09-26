@@ -1,0 +1,88 @@
+module main
+from s3.v1.geometry import Vec3
+from s3.v1.geometry import GeometryVec3Result
+from s3.v1.geometry import GeometryBounds3
+from s3.v1.geometry import GeometryScalarResult
+from s3.v1.geometry import point_cloud_centroid
+from s3.v1.geometry import point_cloud_bounds
+from s3.v1.geometry import point_cloud_radius_of_gyration
+from s3.v1.geometry import triangle_mesh_surface_area
+
+fn mismatch(value: trit) -> i64:
+    match value:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+
+fn main() -> i64:
+    mut points: f64_vector = f64_vector_new(192)
+    mut point: i64 = 0
+    while point < 64:
+        mut x: f64 = to_f64(point)
+        mut y: f64 = to_f64(point + 1)
+        mut z: f64 = to_f64(64 - point)
+        discard f64_vector_push(&mut points, x)
+        discard f64_vector_push(&mut points, y)
+        discard f64_vector_push(&mut points, z)
+        point = point + 1
+
+    mut vertices: f64_vector = f64_vector_new(12)
+    discard f64_vector_push(&mut vertices, 0.0)
+    discard f64_vector_push(&mut vertices, 0.0)
+    discard f64_vector_push(&mut vertices, 0.0)
+    discard f64_vector_push(&mut vertices, 1.0)
+    discard f64_vector_push(&mut vertices, 0.0)
+    discard f64_vector_push(&mut vertices, 0.0)
+    discard f64_vector_push(&mut vertices, 0.0)
+    discard f64_vector_push(&mut vertices, 1.0)
+    discard f64_vector_push(&mut vertices, 0.0)
+    discard f64_vector_push(&mut vertices, 0.0)
+    discard f64_vector_push(&mut vertices, 0.0)
+    discard f64_vector_push(&mut vertices, 1.0)
+
+    mut indices: i64_vector = i64_vector_new(12)
+    discard i64_vector_push(&mut indices, 0)
+    discard i64_vector_push(&mut indices, 1)
+    discard i64_vector_push(&mut indices, 2)
+    discard i64_vector_push(&mut indices, 0)
+    discard i64_vector_push(&mut indices, 1)
+    discard i64_vector_push(&mut indices, 3)
+    discard i64_vector_push(&mut indices, 0)
+    discard i64_vector_push(&mut indices, 2)
+    discard i64_vector_push(&mut indices, 3)
+    discard i64_vector_push(&mut indices, 1)
+    discard i64_vector_push(&mut indices, 2)
+    discard i64_vector_push(&mut indices, 3)
+
+    mut center: GeometryVec3Result = point_cloud_centroid(&points, 64)
+    mut bounds: GeometryBounds3 = point_cloud_bounds(&points, 64)
+    mut gyration: GeometryScalarResult = point_cloud_radius_of_gyration(&points, 64)
+    mut area: GeometryScalarResult = triangle_mesh_surface_area(
+        &vertices, &indices, 4, 4
+    )
+
+    mut failures: i64 = mismatch(center.status == 0)
+    failures = failures + mismatch(center.value.x == 31.5)
+    failures = failures + mismatch(center.value.y == 32.5)
+    failures = failures + mismatch(center.value.z == 32.5)
+    failures = failures + mismatch(bounds.status == 0)
+    failures = failures + mismatch(bounds.minimum.x == 0.0)
+    failures = failures + mismatch(bounds.maximum.x == 63.0)
+    failures = failures + mismatch(bounds.minimum.y == 1.0)
+    failures = failures + mismatch(bounds.maximum.y == 64.0)
+    failures = failures + mismatch(gyration.status == 0)
+    failures = failures + mismatch(gyration.value > 31.9)
+    failures = failures + mismatch(gyration.value < 32.1)
+    failures = failures + mismatch(area.status == 0)
+    failures = failures + mismatch(area.value > 2.36)
+    failures = failures + mismatch(area.value < 2.37)
+    match failures == 0:
+        -1:
+            return 64041
+        0:
+            return -1
+        1:
+            return -1
