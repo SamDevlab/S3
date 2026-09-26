@@ -1,0 +1,12 @@
+4b11825b8dad4b9f132cacd6ab402888f060524d319fe94f6139e173a2200872  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/full-suite.log
+d98e062edff8a5b1698af416f09f0681069f46ae887ffb3c90a804b25c6862ab  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/full-suite.status
+420911fd06969f65d7ecc23bb6c0cc88ee08f5a52300b27b5e3ab3929d62ff38  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/full-suite-nodeids.json
+ceb808ecf405943252fb28a47fd28c2fefef84bd055fe7ace73fbff6e065b8c0  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/native-kernel-scope-1000-budget-failure.log
+078cf8233606681668e0623c6af21345bc75940a7575ce806aa671078256d91a  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/native-kernel-scope-budget-failure.log
+ba4f3246c3e1d725c1e1207ab671094bd898221bc6984113ad983cf11d9cdfa6  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/native-kernel-scope-missing-symbol.log
+3f587ae95c5b71accfd027a6213c6bdfa6756e96d017ddacc886e915595a5df3  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/native-kernel-scope.json
+3f587ae95c5b71accfd027a6213c6bdfa6756e96d017ddacc886e915595a5df3  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/native-kernel-scope.log
+c12ebe95f4051177a43530260cd0e6f842fc88d773070635185d1795b9fdfaa4  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/native-kernel-scope.status
+9fd029745bbedd8a10387077401ac78eebf0a7eca81dbefab95457ad333884f7  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/scientific-budget-benchmark.json
+ff07c5f45373715b6ad34d28b976cc83f4feb765d32f4af31bd1ed622b793b56  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/scientific-budget.log
+ee98081bd80e95ad66bbf836c75ed75706f2caf814cace12645a907a9ce27b19  reports/s3-1.4-scientific-optimizer-domain-compute/evidence/scientific-budget.status

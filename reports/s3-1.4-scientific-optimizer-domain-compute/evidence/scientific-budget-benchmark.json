@@ -1,0 +1,389 @@
+{
+  "architecture": "x86_64",
+  "compiler": "/usr/bin/cc",
+  "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "cpu_model": "AMD Ryzen 5 3400G with Radeon Vega Graphics",
+  "kernel_repeats_per_process": 500,
+  "kernels": {
+    "dot": {
+      "assembly_program_sha256": "cab063fe3cff1e931017abc137bc6f1fcfe9f2e0bab2607c7443034d94e87689",
+      "correctness_both_modes": true,
+      "exact_vs_per_performance": {
+        "bootstrap_replicates": 5000,
+        "bootstrap_seed": 1401,
+        "classification": "IMPROVEMENT",
+        "materiality_threshold_percent": 5.0,
+        "paired_bootstrap_95_percent_interval": [
+          1.7171442099421699,
+          2.375215729273843
+        ],
+        "speedup_reference_over_candidate_median": 2.0851606443025132
+      },
+      "expected_accumulated_result": 43680000.0,
+      "hybrid_vs_per_performance": {
+        "bootstrap_replicates": 5000,
+        "bootstrap_seed": 1401,
+        "classification": "IMPROVEMENT",
+        "materiality_threshold_percent": 5.0,
+        "paired_bootstrap_95_percent_interval": [
+          1.9331151739707029,
+          2.3153653613714713
+        ],
+        "speedup_reference_over_candidate_median": 2.1449002826036536
+      },
+      "median_paired_speedup_exact_over_per": 2.0851606443025132,
+      "median_paired_speedup_hybrid_over_per": 2.1449002826036536,
+      "modes": {
+        "exact-segment": {
+          "coefficient_of_variation": 0.10405577446161099,
+          "elf_bytes": 780080,
+          "maximum_ns": 1831562,
+          "median_ns": 1568506,
+          "minimum_ns": 1331530,
+          "native_assembly_bytes": 2097995,
+          "native_assembly_sha256": "12bffd7744757769d41c93096c12b09c79a5afed883fcff625fa154fa5bcff94",
+          "other_section_bytes": 64,
+          "p95_ns": 1831562,
+          "rodata_bytes": 528369,
+          "samples_ns": [
+            1568506,
+            1831562,
+            1485177,
+            1784842,
+            1767763,
+            1468997,
+            1635785,
+            1331530,
+            1554287
+          ],
+          "section_bytes": {
+            ".bss": 64,
+            ".rodata": 528369,
+            ".text": 236229
+          },
+          "text_bytes": 236229
+        },
+        "loop-hybrid": {
+          "coefficient_of_variation": 0.15703261871973928,
+          "elf_bytes": 747312,
+          "maximum_ns": 1975620,
+          "median_ns": 1524466,
+          "minimum_ns": 1324860,
+          "native_assembly_bytes": 1921847,
+          "native_assembly_sha256": "a9a04ea92f291983c7bcbb6cd5018033bc372c223649ac2656b5ba64a9236ae2",
+          "other_section_bytes": 64,
+          "p95_ns": 1975620,
+          "rodata_bytes": 528369,
+          "samples_ns": [
+            1572855,
+            1975620,
+            1524466,
+            1886371,
+            1382419,
+            1324860,
+            1513427,
+            1365949,
+            1906900
+          ],
+          "section_bytes": {
+            ".bss": 64,
+            ".rodata": 528369,
+            ".text": 203723
+          },
+          "text_bytes": 203723
+        },
+        "per-instruction": {
+          "coefficient_of_variation": 0.13801698425795583,
+          "elf_bytes": 744352,
+          "maximum_ns": 4369864,
+          "median_ns": 3143371,
+          "minimum_ns": 2952364,
+          "native_assembly_bytes": 1825693,
+          "native_assembly_sha256": "86abf0006789a9898b0d8507732df0cffc0bd7e47edb11ff7a9a95bc43e7e8b1",
+          "other_section_bytes": 64,
+          "p95_ns": 4369864,
+          "rodata_bytes": 545891,
+          "samples_ns": [
+            3143371,
+            3819101,
+            3136932,
+            2952364,
+            3035504,
+            3138162,
+            3246150,
+            3162671,
+            4369864
+          ],
+          "section_bytes": {
+            ".bss": 64,
+            ".rodata": 545891,
+            ".text": 180530
+          },
+          "text_bytes": 180530
+        }
+      },
+      "source_sha256": "05e646406c8705d4b51ff6150cc5433d201b0142aaee05cd7df20ae4fc6971d4",
+      "text_delta_exact_minus_per_bytes": 55699,
+      "text_delta_exact_minus_per_percent": 30.85304381543234,
+      "text_delta_hybrid_minus_per_bytes": 23193,
+      "text_delta_hybrid_minus_per_percent": 12.847172215144298
+    },
+    "rmsd": {
+      "assembly_program_sha256": "a38394767d42a23b31e2c56470bd44c5feb60f74151514443c2a679df34a2426",
+      "correctness_both_modes": true,
+      "exact_vs_per_performance": {
+        "bootstrap_replicates": 5000,
+        "bootstrap_seed": 1401,
+        "classification": "IMPROVEMENT",
+        "materiality_threshold_percent": 5.0,
+        "paired_bootstrap_95_percent_interval": [
+          1.7697433761573704,
+          2.738919150720116
+        ],
+        "speedup_reference_over_candidate_median": 2.292351848672116
+      },
+      "expected_accumulated_result": 500.0,
+      "hybrid_vs_per_performance": {
+        "bootstrap_replicates": 5000,
+        "bootstrap_seed": 1401,
+        "classification": "IMPROVEMENT",
+        "materiality_threshold_percent": 5.0,
+        "paired_bootstrap_95_percent_interval": [
+          1.6535303963554489,
+          2.287450551361377
+        ],
+        "speedup_reference_over_candidate_median": 2.008356736234522
+      },
+      "median_paired_speedup_exact_over_per": 2.292351848672116,
+      "median_paired_speedup_hybrid_over_per": 2.008356736234522,
+      "modes": {
+        "exact-segment": {
+          "coefficient_of_variation": 0.1750914694525829,
+          "elf_bytes": 780080,
+          "maximum_ns": 2647549,
+          "median_ns": 1770192,
+          "minimum_ns": 1545666,
+          "native_assembly_bytes": 2097997,
+          "native_assembly_sha256": "13e50a741ad3cf40229b5f8c7fb4187d7bf05427441208c845df40dce7fa25d6",
+          "other_section_bytes": 64,
+          "p95_ns": 2647549,
+          "rodata_bytes": 528369,
+          "samples_ns": [
+            1697004,
+            2647549,
+            1770192,
+            1776444,
+            2060058,
+            1769923,
+            1645195,
+            1904421,
+            1545666
+          ],
+          "section_bytes": {
+            ".bss": 64,
+            ".rodata": 528369,
+            ".text": 236229
+          },
+          "text_bytes": 236229
+        },
+        "loop-hybrid": {
+          "coefficient_of_variation": 0.23428467169448972,
+          "elf_bytes": 747312,
+          "maximum_ns": 3119432,
+          "median_ns": 1896061,
+          "minimum_ns": 1637935,
+          "native_assembly_bytes": 1921849,
+          "native_assembly_sha256": "1b8e1d8d3a1c1848a2e14c2f75b913a3b6f7cf92db520b60a3e993985fac02bd",
+          "other_section_bytes": 64,
+          "p95_ns": 3119432,
+          "rodata_bytes": 528369,
+          "samples_ns": [
+            1645405,
+            2207296,
+            1896061,
+            2284616,
+            1815302,
+            2350394,
+            1656264,
+            3119432,
+            1637935
+          ],
+          "section_bytes": {
+            ".bss": 64,
+            ".rodata": 528369,
+            ".text": 203723
+          },
+          "text_bytes": 203723
+        },
+        "per-instruction": {
+          "coefficient_of_variation": 0.1156869912345341,
+          "elf_bytes": 744352,
+          "maximum_ns": 4847676,
+          "median_ns": 3788622,
+          "minimum_ns": 3635974,
+          "native_assembly_bytes": 1825694,
+          "native_assembly_sha256": "c0251e97f4a6a19a1e84f66191c94fa3725736283c2fc2b92ed2faaa3ba0254a",
+          "other_section_bytes": 64,
+          "p95_ns": 4847676,
+          "rodata_bytes": 545891,
+          "samples_ns": [
+            4697738,
+            4004499,
+            3699763,
+            3777682,
+            3645774,
+            4847676,
+            3788622,
+            4365603,
+            3635974
+          ],
+          "section_bytes": {
+            ".bss": 64,
+            ".rodata": 545891,
+            ".text": 180530
+          },
+          "text_bytes": 180530
+        }
+      },
+      "source_sha256": "660d44ed0a9e337ce5435258407c63c5823089dfb31ed416332b582332c9336a",
+      "text_delta_exact_minus_per_bytes": 55699,
+      "text_delta_exact_minus_per_percent": 30.85304381543234,
+      "text_delta_hybrid_minus_per_bytes": 23193,
+      "text_delta_hybrid_minus_per_percent": 12.847172215144298
+    },
+    "variance": {
+      "assembly_program_sha256": "5d0e5599961440964cfefada6bc634c257ee1bc40a71486a7d86bb7fcb92e19e",
+      "correctness_both_modes": true,
+      "exact_vs_per_performance": {
+        "bootstrap_replicates": 5000,
+        "bootstrap_seed": 1401,
+        "classification": "IMPROVEMENT",
+        "materiality_threshold_percent": 5.0,
+        "paired_bootstrap_95_percent_interval": [
+          1.9947674130479733,
+          2.3098052709834755
+        ],
+        "speedup_reference_over_candidate_median": 2.166101636942285
+      },
+      "expected_accumulated_result": 170625.0,
+      "hybrid_vs_per_performance": {
+        "bootstrap_replicates": 5000,
+        "bootstrap_seed": 1401,
+        "classification": "IMPROVEMENT",
+        "materiality_threshold_percent": 5.0,
+        "paired_bootstrap_95_percent_interval": [
+          1.9226176941491484,
+          2.3598728983067496
+        ],
+        "speedup_reference_over_candidate_median": 2.0408910638202324
+      },
+      "median_paired_speedup_exact_over_per": 2.166101636942285,
+      "median_paired_speedup_hybrid_over_per": 2.0408910638202324,
+      "modes": {
+        "exact-segment": {
+          "coefficient_of_variation": 0.14259303093678324,
+          "elf_bytes": 779672,
+          "maximum_ns": 3694924,
+          "median_ns": 2593670,
+          "minimum_ns": 2435333,
+          "native_assembly_bytes": 2095983,
+          "native_assembly_sha256": "3e1a6fee0512b032b622a70989cecf3a3ead52cd765ac5381a8289b447f3dee7",
+          "other_section_bytes": 64,
+          "p95_ns": 3694924,
+          "rodata_bytes": 527966,
+          "samples_ns": [
+            3694924,
+            2732218,
+            2716319,
+            2514322,
+            2435333,
+            2593670,
+            2469292,
+            2925895,
+            2556620
+          ],
+          "section_bytes": {
+            ".bss": 64,
+            ".rodata": 527966,
+            ".text": 235966
+          },
+          "text_bytes": 235966
+        },
+        "loop-hybrid": {
+          "coefficient_of_variation": 0.10119077533688978,
+          "elf_bytes": 746904,
+          "maximum_ns": 3393419,
+          "median_ns": 2850256,
+          "minimum_ns": 2461022,
+          "native_assembly_bytes": 1919835,
+          "native_assembly_sha256": "dea3d1f7701811422f51c71f1cda29c11d3df3b110656f5e9b1d2e9bf26156c8",
+          "other_section_bytes": 64,
+          "p95_ns": 3393419,
+          "rodata_bytes": 527966,
+          "samples_ns": [
+            3393419,
+            3036624,
+            2981754,
+            2818857,
+            2680359,
+            2850256,
+            2942211,
+            2491352,
+            2461022
+          ],
+          "section_bytes": {
+            ".bss": 64,
+            ".rodata": 527966,
+            ".text": 203460
+          },
+          "text_bytes": 203460
+        },
+        "per-instruction": {
+          "coefficient_of_variation": 0.08659832711443316,
+          "elf_bytes": 743944,
+          "maximum_ns": 6943244,
+          "median_ns": 5817062,
+          "minimum_ns": 5446277,
+          "native_assembly_bytes": 1824141,
+          "native_assembly_sha256": "a5eeca6038a35642cfa0e73732fbf68ae039ea6a4507a7e3f4122d930b95edbf",
+          "other_section_bytes": 64,
+          "p95_ns": 6943244,
+          "rodata_bytes": 545488,
+          "samples_ns": [
+            6710098,
+            5613675,
+            5732773,
+            5446277,
+            5625145,
+            5817062,
+            6943244,
+            5836480,
+            5844601
+          ],
+          "section_bytes": {
+            ".bss": 64,
+            ".rodata": 545488,
+            ".text": 180354
+          },
+          "text_bytes": 180354
+        }
+      },
+      "source_sha256": "b985820cb3596d6249fbce3628cca262289f80ed72b70db70ab03fc047e10a31",
+      "text_delta_exact_minus_per_bytes": 55612,
+      "text_delta_exact_minus_per_percent": 30.83491355888974,
+      "text_delta_hybrid_minus_per_bytes": 23106,
+      "text_delta_hybrid_minus_per_percent": 12.811470774144183
+    }
+  },
+  "max_instructions": 100000000,
+  "optimization": "O1",
+  "os": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "paired_samples_per_mode_kernel": 9,
+  "protocol": "same O1 AssemblyProgram; only instruction_budget_mode varies",
+  "python": "3.13.15",
+  "source_head": "b24b17dabf692352baabfcd0ebc85f207fad5ab8",
+  "source_tree_clean_at_start": true,
+  "timing_scope": "external wall-clock around one native process; each process executes repeated kernel calls",
+  "vector_length": 64,
+  "warmups_per_mode_kernel": 2
+}
