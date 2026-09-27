@@ -131,6 +131,7 @@ or used as O1 evidence.
 ## Independent Lab State
 
 - `BENCH_REPO=SamDevlab/S3-Benchmarks`
+- `BENCH_REPORT=reports/s3-1.7-native-lowering/FINAL_REPORT.md`
 - `BENCH_MAIN_BASE=e5f3236f868d5522e1e0e92e245a51c7b3e91064`
 - `BENCH_EXPERIMENT_COMMIT=c0cf2277390f9f530881fa2d60953a63e3992b0f`
 - `BENCH_PR=25`, Draft, base `main`
@@ -169,7 +170,8 @@ or used as O1 evidence.
 
 - S3 branch: `feat/s3-1.7-native-lowering-codegen-expansion`
 - S3 head at report creation: `f0c2963d` plus this report commit
-- S3 PR: Draft only; no merge authorized or performed.
+- S3 PR #321: Draft, base `main`:
+  https://github.com/SamDevlab/S3/pull/321
 - S3-Benchmarks PR #25: Draft only; no merge authorized or performed.
 - No release, tag, PyPI publication, default promotion, or shutdown was
   performed.
