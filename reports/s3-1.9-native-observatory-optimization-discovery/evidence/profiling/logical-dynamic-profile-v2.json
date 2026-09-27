@@ -1,0 +1,1480 @@
+{
+  "artifacts": {
+    "energy.pv-timeseries-aggregation.v1.baseline.so": "6b4b944c54cc5ee6bf05b40f2c44e870626f8856fdb8169884a9634f44c0b2e8",
+    "energy.pv-timeseries-aggregation.v1.profiled.s": "d35cd1dc3223ad77ec5ed380627862e211a8dfdf8b64b1afe361986501e8ee09",
+    "energy.pv-timeseries-aggregation.v1.profiled.so": "c84bce451bf94d0a7afadc89a76a3536a5b7deb0fe2d52b6a522851b88bb7329",
+    "engineering.point-cloud-summary.v1.baseline.so": "fc640b39ef8c97304a45800bd48a7b5a779c046858f41988b6b87fff142bbd07",
+    "engineering.point-cloud-summary.v1.profiled.s": "ddc96b9ae038e3819dc0f145a86bfb341c33853a5138d380edf384234297475e",
+    "engineering.point-cloud-summary.v1.profiled.so": "8f8cb93477b3bf4074c79ff17f34fe609dba50522e9220951fb723ad5e0e828c",
+    "geospatial.raster-window-statistics.v1.baseline.so": "685fd61b36e7ded2301d63fa6af36bc8752c33618d9c1035d20089eafeab2262",
+    "geospatial.raster-window-statistics.v1.profiled.s": "3f36c50cdf3efeaeaa07d2a9c7e6f9fd082184e24f342e138c7b8c10e69cee47",
+    "geospatial.raster-window-statistics.v1.profiled.so": "b84cd71324225f6709e4b8040b3882097dd10bf644c9f6b37a2cf3a946d0705f"
+  },
+  "configuration": {
+    "compiler": "/usr/bin/cc",
+    "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+    "instruction_budget_mode": "per-instruction",
+    "max_frames": 1024,
+    "max_instructions": 1000000000,
+    "native_policy": "baseline",
+    "optimization": "O1",
+    "target": "linux-x86_64"
+  },
+  "ended_at_utc": "2026-09-27T12:40:44.787622+00:00",
+  "interpretation": "Logical block visits are dynamically counted in a correctness-checked instrumented native build. Structural weights multiply those visits by static uninstrumented native code size per Assembly block; they are not hardware instruction counts, cycles, or runtime estimates.",
+  "measurement_kind": "LOGICAL_DYNAMIC_COUNTS_AND_STATIC_NATIVE_STRUCTURAL_WEIGHT",
+  "report_kind": "S3_LOGICAL_DYNAMIC_BLOCK_PROFILE_EXPERIMENTAL",
+  "results": {
+    "energy.pv-timeseries-aggregation.v1": {
+      "baseline_native_assembly_sha256": "08cbb0d4f17c898b22da46901320f57c0392c35a499473f739431b9fb0082130",
+      "baseline_output_sha256": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+      "baseline_shared_object_sha256": "6b4b944c54cc5ee6bf05b40f2c44e870626f8856fdb8169884a9634f44c0b2e8",
+      "codegen_report_sha256": "98d1d9057f6550a9b9f3c0fb5d66ebccc70e6b57ae1a96b0b5f156a1ea5afba6",
+      "correctness": "PASS_BASELINE_AND_INSTRUMENTED_OUTPUTS_MATCH_REFERENCE_AND_EACH_OTHER",
+      "dataset_id": "pvlib-denver-synthetic-week-v1",
+      "dataset_sha256": "dcf7e356a75be9597f2732c1739a2f93f73d657bfdaa4207634aff2e5481afca",
+      "estimated_uninstrumented_native_structural_weight": 140398,
+      "hot_blocks": [
+        {
+          "assembly_instruction_count": 48,
+          "block": "while_body_33",
+          "estimated_structural_weight": 74592,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 168,
+          "mapped_native_origin_instructions_static": 444,
+          "native_instruction_count_static": 444,
+          "native_machine_categories_static": {
+            "CALL": 1,
+            "CONTROL_FLOW": 131,
+            "MOVE": 178,
+            "STACK": 56,
+            "UNKNOWN": 78
+          },
+          "native_origin_categories_static": {
+            "CALL": 21,
+            "CONSTANT": 76,
+            "CONVERSION": 11,
+            "MEMORY_ACCESS": 252,
+            "MIXED": 14,
+            "USER_COMPUTE": 70
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "switch_continue_48",
+          "estimated_structural_weight": 10416,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 168,
+          "mapped_native_origin_instructions_static": 62,
+          "native_instruction_count_static": 62,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 19,
+            "MOVE": 20,
+            "STACK": 7,
+            "UNKNOWN": 16
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 18
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 7,
+          "block": "switch_continue_52",
+          "estimated_structural_weight": 8568,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 168,
+          "mapped_native_origin_instructions_static": 51,
+          "native_instruction_count_static": 51,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 17,
+            "MOVE": 18,
+            "STACK": 6,
+            "UNKNOWN": 10
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 12,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "while_condition_32",
+          "estimated_structural_weight": 7774,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 169,
+          "mapped_native_origin_instructions_static": 46,
+          "native_instruction_count_static": 46,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 17,
+            "MOVE": 14,
+            "STACK": 6,
+            "UNKNOWN": 9
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "MEMORY_ACCESS": 24,
+            "MIXED": 14
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_neutral_46",
+          "estimated_structural_weight": 5845,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 167,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_neutral_50",
+          "estimated_structural_weight": 5565,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 159,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 3,
+          "block": "rel_cont_40",
+          "estimated_structural_weight": 4732,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 169,
+          "mapped_native_origin_instructions_static": 28,
+          "native_instruction_count_static": 28,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 11,
+            "MOVE": 7,
+            "STACK": 3,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 4,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 3,
+          "block": "rel_cont_44",
+          "estimated_structural_weight": 4704,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 168,
+          "mapped_native_origin_instructions_static": 28,
+          "native_instruction_count_static": 28,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 11,
+            "MOVE": 7,
+            "STACK": 3,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 4,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 3,
+          "block": "entry",
+          "estimated_structural_weight": 4536,
+          "function": "absolute_f64",
+          "logical_block_executions": 168,
+          "mapped_native_origin_instructions_static": 27,
+          "native_instruction_count_static": 27,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 7,
+            "MOVE": 9,
+            "UNKNOWN": 11
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 4,
+            "CONTROL_FLOW": 10,
+            "USER_COMPUTE": 13
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 4,
+          "block": "rel_neg_37",
+          "estimated_structural_weight": 4536,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 168,
+          "mapped_native_origin_instructions_static": 27,
+          "native_instruction_count_static": 27,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 10,
+            "MOVE": 8,
+            "STACK": 2,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 16
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 4,
+          "block": "rel_neg_41",
+          "estimated_structural_weight": 4509,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 167,
+          "mapped_native_origin_instructions_static": 27,
+          "native_instruction_count_static": 27,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 10,
+            "MOVE": 8,
+            "STACK": 2,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 16
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 3,
+          "block": "switch_negative_0",
+          "estimated_structural_weight": 2926,
+          "function": "absolute_f64",
+          "logical_block_executions": 133,
+          "mapped_native_origin_instructions_static": 22,
+          "native_instruction_count_static": 22,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 4,
+            "MOVE": 12,
+            "STACK": 1,
+            "UNKNOWN": 5
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 4,
+            "CONTROL_FLOW": 9,
+            "USER_COMPUTE": 9
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 34,
+          "block": "while_exit_36",
+          "estimated_structural_weight": 319,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 1,
+          "mapped_native_origin_instructions_static": 319,
+          "native_instruction_count_static": 319,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 95,
+            "MOVE": 123,
+            "STACK": 47,
+            "UNKNOWN": 54
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 60,
+            "CONTROL_FLOW": 14,
+            "CONVERSION": 10,
+            "MEMORY_ACCESS": 193,
+            "USER_COMPUTE": 42
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 1,
+          "block": "switch_neutral_1",
+          "estimated_structural_weight": 315,
+          "function": "absolute_f64",
+          "logical_block_executions": 35,
+          "mapped_native_origin_instructions_static": 9,
+          "native_instruction_count_static": 9,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 2,
+            "MOVE": 4,
+            "STACK": 1,
+            "UNKNOWN": 2
+          },
+          "native_origin_categories_static": {
+            "CONTROL_FLOW": 9
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_negative_49",
+          "estimated_structural_weight": 315,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 9,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 19,
+          "block": "switch_neutral_30",
+          "estimated_structural_weight": 127,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 1,
+          "mapped_native_origin_instructions_static": 127,
+          "native_instruction_count_static": 127,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 38,
+            "MOVE": 52,
+            "STACK": 12,
+            "UNKNOWN": 25
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 52,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 72
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 14,
+          "block": "entry",
+          "estimated_structural_weight": 103,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 1,
+          "mapped_native_origin_instructions_static": 103,
+          "native_instruction_count_static": 103,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 34,
+            "MOVE": 37,
+            "STACK": 13,
+            "UNKNOWN": 19
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 20,
+            "MEMORY_ACCESS": 48,
+            "MIXED": 14,
+            "REFERENCE": 21
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 8,
+          "block": "switch_negative_45",
+          "estimated_structural_weight": 55,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 1,
+          "mapped_native_origin_instructions_static": 55,
+          "native_instruction_count_static": 55,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 18,
+            "MOVE": 20,
+            "STACK": 6,
+            "UNKNOWN": 11
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 16,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 36
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "switch_neutral_13",
+          "estimated_structural_weight": 46,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 1,
+          "mapped_native_origin_instructions_static": 46,
+          "native_instruction_count_static": 46,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 17,
+            "MOVE": 14,
+            "STACK": 6,
+            "UNKNOWN": 9
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "MEMORY_ACCESS": 24,
+            "MIXED": 14
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 3,
+          "block": "switch_negative_26",
+          "estimated_structural_weight": 35,
+          "function": "energy_series_aggregation",
+          "logical_block_executions": 1,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 10,
+            "MOVE": 11,
+            "STACK": 3,
+            "UNKNOWN": 11
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 5,
+            "CONTROL_FLOW": 12,
+            "USER_COMPUTE": 18
+          },
+          "unmapped_native_instructions_static": 0
+        }
+      ],
+      "instrumentation": "pushfq; inc qword ptr [rip+counter]; popfq at each S3 Assembly block entry",
+      "instrumented_native_assembly_sha256": "d35cd1dc3223ad77ec5ed380627862e211a8dfdf8b64b1afe361986501e8ee09",
+      "instrumented_output_sha256": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+      "instrumented_shared_object_sha256": "c84bce451bf94d0a7afadc89a76a3536a5b7deb0fe2d52b6a522851b88bb7329",
+      "logical_block_executions": 2036,
+      "logical_dynamic_s3_opcode_counts": {
+        "TADD": 672,
+        "TBR3": 1019,
+        "TCALL": 168,
+        "TCMP": 341,
+        "TCONST": 6409,
+        "TCVT": 169,
+        "TDIV": 2,
+        "TJMP": 848,
+        "TLOAD": 3549,
+        "TMUL": 1,
+        "TNDIFF": 469,
+        "TREL": 337,
+        "TRET": 169,
+        "TSLEN": 3,
+        "TSLOAD": 336,
+        "TSSTORE": 5,
+        "TSTORE": 1865
+      },
+      "pmu_used": false,
+      "profile_scope_note": "Weights include only S3 Assembly basic-block regions. Function prologues/epilogues and runtime-helper execution are excluded; static block weight is not a retired-instruction count because native lowering may branch within an Assembly block.",
+      "source_path": "benchmarks/workloads/real_world/energy_series_aggregation.s3",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "timing_performed": false,
+      "uncovered_function_native_instructions_per_call": 347,
+      "weighted_native_machine_categories": {
+        "CALL": 168,
+        "CONTROL_FLOW": 44140,
+        "MOVE": 51326,
+        "STACK": 15918,
+        "UNKNOWN": 28846
+      }
+    },
+    "engineering.point-cloud-summary.v1": {
+      "baseline_native_assembly_sha256": "a5161190f38d1d3ef05c224d05c8d4fee56d84e0890be7e280c36c5ab7b216c0",
+      "baseline_output_sha256": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+      "baseline_shared_object_sha256": "fc640b39ef8c97304a45800bd48a7b5a779c046858f41988b6b87fff142bbd07",
+      "codegen_report_sha256": "53d05242ed7b200034a5a115cbb52bf3257ae9947d0da9663709720c907401ba",
+      "correctness": "PASS_BASELINE_AND_INSTRUMENTED_OUTPUTS_MATCH_REFERENCE_AND_EACH_OTHER",
+      "dataset_id": "synthetic-regular-point-cloud-64-v1",
+      "dataset_sha256": "346178eab37077a8bd7989d60836a2b54fb27948c36dabd18e7a58b2e41042f8",
+      "estimated_uninstrumented_native_structural_weight": 121197,
+      "hot_blocks": [
+        {
+          "assembly_instruction_count": 64,
+          "block": "while_body_63",
+          "estimated_structural_weight": 38400,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 600,
+          "native_instruction_count_static": 600,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 179,
+            "MOVE": 234,
+            "STACK": 78,
+            "UNKNOWN": 109
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 100,
+            "CONTROL_FLOW": 3,
+            "CONVERSION": 11,
+            "MEMORY_ACCESS": 304,
+            "USER_COMPUTE": 182
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 53,
+          "block": "while_body_30",
+          "estimated_structural_weight": 31680,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 495,
+          "native_instruction_count_static": 495,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 153,
+            "MOVE": 182,
+            "STACK": 63,
+            "UNKNOWN": 97
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 88,
+            "CONTROL_FLOW": 12,
+            "CONVERSION": 11,
+            "MEMORY_ACCESS": 280,
+            "USER_COMPUTE": 104
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "switch_continue_41",
+          "estimated_structural_weight": 3968,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 62,
+          "native_instruction_count_static": 62,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 19,
+            "MOVE": 20,
+            "STACK": 7,
+            "UNKNOWN": 16
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 18
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "switch_continue_45",
+          "estimated_structural_weight": 3968,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 62,
+          "native_instruction_count_static": 62,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 19,
+            "MOVE": 20,
+            "STACK": 7,
+            "UNKNOWN": 16
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 18
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "switch_continue_49",
+          "estimated_structural_weight": 3968,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 62,
+          "native_instruction_count_static": 62,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 19,
+            "MOVE": 20,
+            "STACK": 7,
+            "UNKNOWN": 16
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 18
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "switch_continue_53",
+          "estimated_structural_weight": 3968,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 62,
+          "native_instruction_count_static": 62,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 19,
+            "MOVE": 20,
+            "STACK": 7,
+            "UNKNOWN": 16
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 18
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "switch_continue_57",
+          "estimated_structural_weight": 3968,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 62,
+          "native_instruction_count_static": 62,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 19,
+            "MOVE": 20,
+            "STACK": 7,
+            "UNKNOWN": 16
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 18
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 7,
+          "block": "switch_continue_61",
+          "estimated_structural_weight": 3264,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 51,
+          "native_instruction_count_static": 51,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 17,
+            "MOVE": 18,
+            "STACK": 6,
+            "UNKNOWN": 10
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 12,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "while_condition_29",
+          "estimated_structural_weight": 2990,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 65,
+          "mapped_native_origin_instructions_static": 46,
+          "native_instruction_count_static": 46,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 17,
+            "MOVE": 14,
+            "STACK": 6,
+            "UNKNOWN": 9
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "MEMORY_ACCESS": 24,
+            "MIXED": 14
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "while_condition_62",
+          "estimated_structural_weight": 2990,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 65,
+          "mapped_native_origin_instructions_static": 46,
+          "native_instruction_count_static": 46,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 17,
+            "MOVE": 14,
+            "STACK": 6,
+            "UNKNOWN": 9
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "MEMORY_ACCESS": 24,
+            "MIXED": 14
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_neutral_39",
+          "estimated_structural_weight": 2240,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_neutral_43",
+          "estimated_structural_weight": 2240,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_neutral_47",
+          "estimated_structural_weight": 2240,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_neutral_59",
+          "estimated_structural_weight": 2030,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 58,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_neutral_51",
+          "estimated_structural_weight": 1995,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 57,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_neutral_55",
+          "estimated_structural_weight": 1995,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 57,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 3,
+          "block": "rel_cont_37",
+          "estimated_structural_weight": 1820,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 65,
+          "mapped_native_origin_instructions_static": 28,
+          "native_instruction_count_static": 28,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 11,
+            "MOVE": 7,
+            "STACK": 3,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 4,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 3,
+          "block": "rel_cont_70",
+          "estimated_structural_weight": 1820,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 65,
+          "mapped_native_origin_instructions_static": 28,
+          "native_instruction_count_static": 28,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 11,
+            "MOVE": 7,
+            "STACK": 3,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 4,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 4,
+          "block": "rel_neg_34",
+          "estimated_structural_weight": 1728,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 27,
+          "native_instruction_count_static": 27,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 10,
+            "MOVE": 8,
+            "STACK": 2,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 16
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 4,
+          "block": "rel_neg_67",
+          "estimated_structural_weight": 1728,
+          "function": "point_cloud_summary",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 27,
+          "native_instruction_count_static": 27,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 10,
+            "MOVE": 8,
+            "STACK": 2,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 16
+          },
+          "unmapped_native_instructions_static": 0
+        }
+      ],
+      "instrumentation": "pushfq; inc qword ptr [rip+counter]; popfq at each S3 Assembly block entry",
+      "instrumented_native_assembly_sha256": "ddc96b9ae038e3819dc0f145a86bfb341c33853a5138d380edf384234297475e",
+      "instrumented_output_sha256": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+      "instrumented_shared_object_sha256": "8f8cb93477b3bf4074c79ff17f34fe609dba50522e9220951fb723ad5e0e828c",
+      "logical_block_executions": 1304,
+      "logical_dynamic_s3_opcode_counts": {
+        "TADD": 768,
+        "TBR3": 652,
+        "TCALL": 1,
+        "TCMP": 134,
+        "TCONST": 5339,
+        "TCVT": 129,
+        "TDIV": 4,
+        "TJMP": 651,
+        "TLOAD": 3235,
+        "TMUL": 321,
+        "TNDIFF": 192,
+        "TREL": 384,
+        "TRET": 1,
+        "TSLEN": 2,
+        "TSLOAD": 387,
+        "TSSTORE": 10,
+        "TSTORE": 1434
+      },
+      "pmu_used": false,
+      "profile_scope_note": "Weights include only S3 Assembly basic-block regions. Function prologues/epilogues and runtime-helper execution are excluded; static block weight is not a retired-instruction count because native lowering may branch within an Assembly block.",
+      "source_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "timing_performed": false,
+      "uncovered_function_native_instructions_per_call": 536,
+      "weighted_native_machine_categories": {
+        "CALL": 1,
+        "CONTROL_FLOW": 38437,
+        "MOVE": 43064,
+        "STACK": 14797,
+        "UNKNOWN": 24898
+      }
+    },
+    "geospatial.raster-window-statistics.v1": {
+      "baseline_native_assembly_sha256": "73ae26b6c3e4a6d03a7951834f4a2e1b291a737bb73a89d9ccb650c15f2ce9ed",
+      "baseline_output_sha256": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+      "baseline_shared_object_sha256": "685fd61b36e7ded2301d63fa6af36bc8752c33618d9c1035d20089eafeab2262",
+      "codegen_report_sha256": "b5b0ac0216ffacba4016c69e36a7d70fabe364cf0fd3aa17483d86bef1d1e4e3",
+      "correctness": "PASS_BASELINE_AND_INSTRUMENTED_OUTPUTS_MATCH_REFERENCE_AND_EACH_OTHER",
+      "dataset_id": "synthetic-projected-raster-8x8-v1",
+      "dataset_sha256": "3a182a6f587c30c9f38c0c25dba394729ea4563568dc00e9c3999091a4593f3c",
+      "estimated_uninstrumented_native_structural_weight": 85806,
+      "hot_blocks": [
+        {
+          "assembly_instruction_count": 17,
+          "block": "while_body_69",
+          "estimated_structural_weight": 9792,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 153,
+          "native_instruction_count_static": 153,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 52,
+            "MOVE": 51,
+            "STACK": 20,
+            "UNKNOWN": 30
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 24,
+            "CONVERSION": 11,
+            "MEMORY_ACCESS": 80,
+            "MIXED": 14,
+            "USER_COMPUTE": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 21,
+          "block": "switch_negative_115",
+          "estimated_structural_weight": 9200,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 46,
+          "mapped_native_origin_instructions_static": 200,
+          "native_instruction_count_static": 200,
+          "native_machine_categories_static": {
+            "CALL": 1,
+            "CONTROL_FLOW": 57,
+            "MOVE": 84,
+            "STACK": 24,
+            "UNKNOWN": 34
+          },
+          "native_origin_categories_static": {
+            "CALL": 21,
+            "CONSTANT": 32,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 88,
+            "USER_COMPUTE": 56
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 17,
+          "block": "switch_continue_91",
+          "estimated_structural_weight": 8932,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 58,
+          "mapped_native_origin_instructions_static": 154,
+          "native_instruction_count_static": 154,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 47,
+            "MOVE": 57,
+            "STACK": 19,
+            "UNKNOWN": 31
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 28,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 72,
+            "USER_COMPUTE": 42
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 10,
+          "block": "switch_continue_103",
+          "estimated_structural_weight": 4872,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 58,
+          "mapped_native_origin_instructions_static": 84,
+          "native_instruction_count_static": 84,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 30,
+            "MOVE": 26,
+            "STACK": 10,
+            "UNKNOWN": 18
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 12,
+            "CONVERSION": 22,
+            "MEMORY_ACCESS": 24,
+            "MIXED": 14,
+            "USER_COMPUTE": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 10,
+          "block": "switch_negative_81",
+          "estimated_structural_weight": 4756,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 58,
+          "mapped_native_origin_instructions_static": 82,
+          "native_instruction_count_static": 82,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 28,
+            "MOVE": 28,
+            "STACK": 11,
+            "UNKNOWN": 15
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 16,
+            "MEMORY_ACCESS": 52,
+            "MIXED": 14
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "switch_continue_95",
+          "estimated_structural_weight": 3596,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 58,
+          "mapped_native_origin_instructions_static": 62,
+          "native_instruction_count_static": 62,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 19,
+            "MOVE": 20,
+            "STACK": 7,
+            "UNKNOWN": 16
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 18
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "switch_continue_99",
+          "estimated_structural_weight": 3596,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 58,
+          "mapped_native_origin_instructions_static": 62,
+          "native_instruction_count_static": 62,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 19,
+            "MOVE": 20,
+            "STACK": 7,
+            "UNKNOWN": 16
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 18
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 8,
+          "block": "switch_negative_108",
+          "estimated_structural_weight": 3570,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 51,
+          "mapped_native_origin_instructions_static": 70,
+          "native_instruction_count_static": 70,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 25,
+            "MOVE": 22,
+            "STACK": 9,
+            "UNKNOWN": 14
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 12,
+            "MEMORY_ACCESS": 28,
+            "MIXED": 14,
+            "USER_COMPUTE": 16
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 6,
+          "block": "while_condition_68",
+          "estimated_structural_weight": 3312,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 72,
+          "mapped_native_origin_instructions_static": 46,
+          "native_instruction_count_static": 46,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 17,
+            "MOVE": 14,
+            "STACK": 6,
+            "UNKNOWN": 9
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "MEMORY_ACCESS": 24,
+            "MIXED": 14
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 7,
+          "block": "switch_continue_120",
+          "estimated_structural_weight": 3264,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 51,
+          "native_instruction_count_static": 51,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 17,
+            "MOVE": 18,
+            "STACK": 6,
+            "UNKNOWN": 10
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 12,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 3,
+          "block": "rel_cont_76",
+          "estimated_structural_weight": 2016,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 72,
+          "mapped_native_origin_instructions_static": 28,
+          "native_instruction_count_static": 28,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 11,
+            "MOVE": 7,
+            "STACK": 3,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 4,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_neutral_89",
+          "estimated_structural_weight": 1995,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 57,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_neutral_97",
+          "estimated_structural_weight": 1995,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 57,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 3,
+          "block": "rel_cont_80",
+          "estimated_structural_weight": 1792,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 28,
+          "native_instruction_count_static": 28,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 11,
+            "MOVE": 7,
+            "STACK": 3,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 4,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 4,
+          "block": "rel_neg_73",
+          "estimated_structural_weight": 1728,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 64,
+          "mapped_native_origin_instructions_static": 27,
+          "native_instruction_count_static": 27,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 10,
+            "MOVE": 8,
+            "STACK": 2,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 16
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 5,
+          "block": "switch_neutral_101",
+          "estimated_structural_weight": 1715,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 49,
+          "mapped_native_origin_instructions_static": 35,
+          "native_instruction_count_static": 35,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 12,
+            "MOVE": 12,
+            "STACK": 4,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 3,
+          "block": "rel_cont_107",
+          "estimated_structural_weight": 1624,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 58,
+          "mapped_native_origin_instructions_static": 28,
+          "native_instruction_count_static": 28,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 11,
+            "MOVE": 7,
+            "STACK": 3,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 4,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 3,
+          "block": "rel_cont_87",
+          "estimated_structural_weight": 1624,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 58,
+          "mapped_native_origin_instructions_static": 28,
+          "native_instruction_count_static": 28,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 11,
+            "MOVE": 7,
+            "STACK": 3,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 4,
+            "CONTROL_FLOW": 12,
+            "MEMORY_ACCESS": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 7,
+          "block": "switch_negative_92",
+          "estimated_structural_weight": 1581,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 31,
+          "mapped_native_origin_instructions_static": 51,
+          "native_instruction_count_static": 51,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 17,
+            "MOVE": 18,
+            "STACK": 6,
+            "UNKNOWN": 10
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 12,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 24,
+            "USER_COMPUTE": 12
+          },
+          "unmapped_native_instructions_static": 0
+        },
+        {
+          "assembly_instruction_count": 4,
+          "block": "rel_zero_78",
+          "estimated_structural_weight": 1566,
+          "function": "raster_window_statistics",
+          "logical_block_executions": 58,
+          "mapped_native_origin_instructions_static": 27,
+          "native_instruction_count_static": 27,
+          "native_machine_categories_static": {
+            "CONTROL_FLOW": 10,
+            "MOVE": 8,
+            "STACK": 2,
+            "UNKNOWN": 7
+          },
+          "native_origin_categories_static": {
+            "CONSTANT": 8,
+            "CONTROL_FLOW": 3,
+            "MEMORY_ACCESS": 16
+          },
+          "unmapped_native_instructions_static": 0
+        }
+      ],
+      "instrumentation": "pushfq; inc qword ptr [rip+counter]; popfq at each S3 Assembly block entry",
+      "instrumented_native_assembly_sha256": "3f36c50cdf3efeaeaa07d2a9c7e6f9fd082184e24f342e138c7b8c10e69cee47",
+      "instrumented_output_sha256": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+      "instrumented_shared_object_sha256": "b84cd71324225f6709e4b8040b3882097dd10bf644c9f6b37a2cf3a946d0705f",
+      "logical_block_executions": 1622,
+      "logical_dynamic_s3_opcode_counts": {
+        "TADD": 530,
+        "TBR3": 864,
+        "TCALL": 46,
+        "TCMP": 322,
+        "TCONST": 3963,
+        "TCVT": 183,
+        "TDIV": 2,
+        "TJMP": 711,
+        "TLOAD": 2016,
+        "TMUL": 65,
+        "TNDIFF": 54,
+        "TREL": 220,
+        "TRET": 47,
+        "TSLEN": 3,
+        "TSLOAD": 219,
+        "TSSTORE": 6,
+        "TSTORE": 1003
+      },
+      "pmu_used": false,
+      "profile_scope_note": "Weights include only S3 Assembly basic-block regions. Function prologues/epilogues and runtime-helper execution are excluded; static block weight is not a retired-instruction count because native lowering may branch within an Assembly block.",
+      "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "timing_performed": false,
+      "uncovered_function_native_instructions_per_call": 640,
+      "weighted_native_machine_categories": {
+        "CALL": 46,
+        "CONTROL_FLOW": 28933,
+        "MOVE": 28594,
+        "STACK": 9773,
+        "UNKNOWN": 18460
+      }
+    }
+  },
+  "schema_version": "1.0.0",
+  "source_provenance": {
+    "compiler_source_sha256": {
+      "bootstrap/s3/backends/x86_64/allocation.py": "492bb6debc7ab3b7a5041e081fd6e2510cadf040abea6f3a65ffd84d5eae7087",
+      "bootstrap/s3/backends/x86_64/backend.py": "de5a8a8889ed2f1913ef9b40a199a2cc4e7bc7860cc8912392c915818e917a6e",
+      "bootstrap/s3/backends/x86_64/emitter.py": "168e169a419574226db4055bdbbb1edcad0b1574498af3bc529c261ac64014c4",
+      "bootstrap/s3/memory_effects.py": "308474d95d6d3540d94c88f7d657e33f4a8477294a921d45677a2f8966d68561",
+      "bootstrap/s3/optimizer.py": "3fe339c62dfab83b8cda7c101518b3aa7506501bfbf3a1ae307f11c2ecd6de1f"
+    },
+    "git_head": "211b1aecec756be42516322429720018f54001e7",
+    "git_tree": "08289d214832e856d46e14ef941239649e9f4063",
+    "profiling_tool_sha256": "defd37bc6f545a7d52d236360a431c090234b5e8a7595410ef0ab9e3b4f578d4",
+    "worktree_dirty": true
+  },
+  "started_at_utc": "2026-09-27T12:40:43.400217+00:00"
+}

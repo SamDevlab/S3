@@ -1,0 +1,413 @@
+{
+  "campaign": "S3_1_9_NATIVE_OBSERVATORY_OPTIMIZATION_DISCOVERY_COMPILER_AUTONOMY_AND_COMPUTE_FRONTIER_EXPANSION",
+  "evidence": {
+    "budget_mode_cross_run_classifications": {
+      "energy.pv-timeseries-aggregation.v1": {
+        "EXACT_SEGMENT": {
+          "cross_run_classification": "REPLICATION_DISAGREEMENT_OR_INCONCLUSIVE",
+          "run_classifications": [
+            "INCONCLUSIVE",
+            "MATERIAL_IMPROVEMENT"
+          ],
+          "run_paired_median_ratios": [
+            1.0229037415880162,
+            1.0956404648324485
+          ]
+        },
+        "LOOP_HYBRID": {
+          "cross_run_classification": "REPLICATION_DISAGREEMENT_OR_INCONCLUSIVE",
+          "run_classifications": [
+            "INCONCLUSIVE",
+            "MATERIAL_IMPROVEMENT"
+          ],
+          "run_paired_median_ratios": [
+            1.086833664803032,
+            1.119717058072465
+          ]
+        }
+      },
+      "engineering.point-cloud-summary.v1": {
+        "EXACT_SEGMENT": {
+          "cross_run_classification": "REPEATED_MATERIAL_IMPROVEMENT",
+          "run_classifications": [
+            "MATERIAL_IMPROVEMENT",
+            "MATERIAL_IMPROVEMENT"
+          ],
+          "run_paired_median_ratios": [
+            1.0806119760180886,
+            1.083463221766315
+          ]
+        },
+        "LOOP_HYBRID": {
+          "cross_run_classification": "REPEATED_MATERIAL_IMPROVEMENT",
+          "run_classifications": [
+            "MATERIAL_IMPROVEMENT",
+            "MATERIAL_IMPROVEMENT"
+          ],
+          "run_paired_median_ratios": [
+            1.0859987615457574,
+            1.08567697811629
+          ]
+        }
+      },
+      "geospatial.raster-window-statistics.v1": {
+        "EXACT_SEGMENT": {
+          "cross_run_classification": "REPEATED_MATERIAL_IMPROVEMENT",
+          "run_classifications": [
+            "MATERIAL_IMPROVEMENT",
+            "MATERIAL_IMPROVEMENT"
+          ],
+          "run_paired_median_ratios": [
+            1.0958416954787351,
+            1.0837059539893616
+          ]
+        },
+        "LOOP_HYBRID": {
+          "cross_run_classification": "REPLICATION_DISAGREEMENT_OR_INCONCLUSIVE",
+          "run_classifications": [
+            "INCONCLUSIVE",
+            "INCONCLUSIVE"
+          ],
+          "run_paired_median_ratios": [
+            1.0530163431083865,
+            1.0533887674758238
+          ]
+        }
+      }
+    },
+    "independent_executor_provenance_sha256": {
+      "executor_raw_result_sha256": "897fade8e52d459bf505c89d52a3f307196757d0ea1ea99e993914e968a9e721",
+      "reports/s3-1.9-native-observatory-optimization-discovery/evidence/optimizations/budget-mode-replication-executor-result-v1.json": "362ae31e343230be83a2375b31a714da6814d4f1c6aeb1cca3c2463e03694bc6"
+    },
+    "logical_profile_sha256": "2bbfd0585486f0705cd80cb4abb311ff05813a7b95acdbd50223a92c7b44b88e",
+    "matched_benchmark_reports_sha256": {
+      "reports/s3-1.9-native-observatory-optimization-discovery/evidence/baseline/native-workload-benchmark-v1.json": "6ddd6fb9a8fd6a3c656b6ac0970d1e5ba5f44e05cea59da8aaefd888cb15deaa",
+      "reports/s3-1.9-native-observatory-optimization-discovery/evidence/optimizations/budget-mode-replication-v1.json": "897fade8e52d459bf505c89d52a3f307196757d0ea1ea99e993914e968a9e721"
+    },
+    "observatory_reports_sha256": {
+      "reports/s3-1.9-native-observatory-optimization-discovery/evidence/observatory/energy-native-observatory-v4.json": "f4794705de73e4a4e4f77607c757a585e3185376eaa5a99fa37c820947238eb2",
+      "reports/s3-1.9-native-observatory-optimization-discovery/evidence/observatory/point-cloud-native-observatory-v4.json": "4a02da5d8e65194e018ca3f902a62a192d04442d81bc1a6a7898ca34d106e426",
+      "reports/s3-1.9-native-observatory-optimization-discovery/evidence/observatory/raster-native-observatory-v4.json": "6a3eb1c63c54a031d47064ddf8574df650cdf6a184e0dd4e0259b69cad3c31f2"
+    },
+    "optimization_experiment_result": {
+      "driver_sha256": "7d0fb334eb3c1b823849ae02caa381bca7f6d154756ca232835463c66381f26b",
+      "experiment_id": "EXP-S3-19-OPT-001",
+      "focused_test_sha256": "0eed138da8de9d84c1a7fa5edd3050e2f0fe3632061bc989d9c4f0cf69473c19",
+      "mutable_loads_after": 220,
+      "mutable_loads_before": 220,
+      "mutable_loads_forwarded": 0,
+      "status": "REJECTED_NO_ELIGIBLE_REPEATED_MUTABLE_LOADS",
+      "workloads": {
+        "energy.pv-timeseries-aggregation.v1": {
+          "correctness": "PASS_REFERENCE_AND_BASELINE_EXACT_OUTPUT_MATCH",
+          "mutable_loads_after": 44,
+          "mutable_loads_before": 44,
+          "mutable_loads_forwarded": 0
+        },
+        "engineering.point-cloud-summary.v1": {
+          "correctness": "PASS_REFERENCE_AND_BASELINE_EXACT_OUTPUT_MATCH",
+          "mutable_loads_after": 91,
+          "mutable_loads_before": 91,
+          "mutable_loads_forwarded": 0
+        },
+        "geospatial.raster-window-statistics.v1": {
+          "correctness": "PASS_REFERENCE_AND_BASELINE_EXACT_OUTPUT_MATCH",
+          "mutable_loads_after": 85,
+          "mutable_loads_before": 85,
+          "mutable_loads_forwarded": 0
+        }
+      }
+    },
+    "optimization_experiment_sha256": "9f7ed0341f867203ca4c464d5f14f3951ab88371a564c4a8292d4c3334f2d571",
+    "total_dynamic_structural_weight": 347401,
+    "weighted_machine_category_totals": {
+      "CALL": 215,
+      "CONTROL_FLOW": 111510,
+      "MOVE": 122984,
+      "STACK": 40488,
+      "UNKNOWN": 72204
+    },
+    "weighted_origin_totals": {
+      "CALL": 4503,
+      "CONSTANT": 62857,
+      "CONTROL_FLOW": 29025,
+      "CONVERSION": 5286,
+      "MEMORY_ACCESS": 177281,
+      "MIXED": 11158,
+      "REFERENCE": 56,
+      "UNMAPPED": 0,
+      "USER_COMPUTE": 57235
+    },
+    "workloads": {
+      "energy.pv-timeseries-aggregation.v1": {
+        "logical_block_executions": 2036,
+        "machine_categories": {
+          "CALL": 168,
+          "CONTROL_FLOW": 44140,
+          "MOVE": 51326,
+          "STACK": 15918,
+          "UNKNOWN": 28846
+        },
+        "origin_categories": {
+          "CALL": 3528,
+          "CONSTANT": 25641,
+          "CONTROL_FLOW": 11870,
+          "CONVERSION": 1858,
+          "MEMORY_ACCESS": 72465,
+          "MIXED": 4774,
+          "REFERENCE": 21,
+          "UNMAPPED": 0,
+          "USER_COMPUTE": 20241
+        },
+        "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+        "structural_weight": 140398
+      },
+      "engineering.point-cloud-summary.v1": {
+        "logical_block_executions": 1304,
+        "machine_categories": {
+          "CALL": 1,
+          "CONTROL_FLOW": 38437,
+          "MOVE": 43064,
+          "STACK": 14797,
+          "UNKNOWN": 24898
+        },
+        "origin_categories": {
+          "CALL": 9,
+          "CONSTANT": 21360,
+          "CONTROL_FLOW": 8182,
+          "CONVERSION": 1418,
+          "MEMORY_ACCESS": 63438,
+          "MIXED": 1876,
+          "REFERENCE": 14,
+          "UNMAPPED": 0,
+          "USER_COMPUTE": 24900
+        },
+        "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+        "structural_weight": 121197
+      },
+      "geospatial.raster-window-statistics.v1": {
+        "logical_block_executions": 1622,
+        "machine_categories": {
+          "CALL": 46,
+          "CONTROL_FLOW": 28933,
+          "MOVE": 28594,
+          "STACK": 9773,
+          "UNKNOWN": 18460
+        },
+        "origin_categories": {
+          "CALL": 966,
+          "CONSTANT": 15856,
+          "CONTROL_FLOW": 8973,
+          "CONVERSION": 2010,
+          "MEMORY_ACCESS": 41378,
+          "MIXED": 4508,
+          "REFERENCE": 21,
+          "UNMAPPED": 0,
+          "USER_COMPUTE": 12094
+        },
+        "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+        "structural_weight": 85806
+      }
+    }
+  },
+  "hypotheses": [
+    {
+      "candidate": "EXACT_SEGMENT",
+      "category": "INSTRUCTION_BUDGET_POLICY",
+      "confidence": "REPEATED_FOR_SELECTED_WORKLOADS_ONLY",
+      "evidence": {
+        "compact_ea_applied": false,
+        "o0_vs_o1_material_change": false,
+        "per_workload": {
+          "energy.pv-timeseries-aggregation.v1": {
+            "cross_run_classification": "REPLICATION_DISAGREEMENT_OR_INCONCLUSIVE",
+            "run_classifications": [
+              "INCONCLUSIVE",
+              "MATERIAL_IMPROVEMENT"
+            ],
+            "run_paired_median_ratios": [
+              1.0229037415880162,
+              1.0956404648324485
+            ]
+          },
+          "engineering.point-cloud-summary.v1": {
+            "cross_run_classification": "REPEATED_MATERIAL_IMPROVEMENT",
+            "run_classifications": [
+              "MATERIAL_IMPROVEMENT",
+              "MATERIAL_IMPROVEMENT"
+            ],
+            "run_paired_median_ratios": [
+              1.0806119760180886,
+              1.083463221766315
+            ]
+          },
+          "geospatial.raster-window-statistics.v1": {
+            "cross_run_classification": "REPEATED_MATERIAL_IMPROVEMENT",
+            "run_classifications": [
+              "MATERIAL_IMPROVEMENT",
+              "MATERIAL_IMPROVEMENT"
+            ],
+            "run_paired_median_ratios": [
+              1.0958416954787351,
+              1.0837059539893616
+            ]
+          }
+        },
+        "repeated_material_improvement_workloads": [
+          "engineering.point-cloud-summary.v1",
+          "geospatial.raster-window-statistics.v1"
+        ]
+      },
+      "evidence_tier": 1,
+      "rank": 1,
+      "rank_score": 0.05727047,
+      "score_components": {
+        "formula": "mean observed paired improvement x replicated workload fraction",
+        "mean_repeated_paired_median_improvement_fraction": 0.08590571,
+        "repeated_improvement_workload_fraction": 0.66666667
+      },
+      "status": "HYPOTHESIS_FOR_REVIEW",
+      "unknowns": [
+        "Energy classification did not replicate consistently.",
+        "This changes instruction-budget accounting policy, not source-level optimization.",
+        "PER remains the default; this ranker does not promote a policy."
+      ]
+    },
+    {
+      "candidate": "LOOP_HYBRID",
+      "category": "INSTRUCTION_BUDGET_POLICY",
+      "confidence": "REPEATED_FOR_SELECTED_WORKLOADS_ONLY",
+      "evidence": {
+        "compact_ea_applied": false,
+        "o0_vs_o1_material_change": false,
+        "per_workload": {
+          "energy.pv-timeseries-aggregation.v1": {
+            "cross_run_classification": "REPLICATION_DISAGREEMENT_OR_INCONCLUSIVE",
+            "run_classifications": [
+              "INCONCLUSIVE",
+              "MATERIAL_IMPROVEMENT"
+            ],
+            "run_paired_median_ratios": [
+              1.086833664803032,
+              1.119717058072465
+            ]
+          },
+          "engineering.point-cloud-summary.v1": {
+            "cross_run_classification": "REPEATED_MATERIAL_IMPROVEMENT",
+            "run_classifications": [
+              "MATERIAL_IMPROVEMENT",
+              "MATERIAL_IMPROVEMENT"
+            ],
+            "run_paired_median_ratios": [
+              1.0859987615457574,
+              1.08567697811629
+            ]
+          },
+          "geospatial.raster-window-statistics.v1": {
+            "cross_run_classification": "REPLICATION_DISAGREEMENT_OR_INCONCLUSIVE",
+            "run_classifications": [
+              "INCONCLUSIVE",
+              "INCONCLUSIVE"
+            ],
+            "run_paired_median_ratios": [
+              1.0530163431083865,
+              1.0533887674758238
+            ]
+          }
+        },
+        "repeated_material_improvement_workloads": [
+          "engineering.point-cloud-summary.v1"
+        ]
+      },
+      "evidence_tier": 1,
+      "rank": 2,
+      "rank_score": 0.02861262,
+      "score_components": {
+        "formula": "mean observed paired improvement x replicated workload fraction",
+        "mean_repeated_paired_median_improvement_fraction": 0.08583787,
+        "repeated_improvement_workload_fraction": 0.33333333
+      },
+      "status": "HYPOTHESIS_FOR_REVIEW",
+      "unknowns": [
+        "Energy classification did not replicate consistently.",
+        "This changes instruction-budget accounting policy, not source-level optimization.",
+        "PER remains the default; this ranker does not promote a policy."
+      ]
+    },
+    {
+      "candidate": "memory-origin reduction beyond same-block exact-cell forwarding",
+      "category": "MEMORY_ORIGIN_REDUCTION",
+      "confidence": "REPEATED_STRUCTURAL_OBSERVATION_NOT_CAUSAL",
+      "evidence": {
+        "share": 0.51030653,
+        "total_structural_weight": 347401,
+        "weighted_memory_access": 177281,
+        "workloads_where_memory_is_largest_origin_category": [
+          "energy.pv-timeseries-aggregation.v1",
+          "engineering.point-cloud-summary.v1",
+          "geospatial.raster-window-statistics.v1"
+        ]
+      },
+      "evidence_tier": 2,
+      "rank": 3,
+      "rank_score": 0.12757663,
+      "score_components": {
+        "formula": "share x generality x observational-confidence / semantic-risk",
+        "hotness_and_structural_share": 0.51030653,
+        "observational_confidence_factor": 0.5,
+        "semantic_risk_divisor": 2.0,
+        "workload_generality_fraction": 1.0
+      },
+      "status": "EXACT_LOCAL_RULE_REJECTED_BROADER_MEMORY_HYPOTHESIS_OPEN",
+      "unknowns": [
+        "Structural weight is not retired instructions or a runtime-cause measurement.",
+        "Alias/effect completeness is partial; transformation requires a local proof contract.",
+        "PMU is unavailable by policy."
+      ]
+    },
+    {
+      "candidate": "inspect block-local value/materialization and ternary-control lowering",
+      "category": "NATIVE_MOVE_AND_CONTROL_LOWERING",
+      "confidence": "STRUCTURAL_TRIAGE_ONLY",
+      "evidence": {
+        "total_structural_weight": 347401,
+        "weighted_control_flow_instructions": 111510,
+        "weighted_move_instructions": 122984
+      },
+      "evidence_tier": 2,
+      "rank": 4,
+      "rank_score": 0.11812416,
+      "score_components": {
+        "control_structural_share": 0.32098353,
+        "formula": "(move share + control share) x generality x confidence / risk",
+        "move_structural_share": 0.35401165,
+        "observational_confidence_factor": 0.35,
+        "semantic_risk_divisor": 2.0,
+        "workload_generality_fraction": 1.0
+      },
+      "status": "HYPOTHESIS_FOR_INSPECTION",
+      "unknowns": [
+        "Machine syntax is weighted by logical block entries; branches may skip instructions within a block.",
+        "These machine-category counts are not directly attributed to one source transformation.",
+        "No dynamic register-spill or PMU evidence exists."
+      ]
+    }
+  ],
+  "interpretation": {
+    "automatically_modifies_production": false,
+    "default_policy_promotion": false,
+    "hardware_cycles_claimed": false,
+    "is_oracle": false,
+    "per_instruction_default_preserved": true,
+    "pmu": "UNAVAILABLE_BY_POLICY",
+    "ranking_method": "evidence tier first; measured paired runtime signals are not numerically mixed with structural hypotheses",
+    "runtime_causality_established": false,
+    "timing_class": "CHARACTERIZATION_ONLY"
+  },
+  "report_kind": "S3_OPTIMIZATION_DISCOVERY_HYPOTHESES_EXPERIMENTAL",
+  "schema_version": "1.0.0",
+  "source_revision": {
+    "git_commit": "211b1aecec756be42516322429720018f54001e7",
+    "git_tree": "08289d214832e856d46e14ef941239649e9f4063"
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "execution_environment": {
+    "machine": "x86_64",
+    "native_compiler": "/usr/bin/cc",
+    "native_compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "python_executable": "/home/vboxuser/.stage1-qualification-py313/bin/python",
+    "python_version": "3.13.15",
+    "system": "Linux"
+  },
+  "experiment_id": "EXP-S3-19-OPT-001",
+  "experiment_implementation": {
+    "driver_path": "tools/s3_native_optimization_experiments.py",
+    "driver_sha256": "7d0fb334eb3c1b823849ae02caa381bca7f6d154756ca232835463c66381f26b",
+    "focused_test_path": "tests/test_s3_native_optimization_experiments.py",
+    "focused_test_sha256": "0eed138da8de9d84c1a7fa5edd3050e2f0fe3632061bc989d9c4f0cf69473c19"
+  },
+  "report_kind": "S3_EXPERIMENTAL_LOCAL_MUTABLE_LOAD_FORWARDING",
+  "schema_version": "1.0.0",
+  "source_revision": {
+    "compiler_source_dirty": false,
+    "compiler_source_sha256": {
+      "bootstrap/s3/memory_effects.py": "308474d95d6d3540d94c88f7d657e33f4a8477294a921d45677a2f8966d68561",
+      "bootstrap/s3/optimizer.py": "3fe339c62dfab83b8cda7c101518b3aa7506501bfbf3a1ae307f11c2ecd6de1f",
+      "bootstrap/s3/ssa.py": "0d5ed4da43e6bbe22690466bfb5e67d26be6205ef2504c00cd77c79f5e167c89",
+      "bootstrap/s3/ssa_optimizer/value_numbering.py": "1dc9d2fae232056822c23fee66cfeadaf940c21b41c13e6cc0ef514d3f8186b4"
+    },
+    "git_commit": "211b1aecec756be42516322429720018f54001e7",
+    "git_tree": "08289d214832e856d46e14ef941239649e9f4063"
+  },
+  "summary": {
+    "forwarded_by_function": {
+      "energy.pv-timeseries-aggregation.v1:absolute_f64": 0,
+      "energy.pv-timeseries-aggregation.v1:energy_series_aggregation": 0,
+      "energy.pv-timeseries-aggregation.v1:main": 0,
+      "engineering.point-cloud-summary.v1:main": 0,
+      "engineering.point-cloud-summary.v1:point_cloud_summary": 0,
+      "geospatial.raster-window-statistics.v1:absolute_f64": 0,
+      "geospatial.raster-window-statistics.v1:main": 0,
+      "geospatial.raster-window-statistics.v1:raster_window_statistics": 0
+    },
+    "mutable_loads_after": 220,
+    "mutable_loads_before": 220,
+    "mutable_loads_forwarded": 0,
+    "native_timing_claim": false,
+    "output_equivalence": "EXACT_FLOAT_OUTPUTS_AND_REFERENCE_TOLERANCES_PASS",
+    "status": "REJECTED_NO_ELIGIBLE_REPEATED_MUTABLE_LOADS"
+  },
+  "transformation": {
+    "barriers": "all non-pure instructions, index/result register redefinitions, and block boundaries",
+    "pmu_used": false,
+    "precondition": "two mutable LOADs in one IR basic block use the same memory ID, unchanged index-register version, initialization flag, and result type",
+    "production_pipeline_changed": false,
+    "rewrite": "second LOAD result becomes MOVE from first LOAD result",
+    "timing_performed": false
+  },
+  "workloads": {
+    "energy.pv-timeseries-aggregation.v1": {
+      "baseline_native_assembly_bytes": 368414,
+      "baseline_native_assembly_sha256": "ca79d7a6c39b6e725d1c7c97ae1a67803a5f7344734a60e296c510ea24535f68",
+      "candidate_native_assembly_bytes": 368414,
+      "candidate_native_assembly_sha256": "ca79d7a6c39b6e725d1c7c97ae1a67803a5f7344734a60e296c510ea24535f68",
+      "correctness": "PASS_REFERENCE_AND_BASELINE_EXACT_OUTPUT_MATCH",
+      "dataset_sha256": "dcf7e356a75be9597f2732c1739a2f93f73d657bfdaa4207634aff2e5481afca",
+      "mutable_loads_after": 44,
+      "mutable_loads_before": 44,
+      "mutable_loads_forwarded": 0,
+      "output_sha256": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+      "source_path": "workloads/real_world/energy_series_aggregation.s3",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84"
+    },
+    "engineering.point-cloud-summary.v1": {
+      "baseline_native_assembly_bytes": 594831,
+      "baseline_native_assembly_sha256": "372df1176828594995c8a9f44dcb7dc57f908fb32c8b64beec13d56d9d27eeac",
+      "candidate_native_assembly_bytes": 594831,
+      "candidate_native_assembly_sha256": "372df1176828594995c8a9f44dcb7dc57f908fb32c8b64beec13d56d9d27eeac",
+      "correctness": "PASS_REFERENCE_AND_BASELINE_EXACT_OUTPUT_MATCH",
+      "dataset_sha256": "346178eab37077a8bd7989d60836a2b54fb27948c36dabd18e7a58b2e41042f8",
+      "mutable_loads_after": 91,
+      "mutable_loads_before": 91,
+      "mutable_loads_forwarded": 0,
+      "output_sha256": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+      "source_path": "workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9"
+    },
+    "geospatial.raster-window-statistics.v1": {
+      "baseline_native_assembly_bytes": 717853,
+      "baseline_native_assembly_sha256": "90247f7e1c6947955b36ed7a4908315d8c96f276ba8615d02ed4fbced1c796d7",
+      "candidate_native_assembly_bytes": 717853,
+      "candidate_native_assembly_sha256": "90247f7e1c6947955b36ed7a4908315d8c96f276ba8615d02ed4fbced1c796d7",
+      "correctness": "PASS_REFERENCE_AND_BASELINE_EXACT_OUTPUT_MATCH",
+      "dataset_sha256": "3a182a6f587c30c9f38c0c25dba394729ea4563568dc00e9c3999091a4593f3c",
+      "mutable_loads_after": 85,
+      "mutable_loads_before": 85,
+      "mutable_loads_forwarded": 0,
+      "output_sha256": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+      "source_path": "workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e"
+    }
+  }
+}

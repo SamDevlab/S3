@@ -1,0 +1,302 @@
+{
+  "execution": {
+    "elapsed_seconds": 12.277268,
+    "ended_at_utc": "2026-09-27T12:14:39.453943+00:00",
+    "error": null,
+    "raw_result_path": "native-workload-benchmark-v1.json",
+    "return_code": 0,
+    "started_at_utc": "2026-09-27T12:14:27.176672+00:00",
+    "timed_out": false,
+    "validated": {
+      "verified_compiler_source_sha256": {
+        "bootstrap/s3/backends/x86_64/backend.py": "de5a8a8889ed2f1913ef9b40a199a2cc4e7bc7860cc8912392c915818e917a6e",
+        "bootstrap/s3/backends/x86_64/emitter.py": "168e169a419574226db4055bdbbb1edcad0b1574498af3bc529c261ac64014c4",
+        "bootstrap/s3/codegen.py": "de82372e9db96abe830c527e330aade00b8aacbb7237a32f8000bbf9cad1b0c4",
+        "bootstrap/s3/memory_effects.py": "308474d95d6d3540d94c88f7d657e33f4a8477294a921d45677a2f8966d68561",
+        "bootstrap/s3/optimizer.py": "3fe339c62dfab83b8cda7c101518b3aa7506501bfbf3a1ae307f11c2ecd6de1f"
+      },
+      "workloads": {
+        "energy.pv-timeseries-aggregation.v1": {
+          "compact_ea_applied": false,
+          "correctness": "PASS_ALL_BUILDS",
+          "exact_vs_per": 1.0950081012514188,
+          "hybrid_vs_per": 1.123509902455848,
+          "per_binary_metrics": {
+            "elf_file_bytes": 160584,
+            "exported_function_bytes": 15179,
+            "stack_frame_bytes": 2144,
+            "static_branches": 789,
+            "static_calls": 1,
+            "static_instruction_budget_counter_references": 12,
+            "static_machine_instructions": 2754,
+            "static_memory_references": 953,
+            "static_stack_references": 907,
+            "text_section_bytes": 36304
+          },
+          "per_median_ns_per_call": 17128.823,
+          "per_output_sha256": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+          "samples": 21
+        },
+        "engineering.point-cloud-summary.v1": {
+          "compact_ea_applied": false,
+          "correctness": "PASS_ALL_BUILDS",
+          "exact_vs_per": 1.0843522883431738,
+          "hybrid_vs_per": 1.0877535328765153,
+          "per_binary_metrics": {
+            "elf_file_bytes": 258832,
+            "exported_function_bytes": 26063,
+            "stack_frame_bytes": 3648,
+            "static_branches": 1367,
+            "static_calls": 1,
+            "static_instruction_budget_counter_references": 8,
+            "static_machine_instructions": 4732,
+            "static_memory_references": 1601,
+            "static_stack_references": 1536,
+            "text_section_bytes": 58112
+          },
+          "per_median_ns_per_call": 13584.001,
+          "per_output_sha256": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+          "samples": 21
+        },
+        "geospatial.raster-window-statistics.v1": {
+          "compact_ea_applied": false,
+          "correctness": "PASS_ALL_BUILDS",
+          "exact_vs_per": 1.0867201856077466,
+          "hybrid_vs_per": 1.054991808647511,
+          "per_binary_metrics": {
+            "elf_file_bytes": 312136,
+            "exported_function_bytes": 31216,
+            "stack_frame_bytes": 4192,
+            "static_branches": 1715,
+            "static_calls": 1,
+            "static_instruction_budget_counter_references": 18,
+            "static_machine_instructions": 5666,
+            "static_memory_references": 1898,
+            "static_stack_references": 1821,
+            "text_section_bytes": 68491
+          },
+          "per_median_ns_per_call": 11501.891,
+          "per_output_sha256": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+          "samples": 21
+        }
+      }
+    }
+  },
+  "host": {
+    "machine": "x86_64",
+    "python": "3.13.15",
+    "release": "7.0.0-31-generic",
+    "system": "Linux"
+  },
+  "protocol": {
+    "iterations_per_sample": 1000,
+    "native_speedup_claim": false,
+    "samples": 21,
+    "timed_execution": "S3 benchmark script; compile/setup excluded; same-process scalar C ABI and ctypes dispatch included",
+    "timeout_seconds": 3600,
+    "timing_class": "CHARACTERIZATION_ONLY",
+    "warmups": 3
+  },
+  "provenance": {
+    "executor_sha256": "d7d2654aeca43470da31be3a6e9fc48f0e0820b932e290190b4bddc41288dee1",
+    "lab_head": "e5ff385d26ea6ec89d13cf1955bfa5438e56a266",
+    "lab_tree": "c06ac7b063f27144fa19ddc84dc33c082fcc134a",
+    "lab_worktree_clean": false,
+    "native_artifacts": [
+      {
+        "bytes": 369690,
+        "kind": "assembly",
+        "path": "energy.pv-timeseries-aggregation.v1-o0.s",
+        "sha256": "08cbb0d4f17c898b22da46901320f57c0392c35a499473f739431b9fb0082130"
+      },
+      {
+        "bytes": 160584,
+        "kind": "shared_object",
+        "path": "energy.pv-timeseries-aggregation.v1-o0.so",
+        "sha256": "6b4b944c54cc5ee6bf05b40f2c44e870626f8856fdb8169884a9634f44c0b2e8"
+      },
+      {
+        "bytes": 369690,
+        "kind": "assembly",
+        "path": "energy.pv-timeseries-aggregation.v1-o1-compact-ea.s",
+        "sha256": "08cbb0d4f17c898b22da46901320f57c0392c35a499473f739431b9fb0082130"
+      },
+      {
+        "bytes": 160584,
+        "kind": "shared_object",
+        "path": "energy.pv-timeseries-aggregation.v1-o1-compact-ea.so",
+        "sha256": "6b4b944c54cc5ee6bf05b40f2c44e870626f8856fdb8169884a9634f44c0b2e8"
+      },
+      {
+        "bytes": 455554,
+        "kind": "assembly",
+        "path": "energy.pv-timeseries-aggregation.v1-o1-exact-segment.s",
+        "sha256": "65de5e77d4d9c8a59fcda58ed8280cee73f10f583d6572b160668a3008fd14b8"
+      },
+      {
+        "bytes": 172744,
+        "kind": "shared_object",
+        "path": "energy.pv-timeseries-aggregation.v1-o1-exact-segment.so",
+        "sha256": "6bdc6114720931b092d29f7099e077f9846bf600b8d9585e447e126bb0588a62"
+      },
+      {
+        "bytes": 419846,
+        "kind": "assembly",
+        "path": "energy.pv-timeseries-aggregation.v1-o1-loop-hybrid.s",
+        "sha256": "049b167c375ee60fb6b5c3fc181dff524baacbeab35eb15902b639f274ed3ab1"
+      },
+      {
+        "bytes": 168648,
+        "kind": "shared_object",
+        "path": "energy.pv-timeseries-aggregation.v1-o1-loop-hybrid.so",
+        "sha256": "280147b70c5f318b8269ca66d1d3f6cc0726f76245386149ef97a0017fa08f97"
+      },
+      {
+        "bytes": 369690,
+        "kind": "assembly",
+        "path": "energy.pv-timeseries-aggregation.v1-o1.s",
+        "sha256": "08cbb0d4f17c898b22da46901320f57c0392c35a499473f739431b9fb0082130"
+      },
+      {
+        "bytes": 160584,
+        "kind": "shared_object",
+        "path": "energy.pv-timeseries-aggregation.v1-o1.so",
+        "sha256": "6b4b944c54cc5ee6bf05b40f2c44e870626f8856fdb8169884a9634f44c0b2e8"
+      },
+      {
+        "bytes": 596911,
+        "kind": "assembly",
+        "path": "engineering.point-cloud-summary.v1-o0.s",
+        "sha256": "a5161190f38d1d3ef05c224d05c8d4fee56d84e0890be7e280c36c5ab7b216c0"
+      },
+      {
+        "bytes": 258832,
+        "kind": "shared_object",
+        "path": "engineering.point-cloud-summary.v1-o0.so",
+        "sha256": "fc640b39ef8c97304a45800bd48a7b5a779c046858f41988b6b87fff142bbd07"
+      },
+      {
+        "bytes": 596911,
+        "kind": "assembly",
+        "path": "engineering.point-cloud-summary.v1-o1-compact-ea.s",
+        "sha256": "a5161190f38d1d3ef05c224d05c8d4fee56d84e0890be7e280c36c5ab7b216c0"
+      },
+      {
+        "bytes": 258832,
+        "kind": "shared_object",
+        "path": "engineering.point-cloud-summary.v1-o1-compact-ea.so",
+        "sha256": "fc640b39ef8c97304a45800bd48a7b5a779c046858f41988b6b87fff142bbd07"
+      },
+      {
+        "bytes": 741721,
+        "kind": "assembly",
+        "path": "engineering.point-cloud-summary.v1-o1-exact-segment.s",
+        "sha256": "1935641801dd24827acf7f84623a926e2c0413504827878b8ddc6afc52fd18ed"
+      },
+      {
+        "bytes": 283280,
+        "kind": "shared_object",
+        "path": "engineering.point-cloud-summary.v1-o1-exact-segment.so",
+        "sha256": "fd32e2a80902db538afe75d5367292288a2c14de24f72ec7881f30773248c323"
+      },
+      {
+        "bytes": 698584,
+        "kind": "assembly",
+        "path": "engineering.point-cloud-summary.v1-o1-loop-hybrid.s",
+        "sha256": "25221788aa4e5787ad45480414de4ad8f49dfb2836dd5ad6d3d736f1f509b89b"
+      },
+      {
+        "bytes": 275088,
+        "kind": "shared_object",
+        "path": "engineering.point-cloud-summary.v1-o1-loop-hybrid.so",
+        "sha256": "867a0a851171fe22b1888304ef61649b0153a51c8d5672cff343387baf6eb3c5"
+      },
+      {
+        "bytes": 596911,
+        "kind": "assembly",
+        "path": "engineering.point-cloud-summary.v1-o1.s",
+        "sha256": "a5161190f38d1d3ef05c224d05c8d4fee56d84e0890be7e280c36c5ab7b216c0"
+      },
+      {
+        "bytes": 258832,
+        "kind": "shared_object",
+        "path": "engineering.point-cloud-summary.v1-o1.so",
+        "sha256": "fc640b39ef8c97304a45800bd48a7b5a779c046858f41988b6b87fff142bbd07"
+      },
+      {
+        "bytes": 721546,
+        "kind": "assembly",
+        "path": "geospatial.raster-window-statistics.v1-o0.s",
+        "sha256": "8b1a60b6748d471ccefbc866523e94eeac453e8223669cc4b1bd1155cfc430e7"
+      },
+      {
+        "bytes": 312136,
+        "kind": "shared_object",
+        "path": "geospatial.raster-window-statistics.v1-o0.so",
+        "sha256": "d9f4d82a72c2b2fbbc70980f32e8222ed0c61e89703d2c6d4b085e7e9bae3698"
+      },
+      {
+        "bytes": 720557,
+        "kind": "assembly",
+        "path": "geospatial.raster-window-statistics.v1-o1-compact-ea.s",
+        "sha256": "73ae26b6c3e4a6d03a7951834f4a2e1b291a737bb73a89d9ccb650c15f2ce9ed"
+      },
+      {
+        "bytes": 312136,
+        "kind": "shared_object",
+        "path": "geospatial.raster-window-statistics.v1-o1-compact-ea.so",
+        "sha256": "685fd61b36e7ded2301d63fa6af36bc8752c33618d9c1035d20089eafeab2262"
+      },
+      {
+        "bytes": 900243,
+        "kind": "assembly",
+        "path": "geospatial.raster-window-statistics.v1-o1-exact-segment.s",
+        "sha256": "99d2de7c081833137771df3e13130befcdf98f93909c42933f01eec4b690884c"
+      },
+      {
+        "bytes": 340680,
+        "kind": "shared_object",
+        "path": "geospatial.raster-window-statistics.v1-o1-exact-segment.so",
+        "sha256": "4469dde3058e232c06db6194b097c5cb29a44c60f88856abe83402adbf1fabd8"
+      },
+      {
+        "bytes": 831789,
+        "kind": "assembly",
+        "path": "geospatial.raster-window-statistics.v1-o1-loop-hybrid.s",
+        "sha256": "b63b674d883b52b041e1020c9f540943adead44c5f6375aeb6b8db0dd4c185ed"
+      },
+      {
+        "bytes": 328392,
+        "kind": "shared_object",
+        "path": "geospatial.raster-window-statistics.v1-o1-loop-hybrid.so",
+        "sha256": "f8bd683822ce5c68c4116c1bb0d09d59407475521d700c11adc96069d648b6de"
+      },
+      {
+        "bytes": 720557,
+        "kind": "assembly",
+        "path": "geospatial.raster-window-statistics.v1-o1.s",
+        "sha256": "73ae26b6c3e4a6d03a7951834f4a2e1b291a737bb73a89d9ccb650c15f2ce9ed"
+      },
+      {
+        "bytes": 312136,
+        "kind": "shared_object",
+        "path": "geospatial.raster-window-statistics.v1-o1.so",
+        "sha256": "685fd61b36e7ded2301d63fa6af36bc8752c33618d9c1035d20089eafeab2262"
+      },
+      {
+        "bytes": 15656,
+        "kind": "shared_object",
+        "path": "libreal_world_reference.so",
+        "sha256": "1b9175c1da5a6f2038e2f5570f51bd7bb6ba8dd3488a0c9e80d7f2a039128e4d"
+      }
+    ],
+    "raw_result_sha256": "897fade8e52d459bf505c89d52a3f307196757d0ea1ea99e993914e968a9e721",
+    "s3_commit": "211b1aecec756be42516322429720018f54001e7",
+    "s3_repository": "https://github.com/SamDevlab/S3.git",
+    "s3_tree": "08289d214832e856d46e14ef941239649e9f4063",
+    "s3_worktree_clean": true
+  },
+  "report_kind": "S3_BENCHMARKS_1_9_PINNED_NATIVE_EXECUTION",
+  "schema_version": "1.0.0",
+  "status": "PASS"
+}
