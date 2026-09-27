@@ -171,3 +171,22 @@ No transformation was promoted, no compiler default changed, and no historic
 PR was altered. The two campaign branches are intended for Draft PRs against
 `main`; this report does not authorize merge, release, tag, PyPI publication,
 or a preselected 1.11 campaign.
+
+## Review Status
+
+```text
+S3_PR=324
+S3_PR_BASE=main
+S3_PR_STATE=DRAFT
+BENCH_PR=28
+BENCH_PR_BASE=main
+BENCH_PR_STATE=DRAFT
+MERGE=NOT_AUTHORIZED
+RELEASE=NOT_AUTHORIZED
+TAG=NOT_AUTHORIZED
+PYPI=NOT_AUTHORIZED
+S3_1_11_STARTED=NO
+```
+
+The review requests are [S3 #324](https://github.com/SamDevlab/S3/pull/324)
+and [S3-Benchmarks #28](https://github.com/SamDevlab/S3-Benchmarks/pull/28).
