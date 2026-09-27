@@ -1,0 +1,123 @@
+{
+  "functions": [
+    {
+      "analysis_kind": "DIAGNOSTIC_ONLY_NO_TRANSFORMATION_AUTHORIZED",
+      "function": "absolute_f64",
+      "loops": [],
+      "summary": {
+        "inductions_recognized": 0,
+        "loops_seen": 0,
+        "not_vectorizable_loops": 0,
+        "reductions_recognized": 0,
+        "unknown_loops": 0,
+        "vector_bounds_proofs": 0,
+        "vectorizable_loops": 0
+      }
+    },
+    {
+      "analysis_kind": "DIAGNOSTIC_ONLY_NO_TRANSFORMATION_AUTHORIZED",
+      "function": "energy_series_aggregation",
+      "loops": [
+        {
+          "backedges": [
+            "switch_continue_52"
+          ],
+          "blocks": [
+            "rel_cont_40",
+            "rel_cont_44",
+            "rel_neg_37",
+            "rel_neg_41",
+            "rel_pos_39",
+            "rel_pos_43",
+            "rel_zero_38",
+            "rel_zero_42",
+            "switch_continue_48",
+            "switch_continue_52",
+            "switch_negative_45",
+            "switch_negative_49",
+            "switch_neutral_46",
+            "switch_neutral_50",
+            "switch_positive_47",
+            "switch_positive_51",
+            "while_body_33",
+            "while_condition_32"
+          ],
+          "dependence": "UNKNOWN",
+          "exits": [
+            "while_exit_0_34",
+            "while_exit_1_35"
+          ],
+          "header": "while_condition_32",
+          "memory_pattern": "UNKNOWN",
+          "opcode_counts": {
+            "add": 4,
+            "branch3": 5,
+            "call": 1,
+            "compare": 2,
+            "const": 54,
+            "convert": 1,
+            "jump": 13,
+            "load": 25,
+            "numeric_difference": 2,
+            "relate": 1,
+            "slice_load": 2,
+            "store": 20
+          },
+          "ordered_reduction_count": 0,
+          "reasons": [
+            "CANONICAL_AFFINE_INDUCTION_NOT_PROVEN",
+            "VECTOR_ACCESS_RANGE_AND_IMMUTABLE_ORIGIN_NOT_PROVEN",
+            "GENERAL_INTER_ITERATION_MEMORY_DEPENDENCE_NOT_MODELED"
+          ],
+          "recognized_induction_count": 0,
+          "status": "UNKNOWN",
+          "strict_f64_reduction_count": 0,
+          "vector_bounds_proof_count": 0
+        }
+      ],
+      "summary": {
+        "inductions_recognized": 0,
+        "loops_seen": 1,
+        "not_vectorizable_loops": 0,
+        "reductions_recognized": 0,
+        "unknown_loops": 1,
+        "vector_bounds_proofs": 0,
+        "vectorizable_loops": 0
+      }
+    },
+    {
+      "analysis_kind": "DIAGNOSTIC_ONLY_NO_TRANSFORMATION_AUTHORIZED",
+      "function": "main",
+      "loops": [],
+      "summary": {
+        "inductions_recognized": 0,
+        "loops_seen": 0,
+        "not_vectorizable_loops": 0,
+        "reductions_recognized": 0,
+        "unknown_loops": 0,
+        "vector_bounds_proofs": 0,
+        "vectorizable_loops": 0
+      }
+    }
+  ],
+  "provenance": {
+    "analysis_implementation_sha256": "d4f5371442dabfd49cdd3eac9eda1d83f8b4452c1a201cc4fd77804c38749df8",
+    "git_head": "b8f446a5ea2b24b948a263cb955f426c5d0f48ce",
+    "git_worktree_dirty": true,
+    "optimization": "1",
+    "report_tool_sha256": "25248e2efa304651a0fbd6b5330167ab11db2e84f1c06e89a4d8293e253f71d7",
+    "source_path": "benchmarks\\workloads\\real_world\\energy_series_aggregation.s3",
+    "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+    "source_syntax": "0.6"
+  },
+  "report_kind": "S3_VECTOR_LEGALITY_RESEARCH",
+  "schema_version": "1.0.0",
+  "summary": {
+    "functions": 3,
+    "loops_seen": 1,
+    "not_vectorizable_loops": 0,
+    "transformation_authorized": false,
+    "unknown_loops": 1,
+    "vectorizable_loops": 0
+  }
+}

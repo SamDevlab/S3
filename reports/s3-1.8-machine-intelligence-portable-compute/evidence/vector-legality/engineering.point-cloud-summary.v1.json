@@ -1,0 +1,163 @@
+{
+  "functions": [
+    {
+      "analysis_kind": "DIAGNOSTIC_ONLY_NO_TRANSFORMATION_AUTHORIZED",
+      "function": "point_cloud_summary",
+      "loops": [
+        {
+          "backedges": [
+            "switch_continue_61"
+          ],
+          "blocks": [
+            "rel_cont_37",
+            "rel_neg_34",
+            "rel_pos_36",
+            "rel_zero_35",
+            "switch_continue_41",
+            "switch_continue_45",
+            "switch_continue_49",
+            "switch_continue_53",
+            "switch_continue_57",
+            "switch_continue_61",
+            "switch_negative_38",
+            "switch_negative_42",
+            "switch_negative_46",
+            "switch_negative_50",
+            "switch_negative_54",
+            "switch_negative_58",
+            "switch_neutral_39",
+            "switch_neutral_43",
+            "switch_neutral_47",
+            "switch_neutral_51",
+            "switch_neutral_55",
+            "switch_neutral_59",
+            "switch_positive_40",
+            "switch_positive_44",
+            "switch_positive_48",
+            "switch_positive_52",
+            "switch_positive_56",
+            "switch_positive_60",
+            "while_body_30",
+            "while_condition_29"
+          ],
+          "dependence": "UNKNOWN",
+          "exits": [
+            "while_exit_0_31",
+            "while_exit_1_32"
+          ],
+          "header": "while_condition_29",
+          "memory_pattern": "UNKNOWN",
+          "opcode_counts": {
+            "add": 6,
+            "branch3": 8,
+            "compare": 1,
+            "const": 80,
+            "convert": 1,
+            "jump": 22,
+            "load": 44,
+            "multiply": 1,
+            "relate": 6,
+            "slice_load": 3,
+            "store": 29
+          },
+          "ordered_reduction_count": 0,
+          "reasons": [
+            "CANONICAL_AFFINE_INDUCTION_NOT_PROVEN",
+            "VECTOR_ACCESS_RANGE_AND_IMMUTABLE_ORIGIN_NOT_PROVEN",
+            "GENERAL_INTER_ITERATION_MEMORY_DEPENDENCE_NOT_MODELED"
+          ],
+          "recognized_induction_count": 0,
+          "status": "UNKNOWN",
+          "strict_f64_reduction_count": 0,
+          "vector_bounds_proof_count": 0
+        },
+        {
+          "backedges": [
+            "while_body_63"
+          ],
+          "blocks": [
+            "rel_cont_70",
+            "rel_neg_67",
+            "rel_pos_69",
+            "rel_zero_68",
+            "while_body_63",
+            "while_condition_62"
+          ],
+          "dependence": "UNKNOWN",
+          "exits": [
+            "while_exit_0_64",
+            "while_exit_1_65"
+          ],
+          "header": "while_condition_62",
+          "memory_pattern": "UNKNOWN",
+          "opcode_counts": {
+            "add": 6,
+            "branch3": 2,
+            "compare": 1,
+            "const": 34,
+            "convert": 1,
+            "jump": 4,
+            "load": 18,
+            "multiply": 4,
+            "numeric_difference": 3,
+            "slice_load": 3,
+            "store": 9
+          },
+          "ordered_reduction_count": 0,
+          "reasons": [
+            "CANONICAL_AFFINE_INDUCTION_NOT_PROVEN",
+            "VECTOR_ACCESS_RANGE_AND_IMMUTABLE_ORIGIN_NOT_PROVEN",
+            "GENERAL_INTER_ITERATION_MEMORY_DEPENDENCE_NOT_MODELED"
+          ],
+          "recognized_induction_count": 0,
+          "status": "UNKNOWN",
+          "strict_f64_reduction_count": 0,
+          "vector_bounds_proof_count": 0
+        }
+      ],
+      "summary": {
+        "inductions_recognized": 0,
+        "loops_seen": 2,
+        "not_vectorizable_loops": 0,
+        "reductions_recognized": 0,
+        "unknown_loops": 2,
+        "vector_bounds_proofs": 0,
+        "vectorizable_loops": 0
+      }
+    },
+    {
+      "analysis_kind": "DIAGNOSTIC_ONLY_NO_TRANSFORMATION_AUTHORIZED",
+      "function": "main",
+      "loops": [],
+      "summary": {
+        "inductions_recognized": 0,
+        "loops_seen": 0,
+        "not_vectorizable_loops": 0,
+        "reductions_recognized": 0,
+        "unknown_loops": 0,
+        "vector_bounds_proofs": 0,
+        "vectorizable_loops": 0
+      }
+    }
+  ],
+  "provenance": {
+    "analysis_implementation_sha256": "d4f5371442dabfd49cdd3eac9eda1d83f8b4452c1a201cc4fd77804c38749df8",
+    "git_head": "b8f446a5ea2b24b948a263cb955f426c5d0f48ce",
+    "git_worktree_dirty": true,
+    "optimization": "1",
+    "report_tool_sha256": "25248e2efa304651a0fbd6b5330167ab11db2e84f1c06e89a4d8293e253f71d7",
+    "source_path": "benchmarks\\workloads\\real_world\\point_cloud_summary.s3",
+    "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+    "source_syntax": "0.6"
+  },
+  "report_kind": "S3_VECTOR_LEGALITY_RESEARCH",
+  "schema_version": "1.0.0",
+  "summary": {
+    "functions": 2,
+    "loops_seen": 2,
+    "not_vectorizable_loops": 0,
+    "transformation_authorized": false,
+    "unknown_loops": 2,
+    "vectorizable_loops": 0
+  }
+}

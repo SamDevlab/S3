@@ -1,0 +1,236 @@
+{
+  "functions": [
+    {
+      "complete": true,
+      "effects": {
+        "none": 0,
+        "read": 11,
+        "read_write": 0,
+        "unknown": 0,
+        "write": 10
+      },
+      "function": "point_cloud_summary",
+      "incomplete_reasons": [],
+      "references": [
+        {
+          "escape": "NO_ESCAPE",
+          "live_blocks": [
+            "entry",
+            "rel_cont_11",
+            "rel_cont_18",
+            "rel_cont_25",
+            "rel_cont_3",
+            "rel_cont_37",
+            "rel_cont_70",
+            "rel_neg_0",
+            "rel_neg_15",
+            "rel_neg_22",
+            "rel_neg_34",
+            "rel_neg_67",
+            "rel_neg_8",
+            "rel_pos_10",
+            "rel_pos_17",
+            "rel_pos_2",
+            "rel_pos_24",
+            "rel_pos_36",
+            "rel_pos_69",
+            "rel_zero_1",
+            "rel_zero_16",
+            "rel_zero_23",
+            "rel_zero_35",
+            "rel_zero_68",
+            "rel_zero_9",
+            "switch_continue_41",
+            "switch_continue_45",
+            "switch_continue_49",
+            "switch_continue_53",
+            "switch_continue_57",
+            "switch_continue_61",
+            "switch_continue_7",
+            "switch_negative_19",
+            "switch_negative_26",
+            "switch_negative_38",
+            "switch_negative_4",
+            "switch_negative_42",
+            "switch_negative_46",
+            "switch_negative_50",
+            "switch_negative_54",
+            "switch_negative_58",
+            "switch_neutral_13",
+            "switch_neutral_39",
+            "switch_neutral_43",
+            "switch_neutral_47",
+            "switch_neutral_5",
+            "switch_neutral_51",
+            "switch_neutral_55",
+            "switch_neutral_59",
+            "switch_positive_40",
+            "switch_positive_44",
+            "switch_positive_48",
+            "switch_positive_52",
+            "switch_positive_56",
+            "switch_positive_6",
+            "switch_positive_60",
+            "while_body_30",
+            "while_body_63",
+            "while_condition_29",
+            "while_condition_62",
+            "while_exit_0_31",
+            "while_exit_1_32",
+            "while_exit_33"
+          ],
+          "mutable": false,
+          "origin_unknown": false,
+          "origins": [
+            {
+              "projection": [
+                "parameter",
+                0
+              ],
+              "root": "parameter-space",
+              "storage_class": "external"
+            }
+          ],
+          "read_uses": 10,
+          "register": 0,
+          "unknown_uses": 0,
+          "write_uses": 0
+        },
+        {
+          "escape": "NO_ESCAPE",
+          "live_blocks": [
+            "entry",
+            "rel_cont_11",
+            "rel_cont_18",
+            "rel_cont_25",
+            "rel_cont_3",
+            "rel_cont_37",
+            "rel_cont_70",
+            "rel_neg_0",
+            "rel_neg_15",
+            "rel_neg_22",
+            "rel_neg_34",
+            "rel_neg_67",
+            "rel_neg_8",
+            "rel_pos_10",
+            "rel_pos_17",
+            "rel_pos_2",
+            "rel_pos_24",
+            "rel_pos_36",
+            "rel_pos_69",
+            "rel_zero_1",
+            "rel_zero_16",
+            "rel_zero_23",
+            "rel_zero_35",
+            "rel_zero_68",
+            "rel_zero_9",
+            "switch_continue_41",
+            "switch_continue_45",
+            "switch_continue_49",
+            "switch_continue_53",
+            "switch_continue_57",
+            "switch_continue_61",
+            "switch_continue_7",
+            "switch_negative_19",
+            "switch_negative_26",
+            "switch_negative_38",
+            "switch_negative_4",
+            "switch_negative_42",
+            "switch_negative_46",
+            "switch_negative_50",
+            "switch_negative_54",
+            "switch_negative_58",
+            "switch_neutral_13",
+            "switch_neutral_39",
+            "switch_neutral_43",
+            "switch_neutral_47",
+            "switch_neutral_5",
+            "switch_neutral_51",
+            "switch_neutral_55",
+            "switch_neutral_59",
+            "switch_positive_40",
+            "switch_positive_44",
+            "switch_positive_48",
+            "switch_positive_52",
+            "switch_positive_56",
+            "switch_positive_6",
+            "switch_positive_60",
+            "while_body_30",
+            "while_body_63",
+            "while_condition_29",
+            "while_condition_62",
+            "while_exit_0_31",
+            "while_exit_0_64",
+            "while_exit_1_32",
+            "while_exit_1_65",
+            "while_exit_33",
+            "while_exit_66"
+          ],
+          "mutable": true,
+          "origin_unknown": false,
+          "origins": [
+            {
+              "projection": [
+                "parameter",
+                3
+              ],
+              "root": "parameter-space",
+              "storage_class": "external"
+            }
+          ],
+          "read_uses": 1,
+          "register": 3,
+          "unknown_uses": 0,
+          "write_uses": 10
+        }
+      ]
+    },
+    {
+      "complete": true,
+      "effects": {
+        "none": 0,
+        "read": 0,
+        "read_write": 0,
+        "unknown": 0,
+        "write": 0
+      },
+      "function": "main",
+      "incomplete_reasons": [],
+      "references": []
+    }
+  ],
+  "interpretation": {
+    "complete_means": "NO_UNSUPPORTED_REFERENCE_CONSTRUCT_OR_UNKNOWN_EFFECT_WAS_ENCOUNTERED",
+    "not_a_proof_of": [
+      "optimizer_safety",
+      "interprocedural_no_escape",
+      "runtime_address_identity",
+      "absence_of_language_level_aliasing_outside_modeled_regions"
+    ]
+  },
+  "provenance": {
+    "analysis_implementation_sha256": "79a6f6912e5105e7b284359569ade383ce45a98d89493a3d89a19537a8e45e67",
+    "git_head": "b8f446a5ea2b24b948a263cb955f426c5d0f48ce",
+    "git_worktree_dirty": true,
+    "optimization": "O1",
+    "report_tool_sha256": "7ff716fdff7483e9c02fc0e1e807ea630ddb0e214214cdd9fe352c3db50d5061",
+    "source_path": "benchmarks\\workloads\\real_world\\point_cloud_summary.s3",
+    "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+    "source_syntax": "0.6"
+  },
+  "report_kind": "S3_REFERENCE_DATAFLOW_RESEARCH",
+  "schema_version": "1.0.0",
+  "summary": {
+    "complete_function_count": 2,
+    "escape_status_counts": {
+      "NO_ESCAPE": 2
+    },
+    "function_count": 2,
+    "incomplete_function_count": 0,
+    "origin_status_counts": {
+      "KNOWN": 2
+    },
+    "reference_values": 2,
+    "transformation_authorized": false
+  }
+}
