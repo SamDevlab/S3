@@ -227,7 +227,7 @@ def _hosted_source(workload: dict) -> tuple[str, tuple[str, ...]]:
 def test_real_world_reference_bundle_is_pinned_and_manifested() -> None:
     datasets, references, manifest = _documents()
     dataset_bytes = DATASET_PATH.read_bytes()
-    assert hashlib.sha256(dataset_bytes).hexdigest() == references["dataset_manifest"]["sha256"]
+    assert canonical_source_sha256(dataset_bytes) == references["dataset_manifest"]["sha256"]
     assert manifest["dataset_manifest"] == "workloads/real_world/datasets-v1.json"
     assert manifest["reference_results"] == "references/s3-1.5/reference-results-v1.json"
     assert len(references["workloads"]) == 3

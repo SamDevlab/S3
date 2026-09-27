@@ -1,0 +1,693 @@
+{
+  "classification": "STATIC_ALLOCATOR_AND_CODEGEN_PROBE_NOT_DYNAMIC_SPILL_OR_PERFORMANCE_EVIDENCE",
+  "control": {
+    "dynamic_profile_sha256": "2e1fbc56321bb840349b9b6d933dcaca0912a0edac811a1cfed92898b46f0cb6",
+    "native_generation": "x86-64 FFI assembly text; no object built or executed by this probe",
+    "optimization": "O1",
+    "s3_commit": "e27dff1e712e50271df9f860669cd714e28f4ce7"
+  },
+  "experiment_id": "EXP-S3-110-ALLOCATOR-EFFECT-001",
+  "limits": {
+    "dynamic_spills": "NOT_MEASURED",
+    "logical_block_visits_are_hardware_counts": false,
+    "stack_resident_values_are_spills": false
+  },
+  "schema_version": "1.0.0",
+  "workloads": {
+    "energy.pv-timeseries-aggregation.v1": {
+      "candidates": {
+        "baseline": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 10,
+            "physical_register_count": 211,
+            "stack_resident_virtual_register_count": 0,
+            "virtual_register_count": 211
+          },
+          "assembly_instruction_count": 308,
+          "assembly_opcode_counts": {
+            "TADD": 4,
+            "TBR3": 14,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 135,
+            "TCVT": 2,
+            "TDIV": 2,
+            "TJMP": 31,
+            "TLOAD": 44,
+            "TMUL": 1,
+            "TNDIFF": 2,
+            "TREL": 2,
+            "TRET": 9,
+            "TSLEN": 3,
+            "TSLOAD": 2,
+            "TSSTORE": 5,
+            "TSTORE": 45
+          },
+          "frame_bytes": 2144,
+          "generated_native_assembly": {
+            "branches": 798,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 2754,
+            "memory_operand_instructions": 934,
+            "moves": 1120,
+            "stack_traffic_instructions": 914
+          }
+        },
+        "load_to_load_all_proven": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 17,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 8,
+            "peak_live_virtual_registers": 11,
+            "physical_register_count": 213,
+            "stack_resident_virtual_register_count": 5,
+            "virtual_register_count": 218
+          },
+          "assembly_instruction_count": 315,
+          "assembly_opcode_counts": {
+            "TADD": 4,
+            "TBR3": 14,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 135,
+            "TCVT": 2,
+            "TDIV": 2,
+            "TJMP": 31,
+            "TLOAD": 34,
+            "TMOV": 17,
+            "TMUL": 1,
+            "TNDIFF": 2,
+            "TREL": 2,
+            "TRET": 9,
+            "TSLEN": 3,
+            "TSLOAD": 2,
+            "TSSTORE": 5,
+            "TSTORE": 45
+          },
+          "frame_bytes": 2208,
+          "generated_native_assembly": {
+            "branches": 792,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 2760,
+            "memory_operand_instructions": 947,
+            "moves": 1138,
+            "stack_traffic_instructions": 927
+          }
+        },
+        "load_to_load_profile_hot_only": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 12,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 4,
+            "peak_live_virtual_registers": 11,
+            "physical_register_count": 212,
+            "stack_resident_virtual_register_count": 5,
+            "virtual_register_count": 217
+          },
+          "assembly_instruction_count": 314,
+          "assembly_opcode_counts": {
+            "TADD": 4,
+            "TBR3": 14,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 135,
+            "TCVT": 2,
+            "TDIV": 2,
+            "TJMP": 31,
+            "TLOAD": 38,
+            "TMOV": 12,
+            "TMUL": 1,
+            "TNDIFF": 2,
+            "TREL": 2,
+            "TRET": 9,
+            "TSLEN": 3,
+            "TSLOAD": 2,
+            "TSSTORE": 5,
+            "TSTORE": 45
+          },
+          "frame_bytes": 2192,
+          "generated_native_assembly": {
+            "branches": 798,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 2772,
+            "memory_operand_instructions": 952,
+            "moves": 1138,
+            "stack_traffic_instructions": 932
+          }
+        },
+        "load_to_load_ssa_value_substitution": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 10,
+            "physical_register_count": 209,
+            "stack_resident_virtual_register_count": 0,
+            "virtual_register_count": 209
+          },
+          "assembly_instruction_count": 306,
+          "assembly_opcode_counts": {
+            "TADD": 4,
+            "TBR3": 14,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 135,
+            "TCVT": 2,
+            "TDIV": 2,
+            "TJMP": 31,
+            "TLOAD": 42,
+            "TMUL": 1,
+            "TNDIFF": 2,
+            "TREL": 2,
+            "TRET": 9,
+            "TSLEN": 3,
+            "TSLOAD": 2,
+            "TSSTORE": 5,
+            "TSTORE": 45
+          },
+          "frame_bytes": 2128,
+          "generated_native_assembly": {
+            "branches": 790,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 2728,
+            "memory_operand_instructions": 924,
+            "moves": 1110,
+            "stack_traffic_instructions": 904
+          }
+        },
+        "store_to_load_all_proven": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 15,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 7,
+            "peak_live_virtual_registers": 13,
+            "physical_register_count": 179,
+            "stack_resident_virtual_register_count": 35,
+            "virtual_register_count": 214
+          },
+          "assembly_instruction_count": 311,
+          "assembly_opcode_counts": {
+            "TADD": 4,
+            "TBR3": 14,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 135,
+            "TCVT": 2,
+            "TDIV": 2,
+            "TJMP": 31,
+            "TLOAD": 32,
+            "TMOV": 15,
+            "TMUL": 1,
+            "TNDIFF": 2,
+            "TREL": 2,
+            "TRET": 9,
+            "TSLEN": 3,
+            "TSLOAD": 2,
+            "TSSTORE": 5,
+            "TSTORE": 45
+          },
+          "frame_bytes": 2160,
+          "generated_native_assembly": {
+            "branches": 780,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 2718,
+            "memory_operand_instructions": 982,
+            "moves": 1120,
+            "stack_traffic_instructions": 962
+          }
+        }
+      },
+      "profiled_hot_repeated_load_sites": 6,
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "ssa_value_substitution_forwarded_loads": 2
+    },
+    "engineering.point-cloud-summary.v1": {
+      "candidates": {
+        "baseline": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 7,
+            "physical_register_count": 368,
+            "stack_resident_virtual_register_count": 0,
+            "virtual_register_count": 368
+          },
+          "assembly_instruction_count": 517,
+          "assembly_opcode_counts": {
+            "TADD": 12,
+            "TBR3": 18,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 220,
+            "TCVT": 3,
+            "TDIV": 4,
+            "TJMP": 47,
+            "TLOAD": 91,
+            "TMUL": 6,
+            "TNDIFF": 3,
+            "TREL": 6,
+            "TRET": 7,
+            "TSLEN": 2,
+            "TSLOAD": 9,
+            "TSSTORE": 10,
+            "TSTORE": 72
+          },
+          "frame_bytes": 3648,
+          "generated_native_assembly": {
+            "branches": 1374,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 4732,
+            "memory_operand_instructions": 1569,
+            "moves": 1901,
+            "stack_traffic_instructions": 1541
+          }
+        },
+        "load_to_load_all_proven": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 44,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 12,
+            "peak_live_virtual_registers": 11,
+            "physical_register_count": 386,
+            "stack_resident_virtual_register_count": 1,
+            "virtual_register_count": 387
+          },
+          "assembly_instruction_count": 536,
+          "assembly_opcode_counts": {
+            "TADD": 12,
+            "TBR3": 18,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 220,
+            "TCVT": 3,
+            "TDIV": 4,
+            "TJMP": 47,
+            "TLOAD": 66,
+            "TMOV": 44,
+            "TMUL": 6,
+            "TNDIFF": 3,
+            "TREL": 6,
+            "TRET": 7,
+            "TSLEN": 2,
+            "TSLOAD": 9,
+            "TSSTORE": 10,
+            "TSTORE": 72
+          },
+          "frame_bytes": 3840,
+          "generated_native_assembly": {
+            "branches": 1362,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 4767,
+            "memory_operand_instructions": 1587,
+            "moves": 1960,
+            "stack_traffic_instructions": 1559
+          }
+        },
+        "load_to_load_profile_hot_only": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 22,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 8,
+            "peak_live_virtual_registers": 10,
+            "physical_register_count": 379,
+            "stack_resident_virtual_register_count": 0,
+            "virtual_register_count": 379
+          },
+          "assembly_instruction_count": 528,
+          "assembly_opcode_counts": {
+            "TADD": 12,
+            "TBR3": 18,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 220,
+            "TCVT": 3,
+            "TDIV": 4,
+            "TJMP": 47,
+            "TLOAD": 80,
+            "TMOV": 22,
+            "TMUL": 6,
+            "TNDIFF": 3,
+            "TREL": 6,
+            "TRET": 7,
+            "TSLEN": 2,
+            "TSLOAD": 9,
+            "TSSTORE": 10,
+            "TSTORE": 72
+          },
+          "frame_bytes": 3760,
+          "generated_native_assembly": {
+            "branches": 1374,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 4773,
+            "memory_operand_instructions": 1588,
+            "moves": 1942,
+            "stack_traffic_instructions": 1560
+          }
+        },
+        "load_to_load_ssa_value_substitution": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 7,
+            "physical_register_count": 366,
+            "stack_resident_virtual_register_count": 0,
+            "virtual_register_count": 366
+          },
+          "assembly_instruction_count": 515,
+          "assembly_opcode_counts": {
+            "TADD": 12,
+            "TBR3": 18,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 220,
+            "TCVT": 3,
+            "TDIV": 4,
+            "TJMP": 47,
+            "TLOAD": 89,
+            "TMUL": 6,
+            "TNDIFF": 3,
+            "TREL": 6,
+            "TRET": 7,
+            "TSLEN": 2,
+            "TSLOAD": 9,
+            "TSSTORE": 10,
+            "TSTORE": 72
+          },
+          "frame_bytes": 3632,
+          "generated_native_assembly": {
+            "branches": 1366,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 4706,
+            "memory_operand_instructions": 1559,
+            "moves": 1891,
+            "stack_traffic_instructions": 1531
+          }
+        },
+        "store_to_load_all_proven": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 47,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 17,
+            "peak_live_virtual_registers": 12,
+            "physical_register_count": 346,
+            "stack_resident_virtual_register_count": 30,
+            "virtual_register_count": 376
+          },
+          "assembly_instruction_count": 525,
+          "assembly_opcode_counts": {
+            "TADD": 12,
+            "TBR3": 18,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 220,
+            "TCVT": 3,
+            "TDIV": 4,
+            "TJMP": 47,
+            "TLOAD": 52,
+            "TMOV": 47,
+            "TMUL": 6,
+            "TNDIFF": 3,
+            "TREL": 6,
+            "TRET": 7,
+            "TSLEN": 2,
+            "TSLOAD": 9,
+            "TSSTORE": 10,
+            "TSTORE": 72
+          },
+          "frame_bytes": 3728,
+          "generated_native_assembly": {
+            "branches": 1312,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 4609,
+            "memory_operand_instructions": 1572,
+            "moves": 1902,
+            "stack_traffic_instructions": 1544
+          }
+        }
+      },
+      "profiled_hot_repeated_load_sites": 11,
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "ssa_value_substitution_forwarded_loads": 2
+    },
+    "geospatial.raster-window-statistics.v1": {
+      "candidates": {
+        "baseline": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 11,
+            "physical_register_count": 426,
+            "stack_resident_virtual_register_count": 6,
+            "virtual_register_count": 432
+          },
+          "assembly_instruction_count": 665,
+          "assembly_opcode_counts": {
+            "TADD": 11,
+            "TBR3": 35,
+            "TCALL": 1,
+            "TCMP": 16,
+            "TCONST": 289,
+            "TCVT": 6,
+            "TDIV": 2,
+            "TJMP": 84,
+            "TLOAD": 85,
+            "TMUL": 2,
+            "TNDIFF": 1,
+            "TREL": 3,
+            "TRET": 15,
+            "TSLEN": 3,
+            "TSLOAD": 4,
+            "TSSTORE": 6,
+            "TSTORE": 102
+          },
+          "frame_bytes": 4192,
+          "generated_native_assembly": {
+            "branches": 1730,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 5666,
+            "memory_operand_instructions": 1863,
+            "moves": 2194,
+            "stack_traffic_instructions": 1834
+          }
+        },
+        "load_to_load_all_proven": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 41,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 7,
+            "peak_live_virtual_registers": 14,
+            "physical_register_count": 313,
+            "stack_resident_virtual_register_count": 138,
+            "virtual_register_count": 451
+          },
+          "assembly_instruction_count": 684,
+          "assembly_opcode_counts": {
+            "TADD": 11,
+            "TBR3": 35,
+            "TCALL": 1,
+            "TCMP": 16,
+            "TCONST": 289,
+            "TCVT": 6,
+            "TDIV": 2,
+            "TJMP": 84,
+            "TLOAD": 63,
+            "TMOV": 41,
+            "TMUL": 2,
+            "TNDIFF": 1,
+            "TREL": 3,
+            "TRET": 15,
+            "TSLEN": 3,
+            "TSLOAD": 4,
+            "TSSTORE": 6,
+            "TSTORE": 102
+          },
+          "frame_bytes": 4368,
+          "generated_native_assembly": {
+            "branches": 1724,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 5708,
+            "memory_operand_instructions": 2133,
+            "moves": 2248,
+            "stack_traffic_instructions": 2104
+          }
+        },
+        "load_to_load_profile_hot_only": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 22,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 3,
+            "peak_live_virtual_registers": 13,
+            "physical_register_count": 326,
+            "stack_resident_virtual_register_count": 117,
+            "virtual_register_count": 443
+          },
+          "assembly_instruction_count": 676,
+          "assembly_opcode_counts": {
+            "TADD": 11,
+            "TBR3": 35,
+            "TCALL": 1,
+            "TCMP": 16,
+            "TCONST": 289,
+            "TCVT": 6,
+            "TDIV": 2,
+            "TJMP": 84,
+            "TLOAD": 74,
+            "TMOV": 22,
+            "TMUL": 2,
+            "TNDIFF": 1,
+            "TREL": 3,
+            "TRET": 15,
+            "TSLEN": 3,
+            "TSLOAD": 4,
+            "TSSTORE": 6,
+            "TSTORE": 102
+          },
+          "frame_bytes": 4304,
+          "generated_native_assembly": {
+            "branches": 1730,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 5699,
+            "memory_operand_instructions": 2092,
+            "moves": 2227,
+            "stack_traffic_instructions": 2063
+          }
+        },
+        "load_to_load_ssa_value_substitution": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 12,
+            "physical_register_count": 404,
+            "stack_resident_virtual_register_count": 22,
+            "virtual_register_count": 426
+          },
+          "assembly_instruction_count": 659,
+          "assembly_opcode_counts": {
+            "TADD": 11,
+            "TBR3": 35,
+            "TCALL": 1,
+            "TCMP": 16,
+            "TCONST": 289,
+            "TCVT": 6,
+            "TDIV": 2,
+            "TJMP": 84,
+            "TLOAD": 79,
+            "TMUL": 2,
+            "TNDIFF": 1,
+            "TREL": 3,
+            "TRET": 15,
+            "TSLEN": 3,
+            "TSLOAD": 4,
+            "TSSTORE": 6,
+            "TSTORE": 102
+          },
+          "frame_bytes": 4144,
+          "generated_native_assembly": {
+            "branches": 1706,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 5588,
+            "memory_operand_instructions": 1860,
+            "moves": 2164,
+            "stack_traffic_instructions": 1831
+          }
+        },
+        "store_to_load_all_proven": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 23,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 6,
+            "peak_live_virtual_registers": 14,
+            "physical_register_count": 298,
+            "stack_resident_virtual_register_count": 139,
+            "virtual_register_count": 437
+          },
+          "assembly_instruction_count": 670,
+          "assembly_opcode_counts": {
+            "TADD": 11,
+            "TBR3": 35,
+            "TCALL": 1,
+            "TCMP": 16,
+            "TCONST": 289,
+            "TCVT": 6,
+            "TDIV": 2,
+            "TJMP": 84,
+            "TLOAD": 67,
+            "TMOV": 23,
+            "TMUL": 2,
+            "TNDIFF": 1,
+            "TREL": 3,
+            "TRET": 15,
+            "TSLEN": 3,
+            "TSLOAD": 4,
+            "TSSTORE": 6,
+            "TSTORE": 102
+          },
+          "frame_bytes": 4240,
+          "generated_native_assembly": {
+            "branches": 1704,
+            "budget_instructions": 0,
+            "calls": 1,
+            "machine_instruction_count": 5614,
+            "memory_operand_instructions": 2091,
+            "moves": 2194,
+            "stack_traffic_instructions": 2062
+          }
+        }
+      },
+      "profiled_hot_repeated_load_sites": 11,
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "ssa_value_substitution_forwarded_loads": 6
+    }
+  }
+}

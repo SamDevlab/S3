@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0.0",
+  "campaign_id": "S3_1_10_MEMORY_INTELLIGENCE_VALUE_LOCALITY_VERIFIED_TRANSFORMATIONS_AND_COMPILER_SCIENCE_EXPANSION",
+  "pipeline_effect": "NONE_RESEARCH_ONLY",
+  "contracts": [
+    {
+      "id": "EXP-S3-110-STORE-LOAD-001",
+      "name": "proof-gated exact-cell store-to-load forwarding",
+      "status": "RESEARCH_ONLY",
+      "production_default": false,
+      "scope": "mutable direct exact-cell loads with an available reaching stored SSA value",
+      "required_facts": [
+        "LOAD has a classified direct storage identity and exact cell/index version",
+        "dataflow proves one compatible stored SSA value is available on every reachable path",
+        "no intervening may-alias or unknown write, call, effect, or control-flow ambiguity kills the value",
+        "store provenance and IR operands agree, and the source value is not redefined before an in-block use"
+      ],
+      "proof_checks": [
+        "analysis marks the load forwardable and reports its storage and value",
+        "every reaching store is an IR STORE carrying the reported SSA value",
+        "direct same-block forwarding requires all reaching stores before the load and one unchanged source register",
+        "otherwise a fresh temporary is copied at every reaching store site",
+        "transformed site count equals the number of proof-authorized loads",
+        "candidate passes verify_ir and analyze_initialization"
+      ],
+      "rewrite": "replace only an authorized LOAD with a typed MOVE from the exact proven source register or fresh store-fed temporary",
+      "postconditions": [
+        "all non-authorized IR instructions remain unchanged",
+        "candidate IR verifies and initialization analysis succeeds",
+        "reference, baseline IR, transformed IR, and native outputs agree in the recorded experiment protocol"
+      ],
+      "fallback": "KEEP_BASELINE_IR when no complete proof exists; abort the research candidate on provenance inconsistency",
+      "implementation": "tools/s3_memory_availability_experiment.py:forward_available_stores"
+    },
+    {
+      "id": "EXP-S3-110-LOAD-001",
+      "name": "proof-gated cross-block exact-cell load reuse",
+      "status": "RESEARCH_ONLY",
+      "production_default": false,
+      "scope": "direct exact-cell LOAD candidates whose prior loaded SSA value is available on every CFG path and whose consumer is in another block",
+      "required_facts": [
+        "source and candidate loads have equal classified storage identity and compatible type",
+        "the same loaded SSA value is available at the candidate on every reachable path",
+        "may-alias writes, unknown effects, calls, loop-carried ambiguity, and divergent incoming values kill or reject availability",
+        "the candidate is cross-block; same-block-only repetitions are excluded"
+      ],
+      "proof_checks": [
+        "analysis marks the candidate cross_block_available and forwardable",
+        "source sites resolve to exactly one defining IR LOAD with matching storage and SSA type",
+        "all candidates in a reuse group share storage and the same SSA source value",
+        "each authorized source gets a fresh typed temporary copy",
+        "selected site count equals the set of proof-authorized sites",
+        "candidate passes verify_ir and analyze_initialization"
+      ],
+      "rewrite": "copy the unique source LOAD result into a fresh typed temporary and replace only authorized later LOADs with MOVEs from that temporary",
+      "postconditions": [
+        "no load outside the proof-authorized selected set is rewritten",
+        "candidate IR verifies and initialization analysis succeeds",
+        "reference, baseline IR, transformed IR, and native outputs agree in the recorded experiment protocol"
+      ],
+      "fallback": "KEEP_BASELINE_IR when availability is unknown or killed; abort the research candidate on missing or inconsistent proof provenance",
+      "implementation": "tools/s3_memory_repeated_load_experiment.py:forward_available_loads"
+    },
+    {
+      "id": "EXP-S3-110-LOAD-SSA-001",
+      "name": "proof-gated cross-block load removal by dominating SSA-value substitution",
+      "status": "RESEARCH_ONLY",
+      "production_default": false,
+      "scope": "direct exact-cell cross-block LOAD candidates whose source SSA value is available on every reachable path and whose IR register uses can be rewritten without phi lowering",
+      "required_facts": [
+        "the same loaded SSA value is available at the candidate on every reachable path",
+        "one exact source LOAD dominates the candidate and has compatible type/storage identity",
+        "reference, slice, aggregate, and length metadata agree across SSA values, IR instructions, and registers",
+        "source and target IR registers each have exactly one definition matching the SSA load sites",
+        "the target SSA value has no phi use and all ordinary operand uses map exactly to original IR operands",
+        "may-alias writes, unknown effects, calls, and control-flow ambiguity kill or reject availability"
+      ],
+      "proof_checks": [
+        "analysis marks the candidate cross_block_available and forwardable",
+        "source and target LOAD provenance, storage identity, types, and instruction indices agree between SSA and original IR",
+        "DominatorTree proves the source block dominates the target block",
+        "unique IR definitions and every target operand use are checked before rewriting",
+        "all other instructions remain in place; only the target LOAD is removed and its proved uses are substituted",
+        "candidate passes verify_ir and analyze_initialization"
+      ],
+      "rewrite": "remove the authorized target LOAD, substitute the dominating source IR register in its exact SSA-mapped operand uses, and remove the now-dead target register",
+      "postconditions": [
+        "phi-mediated targets and any source/target register with multiple definitions remain unchanged",
+        "candidate IR verifies and initialization analysis succeeds",
+        "reference, baseline IR, transformed IR, and native outputs agree in the recorded experiment protocol"
+      ],
+      "fallback": "KEEP_BASELINE_IR when availability, dominance, unique-register identity, or exact use mapping is not proven; abort on inconsistent provenance",
+      "implementation": "tools/s3_memory_repeated_load_experiment.py:forward_available_loads_by_ssa_substitution"
+    }
+  ]
+}
