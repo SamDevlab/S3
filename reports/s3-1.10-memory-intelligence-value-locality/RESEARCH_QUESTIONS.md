@@ -36,3 +36,17 @@ authority.
 - Static stack residence is not a dynamic spill count.
 - PMU access is unavailable by policy; do not infer cycles or retired operations.
 - Temporary-copy cross-block LOAD→LOAD reuse is not generally beneficial; the raster native candidate is a measured material regression. Direct SSA-value substitution reduces static references but has much stricter eligibility and inconclusive timing.
+
+## Final replay update
+
+The Bench lab subsequently replayed the frozen S3 1.10 SHA
+`856bf0cd60c3da6ba701adec73c7858d063739a7` independently. It passed all three
+workload correctness gates and completed the six-version compatibility index
+for S3 1.5–1.10. The 1.10 run was a separate serial group after the 1.5–1.9
+historical group, so cross-version timing remains descriptive and does not
+support a causal delta. See Bench
+`reports/s3-1.10-memory-intelligence-lab/CROSS_VERSION_COMPATIBILITY_INDEX.json`.
+
+RQ12 remains **PARTIAL**: exact pinned builds, protocol, inputs, and outputs
+are verified across all six S3 lines, but timing collection was grouped rather
+than interleaved and is not a causal cross-version comparison.
