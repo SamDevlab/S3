@@ -266,6 +266,13 @@ portable compute -> deterministic parallelism -> accelerators
 
 ## Publication boundary
 
-This report is for the S3 1.8 Draft PR. No merge, release, tag, PyPI publish,
+```text
+S3_PR=322
+S3_PR_BASE=main
+S3_PR_STATE=DRAFT
+```
+
+This report is for [S3 PR #322](https://github.com/SamDevlab/S3/pull/322).
+No merge, release, tag, PyPI publish,
 default-policy promotion or S3 1.9 campaign is authorized by this work.
 Human review decides integration and the next frontier.
