@@ -181,6 +181,9 @@ class X8664Emitter:
         self._initialization_tracking_registers: frozenset[int] = frozenset()
         self._current_instruction_sites: dict[int, tuple[str, int]] = {}
         self._compact_ea_active = False
+        self._collect_origin_spans = False
+        self._origin_spans: list[dict[str, object]] = []
+        self._function_line_base = 0
         self._composite_builtins = tuple(
             sorted(
                 {
@@ -203,12 +206,14 @@ class X8664Emitter:
         }
 
     def emit(self) -> str:
+        self._origin_spans.clear()
         lines = [
             ".intel_syntax noprefix",
             "# Generated deterministically by the S3 Linux x86-64 backend.",
             ".section .text",
         ]
         for function in self.program.functions:
+            self._function_line_base = len(lines)
             lines.extend(self._emit_function(function))
             lines.append("")
         lines.extend(self._render_composite_vector_wrappers())
@@ -220,6 +225,54 @@ class X8664Emitter:
             lines.extend(self._render_budget_state())
         lines.append(render_runtime().rstrip())
         return "\n".join(lines) + "\n"
+
+    def emit_with_origins(self) -> tuple[str, tuple[dict[str, object], ...]]:
+        """Emit unchanged native text plus an opt-in Assembly-to-text line map."""
+
+        self._collect_origin_spans = True
+        try:
+            text = self.emit()
+            return text, tuple(self._origin_spans)
+        finally:
+            self._collect_origin_spans = False
+
+    def _append_instruction_emission(
+        self,
+        lines: list[str],
+        emitted: list[str],
+        function: AssemblyFunction,
+        block: str,
+        instruction_indexes: tuple[int, ...],
+        instructions: tuple[AssemblyInstruction, ...],
+    ) -> None:
+        first_local_line = len(lines) + 1
+        lines.extend(emitted)
+        if not self._collect_origin_spans:
+            return
+        last_local_line = len(lines)
+        self._origin_spans.append(
+            {
+                "function": function.name,
+                "block": block,
+                "assembly_instruction_indexes": list(instruction_indexes),
+                "assembly_opcodes": [instruction.opcode.value for instruction in instructions],
+                "source_locations": [
+                    instruction.source.to_dict()
+                    for instruction in instructions
+                    if instruction.source is not None
+                ],
+                "native_assembly_line_range": (
+                    [
+                        self._function_line_base + first_local_line,
+                        self._function_line_base + last_local_line,
+                    ]
+                    if last_local_line >= first_local_line
+                    else None
+                ),
+                "mapping_status": "MAPPED" if last_local_line >= first_local_line else "NO_EMITTED_LINES",
+                "fused_assembly_operations": len(instruction_indexes) > 1,
+            }
+        )
 
     def _emit_function(self, function: AssemblyFunction) -> list[str]:
         if function.external:
@@ -319,24 +372,34 @@ class X8664Emitter:
                         instruction_index,
                         function_liveness,
                     ):
-                        lines.extend(
+                        self._append_instruction_emission(
+                            lines,
                             self._emit_tcmp_tbr3(
                                 function,
                                 block.label,
                                 layout,
                                 block.instructions[instruction_index],
                                 block.instructions[instruction_index + 1],
-                            )
+                            ),
+                            function,
+                            block.label,
+                            (instruction_index, instruction_index + 1),
+                            (block.instructions[instruction_index], block.instructions[instruction_index + 1]),
                         )
                         instruction_index += 2
                         continue
-                    lines.extend(
+                    self._append_instruction_emission(
+                        lines,
                         self._emit_instruction(
                             function,
                             block.label,
                             layout,
                             block.instructions[instruction_index],
-                        )
+                        ),
+                        function,
+                        block.label,
+                        (instruction_index,),
+                        (block.instructions[instruction_index],),
                     )
                     instruction_index += 1
         lines.append(f".size {symbol}, .-{symbol}")
@@ -492,7 +555,8 @@ class X8664Emitter:
                     function_liveness,
                 )
             ):
-                lines.extend(
+                self._append_instruction_emission(
+                    lines,
                     self._emit_tcmp_tbr3(
                         function,
                         block.label,
@@ -500,18 +564,27 @@ class X8664Emitter:
                         block.instructions[instruction_index],
                         block.instructions[instruction_index + 1],
                         include_budget=include_budget,
-                    )
+                    ),
+                    function,
+                    block.label,
+                    (instruction_index, instruction_index + 1),
+                    (block.instructions[instruction_index], block.instructions[instruction_index + 1]),
                 )
                 instruction_index += 2
                 continue
-            lines.extend(
+            self._append_instruction_emission(
+                lines,
                 self._emit_instruction(
                     function,
                     block.label,
                     layout,
                     block.instructions[instruction_index],
                     include_budget=include_budget,
-                )
+                ),
+                function,
+                block.label,
+                (instruction_index,),
+                (block.instructions[instruction_index],),
             )
             instruction_index += 1
         return lines
