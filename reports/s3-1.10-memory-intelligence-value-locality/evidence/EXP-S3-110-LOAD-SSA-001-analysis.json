@@ -1,0 +1,51 @@
+{
+  "analysis_kind": "POST_HOC_PAIRED_BOOTSTRAP_SUMMARY",
+  "experiment_id": "EXP-S3-110-LOAD-SSA-001",
+  "interpretation": "Per-workload characterization only; does not establish a general native speedup or hardware-level cause.",
+  "method": {
+    "confidence_interval": "95% percentile bootstrap of median paired ratios",
+    "function": "tools.s3_15_native_workload_benchmark._paired_ratio_summary",
+    "material_threshold": 0.05,
+    "ratio": "paired baseline ns/candidate ns",
+    "resamples": 10000,
+    "seed": 3110
+  },
+  "raw_result_path": "reports\\s3-1.10-memory-intelligence-value-locality\\evidence\\EXP-S3-110-LOAD-SSA-001-native.json",
+  "raw_result_sha256": "283fd652336b9ea3751ae0d46781969de1d7c673c7a860c00005ba94f21e5a4c",
+  "schema_version": "1.0.0",
+  "workloads": {
+    "energy.pv-timeseries-aggregation.v1": {
+      "baseline_over_candidate_median_ratio": 1.13985355120214,
+      "classification": "INCONCLUSIVE",
+      "material_change_threshold": 0.05,
+      "paired_bootstrap_95_percentile_interval": [
+        1.0036486825254138,
+        1.2074727204944913
+      ],
+      "resamples": 10000,
+      "seed": 3110
+    },
+    "engineering.point-cloud-summary.v1": {
+      "baseline_over_candidate_median_ratio": 1.0098434842510466,
+      "classification": "INCONCLUSIVE",
+      "material_change_threshold": 0.05,
+      "paired_bootstrap_95_percentile_interval": [
+        0.9445217296954568,
+        1.1386066507479742
+      ],
+      "resamples": 10000,
+      "seed": 3110
+    },
+    "geospatial.raster-window-statistics.v1": {
+      "baseline_over_candidate_median_ratio": 0.9634863586425891,
+      "classification": "INCONCLUSIVE",
+      "material_change_threshold": 0.05,
+      "paired_bootstrap_95_percentile_interval": [
+        0.8596608335164728,
+        1.093837838865328
+      ],
+      "resamples": 10000,
+      "seed": 3110
+    }
+  }
+}

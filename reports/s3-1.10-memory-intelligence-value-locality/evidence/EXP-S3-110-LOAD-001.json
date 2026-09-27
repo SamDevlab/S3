@@ -1,0 +1,937 @@
+{
+  "analysis": {
+    "candidate_rule": "prior exact-cell LOAD is available on all reachable CFG paths; at least one source load is in a different block; loaded type agrees",
+    "hotness": "logical destination basic-block visits from the correctness-checked 1.9 profile; not hardware counts or candidate execution measurements",
+    "kills": "must-alias store; conservative unknown for may-alias store, call, indirect store, or unclassified effect",
+    "runtime_measured": false,
+    "same_block_candidates_reported": false,
+    "storage": "direct frame memory object plus proven constant-or-SSA index",
+    "transformation_applied": false
+  },
+  "classification": "DIAGNOSTIC_CENSUS_NOT_NATIVE_OR_RUNTIME_EVIDENCE",
+  "control": {
+    "optimization": "O1",
+    "profile_path": "reports\\s3-1.9-native-observatory-optimization-discovery\\evidence\\profiling\\logical-dynamic-profile-v3.json",
+    "profile_sha256": "2e1fbc56321bb840349b9b6d933dcaca0912a0edac811a1cfed92898b46f0cb6",
+    "s3_commit": "e27dff1e712e50271df9f860669cd714e28f4ce7"
+  },
+  "experiment_id": "EXP-S3-110-LOAD-001",
+  "schema_version": "1.0.0",
+  "workloads": {
+    "energy.pv-timeseries-aggregation.v1": {
+      "cross_block_candidate_count": 10,
+      "dataset_sha256": "dcf7e356a75be9597f2732c1739a2f93f73d657bfdaa4207634aff2e5481afca",
+      "direct_load_sites_analyzed": 44,
+      "functions": [
+        {
+          "candidates": [
+            {
+              "block": "switch_neutral_5",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "entry",
+                  "instruction_index": 10
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 0
+              }
+            },
+            {
+              "block": "switch_positive_6",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "entry",
+                  "instruction_index": 10
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 0
+              }
+            },
+            {
+              "block": "switch_neutral_13",
+              "instruction_index": 3,
+              "logical_destination_block_visits": 1,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_7",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 0
+              }
+            },
+            {
+              "block": "while_body_33",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 168,
+              "source_load_sites": [
+                {
+                  "block": "while_condition_32",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 7
+              }
+            },
+            {
+              "block": "while_exit_36",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 1,
+              "source_load_sites": [
+                {
+                  "block": "while_condition_32",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 0
+              }
+            },
+            {
+              "block": "switch_neutral_46",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 167,
+              "source_load_sites": [
+                {
+                  "block": "while_body_33",
+                  "instruction_index": 44
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 11
+              }
+            },
+            {
+              "block": "switch_positive_47",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "while_body_33",
+                  "instruction_index": 44
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 11
+              }
+            },
+            {
+              "block": "switch_negative_49",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 9,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_48",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 15
+              }
+            },
+            {
+              "block": "switch_neutral_50",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 159,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_48",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 10
+              }
+            },
+            {
+              "block": "switch_positive_51",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_48",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 10
+              }
+            }
+          ],
+          "cross_block_candidate_count": 10,
+          "function": "energy_series_aggregation",
+          "hot_candidate_count": 6,
+          "logical_destination_block_visits": 505
+        }
+      ],
+      "hot_candidate_count": 6,
+      "logical_destination_block_visits": 505,
+      "source_path": "workloads/real_world/energy_series_aggregation.s3",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "windows_checkout_source_sha256": "58b81c4858e5859c7ef6092e913146624972a8dced8fdb9f5085ab545796cddb"
+    },
+    "engineering.point-cloud-summary.v1": {
+      "cross_block_candidate_count": 25,
+      "dataset_sha256": "346178eab37077a8bd7989d60836a2b54fb27948c36dabd18e7a58b2e41042f8",
+      "direct_load_sites_analyzed": 91,
+      "functions": [
+        {
+          "candidates": [
+            {
+              "block": "switch_neutral_13",
+              "instruction_index": 3,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_7",
+                  "instruction_index": 7
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 0
+              }
+            },
+            {
+              "block": "while_body_30",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 64,
+              "source_load_sites": [
+                {
+                  "block": "while_condition_29",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 16
+              }
+            },
+            {
+              "block": "while_exit_33",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "while_condition_29",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 0
+              }
+            },
+            {
+              "block": "switch_negative_38",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "while_body_30",
+                  "instruction_index": 48
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 19
+              }
+            },
+            {
+              "block": "switch_neutral_39",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 64,
+              "source_load_sites": [
+                {
+                  "block": "while_body_30",
+                  "instruction_index": 50
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 7
+              }
+            },
+            {
+              "block": "switch_positive_40",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "while_body_30",
+                  "instruction_index": 50
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 7
+              }
+            },
+            {
+              "block": "switch_continue_41",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 64,
+              "source_load_sites": [
+                {
+                  "block": "while_body_30",
+                  "instruction_index": 36
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 20
+              }
+            },
+            {
+              "block": "switch_negative_42",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_41",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 20
+              }
+            },
+            {
+              "block": "switch_neutral_43",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 64,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_41",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 8
+              }
+            },
+            {
+              "block": "switch_positive_44",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_41",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 8
+              }
+            },
+            {
+              "block": "switch_continue_45",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 64,
+              "source_load_sites": [
+                {
+                  "block": "while_body_30",
+                  "instruction_index": 43
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 21
+              }
+            },
+            {
+              "block": "switch_negative_46",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_45",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 21
+              }
+            },
+            {
+              "block": "switch_neutral_47",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 64,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_45",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 9
+              }
+            },
+            {
+              "block": "switch_positive_48",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_45",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 9
+              }
+            },
+            {
+              "block": "switch_negative_50",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_49",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 19
+              }
+            },
+            {
+              "block": "switch_neutral_51",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 57,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_49",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 10
+              }
+            },
+            {
+              "block": "switch_positive_52",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_49",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 10
+              }
+            },
+            {
+              "block": "switch_negative_54",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_53",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 20
+              }
+            },
+            {
+              "block": "switch_neutral_55",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 57,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_53",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 11
+              }
+            },
+            {
+              "block": "switch_positive_56",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_53",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 11
+              }
+            },
+            {
+              "block": "switch_negative_58",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_57",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 21
+              }
+            },
+            {
+              "block": "switch_neutral_59",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 58,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_57",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 12
+              }
+            },
+            {
+              "block": "switch_positive_60",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_57",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 12
+              }
+            },
+            {
+              "block": "switch_continue_61",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 64,
+              "source_load_sites": [
+                {
+                  "block": "while_body_30",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 16
+              }
+            },
+            {
+              "block": "while_body_63",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 64,
+              "source_load_sites": [
+                {
+                  "block": "while_condition_62",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 16
+              }
+            }
+          ],
+          "cross_block_candidate_count": 25,
+          "function": "point_cloud_summary",
+          "hot_candidate_count": 11,
+          "logical_destination_block_visits": 684
+        }
+      ],
+      "hot_candidate_count": 11,
+      "logical_destination_block_visits": 684,
+      "source_path": "workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "windows_checkout_source_sha256": "0e1db00d18bd3a9653274e67dad6e89b1432ebdd989eca2ca26c6b392a4f00b1"
+    },
+    "geospatial.raster-window-statistics.v1": {
+      "cross_block_candidate_count": 22,
+      "dataset_sha256": "3a182a6f587c30c9f38c0c25dba394729ea4563568dc00e9c3999091a4593f3c",
+      "direct_load_sites_analyzed": 85,
+      "functions": [
+        {
+          "candidates": [
+            {
+              "block": "switch_neutral_36",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_15",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 2
+              }
+            },
+            {
+              "block": "switch_neutral_36",
+              "instruction_index": 3,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_23",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 0
+              }
+            },
+            {
+              "block": "switch_neutral_36",
+              "instruction_index": 5,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_neutral_29",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 1
+              }
+            },
+            {
+              "block": "switch_negative_42",
+              "instruction_index": 3,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_neutral_36",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 2
+              }
+            },
+            {
+              "block": "while_body_69",
+              "instruction_index": 3,
+              "logical_destination_block_visits": 64,
+              "source_load_sites": [
+                {
+                  "block": "while_condition_68",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 0
+              }
+            },
+            {
+              "block": "while_body_69",
+              "instruction_index": 6,
+              "logical_destination_block_visits": 64,
+              "source_load_sites": [
+                {
+                  "block": "while_condition_68",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 23
+              }
+            },
+            {
+              "block": "switch_negative_81",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 58,
+              "source_load_sites": [
+                {
+                  "block": "while_body_69",
+                  "instruction_index": 12
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 25
+              }
+            },
+            {
+              "block": "switch_neutral_89",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 57,
+              "source_load_sites": [
+                {
+                  "block": "switch_negative_81",
+                  "instruction_index": 6
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 13
+              }
+            },
+            {
+              "block": "switch_positive_90",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_negative_81",
+                  "instruction_index": 6
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 13
+              }
+            },
+            {
+              "block": "switch_continue_95",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 58,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_91",
+                  "instruction_index": 14
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 27
+              }
+            },
+            {
+              "block": "switch_negative_96",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_95",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 27
+              }
+            },
+            {
+              "block": "switch_neutral_97",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 57,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_95",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 18
+              }
+            },
+            {
+              "block": "switch_positive_98",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_95",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 18
+              }
+            },
+            {
+              "block": "switch_negative_100",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_99",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 27
+              }
+            },
+            {
+              "block": "switch_neutral_101",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 49,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_99",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 19
+              }
+            },
+            {
+              "block": "switch_positive_102",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_continue_99",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 19
+              }
+            },
+            {
+              "block": "switch_continue_103",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 58,
+              "source_load_sites": [
+                {
+                  "block": "while_body_69",
+                  "instruction_index": 6
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 23
+              }
+            },
+            {
+              "block": "switch_continue_103",
+              "instruction_index": 6,
+              "logical_destination_block_visits": 58,
+              "source_load_sites": [
+                {
+                  "block": "while_body_69",
+                  "instruction_index": 3
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 0
+              }
+            },
+            {
+              "block": "switch_negative_108",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 51,
+              "source_load_sites": [
+                {
+                  "block": "switch_negative_81",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 25
+              }
+            },
+            {
+              "block": "switch_negative_115",
+              "instruction_index": 3,
+              "logical_destination_block_visits": 46,
+              "source_load_sites": [
+                {
+                  "block": "switch_negative_108",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 25
+              }
+            },
+            {
+              "block": "switch_neutral_133",
+              "instruction_index": 1,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "while_exit_63",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 15
+              }
+            },
+            {
+              "block": "switch_neutral_133",
+              "instruction_index": 6,
+              "logical_destination_block_visits": 0,
+              "source_load_sites": [
+                {
+                  "block": "switch_neutral_126",
+                  "instruction_index": 1
+                }
+              ],
+              "storage": {
+                "index": 0,
+                "memory_object": 16
+              }
+            }
+          ],
+          "cross_block_candidate_count": 22,
+          "function": "raster_window_statistics",
+          "hot_candidate_count": 11,
+          "logical_destination_block_visits": 620
+        }
+      ],
+      "hot_candidate_count": 11,
+      "logical_destination_block_visits": 620,
+      "source_path": "workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "windows_checkout_source_sha256": "7f99315b015db64d849bf02cc5990373f4f83d3d0c040b0141954abb73817512"
+    }
+  }
+}

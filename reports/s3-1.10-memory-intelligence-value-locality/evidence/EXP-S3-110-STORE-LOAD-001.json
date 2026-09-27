@@ -1,0 +1,708 @@
+{
+  "created_at_utc": "2026-09-27T17:25:32.191690+00:00",
+  "experiment_id": "EXP-S3-110-STORE-LOAD-001",
+  "protocol": {
+    "candidate": "O1 IR with experimental proof-gated STORE-to-LOAD forwarding",
+    "control": "O1 compiler output",
+    "correctness_before_timing": true,
+    "machine": "x86_64",
+    "native_compiler": "/usr/bin/cc",
+    "native_compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "pmu": {
+      "perf_event_paranoid": "4",
+      "probe_detail": [
+        "To make the adjusted perf_event_paranoid setting permanent preserve it",
+        "in /etc/sysctl.conf (e.g. kernel.perf_event_paranoid = <setting>)"
+      ],
+      "probe_exit": 1,
+      "status": "UNAVAILABLE_BY_POLICY"
+    },
+    "python": "3.14.4",
+    "transformation_in_production_pipeline": false
+  },
+  "schema_version": "1.0.0",
+  "workloads": {
+    "energy.pv-timeseries-aggregation.v1": {
+      "baseline": {
+        "assembly_bytes": 369690,
+        "assembly_instruction_count": 308,
+        "assembly_opcode_counts": {
+          "TADD": 4,
+          "TBR3": 14,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 135,
+          "TCVT": 2,
+          "TDIV": 2,
+          "TJMP": 31,
+          "TLOAD": 44,
+          "TMUL": 1,
+          "TNDIFF": 2,
+          "TREL": 2,
+          "TRET": 9,
+          "TSLEN": 3,
+          "TSLOAD": 2,
+          "TSSTORE": 5,
+          "TSTORE": 45
+        },
+        "assembly_sha256": "08cbb0d4f17c898b22da46901320f57c0392c35a499473f739431b9fb0082130",
+        "binary": {
+          "elf_file_bytes": 160584,
+          "exported_function_bytes": 15179,
+          "stack_frame_bytes": 2144,
+          "static_branches": 789,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 12,
+          "static_machine_instructions": 2754,
+          "static_memory_references": 953,
+          "static_stack_references": 907,
+          "text_section_bytes": 36304
+        },
+        "shared_object_sha256": "6b4b944c54cc5ee6bf05b40f2c44e870626f8856fdb8169884a9634f44c0b2e8"
+      },
+      "candidate": {
+        "assembly_bytes": 361229,
+        "assembly_instruction_count": 311,
+        "assembly_opcode_counts": {
+          "TADD": 4,
+          "TBR3": 14,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 135,
+          "TCVT": 2,
+          "TDIV": 2,
+          "TJMP": 31,
+          "TLOAD": 32,
+          "TMOV": 15,
+          "TMUL": 1,
+          "TNDIFF": 2,
+          "TREL": 2,
+          "TRET": 9,
+          "TSLEN": 3,
+          "TSLOAD": 2,
+          "TSSTORE": 5,
+          "TSTORE": 45
+        },
+        "assembly_sha256": "39e96d1b4935dc2186033441fefd8f8eae5a2a10cf98e6712ed340134bf62ea9",
+        "binary": {
+          "elf_file_bytes": 156488,
+          "exported_function_bytes": 15111,
+          "stack_frame_bytes": 2160,
+          "static_branches": 771,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 12,
+          "static_machine_instructions": 2718,
+          "static_memory_references": 1001,
+          "static_stack_references": 955,
+          "text_section_bytes": 35546
+        },
+        "shared_object_sha256": "eb7e91ef3acc0b2b98ca38558767ccc9a40898f792f3315117a6d7d53bedcf22"
+      },
+      "candidate_output_sha256": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+      "correctness": "PASS_REFERENCE_AND_EXACT_BASELINE_OUTPUT",
+      "dataset_sha256": "dcf7e356a75be9597f2732c1739a2f93f73d657bfdaa4207634aff2e5481afca",
+      "eligible_loads_forwarded": 12,
+      "source_path": "workloads/real_world/energy_series_aggregation.s3",
+      "source_sha256": "58b81c4858e5859c7ef6092e913146624972a8dced8fdb9f5085ab545796cddb",
+      "timing": {
+        "baseline_median_ns_per_call": 17129.81,
+        "baseline_ns_per_call": [
+          17030.612,
+          16906.014,
+          18778.027,
+          17181.176,
+          17045.082,
+          17473.244,
+          17571.473,
+          17170.369,
+          17378.276,
+          17342.397,
+          17034.702,
+          18286.374,
+          17174.71,
+          17129.81,
+          17028.332,
+          17945.896,
+          16985.363,
+          16971.063,
+          16825.453,
+          16984.163,
+          16975.453
+        ],
+        "baseline_over_candidate_median_ratio": 1.0276326464695718,
+        "candidate_median_ns_per_call": 16669.196,
+        "candidate_ns_per_call": [
+          16667.764,
+          17515.428,
+          16557.218,
+          16660.535,
+          16552.91,
+          16689.728,
+          16798.186,
+          16628.389,
+          16788.236,
+          16749.987,
+          16606.079,
+          18883.161,
+          16669.196,
+          18472.774,
+          16387.063,
+          16756.327,
+          16886.865,
+          16521.33,
+          16629.904,
+          17117.59,
+          16643.778
+        ],
+        "class": "CHARACTERIZATION_ONLY",
+        "iterations_per_sample": 1000,
+        "native_speedup_claim": false,
+        "order_seed": 3110,
+        "paired_order": [
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ]
+        ],
+        "samples": 21,
+        "scope": "same-process scalar C ABI; setup and compilation excluded; ctypes dispatch included equally",
+        "warmups": 3
+      }
+    },
+    "engineering.point-cloud-summary.v1": {
+      "baseline": {
+        "assembly_bytes": 596911,
+        "assembly_instruction_count": 517,
+        "assembly_opcode_counts": {
+          "TADD": 12,
+          "TBR3": 18,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 220,
+          "TCVT": 3,
+          "TDIV": 4,
+          "TJMP": 47,
+          "TLOAD": 91,
+          "TMUL": 6,
+          "TNDIFF": 3,
+          "TREL": 6,
+          "TRET": 7,
+          "TSLEN": 2,
+          "TSLOAD": 9,
+          "TSSTORE": 10,
+          "TSTORE": 72
+        },
+        "assembly_sha256": "a5161190f38d1d3ef05c224d05c8d4fee56d84e0890be7e280c36c5ab7b216c0",
+        "binary": {
+          "elf_file_bytes": 258832,
+          "exported_function_bytes": 26063,
+          "stack_frame_bytes": 3648,
+          "static_branches": 1367,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 8,
+          "static_machine_instructions": 4732,
+          "static_memory_references": 1601,
+          "static_stack_references": 1536,
+          "text_section_bytes": 58112
+        },
+        "shared_object_sha256": "fc640b39ef8c97304a45800bd48a7b5a779c046858f41988b6b87fff142bbd07"
+      },
+      "candidate": {
+        "assembly_bytes": 565459,
+        "assembly_instruction_count": 525,
+        "assembly_opcode_counts": {
+          "TADD": 12,
+          "TBR3": 18,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 220,
+          "TCVT": 3,
+          "TDIV": 4,
+          "TJMP": 47,
+          "TLOAD": 52,
+          "TMOV": 47,
+          "TMUL": 6,
+          "TNDIFF": 3,
+          "TREL": 6,
+          "TRET": 7,
+          "TSLEN": 2,
+          "TSLOAD": 9,
+          "TSSTORE": 10,
+          "TSTORE": 72
+        },
+        "assembly_sha256": "db0a7894e0832a2dfc887271ad2aa2cb457d8849ab7eba2d9b1bac79540aad69",
+        "binary": {
+          "elf_file_bytes": 246544,
+          "exported_function_bytes": 25358,
+          "stack_frame_bytes": 3728,
+          "static_branches": 1305,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 8,
+          "static_machine_instructions": 4609,
+          "static_memory_references": 1604,
+          "static_stack_references": 1539,
+          "text_section_bytes": 55105
+        },
+        "shared_object_sha256": "5557cc8de4c9d065ade26a11449bc8961a2059d10a4266809a63938b4194a714"
+      },
+      "candidate_output_sha256": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+      "correctness": "PASS_REFERENCE_AND_EXACT_BASELINE_OUTPUT",
+      "dataset_sha256": "346178eab37077a8bd7989d60836a2b54fb27948c36dabd18e7a58b2e41042f8",
+      "eligible_loads_forwarded": 39,
+      "source_path": "workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "0e1db00d18bd3a9653274e67dad6e89b1432ebdd989eca2ca26c6b392a4f00b1",
+      "timing": {
+        "baseline_median_ns_per_call": 13469.662,
+        "baseline_ns_per_call": [
+          14509.743,
+          14042.022,
+          13449.453,
+          13554.161,
+          13413.343,
+          14279.814,
+          13348.76,
+          14617.97,
+          13736.833,
+          13314.291,
+          14303.549,
+          13417.463,
+          13469.662,
+          13327.305,
+          13576.66,
+          13463.972,
+          13451.242,
+          13415.373,
+          13322.055,
+          13673.499,
+          13517.461
+        ],
+        "baseline_over_candidate_median_ratio": 1.1072095039264591,
+        "candidate_median_ns_per_call": 12165.414,
+        "candidate_ns_per_call": [
+          16069.023,
+          13119.818,
+          11822.78,
+          12222.783,
+          12501.548,
+          13590.729,
+          11970.903,
+          11814.395,
+          11954.893,
+          12787.299,
+          11889.809,
+          11924.328,
+          12004.947,
+          13757.843,
+          12451.859,
+          12118.395,
+          11894.489,
+          11897.538,
+          12192.393,
+          12754.234,
+          12165.414
+        ],
+        "class": "CHARACTERIZATION_ONLY",
+        "iterations_per_sample": 1000,
+        "native_speedup_claim": false,
+        "order_seed": 3110,
+        "paired_order": [
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ]
+        ],
+        "samples": 21,
+        "scope": "same-process scalar C ABI; setup and compilation excluded; ctypes dispatch included equally",
+        "warmups": 3
+      }
+    },
+    "geospatial.raster-window-statistics.v1": {
+      "baseline": {
+        "assembly_bytes": 720557,
+        "assembly_instruction_count": 665,
+        "assembly_opcode_counts": {
+          "TADD": 11,
+          "TBR3": 35,
+          "TCALL": 1,
+          "TCMP": 16,
+          "TCONST": 289,
+          "TCVT": 6,
+          "TDIV": 2,
+          "TJMP": 84,
+          "TLOAD": 85,
+          "TMUL": 2,
+          "TNDIFF": 1,
+          "TREL": 3,
+          "TRET": 15,
+          "TSLEN": 3,
+          "TSLOAD": 4,
+          "TSSTORE": 6,
+          "TSTORE": 102
+        },
+        "assembly_sha256": "73ae26b6c3e4a6d03a7951834f4a2e1b291a737bb73a89d9ccb650c15f2ce9ed",
+        "binary": {
+          "elf_file_bytes": 312136,
+          "exported_function_bytes": 31216,
+          "stack_frame_bytes": 4192,
+          "static_branches": 1715,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 18,
+          "static_machine_instructions": 5666,
+          "static_memory_references": 1898,
+          "static_stack_references": 1821,
+          "text_section_bytes": 68491
+        },
+        "shared_object_sha256": "685fd61b36e7ded2301d63fa6af36bc8752c33618d9c1035d20089eafeab2262"
+      },
+      "candidate": {
+        "assembly_bytes": 710902,
+        "assembly_instruction_count": 670,
+        "assembly_opcode_counts": {
+          "TADD": 11,
+          "TBR3": 35,
+          "TCALL": 1,
+          "TCMP": 16,
+          "TCONST": 289,
+          "TCVT": 6,
+          "TDIV": 2,
+          "TJMP": 84,
+          "TLOAD": 67,
+          "TMOV": 23,
+          "TMUL": 2,
+          "TNDIFF": 1,
+          "TREL": 3,
+          "TRET": 15,
+          "TSLEN": 3,
+          "TSLOAD": 4,
+          "TSSTORE": 6,
+          "TSTORE": 102
+        },
+        "assembly_sha256": "e29439f42df68e5eb1373664b4b050fb18edda292588d21083253033d8cf2b7c",
+        "binary": {
+          "elf_file_bytes": 308040,
+          "exported_function_bytes": 31797,
+          "stack_frame_bytes": 4240,
+          "static_branches": 1689,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 18,
+          "static_machine_instructions": 5614,
+          "static_memory_references": 2126,
+          "static_stack_references": 2049,
+          "text_section_bytes": 68054
+        },
+        "shared_object_sha256": "343016417fd1f008d46161c285c7bf10c96ef271d0746288d63a39c55808f158"
+      },
+      "candidate_output_sha256": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+      "correctness": "PASS_REFERENCE_AND_EXACT_BASELINE_OUTPUT",
+      "dataset_sha256": "3a182a6f587c30c9f38c0c25dba394729ea4563568dc00e9c3999091a4593f3c",
+      "eligible_loads_forwarded": 18,
+      "source_path": "workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "7f99315b015db64d849bf02cc5990373f4f83d3d0c040b0141954abb73817512",
+      "timing": {
+        "baseline_median_ns_per_call": 12663.038,
+        "baseline_ns_per_call": [
+          13517.402,
+          13965.845,
+          13417.454,
+          13051.36,
+          12984.891,
+          12806.744,
+          13519.252,
+          12822.178,
+          11755.016,
+          11792.386,
+          11706.507,
+          12663.038,
+          11745.252,
+          11699.112,
+          11609.583,
+          13662.28,
+          12028.357,
+          11715.822,
+          11643.193,
+          14223.798,
+          12593.047
+        ],
+        "baseline_over_candidate_median_ratio": 1.1034081031022553,
+        "candidate_median_ns_per_call": 11476.296,
+        "candidate_ns_per_call": [
+          13261.796,
+          14452.247,
+          12589.618,
+          14378.065,
+          12524.779,
+          12313.013,
+          12537.47,
+          13996.227,
+          11913.184,
+          11348.224,
+          11316.633,
+          11344.333,
+          11307.109,
+          11422.917,
+          11512.035,
+          11366.268,
+          11291.839,
+          11476.296,
+          11444.426,
+          11405.267,
+          11348.638
+        ],
+        "class": "CHARACTERIZATION_ONLY",
+        "iterations_per_sample": 1000,
+        "native_speedup_claim": false,
+        "order_seed": 3110,
+        "paired_order": [
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ],
+          [
+            "candidate",
+            "baseline"
+          ],
+          [
+            "baseline",
+            "candidate"
+          ]
+        ],
+        "samples": 21,
+        "scope": "same-process scalar C ABI; setup and compilation excluded; ctypes dispatch included equally",
+        "warmups": 3
+      }
+    }
+  }
+}
