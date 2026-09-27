@@ -15,7 +15,9 @@ from bootstrap.s3.assembly import (
     AssemblyType,
 )
 from bootstrap.s3.backends.x86_64 import NativeToolchain, X8664Backend
+from bootstrap.s3.backends.x86_64.emitter import X8664Emitter
 from bootstrap.s3.backends.x86_64.register_init_safety import (
+    analyze_register_initialization,
     proven_initialized_register_reads,
 )
 from bootstrap.s3.pipeline import compile_source
@@ -49,6 +51,52 @@ def test_definite_local_write_proves_exact_register_read() -> None:
     assert proven_initialized_register_reads(function) == frozenset({("entry", 1, 0)})
 
 
+def test_initialization_analysis_tracks_only_registers_with_unproven_reads() -> None:
+    function = AssemblyFunction(
+        name="main",
+        return_type=AssemblyType.TRYTE,
+        parameters=(),
+        register_types=(
+            (0, AssemblyType.TRYTE),
+            (1, AssemblyType.TRYTE),
+            (2, AssemblyType.TRIT),
+            (3, AssemblyType.TRYTE),
+        ),
+        blocks=(
+            AssemblyBlock(
+                "entry",
+                (
+                    AssemblyInstruction(AssemblyOpcode.TCONST, (0,), immediate=7),
+                    AssemblyInstruction(AssemblyOpcode.TCONST, (2,), immediate=0),
+                    AssemblyInstruction(
+                        AssemblyOpcode.TBR3,
+                        (2,),
+                        labels=("negative", "neutral", "positive"),
+                    ),
+                ),
+            ),
+            AssemblyBlock("negative", (AssemblyInstruction(AssemblyOpcode.TRET, (0,)),)),
+            AssemblyBlock("neutral", (AssemblyInstruction(AssemblyOpcode.TRET, (1,)),)),
+            AssemblyBlock("positive", (AssemblyInstruction(AssemblyOpcode.TRET, (3,)),)),
+        ),
+    )
+
+    analysis = analyze_register_initialization(function)
+
+    assert analysis.safe_reads == frozenset({("entry", 2, 2), ("negative", 0, 0)})
+    assert analysis.tracked_registers == frozenset({1, 3})
+    assert analysis.reason_for(0) == "all reads are proven initialized on every reachable path"
+    assert analysis.reason_for(1) == "one or more reads are not proven initialized"
+    assert analysis.reason_for(2) == "all reads are proven initialized on every reachable path"
+
+    native = X8664Backend().generate(AssemblyProgram((function,)))
+    function_start = native.index(".type s3_main, @function")
+    function_end = native.index(".size s3_main, .-s3_main", function_start)
+    main_native = native[function_start:function_end]
+    assert main_native.count("mov byte ptr") == 2
+    assert main_native.count("cmp byte ptr") == 2
+
+
 def test_uninitialized_register_keeps_checked_path() -> None:
     function = _function(
         (AssemblyInstruction(AssemblyOpcode.TRET, (0,)),),
@@ -56,8 +104,10 @@ def test_uninitialized_register_keeps_checked_path() -> None:
     )
 
     assert not proven_initialized_register_reads(function)
+    assert analyze_register_initialization(function).tracked_registers == frozenset({0})
     native = X8664Backend().generate(AssemblyProgram((function,)))
     assert "cmp byte ptr" in native
+    assert "mov byte ptr" in native
 
 
 def test_join_with_uninitialized_predecessor_is_not_proven() -> None:
@@ -105,6 +155,9 @@ fn main() -> tryte:
     main = next(function for function in program.functions if function.name == "main")
 
     assert not proven_initialized_register_reads(main)
+    assert analyze_register_initialization(main).tracked_registers == frozenset(
+        main.all_register_types
+    )
 
 
 def test_alias_reads_remain_proven_when_source_is_initialized() -> None:
@@ -135,6 +188,9 @@ def test_address_taken_register_is_conservatively_excluded() -> None:
     )
 
     assert not proven_initialized_register_reads(function)
+    analysis = analyze_register_initialization(function)
+    assert 0 in analysis.tracked_registers
+    assert analysis.reason_for(0) == "register address is taken and its initialization state may be observed"
 
 
 def test_reference_contract_disables_local_fact() -> None:
@@ -221,7 +277,32 @@ def test_positive_native_shape_removes_only_initialization_check() -> None:
     main_native = native[function_start:function_end]
 
     assert "cmp byte ptr" not in main_native
+    assert "mov byte ptr" not in main_native
     assert "mov qword ptr" in native or "mov rax," in native
+
+
+def test_initialized_parameter_does_not_need_an_initialization_marker() -> None:
+    parameter = AssemblyParameter(0, AssemblyType.TRYTE)
+    function = AssemblyFunction(
+        name="identity",
+        return_type=AssemblyType.TRYTE,
+        parameters=(parameter,),
+        register_types=(),
+        blocks=(AssemblyBlock("entry", (AssemblyInstruction(AssemblyOpcode.TRET, (0,)),)),),
+    )
+
+    analysis = analyze_register_initialization(function)
+    assert analysis.safe_reads == frozenset({("entry", 0, 0)})
+    assert not analysis.tracked_registers
+
+    native = X8664Emitter(
+        AssemblyProgram((function,)),
+        max_frames=100_000,
+        max_instructions=1_000_000_000,
+    ).emit()
+    function_start = native.index(".type s3_identity, @function")
+    function_end = native.index(".size s3_identity, .-s3_identity", function_start)
+    assert "mov byte ptr" not in native[function_start:function_end]
 
 
 @pytest.mark.s3_native

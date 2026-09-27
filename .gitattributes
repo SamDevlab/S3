@@ -1,1 +1,2 @@
 tests/golden/assembly_renderer_candidate_actual/*.assembly.txt text eol=lf
+reports/s3-1.7-native-lowering-codegen-expansion/*.log whitespace=-blank-at-eol

@@ -7,11 +7,92 @@ case returns no safe sites, leaving the native checked path unchanged.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from ...assembly import AssemblyFunction, AssemblyOpcode
 from .liveness import instruction_use_def
 
 
 RegisterReadSite = tuple[str, int, int]
+
+
+@dataclass(frozen=True, slots=True)
+class RegisterInitializationAnalysis:
+    safe_reads: frozenset[RegisterReadSite]
+    tracked_registers: frozenset[int]
+    read_sites: frozenset[RegisterReadSite]
+    address_taken_registers: frozenset[int] = frozenset()
+    conservative_reason: str | None = None
+
+    def reason_for(self, register: int) -> str:
+        if self.conservative_reason is not None:
+            return self.conservative_reason
+        if register in self.address_taken_registers:
+            return "register address is taken and its initialization state may be observed"
+        if register in self.tracked_registers:
+            return "one or more reads are not proven initialized"
+        if any(site[2] == register for site in self.safe_reads):
+            return "all reads are proven initialized on every reachable path"
+        return "register has no read requiring initialization tracking"
+
+
+def analyze_register_initialization(
+    function: AssemblyFunction,
+) -> RegisterInitializationAnalysis:
+    """Explain which register initialization markers remain observable."""
+
+    all_registers = frozenset(function.all_register_types)
+
+    def conservative(reason: str) -> RegisterInitializationAnalysis:
+        return RegisterInitializationAnalysis(
+            safe_reads=frozenset(),
+            tracked_registers=all_registers,
+            read_sites=frozenset(),
+            conservative_reason=reason,
+        )
+
+    if function.external:
+        return conservative("external function")
+    if not function.blocks:
+        return conservative("function has no blocks")
+    if function.reference_targets:
+        return conservative("reference targets can observe register initialization")
+    if function.slice_registers:
+        return conservative("slice operations can observe register initialization")
+    if any(
+        instruction.opcode is AssemblyOpcode.TCALL
+        for block in function.blocks
+        for instruction in block.instructions
+    ):
+        return conservative("call snapshots retain initialization validation")
+
+    try:
+        read_sites = frozenset(
+            (block.label, index, register)
+            for block in function.blocks
+            for index, instruction in enumerate(block.instructions)
+            for register in instruction_use_def(instruction)[0]
+        )
+        safe_reads = proven_initialized_register_reads(function)
+        unproven_registers = {site[2] for site in read_sites - safe_reads}
+        address_taken = {
+            instruction.registers[1]
+            for block in function.blocks
+            for instruction in block.instructions
+            if instruction.opcode is AssemblyOpcode.TADDR
+            and instruction.memory is None
+            and len(instruction.registers) == 2
+        }
+    except (KeyError, StopIteration, TypeError, ValueError):
+        return conservative("unsupported instruction or incomplete read/use model")
+
+    tracked_registers = frozenset(unproven_registers | address_taken)
+    return RegisterInitializationAnalysis(
+        safe_reads=safe_reads,
+        tracked_registers=tracked_registers,
+        read_sites=read_sites,
+        address_taken_registers=frozenset(address_taken),
+    )
 
 
 def _successors(function: AssemblyFunction) -> dict[str, tuple[str, ...]]:

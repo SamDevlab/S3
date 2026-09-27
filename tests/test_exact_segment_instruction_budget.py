@@ -174,16 +174,16 @@ def test_register_resident_budget_falls_back_for_unsupported_codegen_paths() -> 
 def test_default_mode_matches_frozen_register_resident_native_assembly_bytes() -> None:
     expected = {
         "linear": (
-            50_164,
-            "a7dcff9f819854145a3e0e220d06b72e206f5eb58325add590b3b1bd57a5936d",
+            50_104,
+            "cdc2a0ba8120b7e7710746c242f61469dff10464b8c4175b5cd12efb1ef60d4c",
         ),
         "loop_call": (
-            95_939,
-            "61fe0e73c629cd1f0807a8dc91e4e420c3221667645f9943479a60d3d0826d1f",
+            95_753,
+            "21e813e0e193985ae34077c921bfaaa48491a7057f278824678d311b146e814b",
         ),
         "bounds": (
-            68_603,
-            "eb77dfd5ac4347f6389a5120964b0c6a52cced8dcee6a0c55d529e8bb92b33e0",
+            68_543,
+            "d9bdefbb9e39ca4113a8be8acd5d750987774744a5796a3ac75117b02ab0eb10",
         ),
     }
     sources = {

@@ -7,10 +7,96 @@ from pathlib import Path
 
 import pytest
 
+import bootstrap.s3.backends.x86_64 as x86_64
 from bootstrap.s3.backends.x86_64 import InstructionBudgetMode, generate_ffi_assembly
-from bootstrap.s3.pipeline import compile_source
 from bootstrap.s3.ffi import build_shared_library
 from bootstrap.s3.pipeline import compile_source
+
+
+def test_shared_library_forwards_instruction_limit_to_native_generator(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = "export fn answer() -> i64:\n    return 42\nfn main() -> i64:\n    return 0\n"
+    output = tmp_path / "liblimited.so"
+    observed: dict[str, object] = {}
+
+    def fake_generate(_program, **kwargs: object) -> str:
+        observed.update(kwargs)
+        return "native assembly"
+
+    class FakeToolchain:
+        def build_shared(self, assembly, path, **kwargs):
+            observed["assembly"] = assembly
+            observed["build_kwargs"] = kwargs
+            return path
+
+    toolchain = FakeToolchain()
+
+    class FakeNativeToolchain:
+        @classmethod
+        def detect(cls):
+            return toolchain
+
+    monkeypatch.setattr(x86_64, "generate_ffi_assembly", fake_generate)
+    monkeypatch.setattr(x86_64, "NativeToolchain", FakeNativeToolchain)
+
+    assert build_shared_library(source, output, max_instructions=123_456) == output
+    assert observed["max_instructions"] == 123_456
+    assert observed["assembly"] == "native assembly"
+
+
+def test_shared_library_compiles_with_requested_optimization_and_syntax_mode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from bootstrap.s3 import pipeline
+    from bootstrap.s3.lexer import SyntaxMode
+    from bootstrap.s3.optimizer import OptimizationLevel
+
+    source = "fn main() -> tryte { return 0; }\n"
+    output = tmp_path / "liboptions.so"
+    real_compile_source = pipeline.compile_source
+    compile_options: dict[str, object] = {}
+    generated_programs: list[object] = []
+
+    def observed_compile_source(
+        source_text: str,
+        optimization: OptimizationLevel | str,
+        *,
+        mode: SyntaxMode,
+    ):
+        compile_options.update(optimization=optimization, mode=mode)
+        return real_compile_source(source_text, optimization, mode=mode)
+
+    def fake_generate(program, **_kwargs: object) -> str:
+        generated_programs.append(program)
+        return "native assembly"
+
+    class FakeToolchain:
+        def build_shared(self, _assembly, path, **_kwargs):
+            return path
+
+    class FakeNativeToolchain:
+        @classmethod
+        def detect(cls):
+            return FakeToolchain()
+
+    monkeypatch.setattr(pipeline, "compile_source", observed_compile_source)
+    monkeypatch.setattr(x86_64, "generate_ffi_assembly", fake_generate)
+    monkeypatch.setattr(x86_64, "NativeToolchain", FakeNativeToolchain)
+
+    assert build_shared_library(
+        source,
+        output,
+        optimization=OptimizationLevel.O1,
+        mode=SyntaxMode.V0_5,
+    ) == output
+    assert compile_options == {
+        "optimization": OptimizationLevel.O1,
+        "mode": SyntaxMode.V0_5,
+    }
+    assert len(generated_programs) == 1
 
 
 def test_foreign_and_exported_functions_are_source_visible_and_stable() -> None:
