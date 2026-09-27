@@ -16,6 +16,7 @@ from bootstrap.s3.ir_emulator import execute_ir
 from bootstrap.s3.optimizer import OptimizationLevel
 from bootstrap.s3.pipeline import compile_source, compile_sources
 from bootstrap.s3.stdlib import standard_library_sources
+from tools.s3_source_identity import canonical_source_sha256
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -270,7 +271,7 @@ def test_agent_kernel_corpus_pins_multiple_bounded_task_to_source_contracts() ->
         source_path = ROOT / task["source"]
         source_bytes = source_path.read_bytes()
         reference = references_by_id[task["workload_id"]]
-        assert hashlib.sha256(source_bytes).hexdigest() == task["source_sha256"]
+        assert canonical_source_sha256(source_bytes) == task["source_sha256"]
         assert hashlib.sha256(
             (json.dumps(reference["expected_output"], sort_keys=True, indent=2, allow_nan=False) + "\n").encode()
         ).hexdigest() == task["reference_result_sha256"]

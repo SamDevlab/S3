@@ -16,6 +16,7 @@ from bootstrap.s3.optimizer import OptimizationLevel  # noqa: E402
 from bootstrap.s3.pipeline import compile_source  # noqa: E402
 from bootstrap.s3.lexer import SyntaxMode  # noqa: E402
 from bootstrap.s3.vector_legality import analyze_vector_legality  # noqa: E402
+from tools.s3_source_identity import canonical_source_sha256  # noqa: E402
 
 
 def main() -> int:
@@ -42,7 +43,7 @@ def main() -> int:
         "schema_version": "1.0.0",
         "report_kind": "S3_VECTOR_LEGALITY_RESEARCH",
         "provenance": {
-            "source_sha256": sha256(source_bytes).hexdigest(),
+            "source_sha256": canonical_source_sha256(source_bytes),
             "analysis_implementation_sha256": sha256(
                 (ROOT / "bootstrap/s3/vector_legality.py").read_bytes()
             ).hexdigest(),

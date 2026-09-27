@@ -20,6 +20,7 @@ from bootstrap.s3.codegen_optimization import analyze_redundant_noop_moves  # no
 from bootstrap.s3.lexer import SyntaxMode  # noqa: E402
 from bootstrap.s3.optimizer import OptimizationLevel  # noqa: E402
 from bootstrap.s3.pipeline import compile_source  # noqa: E402
+from tools.s3_source_identity import canonical_source_sha256  # noqa: E402
 
 
 def _make_report(
@@ -53,7 +54,7 @@ def _make_report(
         program,
         native_text,
         native_origins=native_origins,
-        source_sha256=sha256(source_bytes).hexdigest(),
+        source_sha256=canonical_source_sha256(source_bytes),
         optimization=optimization.value,
         max_frames=max_frames,
         max_instructions=max_instructions,

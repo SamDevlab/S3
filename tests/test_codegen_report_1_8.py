@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+
 from bootstrap.s3.assembly import (
     AssemblyBlock,
     AssemblyFunction,
@@ -12,6 +14,7 @@ from bootstrap.s3.backends.x86_64.emitter import mangle_block
 from bootstrap.s3.backends.x86_64.emitter import X8664Emitter
 from bootstrap.s3.backends.x86_64.instruction_budget import InstructionBudgetMode
 from bootstrap.s3.codegen_report import build_codegen_report, compare_codegen_reports
+from tools.s3_source_identity import canonical_source_sha256
 
 
 def _program() -> AssemblyProgram:
@@ -165,3 +168,11 @@ def test_codegen_report_rejects_stale_emitter_opcode_origin() -> None:
         assert "does not match the AssemblyProgram" in str(exc)
     else:
         raise AssertionError("stale origin mapping must fail closed")
+
+
+def test_source_identity_is_stable_across_windows_and_git_line_endings() -> None:
+    lf_source = b"fn main() -> i64 {\n    return 1;\n}\n"
+    crlf_source = lf_source.replace(b"\n", b"\r\n")
+
+    assert canonical_source_sha256(lf_source) == canonical_source_sha256(crlf_source)
+    assert canonical_source_sha256(lf_source) == hashlib.sha256(lf_source).hexdigest()

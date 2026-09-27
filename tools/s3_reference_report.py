@@ -17,6 +17,7 @@ from bootstrap.s3.lexer import SyntaxMode  # noqa: E402
 from bootstrap.s3.optimizer import OptimizationLevel  # noqa: E402
 from bootstrap.s3.pipeline import compile_source  # noqa: E402
 from bootstrap.s3.reference_analysis import analyze_module_references  # noqa: E402
+from tools.s3_source_identity import canonical_source_sha256  # noqa: E402
 
 
 def main() -> int:
@@ -77,7 +78,7 @@ def main() -> int:
             "git_head": head,
             "git_worktree_dirty": dirty,
             "source_path": source_path,
-            "source_sha256": sha256(source_bytes).hexdigest(),
+            "source_sha256": canonical_source_sha256(source_bytes),
             "analysis_implementation_sha256": sha256(
                 (ROOT / "bootstrap/s3/reference_analysis.py").read_bytes()
             ).hexdigest(),
