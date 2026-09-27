@@ -1,0 +1,273 @@
+{
+  "functions": [
+    {
+      "complete": true,
+      "effects": {
+        "none": 0,
+        "read": 0,
+        "read_write": 0,
+        "unknown": 0,
+        "write": 0
+      },
+      "function": "absolute_f64",
+      "incomplete_reasons": [],
+      "references": []
+    },
+    {
+      "complete": true,
+      "effects": {
+        "none": 0,
+        "read": 5,
+        "read_write": 0,
+        "unknown": 0,
+        "write": 5
+      },
+      "function": "energy_series_aggregation",
+      "incomplete_reasons": [],
+      "references": [
+        {
+          "escape": "NO_ESCAPE",
+          "live_blocks": [
+            "entry",
+            "rel_cont_11",
+            "rel_cont_18",
+            "rel_cont_25",
+            "rel_cont_3",
+            "rel_cont_40",
+            "rel_cont_44",
+            "rel_neg_0",
+            "rel_neg_15",
+            "rel_neg_22",
+            "rel_neg_37",
+            "rel_neg_41",
+            "rel_neg_8",
+            "rel_pos_10",
+            "rel_pos_17",
+            "rel_pos_2",
+            "rel_pos_24",
+            "rel_pos_39",
+            "rel_pos_43",
+            "rel_zero_1",
+            "rel_zero_16",
+            "rel_zero_23",
+            "rel_zero_38",
+            "rel_zero_42",
+            "rel_zero_9",
+            "switch_continue_48",
+            "switch_continue_52",
+            "switch_continue_7",
+            "switch_negative_19",
+            "switch_negative_26",
+            "switch_negative_4",
+            "switch_negative_45",
+            "switch_negative_49",
+            "switch_neutral_13",
+            "switch_neutral_30",
+            "switch_neutral_46",
+            "switch_neutral_5",
+            "switch_neutral_50",
+            "switch_positive_47",
+            "switch_positive_51",
+            "switch_positive_6",
+            "while_body_33",
+            "while_condition_32"
+          ],
+          "mutable": false,
+          "origin_unknown": false,
+          "origins": [
+            {
+              "projection": [
+                "parameter",
+                0
+              ],
+              "root": "parameter-space",
+              "storage_class": "external"
+            }
+          ],
+          "read_uses": 2,
+          "register": 0,
+          "unknown_uses": 0,
+          "write_uses": 0
+        },
+        {
+          "escape": "NO_ESCAPE",
+          "live_blocks": [
+            "entry",
+            "rel_cont_11",
+            "rel_cont_18",
+            "rel_cont_25",
+            "rel_cont_3",
+            "rel_cont_40",
+            "rel_cont_44",
+            "rel_neg_0",
+            "rel_neg_15",
+            "rel_neg_22",
+            "rel_neg_37",
+            "rel_neg_41",
+            "rel_neg_8",
+            "rel_pos_10",
+            "rel_pos_17",
+            "rel_pos_2",
+            "rel_pos_24",
+            "rel_pos_39",
+            "rel_pos_43",
+            "rel_zero_1",
+            "rel_zero_16",
+            "rel_zero_23",
+            "rel_zero_38",
+            "rel_zero_42",
+            "rel_zero_9",
+            "switch_continue_48",
+            "switch_continue_52",
+            "switch_continue_7",
+            "switch_negative_19",
+            "switch_negative_26",
+            "switch_negative_4",
+            "switch_negative_45",
+            "switch_negative_49",
+            "switch_neutral_13",
+            "switch_neutral_30",
+            "switch_neutral_46",
+            "switch_neutral_5",
+            "switch_neutral_50",
+            "switch_positive_47",
+            "switch_positive_51",
+            "switch_positive_6",
+            "while_body_33",
+            "while_condition_32"
+          ],
+          "mutable": false,
+          "origin_unknown": false,
+          "origins": [
+            {
+              "projection": [
+                "parameter",
+                2
+              ],
+              "root": "parameter-space",
+              "storage_class": "external"
+            }
+          ],
+          "read_uses": 2,
+          "register": 2,
+          "unknown_uses": 0,
+          "write_uses": 0
+        },
+        {
+          "escape": "NO_ESCAPE",
+          "live_blocks": [
+            "entry",
+            "rel_cont_11",
+            "rel_cont_18",
+            "rel_cont_25",
+            "rel_cont_3",
+            "rel_cont_40",
+            "rel_cont_44",
+            "rel_neg_0",
+            "rel_neg_15",
+            "rel_neg_22",
+            "rel_neg_37",
+            "rel_neg_41",
+            "rel_neg_8",
+            "rel_pos_10",
+            "rel_pos_17",
+            "rel_pos_2",
+            "rel_pos_24",
+            "rel_pos_39",
+            "rel_pos_43",
+            "rel_zero_1",
+            "rel_zero_16",
+            "rel_zero_23",
+            "rel_zero_38",
+            "rel_zero_42",
+            "rel_zero_9",
+            "switch_continue_48",
+            "switch_continue_52",
+            "switch_continue_7",
+            "switch_negative_19",
+            "switch_negative_26",
+            "switch_negative_4",
+            "switch_negative_45",
+            "switch_negative_49",
+            "switch_neutral_13",
+            "switch_neutral_30",
+            "switch_neutral_46",
+            "switch_neutral_5",
+            "switch_neutral_50",
+            "switch_positive_47",
+            "switch_positive_51",
+            "switch_positive_6",
+            "while_body_33",
+            "while_condition_32",
+            "while_exit_0_34",
+            "while_exit_1_35",
+            "while_exit_36"
+          ],
+          "mutable": true,
+          "origin_unknown": false,
+          "origins": [
+            {
+              "projection": [
+                "parameter",
+                5
+              ],
+              "root": "parameter-space",
+              "storage_class": "external"
+            }
+          ],
+          "read_uses": 1,
+          "register": 5,
+          "unknown_uses": 0,
+          "write_uses": 5
+        }
+      ]
+    },
+    {
+      "complete": true,
+      "effects": {
+        "none": 0,
+        "read": 0,
+        "read_write": 0,
+        "unknown": 0,
+        "write": 0
+      },
+      "function": "main",
+      "incomplete_reasons": [],
+      "references": []
+    }
+  ],
+  "interpretation": {
+    "complete_means": "NO_UNSUPPORTED_REFERENCE_CONSTRUCT_OR_UNKNOWN_EFFECT_WAS_ENCOUNTERED",
+    "not_a_proof_of": [
+      "optimizer_safety",
+      "interprocedural_no_escape",
+      "runtime_address_identity",
+      "absence_of_language_level_aliasing_outside_modeled_regions"
+    ]
+  },
+  "provenance": {
+    "analysis_implementation_sha256": "79a6f6912e5105e7b284359569ade383ce45a98d89493a3d89a19537a8e45e67",
+    "git_head": "b8f446a5ea2b24b948a263cb955f426c5d0f48ce",
+    "git_worktree_dirty": true,
+    "optimization": "O1",
+    "report_tool_sha256": "7ff716fdff7483e9c02fc0e1e807ea630ddb0e214214cdd9fe352c3db50d5061",
+    "source_path": "benchmarks\\workloads\\real_world\\energy_series_aggregation.s3",
+    "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+    "source_syntax": "0.6"
+  },
+  "report_kind": "S3_REFERENCE_DATAFLOW_RESEARCH",
+  "schema_version": "1.0.0",
+  "summary": {
+    "complete_function_count": 3,
+    "escape_status_counts": {
+      "NO_ESCAPE": 3
+    },
+    "function_count": 3,
+    "incomplete_function_count": 0,
+    "origin_status_counts": {
+      "KNOWN": 3
+    },
+    "reference_values": 3,
+    "transformation_authorized": false
+  }
+}

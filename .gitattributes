@@ -1,2 +1,3 @@
 tests/golden/assembly_renderer_candidate_actual/*.assembly.txt text eol=lf
+reports/s3-1.8-machine-intelligence-portable-compute/evidence/linux-full-suite-b8/* -text
 reports/s3-1.7-native-lowering-codegen-expansion/*.log whitespace=-blank-at-eol
