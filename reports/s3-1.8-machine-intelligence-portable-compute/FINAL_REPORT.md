@@ -152,8 +152,10 @@ the measured records.
 - Full Linux suite at exact source HEAD `b8f446a5ea2b24b948a263cb955f426c5d0f48ce`:
   `4,490 passed, 1 skipped, 0 failed`, exit 0. The one skip is the optional
   `cryptography` package-signature test because the dependency is absent in the
-  guest. Transcript: `/tmp/s3-1.8-linux-final-b8/FULL_SUITE.log`; terminal
-  status: `/tmp/s3-1.8-linux-final-b8/FULL_SUITE.status`.
+  guest. Raw transcript and terminal status are preserved at
+  `reports/s3-1.8-machine-intelligence-portable-compute/evidence/linux-full-suite-b8/`.
+  Transcript SHA-256: `e271ee259d539c96adc9856abbe61e409acc25a2015fd1a88665f17a5aa37604`;
+  status SHA-256: `652fdac1d806cc42fb56bd031f1ba31df775d4c8870e561bd2fd3aa38bd61fcb`.
 - Nine baseline artifacts (three report families for each continuity workload)
   are pinned to S3 candidate HEAD `b8f446a5ea2b24b948a263cb955f426c5d0f48ce`.
   The independent lab validates artifact kind, path, SHA-256 and candidate
