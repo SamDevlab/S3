@@ -38,13 +38,16 @@ NATIVE_LINUX_CORRECTNESS=PASS for pinned baseline and tested candidates
 INDEPENDENT_BENCH_REPLAY=PASS for hot-fallthrough correctness and static metrics
 ```
 
-The full S3 Linux gate used the exact frozen source SHA and the exact current
-hashes of all 30 S3 1.11 test/tool files. To avoid writing into the VM's full
-root filesystem, pytest temporary data and compiler caches were directed to
-the available `/dev/shm` scratch. The transcript contains the terminal exit
-code and UTC start/end. The first Bench Linux collection attempt lacked the S3
-checkout on `PYTHONPATH` and ran no tests; the corrected full suite passed and
-its separate transcript is retained in the Bench report.
+The full S3 Linux gate used the exact frozen source SHA and hash-matched all 30
+S3 1.11 test/tool files as they stood during that run. Afterward, two tests
+had only their extra blank line at EOF removed to satisfy the staged whitespace
+check; the final versions were rerun together on Linux (3 passed, exit 0).
+No test logic changed. To avoid writing into the VM's full root filesystem,
+pytest temporary data and compiler caches were directed to the available
+`/dev/shm` scratch. The transcript contains the terminal exit code and UTC
+start/end. The first Bench Linux collection attempt lacked the S3 checkout on
+`PYTHONPATH` and ran no tests; the corrected full suite passed and its separate
+transcript is retained in the Bench report.
 
 ## Scientific Findings
 
