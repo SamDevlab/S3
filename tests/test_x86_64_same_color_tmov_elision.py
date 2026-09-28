@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import platform
 import re
+from pathlib import Path
 
 import pytest
 
-from bootstrap.s3.assembly import parse_assembly
-from bootstrap.s3.backends.x86_64 import X8664Backend, generate_native_assembly
+from bootstrap.s3.assembly import AssemblyOpcode, parse_assembly
+from bootstrap.s3.backends.x86_64 import NativeToolchain, X8664Backend, generate_native_assembly
 from bootstrap.s3.backends.x86_64.allocation import analyze_allocation
 from bootstrap.s3.backends.x86_64.emitter import X8664Emitter
 from bootstrap.s3.backends.x86_64.instruction_budget import InstructionBudgetMode
+from bootstrap.s3.pipeline import compile_source
 
 
 MAX_INSTRUCTIONS = 1_000_000_000
@@ -202,3 +205,90 @@ def test_same_color_elision_keeps_tracked_destination_initialization_write() -> 
         "mov byte ptr" in line and line.rstrip().endswith(", 1")
         for line in move_lines
     )
+
+
+def _reborrow_source() -> str:
+    return (
+        "fn main() -> tryte:\n"
+        "    mut value: tryte = 1\n"
+        "    r: &mut tryte = &mut value\n"
+        "    s: &mut tryte = &mut *r\n"
+        "    *s = 7\n"
+        "    return *r\n"
+    )
+
+
+def test_normal_source_pipeline_elides_only_proven_same_color_copies() -> None:
+    program = compile_source(_reborrow_source(), "O1").assembly
+    assert program is not None
+    function = next(item for item in program.functions if item.name == "main")
+    plan = analyze_allocation(function, reserved_registers=frozenset({"r15"}))
+    copies = [item for item in function.instructions if item.opcode is AssemblyOpcode.TMOV]
+    assert copies
+
+    emitter = X8664Emitter(
+        program,
+        max_frames=1024,
+        max_instructions=MAX_INSTRUCTIONS,
+        register_allocation=True,
+        instruction_budget_mode=InstructionBudgetMode.PER_INSTRUCTION,
+    )
+    text, origins = emitter.emit_with_origins()
+    backend_text = X8664Backend(
+        max_frames=1024,
+        max_instructions=MAX_INSTRUCTIONS,
+        instruction_budget_mode=InstructionBudgetMode.PER_INSTRUCTION,
+    ).generate(program)
+    assert backend_text == text
+
+    rows = [
+        item
+        for item in origins
+        if item.get("function") == "main" and "TMOV" in item.get("assembly_opcodes", [])
+    ]
+    assert len(rows) == len(copies)
+    elided = 0
+    for instruction, row in zip(copies, rows, strict=True):
+        destination, source = instruction.registers
+        destination_physical = plan.physical_register(destination)
+        source_physical = plan.physical_register(source)
+        start, end = row["native_assembly_line_range"]
+        lines = text.splitlines()[start - 1 : end]
+        assert sum(line.strip() == "dec r15" for line in lines) == 1
+        assert any(
+            "mov byte ptr" in line and line.rstrip().endswith(", 1")
+            for line in lines
+        )
+
+        if (
+            destination != source
+            and destination_physical is not None
+            and destination_physical == source_physical
+        ):
+            elided += 1
+            assert f"mov rax, {source_physical}" not in [line.strip() for line in lines]
+            assert f"mov {destination_physical}, rax" not in [line.strip() for line in lines]
+        elif destination_physical is not None and source_physical is not None:
+            assert f"mov rax, {source_physical}" in [line.strip() for line in lines]
+            assert f"mov {destination_physical}, rax" in [line.strip() for line in lines]
+
+    assert elided > 0
+
+
+@pytest.mark.s3_native
+def test_native_reborrow_result_is_preserved_after_same_color_elision(tmp_path: Path) -> None:
+    if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
+        pytest.skip("native execution requires Linux x86-64")
+
+    program = compile_source(_reborrow_source(), "O1").assembly
+    assert program is not None
+    toolchain = NativeToolchain.detect()
+    executable = toolchain.build(
+        X8664Backend(max_instructions=MAX_INSTRUCTIONS).generate(program),
+        tmp_path / "same-color-reborrow",
+    )
+    completed = toolchain.run(executable)
+
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == "program returned: 7"
