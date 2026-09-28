@@ -1,0 +1,428 @@
+{
+  "classification": "STATIC_INSTRUCTION_LINEAGE_WITH_BOUNDED_LOGICAL_PROFILE_JOIN",
+  "control": {
+    "hardware_counters": "UNAVAILABLE_BY_POLICY",
+    "optimization": "O1",
+    "profile_scope": "logical basic-block entries",
+    "s3_commit": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+    "s3_tree": "dc1138890655169088f9371ce32a9050cfc3af8d"
+  },
+  "experiment_id": "EXP-S3-111-MOVE-CTRL-ADDR-001",
+  "schema_version": "1.0.0",
+  "workloads": [
+    {
+      "control_provenance": {
+        "hot_block_subset_lineage_visit_weight": {
+          "MULTIPLE_SOURCE_OPCODES": 2373,
+          "TADD": 2184,
+          "TBR3": 3876,
+          "TCALL": 504,
+          "TCONST": 6387,
+          "TCVT": 674,
+          "TDIV": 6,
+          "TJMP": 1680,
+          "TLOAD": 14168,
+          "TMUL": 3,
+          "TNDIFF": 1141,
+          "TREL": 675,
+          "TRET": 339,
+          "TSLEN": 6,
+          "TSLOAD": 1680,
+          "TSSTORE": 30,
+          "TSTORE": 8438
+        },
+        "limitation": "mnemonic and origin do not prove taken-edge frequency or runtime cost",
+        "static_count_by_assembly_opcode_lineage": {
+          "MULTIPLE_SOURCE_OPCODES": 42,
+          "TADD": 13,
+          "TBR3": 53,
+          "TCALL": 3,
+          "TCONST": 138,
+          "TCVT": 6,
+          "TDIV": 6,
+          "TJMP": 62,
+          "TLOAD": 176,
+          "TMUL": 3,
+          "TNDIFF": 7,
+          "TREL": 7,
+          "TRET": 35,
+          "TSLEN": 6,
+          "TSLOAD": 10,
+          "TSSTORE": 30,
+          "TSTORE": 218,
+          "UNMAPPED": 1196
+        },
+        "static_count_by_mnemonic": {
+          "call": 56,
+          "ja": 20,
+          "jae": 133,
+          "jb": 30,
+          "jbe": 4,
+          "je": 342,
+          "jg": 39,
+          "jl": 41,
+          "jmp": 878,
+          "jne": 27,
+          "jns": 2,
+          "jo": 11,
+          "js": 335,
+          "ret": 93
+        }
+      },
+      "hot_block_subset_join": {
+        "interpretation": "instruction-row count multiplied by block-entry visits; not retired instructions or runtime share",
+        "mapped_native_instruction_rows": 1561,
+        "scope": "displayed logical hot_blocks subset; not all blocks",
+        "visit_weight_by_native_category": {
+          "CALL": 168,
+          "CONTROL_FLOW": 43996,
+          "MEMORY_ACCESS": 15882,
+          "MOVE": 51218,
+          "STACK": 169,
+          "UNKNOWN": 28585
+        }
+      },
+      "logical_hot_block_rows": 20,
+      "logical_profile_sha256": "cb41a728b1af004835dda6df008db0eed6956165fb2f031a969776a0dd288434",
+      "memory_address_forms_static": {
+        "BASE_DISPLACEMENT": 245,
+        "BASE_INDEX_SCALE": 49,
+        "BASE_ONLY": 21,
+        "RIP_RELATIVE": 19
+      },
+      "move_provenance": {
+        "hot_block_subset_lineage_visit_weight": {
+          "MULTIPLE_SOURCE_OPCODES": 678,
+          "TADD": 4200,
+          "TBR3": 674,
+          "TCALL": 2688,
+          "TCONST": 12779,
+          "TCVT": 508,
+          "TDIV": 14,
+          "TLOAD": 14168,
+          "TMUL": 7,
+          "TNDIFF": 3150,
+          "TREL": 2191,
+          "TRET": 679,
+          "TSLEN": 9,
+          "TSLOAD": 2016,
+          "TSSTORE": 25,
+          "TSTORE": 7432
+        },
+        "limitation": "lineage identifies the associated Assembly opcode, not semantic reason or allocator cause",
+        "static_count_by_assembly_opcode_lineage": {
+          "MULTIPLE_SOURCE_OPCODES": 12,
+          "TADD": 25,
+          "TBR3": 9,
+          "TCALL": 16,
+          "TCONST": 280,
+          "TCVT": 7,
+          "TDIV": 14,
+          "TLOAD": 176,
+          "TMUL": 7,
+          "TNDIFF": 20,
+          "TREL": 20,
+          "TRET": 78,
+          "TSLEN": 9,
+          "TSLOAD": 12,
+          "TSSTORE": 25,
+          "TSTORE": 180,
+          "UNMAPPED": 1891
+        },
+        "static_count_by_origin_category": {
+          "CALL": 16,
+          "CONSTANT": 280,
+          "CONTROL_FLOW": 87,
+          "CONVERSION": 7,
+          "MEMORY_ACCESS": 393,
+          "MIXED": 12,
+          "REFERENCE": 9,
+          "UNMAPPED": 1891,
+          "USER_COMPUTE": 86
+        }
+      },
+      "native_instruction_rows": 7239,
+      "native_machine_categories_static": {
+        "ADDRESSING": 925,
+        "CALL": 56,
+        "CONTROL_FLOW": 1955,
+        "MEMORY_ACCESS": 334,
+        "MOVE": 2781,
+        "STACK": 231,
+        "UNKNOWN": 957
+      },
+      "observatory_sha256": "dfb19b4d779700ac181ad89bc786e9e26da31e072029c9af94adc0db0ca2943e",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "workload_id": "energy.pv-timeseries-aggregation.v1"
+    },
+    {
+      "control_provenance": {
+        "hot_block_subset_lineage_visit_weight": {
+          "MULTIPLE_SOURCE_OPCODES": 910,
+          "TADD": 3200,
+          "TBR3": 3084,
+          "TCONST": 5214,
+          "TCVT": 512,
+          "TJMP": 1240,
+          "TLOAD": 12744,
+          "TMUL": 1088,
+          "TNDIFF": 576,
+          "TREL": 1152,
+          "TSLOAD": 1920,
+          "TSTORE": 6064
+        },
+        "limitation": "mnemonic and origin do not prove taken-edge frequency or runtime cost",
+        "static_count_by_assembly_opcode_lineage": {
+          "MULTIPLE_SOURCE_OPCODES": 42,
+          "TADD": 50,
+          "TBR3": 72,
+          "TCALL": 3,
+          "TCONST": 221,
+          "TCVT": 10,
+          "TDIV": 12,
+          "TJMP": 94,
+          "TLOAD": 364,
+          "TMUL": 21,
+          "TNDIFF": 9,
+          "TREL": 18,
+          "TRET": 23,
+          "TSLEN": 4,
+          "TSLOAD": 45,
+          "TSSTORE": 60,
+          "TSTORE": 328,
+          "UNMAPPED": 1724
+        },
+        "static_count_by_mnemonic": {
+          "call": 56,
+          "ja": 20,
+          "jae": 219,
+          "jb": 30,
+          "jbe": 4,
+          "je": 582,
+          "jg": 44,
+          "jl": 47,
+          "jmp": 1426,
+          "jne": 27,
+          "jns": 2,
+          "jo": 19,
+          "js": 536,
+          "ret": 88
+        }
+      },
+      "hot_block_subset_join": {
+        "interpretation": "instruction-row count multiplied by block-entry visits; not retired instructions or runtime share",
+        "mapped_native_instruction_rows": 1868,
+        "scope": "displayed logical hot_blocks subset; not all blocks",
+        "visit_weight_by_native_category": {
+          "CONTROL_FLOW": 37704,
+          "MEMORY_ACCESS": 14530,
+          "MOVE": 42298,
+          "UNKNOWN": 24468
+        }
+      },
+      "logical_hot_block_rows": 20,
+      "logical_profile_sha256": "cb41a728b1af004835dda6df008db0eed6956165fb2f031a969776a0dd288434",
+      "memory_address_forms_static": {
+        "BASE_DISPLACEMENT": 429,
+        "BASE_INDEX_SCALE": 96,
+        "BASE_ONLY": 34,
+        "RIP_RELATIVE": 12
+      },
+      "move_provenance": {
+        "hot_block_subset_lineage_visit_weight": {
+          "MULTIPLE_SOURCE_OPCODES": 260,
+          "TADD": 4224,
+          "TBR3": 514,
+          "TCONST": 10428,
+          "TCVT": 384,
+          "TLOAD": 12744,
+          "TMUL": 1856,
+          "TNDIFF": 1344,
+          "TREL": 2688,
+          "TSLOAD": 2304,
+          "TSTORE": 5552
+        },
+        "limitation": "lineage identifies the associated Assembly opcode, not semantic reason or allocator cause",
+        "static_count_by_assembly_opcode_lineage": {
+          "MULTIPLE_SOURCE_OPCODES": 12,
+          "TADD": 66,
+          "TBR3": 12,
+          "TCALL": 4,
+          "TCONST": 445,
+          "TCVT": 10,
+          "TDIV": 28,
+          "TLOAD": 364,
+          "TMUL": 33,
+          "TNDIFF": 21,
+          "TREL": 42,
+          "TRET": 45,
+          "TSLEN": 6,
+          "TSLOAD": 54,
+          "TSSTORE": 50,
+          "TSTORE": 288,
+          "UNMAPPED": 2859
+        },
+        "static_count_by_origin_category": {
+          "CALL": 4,
+          "CONSTANT": 445,
+          "CONTROL_FLOW": 57,
+          "CONVERSION": 10,
+          "MEMORY_ACCESS": 756,
+          "MIXED": 12,
+          "REFERENCE": 6,
+          "UNMAPPED": 2859,
+          "USER_COMPUTE": 190
+        }
+      },
+      "native_instruction_rows": 11151,
+      "native_machine_categories_static": {
+        "ADDRESSING": 1609,
+        "CALL": 56,
+        "CONTROL_FLOW": 3044,
+        "MEMORY_ACCESS": 571,
+        "MOVE": 4339,
+        "STACK": 225,
+        "UNKNOWN": 1307
+      },
+      "observatory_sha256": "17f4224028cbebaf541ab2dbc40a4558b3dd046d01a8ce464b6a5cdd0ce29fa2",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "workload_id": "engineering.point-cloud-summary.v1"
+    },
+    {
+      "control_provenance": {
+        "hot_block_subset_lineage_visit_weight": {
+          "MULTIPLE_SOURCE_OPCODES": 2121,
+          "TADD": 2178,
+          "TBR3": 2556,
+          "TCALL": 138,
+          "TCONST": 3200,
+          "TCVT": 720,
+          "TJMP": 852,
+          "TLOAD": 7364,
+          "TMUL": 256,
+          "TNDIFF": 138,
+          "TREL": 522,
+          "TSLOAD": 1095,
+          "TSTORE": 3212
+        },
+        "limitation": "mnemonic and origin do not prove taken-edge frequency or runtime cost",
+        "static_count_by_assembly_opcode_lineage": {
+          "MULTIPLE_SOURCE_OPCODES": 112,
+          "TADD": 46,
+          "TBR3": 119,
+          "TCALL": 3,
+          "TCONST": 292,
+          "TCVT": 18,
+          "TDIV": 6,
+          "TJMP": 168,
+          "TLOAD": 340,
+          "TMUL": 8,
+          "TNDIFF": 4,
+          "TREL": 10,
+          "TRET": 53,
+          "TSLEN": 6,
+          "TSLOAD": 20,
+          "TSSTORE": 36,
+          "TSTORE": 506,
+          "UNMAPPED": 1970
+        },
+        "static_count_by_mnemonic": {
+          "call": 56,
+          "ja": 20,
+          "jae": 234,
+          "jb": 30,
+          "jbe": 4,
+          "je": 638,
+          "jg": 83,
+          "jl": 85,
+          "jmp": 1726,
+          "jne": 27,
+          "jns": 2,
+          "jo": 21,
+          "js": 692,
+          "ret": 99
+        }
+      },
+      "hot_block_subset_join": {
+        "interpretation": "instruction-row count multiplied by block-entry visits; not retired instructions or runtime share",
+        "mapped_native_instruction_rows": 1286,
+        "scope": "displayed logical hot_blocks subset; not all blocks",
+        "visit_weight_by_native_category": {
+          "CALL": 46,
+          "CONTROL_FLOW": 24306,
+          "MEMORY_ACCESS": 8629,
+          "MOVE": 24422,
+          "UNKNOWN": 15123
+        }
+      },
+      "logical_hot_block_rows": 20,
+      "logical_profile_sha256": "cb41a728b1af004835dda6df008db0eed6956165fb2f031a969776a0dd288434",
+      "memory_address_forms_static": {
+        "BASE_DISPLACEMENT": 467,
+        "BASE_INDEX_SCALE": 90,
+        "BASE_ONLY": 37,
+        "RIP_RELATIVE": 25
+      },
+      "move_provenance": {
+        "hot_block_subset_lineage_visit_weight": {
+          "MULTIPLE_SOURCE_OPCODES": 606,
+          "TADD": 2400,
+          "TBR3": 426,
+          "TCALL": 736,
+          "TCONST": 6400,
+          "TCVT": 540,
+          "TLOAD": 7364,
+          "TMUL": 256,
+          "TNDIFF": 322,
+          "TREL": 1218,
+          "TSLOAD": 1314,
+          "TSTORE": 2840
+        },
+        "limitation": "lineage identifies the associated Assembly opcode, not semantic reason or allocator cause",
+        "static_count_by_assembly_opcode_lineage": {
+          "MULTIPLE_SOURCE_OPCODES": 32,
+          "TADD": 50,
+          "TBR3": 20,
+          "TCALL": 16,
+          "TCONST": 587,
+          "TCVT": 21,
+          "TDIV": 14,
+          "TLOAD": 340,
+          "TMUL": 8,
+          "TNDIFF": 13,
+          "TREL": 27,
+          "TRET": 120,
+          "TSLEN": 9,
+          "TSLOAD": 24,
+          "TSSTORE": 30,
+          "TSTORE": 408,
+          "UNMAPPED": 3284
+        },
+        "static_count_by_origin_category": {
+          "CALL": 16,
+          "CONSTANT": 587,
+          "CONTROL_FLOW": 140,
+          "CONVERSION": 21,
+          "MEMORY_ACCESS": 802,
+          "MIXED": 32,
+          "REFERENCE": 9,
+          "UNMAPPED": 3284,
+          "USER_COMPUTE": 112
+        }
+      },
+      "native_instruction_rows": 13034,
+      "native_machine_categories_static": {
+        "ADDRESSING": 1902,
+        "CALL": 56,
+        "CONTROL_FLOW": 3661,
+        "MEMORY_ACCESS": 619,
+        "MOVE": 5003,
+        "STACK": 237,
+        "UNKNOWN": 1556
+      },
+      "observatory_sha256": "2f959824c289f72e873ab5853e87eb45b185427ec67ce73c839f0f7061d01a8a",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "workload_id": "geospatial.raster-window-statistics.v1"
+    }
+  ]
+}

@@ -1,0 +1,482 @@
+{
+  "functions": [
+    {
+      "all_slice_reads_proven": true,
+      "function": "energy_series_aggregation",
+      "loops": [
+        {
+          "all_accesses_proven": true,
+          "bound": "period_count",
+          "bound_interval": [
+            1,
+            364
+          ],
+          "header": "while_condition_32",
+          "induction": "period",
+          "ir_recurrence": {
+            "all_abstract_backedges_update_once": true,
+            "backedge_steps": [
+              1
+            ],
+            "backedges": [
+              {
+                "other_store": false,
+                "tail": "switch_continue_52",
+                "updates_saturated": 1
+              }
+            ],
+            "condition_recognizer": "CONDITION_RECOGNIZED",
+            "induction_memory": 7,
+            "induction_storage_does_not_escape": true,
+            "initializer": 0,
+            "scope": "IR CFG over-approximation plus source while condition; not a general loop proof or SIMD legality result",
+            "status": "PASS"
+          },
+          "slice_accesses": 2,
+          "source_line": 44
+        }
+      ],
+      "slice_reads": [
+        {
+          "array": "ac_power_w",
+          "bound_range": [
+            1,
+            364
+          ],
+          "bounds_status": "PROVEN",
+          "conversion_safe": true,
+          "index_affine": {
+            "coefficients": {
+              "period": 1
+            },
+            "constant": 0
+          },
+          "index_interval": [
+            0,
+            363
+          ],
+          "induction_range": [
+            0,
+            363
+          ],
+          "ir_index_type": "tryte",
+          "length_interval": [
+            1,
+            364
+          ],
+          "length_symbol": "period_count",
+          "loop_header": "while_condition_32",
+          "offset": 0,
+          "proof_kind": "COUNTED_LOOP_SAME_LENGTH",
+          "source_line": 46,
+          "stride": 1
+        },
+        {
+          "array": "load_w",
+          "bound_range": [
+            1,
+            364
+          ],
+          "bounds_status": "PROVEN",
+          "conversion_safe": true,
+          "index_affine": {
+            "coefficients": {
+              "period": 1
+            },
+            "constant": 0
+          },
+          "index_interval": [
+            0,
+            363
+          ],
+          "induction_range": [
+            0,
+            363
+          ],
+          "ir_index_type": "tryte",
+          "length_interval": [
+            1,
+            364
+          ],
+          "length_symbol": "load_count",
+          "loop_header": "while_condition_32",
+          "offset": 0,
+          "proof_kind": "COUNTED_LOOP_SAME_LENGTH",
+          "source_line": 47,
+          "stride": 1
+        }
+      ],
+      "source_path": "benchmarks/workloads/real_world/energy_series_aggregation.s3",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "workload": "energy"
+    },
+    {
+      "all_slice_reads_proven": true,
+      "function": "point_cloud_summary",
+      "loops": [
+        {
+          "all_accesses_proven": true,
+          "bound": "bounded_point_count",
+          "bound_interval": [
+            1,
+            121
+          ],
+          "header": "while_condition_29",
+          "induction": "point",
+          "ir_recurrence": {
+            "all_abstract_backedges_update_once": true,
+            "backedge_steps": [
+              1
+            ],
+            "backedges": [
+              {
+                "other_store": false,
+                "tail": "switch_continue_61",
+                "updates_saturated": 1
+              }
+            ],
+            "condition_recognizer": "CONDITION_RECOGNIZED",
+            "induction_memory": 16,
+            "induction_storage_does_not_escape": true,
+            "initializer": 0,
+            "scope": "IR CFG over-approximation plus source while condition; not a general loop proof or SIMD legality result",
+            "status": "PASS"
+          },
+          "slice_accesses": 3,
+          "source_line": 34
+        },
+        {
+          "all_accesses_proven": true,
+          "bound": "bounded_point_count",
+          "bound_interval": [
+            1,
+            121
+          ],
+          "header": "while_condition_62",
+          "induction": "point",
+          "ir_recurrence": {
+            "all_abstract_backedges_update_once": true,
+            "backedge_steps": [
+              1
+            ],
+            "backedges": [
+              {
+                "other_store": false,
+                "tail": "while_body_63",
+                "updates_saturated": 1
+              }
+            ],
+            "condition_recognizer": "CONDITION_RECOGNIZED",
+            "induction_memory": 16,
+            "induction_storage_does_not_escape": true,
+            "initializer": 0,
+            "scope": "IR CFG over-approximation plus source while condition; not a general loop proof or SIMD legality result",
+            "status": "PASS"
+          },
+          "slice_accesses": 3,
+          "source_line": 91
+        }
+      ],
+      "slice_reads": [
+        {
+          "array": "coordinates",
+          "bounds_status": "PROVEN",
+          "conversion_safe": true,
+          "index_affine": {
+            "coefficients": {},
+            "constant": 0
+          },
+          "index_interval": [
+            0,
+            0
+          ],
+          "ir_index_type": "tryte",
+          "length_interval": [
+            3,
+            363
+          ],
+          "length_symbol": "coordinate_count",
+          "loop_header": null,
+          "proof_kind": "STATIC_INDEX_BELOW_GUARDED_SLICE_LENGTH",
+          "source_line": 24
+        },
+        {
+          "array": "coordinates",
+          "bounds_status": "PROVEN",
+          "conversion_safe": true,
+          "index_affine": {
+            "coefficients": {},
+            "constant": 1
+          },
+          "index_interval": [
+            1,
+            1
+          ],
+          "ir_index_type": "tryte",
+          "length_interval": [
+            3,
+            363
+          ],
+          "length_symbol": "coordinate_count",
+          "loop_header": null,
+          "proof_kind": "STATIC_INDEX_BELOW_GUARDED_SLICE_LENGTH",
+          "source_line": 25
+        },
+        {
+          "array": "coordinates",
+          "bounds_status": "PROVEN",
+          "conversion_safe": true,
+          "index_affine": {
+            "coefficients": {},
+            "constant": 2
+          },
+          "index_interval": [
+            2,
+            2
+          ],
+          "ir_index_type": "tryte",
+          "length_interval": [
+            3,
+            363
+          ],
+          "length_symbol": "coordinate_count",
+          "loop_header": null,
+          "proof_kind": "STATIC_INDEX_BELOW_GUARDED_SLICE_LENGTH",
+          "source_line": 26
+        },
+        {
+          "array": "coordinates",
+          "bound_range": [
+            1,
+            121
+          ],
+          "bounds_status": "PROVEN",
+          "conversion_safe": true,
+          "index_affine": {
+            "coefficients": {
+              "point": 3
+            },
+            "constant": 0
+          },
+          "index_interval": [
+            0,
+            360
+          ],
+          "induction_range": [
+            0,
+            120
+          ],
+          "ir_index_type": "tryte",
+          "length_interval": [
+            3,
+            363
+          ],
+          "length_symbol": "coordinate_count",
+          "loop_header": "while_condition_29",
+          "offset": 0,
+          "proof_kind": "COUNTED_LOOP_AFFINE_GROUPED_SLICE",
+          "source_line": 36,
+          "stride": 3
+        },
+        {
+          "array": "coordinates",
+          "bound_range": [
+            1,
+            121
+          ],
+          "bounds_status": "PROVEN",
+          "conversion_safe": true,
+          "index_affine": {
+            "coefficients": {
+              "point": 3
+            },
+            "constant": 1
+          },
+          "index_interval": [
+            1,
+            361
+          ],
+          "induction_range": [
+            0,
+            120
+          ],
+          "ir_index_type": "tryte",
+          "length_interval": [
+            3,
+            363
+          ],
+          "length_symbol": "coordinate_count",
+          "loop_header": "while_condition_29",
+          "offset": 1,
+          "proof_kind": "COUNTED_LOOP_AFFINE_GROUPED_SLICE",
+          "source_line": 37,
+          "stride": 3
+        },
+        {
+          "array": "coordinates",
+          "bound_range": [
+            1,
+            121
+          ],
+          "bounds_status": "PROVEN",
+          "conversion_safe": true,
+          "index_affine": {
+            "coefficients": {
+              "point": 3
+            },
+            "constant": 2
+          },
+          "index_interval": [
+            2,
+            362
+          ],
+          "induction_range": [
+            0,
+            120
+          ],
+          "ir_index_type": "tryte",
+          "length_interval": [
+            3,
+            363
+          ],
+          "length_symbol": "coordinate_count",
+          "loop_header": "while_condition_29",
+          "offset": 2,
+          "proof_kind": "COUNTED_LOOP_AFFINE_GROUPED_SLICE",
+          "source_line": 38,
+          "stride": 3
+        },
+        {
+          "array": "coordinates",
+          "bound_range": [
+            1,
+            121
+          ],
+          "bounds_status": "PROVEN",
+          "conversion_safe": true,
+          "index_affine": {
+            "coefficients": {
+              "point": 3
+            },
+            "constant": 0
+          },
+          "index_interval": [
+            0,
+            360
+          ],
+          "induction_range": [
+            0,
+            120
+          ],
+          "ir_index_type": "tryte",
+          "length_interval": [
+            3,
+            363
+          ],
+          "length_symbol": "coordinate_count",
+          "loop_header": "while_condition_62",
+          "offset": 0,
+          "proof_kind": "COUNTED_LOOP_AFFINE_GROUPED_SLICE",
+          "source_line": 93,
+          "stride": 3
+        },
+        {
+          "array": "coordinates",
+          "bound_range": [
+            1,
+            121
+          ],
+          "bounds_status": "PROVEN",
+          "conversion_safe": true,
+          "index_affine": {
+            "coefficients": {
+              "point": 3
+            },
+            "constant": 1
+          },
+          "index_interval": [
+            1,
+            361
+          ],
+          "induction_range": [
+            0,
+            120
+          ],
+          "ir_index_type": "tryte",
+          "length_interval": [
+            3,
+            363
+          ],
+          "length_symbol": "coordinate_count",
+          "loop_header": "while_condition_62",
+          "offset": 1,
+          "proof_kind": "COUNTED_LOOP_AFFINE_GROUPED_SLICE",
+          "source_line": 94,
+          "stride": 3
+        },
+        {
+          "array": "coordinates",
+          "bound_range": [
+            1,
+            121
+          ],
+          "bounds_status": "PROVEN",
+          "conversion_safe": true,
+          "index_affine": {
+            "coefficients": {
+              "point": 3
+            },
+            "constant": 2
+          },
+          "index_interval": [
+            2,
+            362
+          ],
+          "induction_range": [
+            0,
+            120
+          ],
+          "ir_index_type": "tryte",
+          "length_interval": [
+            3,
+            363
+          ],
+          "length_symbol": "coordinate_count",
+          "loop_header": "while_condition_62",
+          "offset": 2,
+          "proof_kind": "COUNTED_LOOP_AFFINE_GROUPED_SLICE",
+          "source_line": 95,
+          "stride": 3
+        }
+      ],
+      "source_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "workload": "point-cloud"
+    }
+  ],
+  "language_contracts": {
+    "i64_arithmetic": "checked; interval overflow causes UNKNOWN",
+    "i64_to_tryte": "checked conversion to [-364, 364]",
+    "relational_match": "RELATE yields -1 for true and 0 for false",
+    "slice_index_ir_type_required": "tryte"
+  },
+  "limitations": [
+    "Only the exact recognized source guard forms and counted-loop form are analyzed.",
+    "Loop reasoning requires zero initialization and unit updates on every abstract CFG backedge.",
+    "This proves the observed scalar slice bounds only; it does not prove aliasing, dependence, vector legality, or timing benefit.",
+    "Unknown syntax, arithmetic overflow, missing equality guards, or an unrecognized recurrence remains UNKNOWN."
+  ],
+  "optimization": "O1",
+  "python": "3.14.4",
+  "schema": "s3-1.11-guarded-slice-bounds-v1",
+  "source_revision": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+  "source_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+  "summary": {
+    "dependence_proofs": 0,
+    "functions": 2,
+    "slice_bounds_proven": 11,
+    "slice_bounds_unknown": 0,
+    "slice_reads": 11,
+    "vectorization_authorized": false
+  }
+}

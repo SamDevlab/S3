@@ -1,0 +1,724 @@
+{
+  "loops": [
+    {
+      "all_bounds_unknown": true,
+      "all_dependence_unknown": true,
+      "candidate_induction_memory": 7,
+      "condition_body": "while_body_33",
+      "function": "energy_series_aggregation",
+      "interpretation": "Affine forms ignore conversion barriers only to reveal expression shape; they do not prove overflow behavior, bounds, aliasing, dependence, or vector legality.",
+      "loop_header": "while_condition_32",
+      "natural_loop_blocks": 18,
+      "slice_access_counts": {
+        "slice_load:READ": 2
+      },
+      "slice_accesses": [
+        {
+          "affine_shape_ignoring_conversion_barriers": {
+            "coefficient": 1,
+            "offset": 0
+          },
+          "base_parameter": "ac_power_w",
+          "base_register": 0,
+          "block": "while_body_33",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [
+            "tryte"
+          ],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "same_block_store_load",
+            "memory": 14,
+            "source": {
+              "kind": "conversion_barrier",
+              "reason": "conversion semantics must be proven before treating this as an affine access",
+              "result_type": "tryte",
+              "source": {
+                "kind": "candidate_induction_load",
+                "memory": 7
+              }
+            },
+            "store_instruction_index": 4
+          },
+          "instruction_index": 7,
+          "length_register": 1,
+          "opcode": "slice_load"
+        },
+        {
+          "affine_shape_ignoring_conversion_barriers": {
+            "coefficient": 1,
+            "offset": 0
+          },
+          "base_parameter": "load_w",
+          "base_register": 2,
+          "block": "while_body_33",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [
+            "tryte"
+          ],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "same_block_store_load",
+            "memory": 14,
+            "source": {
+              "kind": "conversion_barrier",
+              "reason": "conversion semantics must be proven before treating this as an affine access",
+              "result_type": "tryte",
+              "source": {
+                "kind": "candidate_induction_load",
+                "memory": 7
+              }
+            },
+            "store_instruction_index": 4
+          },
+          "instruction_index": 12,
+          "length_register": 3,
+          "opcode": "slice_load"
+        }
+      ],
+      "source_path": "benchmarks/workloads/real_world/energy_series_aggregation.s3",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "workload": "energy"
+    },
+    {
+      "all_bounds_unknown": true,
+      "all_dependence_unknown": true,
+      "candidate_induction_memory": 16,
+      "condition_body": "while_body_30",
+      "function": "point_cloud_summary",
+      "interpretation": "Affine forms ignore conversion barriers only to reveal expression shape; they do not prove overflow behavior, bounds, aliasing, dependence, or vector legality.",
+      "loop_header": "while_condition_29",
+      "natural_loop_blocks": 30,
+      "slice_access_counts": {
+        "slice_load:READ": 3
+      },
+      "slice_accesses": [
+        {
+          "affine_shape_ignoring_conversion_barriers": {
+            "coefficient": 3,
+            "offset": 0
+          },
+          "base_parameter": "coordinates",
+          "base_register": 0,
+          "block": "while_body_30",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [
+            "tryte"
+          ],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "same_block_store_load",
+            "memory": 18,
+            "source": {
+              "kind": "conversion_barrier",
+              "reason": "conversion semantics must be proven before treating this as an affine access",
+              "result_type": "tryte",
+              "source": {
+                "kind": "multiply",
+                "operands": [
+                  {
+                    "kind": "candidate_induction_load",
+                    "memory": 16
+                  },
+                  {
+                    "kind": "constant",
+                    "value": 3
+                  }
+                ]
+              }
+            },
+            "store_instruction_index": 6
+          },
+          "instruction_index": 9,
+          "length_register": 1,
+          "opcode": "slice_load"
+        },
+        {
+          "affine_shape_ignoring_conversion_barriers": {
+            "coefficient": 3,
+            "offset": 1
+          },
+          "base_parameter": "coordinates",
+          "base_register": 0,
+          "block": "while_body_30",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [
+            "tryte"
+          ],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "add",
+            "operands": [
+              {
+                "kind": "same_block_store_load",
+                "memory": 18,
+                "source": {
+                  "kind": "conversion_barrier",
+                  "reason": "conversion semantics must be proven before treating this as an affine access",
+                  "result_type": "tryte",
+                  "source": {
+                    "kind": "multiply",
+                    "operands": [
+                      {
+                        "kind": "candidate_induction_load",
+                        "memory": 16
+                      },
+                      {
+                        "kind": "constant",
+                        "value": 3
+                      }
+                    ]
+                  }
+                },
+                "store_instruction_index": 6
+              },
+              {
+                "kind": "constant",
+                "value": 1
+              }
+            ]
+          },
+          "instruction_index": 16,
+          "length_register": 1,
+          "opcode": "slice_load"
+        },
+        {
+          "affine_shape_ignoring_conversion_barriers": {
+            "coefficient": 3,
+            "offset": 2
+          },
+          "base_parameter": "coordinates",
+          "base_register": 0,
+          "block": "while_body_30",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [
+            "tryte"
+          ],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "add",
+            "operands": [
+              {
+                "kind": "same_block_store_load",
+                "memory": 18,
+                "source": {
+                  "kind": "conversion_barrier",
+                  "reason": "conversion semantics must be proven before treating this as an affine access",
+                  "result_type": "tryte",
+                  "source": {
+                    "kind": "multiply",
+                    "operands": [
+                      {
+                        "kind": "candidate_induction_load",
+                        "memory": 16
+                      },
+                      {
+                        "kind": "constant",
+                        "value": 3
+                      }
+                    ]
+                  }
+                },
+                "store_instruction_index": 6
+              },
+              {
+                "kind": "constant",
+                "value": 2
+              }
+            ]
+          },
+          "instruction_index": 23,
+          "length_register": 1,
+          "opcode": "slice_load"
+        }
+      ],
+      "source_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "workload": "point-cloud"
+    },
+    {
+      "all_bounds_unknown": true,
+      "all_dependence_unknown": true,
+      "candidate_induction_memory": 16,
+      "condition_body": "while_body_63",
+      "function": "point_cloud_summary",
+      "interpretation": "Affine forms ignore conversion barriers only to reveal expression shape; they do not prove overflow behavior, bounds, aliasing, dependence, or vector legality.",
+      "loop_header": "while_condition_62",
+      "natural_loop_blocks": 6,
+      "slice_access_counts": {
+        "slice_load:READ": 3
+      },
+      "slice_accesses": [
+        {
+          "affine_shape_ignoring_conversion_barriers": {
+            "coefficient": 3,
+            "offset": 0
+          },
+          "base_parameter": "coordinates",
+          "base_register": 0,
+          "block": "while_body_63",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [
+            "tryte"
+          ],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "same_block_store_load",
+            "memory": 28,
+            "source": {
+              "kind": "conversion_barrier",
+              "reason": "conversion semantics must be proven before treating this as an affine access",
+              "result_type": "tryte",
+              "source": {
+                "kind": "multiply",
+                "operands": [
+                  {
+                    "kind": "candidate_induction_load",
+                    "memory": 16
+                  },
+                  {
+                    "kind": "constant",
+                    "value": 3
+                  }
+                ]
+              }
+            },
+            "store_instruction_index": 6
+          },
+          "instruction_index": 9,
+          "length_register": 1,
+          "opcode": "slice_load"
+        },
+        {
+          "affine_shape_ignoring_conversion_barriers": {
+            "coefficient": 3,
+            "offset": 1
+          },
+          "base_parameter": "coordinates",
+          "base_register": 0,
+          "block": "while_body_63",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [
+            "tryte"
+          ],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "add",
+            "operands": [
+              {
+                "kind": "same_block_store_load",
+                "memory": 28,
+                "source": {
+                  "kind": "conversion_barrier",
+                  "reason": "conversion semantics must be proven before treating this as an affine access",
+                  "result_type": "tryte",
+                  "source": {
+                    "kind": "multiply",
+                    "operands": [
+                      {
+                        "kind": "candidate_induction_load",
+                        "memory": 16
+                      },
+                      {
+                        "kind": "constant",
+                        "value": 3
+                      }
+                    ]
+                  }
+                },
+                "store_instruction_index": 6
+              },
+              {
+                "kind": "constant",
+                "value": 1
+              }
+            ]
+          },
+          "instruction_index": 19,
+          "length_register": 1,
+          "opcode": "slice_load"
+        },
+        {
+          "affine_shape_ignoring_conversion_barriers": {
+            "coefficient": 3,
+            "offset": 2
+          },
+          "base_parameter": "coordinates",
+          "base_register": 0,
+          "block": "while_body_63",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [
+            "tryte"
+          ],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "add",
+            "operands": [
+              {
+                "kind": "same_block_store_load",
+                "memory": 28,
+                "source": {
+                  "kind": "conversion_barrier",
+                  "reason": "conversion semantics must be proven before treating this as an affine access",
+                  "result_type": "tryte",
+                  "source": {
+                    "kind": "multiply",
+                    "operands": [
+                      {
+                        "kind": "candidate_induction_load",
+                        "memory": 16
+                      },
+                      {
+                        "kind": "constant",
+                        "value": 3
+                      }
+                    ]
+                  }
+                },
+                "store_instruction_index": 6
+              },
+              {
+                "kind": "constant",
+                "value": 2
+              }
+            ]
+          },
+          "instruction_index": 29,
+          "length_register": 1,
+          "opcode": "slice_load"
+        }
+      ],
+      "source_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "workload": "point-cloud"
+    },
+    {
+      "all_bounds_unknown": true,
+      "all_dependence_unknown": true,
+      "candidate_induction_memory": 14,
+      "condition_body": "while_body_60",
+      "function": "raster_window_statistics",
+      "interpretation": "Affine forms ignore conversion barriers only to reveal expression shape; they do not prove overflow behavior, bounds, aliasing, dependence, or vector legality.",
+      "loop_header": "while_condition_59",
+      "natural_loop_blocks": 57,
+      "slice_access_counts": {
+        "slice_load:READ": 4
+      },
+      "slice_accesses": [
+        {
+          "affine_shape_ignoring_conversion_barriers": null,
+          "base_parameter": "valid_mask",
+          "base_register": 2,
+          "block": "while_body_69",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [
+            "tryte"
+          ],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "same_block_store_load",
+            "memory": 25,
+            "source": {
+              "kind": "conversion_barrier",
+              "reason": "conversion semantics must be proven before treating this as an affine access",
+              "result_type": "tryte",
+              "source": {
+                "kind": "add",
+                "operands": [
+                  {
+                    "kind": "multiply",
+                    "operands": [
+                      {
+                        "kind": "candidate_induction_load",
+                        "memory": 14
+                      },
+                      {
+                        "kind": "opaque_definition",
+                        "opcode": "load",
+                        "operands": [
+                          180
+                        ],
+                        "result_type": "i64"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "opaque_definition",
+                    "opcode": "load",
+                    "operands": [
+                      183
+                    ],
+                    "result_type": "i64"
+                  }
+                ]
+              }
+            },
+            "store_instruction_index": 10
+          },
+          "instruction_index": 13,
+          "length_register": 3,
+          "opcode": "slice_load"
+        },
+        {
+          "affine_shape_ignoring_conversion_barriers": null,
+          "base_parameter": "values",
+          "base_register": 0,
+          "block": "switch_negative_81",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "opaque_definition",
+            "opcode": "load",
+            "operands": [
+              201
+            ],
+            "result_type": "tryte"
+          },
+          "instruction_index": 2,
+          "length_register": 1,
+          "opcode": "slice_load"
+        },
+        {
+          "affine_shape_ignoring_conversion_barriers": null,
+          "base_parameter": "valid_mask",
+          "base_register": 2,
+          "block": "switch_negative_108",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "add",
+            "operands": [
+              {
+                "kind": "opaque_definition",
+                "opcode": "load",
+                "operands": [
+                  301
+                ],
+                "result_type": "tryte"
+              },
+              {
+                "kind": "constant",
+                "value": 1
+              }
+            ]
+          },
+          "instruction_index": 4,
+          "length_register": 3,
+          "opcode": "slice_load"
+        },
+        {
+          "affine_shape_ignoring_conversion_barriers": null,
+          "base_parameter": "values",
+          "base_register": 0,
+          "block": "switch_negative_115",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "add",
+            "operands": [
+              {
+                "kind": "opaque_definition",
+                "opcode": "load",
+                "operands": [
+                  318
+                ],
+                "result_type": "tryte"
+              },
+              {
+                "kind": "constant",
+                "value": 1
+              }
+            ]
+          },
+          "instruction_index": 6,
+          "length_register": 1,
+          "opcode": "slice_load"
+        }
+      ],
+      "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "workload": "raster"
+    },
+    {
+      "all_bounds_unknown": true,
+      "all_dependence_unknown": true,
+      "candidate_induction_memory": 23,
+      "condition_body": "while_body_69",
+      "function": "raster_window_statistics",
+      "interpretation": "Affine forms ignore conversion barriers only to reveal expression shape; they do not prove overflow behavior, bounds, aliasing, dependence, or vector legality.",
+      "loop_header": "while_condition_68",
+      "natural_loop_blocks": 48,
+      "slice_access_counts": {
+        "slice_load:READ": 4
+      },
+      "slice_accesses": [
+        {
+          "affine_shape_ignoring_conversion_barriers": null,
+          "base_parameter": "valid_mask",
+          "base_register": 2,
+          "block": "while_body_69",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [
+            "tryte"
+          ],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "same_block_store_load",
+            "memory": 25,
+            "source": {
+              "kind": "conversion_barrier",
+              "reason": "conversion semantics must be proven before treating this as an affine access",
+              "result_type": "tryte",
+              "source": {
+                "kind": "add",
+                "operands": [
+                  {
+                    "kind": "multiply",
+                    "operands": [
+                      {
+                        "kind": "opaque_definition",
+                        "opcode": "load",
+                        "operands": [
+                          178
+                        ],
+                        "result_type": "i64"
+                      },
+                      {
+                        "kind": "opaque_definition",
+                        "opcode": "load",
+                        "operands": [
+                          180
+                        ],
+                        "result_type": "i64"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "candidate_induction_load",
+                    "memory": 23
+                  }
+                ]
+              }
+            },
+            "store_instruction_index": 10
+          },
+          "instruction_index": 13,
+          "length_register": 3,
+          "opcode": "slice_load"
+        },
+        {
+          "affine_shape_ignoring_conversion_barriers": null,
+          "base_parameter": "values",
+          "base_register": 0,
+          "block": "switch_negative_81",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "opaque_definition",
+            "opcode": "load",
+            "operands": [
+              201
+            ],
+            "result_type": "tryte"
+          },
+          "instruction_index": 2,
+          "length_register": 1,
+          "opcode": "slice_load"
+        },
+        {
+          "affine_shape_ignoring_conversion_barriers": null,
+          "base_parameter": "valid_mask",
+          "base_register": 2,
+          "block": "switch_negative_108",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "add",
+            "operands": [
+              {
+                "kind": "opaque_definition",
+                "opcode": "load",
+                "operands": [
+                  301
+                ],
+                "result_type": "tryte"
+              },
+              {
+                "kind": "constant",
+                "value": 1
+              }
+            ]
+          },
+          "instruction_index": 4,
+          "length_register": 3,
+          "opcode": "slice_load"
+        },
+        {
+          "affine_shape_ignoring_conversion_barriers": null,
+          "base_parameter": "values",
+          "base_register": 0,
+          "block": "switch_negative_115",
+          "bounds_status": "UNKNOWN",
+          "conversion_barriers": [],
+          "dependence_status": "UNKNOWN",
+          "direction": "READ",
+          "index_expression": {
+            "kind": "add",
+            "operands": [
+              {
+                "kind": "opaque_definition",
+                "opcode": "load",
+                "operands": [
+                  318
+                ],
+                "result_type": "tryte"
+              },
+              {
+                "kind": "constant",
+                "value": 1
+              }
+            ]
+          },
+          "instruction_index": 6,
+          "length_register": 1,
+          "opcode": "slice_load"
+        }
+      ],
+      "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "workload": "raster"
+    }
+  ],
+  "optimization": "O1",
+  "python": "3.14.4",
+  "schema": "s3-1.11-loop-access-shapes-v1",
+  "source_revision": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+  "source_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+  "summary": {
+    "access_bounds_proven": 0,
+    "dependence_proofs": 0,
+    "loops": 5,
+    "loops_with_slice_accesses": 5,
+    "vectorization_authorized": false
+  }
+}

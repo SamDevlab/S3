@@ -1,0 +1,792 @@
+{
+  "classification": "RESEARCH_ONLY_NATIVE_CHARACTERIZATION_NO_PIPELINE_PROMOTION",
+  "control": {
+    "compiler_source_dirty": false,
+    "experiment_tool_sha256": "6315aa6cc92c67457a651f19d657b86d6f24d4c690e35d3aa0257cb1aca03777",
+    "hardware_counters": {
+      "perf_event_paranoid": "4",
+      "source": "single baseline capability probe on the same Linux host",
+      "status": "UNAVAILABLE_BY_POLICY"
+    },
+    "instruction_budget_mode": "PER",
+    "native_target": "Linux x86-64",
+    "optimization": "O1",
+    "s3_commit": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+    "s3_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+    "toolchain": "/usr/bin/cc",
+    "worktree_dirty": true
+  },
+  "experiment_id": "EXP-S3-111-VALUE-COST-001",
+  "protocol": {
+    "iterations_per_sample": 1000,
+    "native_speedup_claim": false,
+    "paired_order": "alternating baseline/candidate; reverse on odd sample",
+    "samples": 21,
+    "timing_class": "CHARACTERIZATION_ONLY",
+    "warmups": 3
+  },
+  "schema_version": "1.0.0",
+  "transform": {
+    "cost_model": "non-scalar Pareto constraints over static pressure and native object dimensions",
+    "implementation": "existing proof-gated research helper; no production optimizer wiring",
+    "name": "dominating exact-cell repeated-load SSA substitution"
+  },
+  "workloads": [
+    {
+      "correctness": "PASS_REFERENCE_AND_NATIVE_OUTPUT_EQUAL",
+      "eligible_sites_forwarded": 2,
+      "native_artifacts": {
+        "baseline": {
+          "bytes": 160584,
+          "file_name": "energy.pv-timeseries-aggregation.v1-baseline.so",
+          "sha256": "6b4b944c54cc5ee6bf05b40f2c44e870626f8856fdb8169884a9634f44c0b2e8"
+        },
+        "ssa_substitution": {
+          "bytes": 160584,
+          "file_name": "energy.pv-timeseries-aggregation.v1-ssa_substitution.so",
+          "sha256": "4a8de5894d7f172ee962333d267f38256f18505529932a852287c5e07048280b"
+        }
+      },
+      "native_binary": {
+        "baseline": {
+          "elf_file_bytes": 160584,
+          "exported_function_bytes": 15179,
+          "stack_frame_bytes": 2144,
+          "static_branches": 789,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 12,
+          "static_machine_instructions": 2754,
+          "static_memory_references": 953,
+          "static_stack_references": 907,
+          "text_section_bytes": 36304
+        },
+        "delta": {
+          "stack_frame_bytes": -16,
+          "static_branches": -8,
+          "static_machine_instructions": -26,
+          "static_memory_references": -10,
+          "static_stack_references": -10,
+          "text_section_bytes": -350
+        },
+        "ssa_substitution": {
+          "elf_file_bytes": 160584,
+          "exported_function_bytes": 15029,
+          "stack_frame_bytes": 2128,
+          "static_branches": 781,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 12,
+          "static_machine_instructions": 2728,
+          "static_memory_references": 943,
+          "static_stack_references": 897,
+          "text_section_bytes": 35954
+        }
+      },
+      "native_output": {
+        "baseline": {
+          "output_sha256": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+          "values": [
+            183250.39367548373,
+            4436.3555385522,
+            -196429.60632451627,
+            0.21815523056605207,
+            1516.023863195179
+          ]
+        },
+        "ssa_substitution": {
+          "output_sha256": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+          "values": [
+            183250.39367548373,
+            4436.3555385522,
+            -196429.60632451627,
+            0.21815523056605207,
+            1516.023863195179
+          ]
+        }
+      },
+      "pressure_guard": {
+        "accept_if_peak_live_nonincreasing": true,
+        "accept_if_stack_resident_nonincreasing": true,
+        "adaptive_candidate_selected": true,
+        "multiobjective_policy": "select only if peak-live and stack residency do not grow, all measured native dimensions are nonincreasing, and at least one native dimension improves",
+        "native_metric_deltas": {
+          "stack_frame_bytes": -16,
+          "static_branches": -8,
+          "static_machine_instructions": -26,
+          "static_memory_references": -10,
+          "static_stack_references": -10,
+          "text_section_bytes": -350
+        },
+        "native_pareto_dominates": true,
+        "peak_live_delta": 0,
+        "policy": "require nonincreasing static peak-live and stack-resident counts",
+        "pressure_guard_accepts": true,
+        "stack_resident_virtual_delta": 0
+      },
+      "source_path": "benchmarks/workloads/real_world/energy_series_aggregation.s3",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "static_codegen": {
+        "baseline": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 10,
+            "physical_register_count": 211,
+            "stack_resident_virtual_register_count": 0,
+            "virtual_register_count": 211
+          },
+          "assembly_instruction_count": 308,
+          "assembly_opcode_counts": {
+            "TADD": 4,
+            "TBR3": 14,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 135,
+            "TCVT": 2,
+            "TDIV": 2,
+            "TJMP": 31,
+            "TLOAD": 44,
+            "TMUL": 1,
+            "TNDIFF": 2,
+            "TREL": 2,
+            "TRET": 9,
+            "TSLEN": 3,
+            "TSLOAD": 2,
+            "TSSTORE": 5,
+            "TSTORE": 45
+          },
+          "frame_bytes": 2144,
+          "native_assembly_source_sha256": "08cbb0d4f17c898b22da46901320f57c0392c35a499473f739431b9fb0082130"
+        },
+        "ssa_substitution": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 10,
+            "physical_register_count": 209,
+            "stack_resident_virtual_register_count": 0,
+            "virtual_register_count": 209
+          },
+          "assembly_instruction_count": 306,
+          "assembly_opcode_counts": {
+            "TADD": 4,
+            "TBR3": 14,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 135,
+            "TCVT": 2,
+            "TDIV": 2,
+            "TJMP": 31,
+            "TLOAD": 42,
+            "TMUL": 1,
+            "TNDIFF": 2,
+            "TREL": 2,
+            "TRET": 9,
+            "TSLEN": 3,
+            "TSLOAD": 2,
+            "TSSTORE": 5,
+            "TSTORE": 45
+          },
+          "frame_bytes": 2128,
+          "native_assembly_source_sha256": "704e8baf3306ef643c2df129b343cf13c26845fc8e98122f089915a692599a6b"
+        }
+      },
+      "timing": {
+        "baseline": {
+          "coefficient_of_variation": 0.02969697738007393,
+          "maximum_ns_per_call": 18104.754,
+          "mean_ns_per_call": 16947.263666666666,
+          "median_ns_per_call": 16791.768,
+          "minimum_ns_per_call": 16476.207,
+          "p95_ns_per_call": 18028.491,
+          "sample_count": 21,
+          "stddev_ns_per_call": 503.2825057631487
+        },
+        "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+        "paired_baseline_over_candidate": {
+          "baseline_over_candidate_median_ratio": 1.014601921946812,
+          "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            1.00883653687735,
+            1.0182411908866777
+          ],
+          "resamples": 10000,
+          "seed": 11110
+        },
+        "raw_samples_ns_per_call": {
+          "baseline": [
+            17208.314,
+            16674.619,
+            16518.419,
+            16603.929,
+            16476.207,
+            17326.312,
+            16822.52,
+            17550.098,
+            17265.062,
+            16821.349,
+            16791.768,
+            17286.032,
+            16510.256,
+            18104.754,
+            16493.479,
+            18028.491,
+            16565.367,
+            16538.845,
+            16590.275,
+            17218.484,
+            16497.957
+          ],
+          "ssa_substitution": [
+            17953.267,
+            16266.171,
+            16366.491,
+            16364.969,
+            16139.942,
+            17510.142,
+            16622.804,
+            16819.05,
+            17016.434,
+            16542.644,
+            16546.704,
+            16891.988,
+            16346.159,
+            16304.309,
+            16571.471,
+            18027.475,
+            16565.923,
+            16393.979,
+            16293.07,
+            16309.18,
+            18160.116
+          ]
+        },
+        "ssa_substitution": {
+          "coefficient_of_variation": 0.03701166559736619,
+          "maximum_ns_per_call": 18160.116,
+          "mean_ns_per_call": 16762.489904761904,
+          "median_ns_per_call": 16546.704,
+          "minimum_ns_per_call": 16139.942,
+          "p95_ns_per_call": 18027.475,
+          "sample_count": 21,
+          "stddev_ns_per_call": 620.4076709342742
+        }
+      },
+      "workload_id": "energy.pv-timeseries-aggregation.v1"
+    },
+    {
+      "correctness": "PASS_REFERENCE_AND_NATIVE_OUTPUT_EQUAL",
+      "eligible_sites_forwarded": 2,
+      "native_artifacts": {
+        "baseline": {
+          "bytes": 258832,
+          "file_name": "engineering.point-cloud-summary.v1-baseline.so",
+          "sha256": "fc640b39ef8c97304a45800bd48a7b5a779c046858f41988b6b87fff142bbd07"
+        },
+        "ssa_substitution": {
+          "bytes": 258832,
+          "file_name": "engineering.point-cloud-summary.v1-ssa_substitution.so",
+          "sha256": "23e8943fd5a23a17fac41f1fa0d595a9404fff4aa553f03c01e83b0bbc9960c9"
+        }
+      },
+      "native_binary": {
+        "baseline": {
+          "elf_file_bytes": 258832,
+          "exported_function_bytes": 26063,
+          "stack_frame_bytes": 3648,
+          "static_branches": 1367,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 8,
+          "static_machine_instructions": 4732,
+          "static_memory_references": 1601,
+          "static_stack_references": 1536,
+          "text_section_bytes": 58112
+        },
+        "delta": {
+          "stack_frame_bytes": -16,
+          "static_branches": -8,
+          "static_machine_instructions": -26,
+          "static_memory_references": -10,
+          "static_stack_references": -10,
+          "text_section_bytes": -350
+        },
+        "ssa_substitution": {
+          "elf_file_bytes": 258832,
+          "exported_function_bytes": 25913,
+          "stack_frame_bytes": 3632,
+          "static_branches": 1359,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 8,
+          "static_machine_instructions": 4706,
+          "static_memory_references": 1591,
+          "static_stack_references": 1526,
+          "text_section_bytes": 57762
+        }
+      },
+      "native_output": {
+        "baseline": {
+          "output_sha256": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+          "values": [
+            0.0,
+            0.0,
+            0.0,
+            -3.5,
+            -3.5,
+            -6.0,
+            3.5,
+            3.5,
+            6.0,
+            4.971795450337836
+          ]
+        },
+        "ssa_substitution": {
+          "output_sha256": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+          "values": [
+            0.0,
+            0.0,
+            0.0,
+            -3.5,
+            -3.5,
+            -6.0,
+            3.5,
+            3.5,
+            6.0,
+            4.971795450337836
+          ]
+        }
+      },
+      "pressure_guard": {
+        "accept_if_peak_live_nonincreasing": true,
+        "accept_if_stack_resident_nonincreasing": true,
+        "adaptive_candidate_selected": true,
+        "multiobjective_policy": "select only if peak-live and stack residency do not grow, all measured native dimensions are nonincreasing, and at least one native dimension improves",
+        "native_metric_deltas": {
+          "stack_frame_bytes": -16,
+          "static_branches": -8,
+          "static_machine_instructions": -26,
+          "static_memory_references": -10,
+          "static_stack_references": -10,
+          "text_section_bytes": -350
+        },
+        "native_pareto_dominates": true,
+        "peak_live_delta": 0,
+        "policy": "require nonincreasing static peak-live and stack-resident counts",
+        "pressure_guard_accepts": true,
+        "stack_resident_virtual_delta": 0
+      },
+      "source_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "static_codegen": {
+        "baseline": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 7,
+            "physical_register_count": 368,
+            "stack_resident_virtual_register_count": 0,
+            "virtual_register_count": 368
+          },
+          "assembly_instruction_count": 517,
+          "assembly_opcode_counts": {
+            "TADD": 12,
+            "TBR3": 18,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 220,
+            "TCVT": 3,
+            "TDIV": 4,
+            "TJMP": 47,
+            "TLOAD": 91,
+            "TMUL": 6,
+            "TNDIFF": 3,
+            "TREL": 6,
+            "TRET": 7,
+            "TSLEN": 2,
+            "TSLOAD": 9,
+            "TSSTORE": 10,
+            "TSTORE": 72
+          },
+          "frame_bytes": 3648,
+          "native_assembly_source_sha256": "a5161190f38d1d3ef05c224d05c8d4fee56d84e0890be7e280c36c5ab7b216c0"
+        },
+        "ssa_substitution": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 7,
+            "physical_register_count": 366,
+            "stack_resident_virtual_register_count": 0,
+            "virtual_register_count": 366
+          },
+          "assembly_instruction_count": 515,
+          "assembly_opcode_counts": {
+            "TADD": 12,
+            "TBR3": 18,
+            "TCALL": 1,
+            "TCMP": 6,
+            "TCONST": 220,
+            "TCVT": 3,
+            "TDIV": 4,
+            "TJMP": 47,
+            "TLOAD": 89,
+            "TMUL": 6,
+            "TNDIFF": 3,
+            "TREL": 6,
+            "TRET": 7,
+            "TSLEN": 2,
+            "TSLOAD": 9,
+            "TSSTORE": 10,
+            "TSTORE": 72
+          },
+          "frame_bytes": 3632,
+          "native_assembly_source_sha256": "c51c7691b8d87b3c34a346afc5b97dbe8ffa4d97f7b673a1f7f2efc318fb73f1"
+        }
+      },
+      "timing": {
+        "baseline": {
+          "coefficient_of_variation": 0.04588319210393855,
+          "maximum_ns_per_call": 15639.33,
+          "mean_ns_per_call": 13541.355142857143,
+          "median_ns_per_call": 13280.454,
+          "minimum_ns_per_call": 13104.904,
+          "p95_ns_per_call": 14541.031,
+          "sample_count": 21,
+          "stddev_ns_per_call": 621.3205993673705
+        },
+        "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+        "paired_baseline_over_candidate": {
+          "baseline_over_candidate_median_ratio": 1.0062508925490292,
+          "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            0.9960978991647353,
+            1.0151890250789304
+          ],
+          "resamples": 10000,
+          "seed": 11111
+        },
+        "raw_samples_ns_per_call": {
+          "baseline": [
+            13776.775,
+            13280.454,
+            14417.524,
+            13190.832,
+            13174.112,
+            13203.955,
+            13233.56,
+            13285.084,
+            14541.031,
+            13282.064,
+            13230.385,
+            13159.655,
+            13191.203,
+            13264.733,
+            13104.904,
+            13277.463,
+            13329.652,
+            13414.82,
+            13572.458,
+            15639.33,
+            13798.464
+          ],
+          "ssa_substitution": [
+            13065.507,
+            13000.718,
+            13086.847,
+            13197.449,
+            13480.188,
+            13255.68,
+            13440.479,
+            13567.108,
+            13412.326,
+            13199.555,
+            13309.238,
+            13196.854,
+            13190.036,
+            13085.265,
+            13216.364,
+            13175.923,
+            13411.269,
+            13286.803,
+            13369.39,
+            13630.047,
+            13073.018
+          ]
+        },
+        "ssa_substitution": {
+          "coefficient_of_variation": 0.01302883035057136,
+          "maximum_ns_per_call": 13630.047,
+          "mean_ns_per_call": 13269.050666666668,
+          "median_ns_per_call": 13216.364,
+          "minimum_ns_per_call": 13000.718,
+          "p95_ns_per_call": 13567.108,
+          "sample_count": 21,
+          "stddev_ns_per_call": 172.88021004913583
+        }
+      },
+      "workload_id": "engineering.point-cloud-summary.v1"
+    },
+    {
+      "correctness": "PASS_REFERENCE_AND_NATIVE_OUTPUT_EQUAL",
+      "eligible_sites_forwarded": 6,
+      "native_artifacts": {
+        "baseline": {
+          "bytes": 312136,
+          "file_name": "geospatial.raster-window-statistics.v1-baseline.so",
+          "sha256": "685fd61b36e7ded2301d63fa6af36bc8752c33618d9c1035d20089eafeab2262"
+        },
+        "ssa_substitution": {
+          "bytes": 308040,
+          "file_name": "geospatial.raster-window-statistics.v1-ssa_substitution.so",
+          "sha256": "e76ee31ff4864b6b30aa8f736591ef97a37d0d1938f911fd33cb73500db9e862"
+        }
+      },
+      "native_binary": {
+        "baseline": {
+          "elf_file_bytes": 312136,
+          "exported_function_bytes": 31216,
+          "stack_frame_bytes": 4192,
+          "static_branches": 1715,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 18,
+          "static_machine_instructions": 5666,
+          "static_memory_references": 1898,
+          "static_stack_references": 1821,
+          "text_section_bytes": 68491
+        },
+        "delta": {
+          "stack_frame_bytes": -48,
+          "static_branches": -24,
+          "static_machine_instructions": -78,
+          "static_memory_references": -3,
+          "static_stack_references": -3,
+          "text_section_bytes": -942
+        },
+        "ssa_substitution": {
+          "elf_file_bytes": 308040,
+          "exported_function_bytes": 30874,
+          "stack_frame_bytes": 4144,
+          "static_branches": 1691,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 18,
+          "static_machine_instructions": 5588,
+          "static_memory_references": 1895,
+          "static_stack_references": 1818,
+          "text_section_bytes": 67549
+        }
+      },
+      "native_output": {
+        "baseline": {
+          "output_sha256": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+          "values": [
+            1640.0,
+            28.275862068965516,
+            -16.0,
+            74.0,
+            31.0,
+            30.304347826086957
+          ]
+        },
+        "ssa_substitution": {
+          "output_sha256": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+          "values": [
+            1640.0,
+            28.275862068965516,
+            -16.0,
+            74.0,
+            31.0,
+            30.304347826086957
+          ]
+        }
+      },
+      "pressure_guard": {
+        "accept_if_peak_live_nonincreasing": false,
+        "accept_if_stack_resident_nonincreasing": false,
+        "adaptive_candidate_selected": false,
+        "multiobjective_policy": "select only if peak-live and stack residency do not grow, all measured native dimensions are nonincreasing, and at least one native dimension improves",
+        "native_metric_deltas": {
+          "stack_frame_bytes": -48,
+          "static_branches": -24,
+          "static_machine_instructions": -78,
+          "static_memory_references": -3,
+          "static_stack_references": -3,
+          "text_section_bytes": -942
+        },
+        "native_pareto_dominates": true,
+        "peak_live_delta": 1,
+        "policy": "require nonincreasing static peak-live and stack-resident counts",
+        "pressure_guard_accepts": false,
+        "stack_resident_virtual_delta": 16
+      },
+      "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "static_codegen": {
+        "baseline": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 11,
+            "physical_register_count": 426,
+            "stack_resident_virtual_register_count": 6,
+            "virtual_register_count": 432
+          },
+          "assembly_instruction_count": 665,
+          "assembly_opcode_counts": {
+            "TADD": 11,
+            "TBR3": 35,
+            "TCALL": 1,
+            "TCMP": 16,
+            "TCONST": 289,
+            "TCVT": 6,
+            "TDIV": 2,
+            "TJMP": 84,
+            "TLOAD": 85,
+            "TMUL": 2,
+            "TNDIFF": 1,
+            "TREL": 3,
+            "TRET": 15,
+            "TSLEN": 3,
+            "TSLOAD": 4,
+            "TSSTORE": 6,
+            "TSTORE": 102
+          },
+          "frame_bytes": 4192,
+          "native_assembly_source_sha256": "73ae26b6c3e4a6d03a7951834f4a2e1b291a737bb73a89d9ccb650c15f2ce9ed"
+        },
+        "ssa_substitution": {
+          "allocation": {
+            "address_taken_virtual_register_count": 0,
+            "assembly_move_count": 0,
+            "dynamic_spills": null,
+            "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+            "moves_assigned_same_physical_register": 0,
+            "peak_live_virtual_registers": 12,
+            "physical_register_count": 404,
+            "stack_resident_virtual_register_count": 22,
+            "virtual_register_count": 426
+          },
+          "assembly_instruction_count": 659,
+          "assembly_opcode_counts": {
+            "TADD": 11,
+            "TBR3": 35,
+            "TCALL": 1,
+            "TCMP": 16,
+            "TCONST": 289,
+            "TCVT": 6,
+            "TDIV": 2,
+            "TJMP": 84,
+            "TLOAD": 79,
+            "TMUL": 2,
+            "TNDIFF": 1,
+            "TREL": 3,
+            "TRET": 15,
+            "TSLEN": 3,
+            "TSLOAD": 4,
+            "TSSTORE": 6,
+            "TSTORE": 102
+          },
+          "frame_bytes": 4144,
+          "native_assembly_source_sha256": "c550de45d7cfa5b82449be79df334e0f831230f72040ba635b3dafd28e6a13bf"
+        }
+      },
+      "timing": {
+        "baseline": {
+          "coefficient_of_variation": 0.026842529535919396,
+          "maximum_ns_per_call": 12518.774,
+          "mean_ns_per_call": 11564.633047619047,
+          "median_ns_per_call": 11449.116,
+          "minimum_ns_per_call": 11227.69,
+          "p95_ns_per_call": 12135.894,
+          "sample_count": 21,
+          "stddev_ns_per_call": 310.4240041527838
+        },
+        "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+        "paired_baseline_over_candidate": {
+          "baseline_over_candidate_median_ratio": 1.024582481723214,
+          "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            1.0170821493845845,
+            1.026950204240217
+          ],
+          "resamples": 10000,
+          "seed": 11112
+        },
+        "raw_samples_ns_per_call": {
+          "baseline": [
+            11799.054,
+            11314.068,
+            11390.218,
+            11227.69,
+            11444.084,
+            11996.667,
+            11336.545,
+            12518.774,
+            11627.903,
+            11584.019,
+            11411.726,
+            11594.949,
+            12135.894,
+            11449.603,
+            11499.806,
+            11390.146,
+            11449.116,
+            11472.886,
+            11424.556,
+            11392.737,
+            11396.853
+          ],
+          "ssa_substitution": [
+            11489.412,
+            11031.314,
+            11054.563,
+            11381.217,
+            11173.318,
+            12099.734,
+            11206.12,
+            12414.549,
+            11168.371,
+            11193.77,
+            11273.64,
+            11221.12,
+            11337.488,
+            11161.879,
+            11630.553,
+            11106.098,
+            11174.421,
+            11159.312,
+            11178.967,
+            11175.071,
+            11205.44
+          ]
+        },
+        "ssa_substitution": {
+          "coefficient_of_variation": 0.0302373292981244,
+          "maximum_ns_per_call": 12414.549,
+          "mean_ns_per_call": 11325.54080952381,
+          "median_ns_per_call": 11193.77,
+          "minimum_ns_per_call": 11031.314,
+          "p95_ns_per_call": 12099.734,
+          "sample_count": 21,
+          "stddev_ns_per_call": 342.45410693691787
+        }
+      },
+      "workload_id": "geospatial.raster-window-statistics.v1"
+    }
+  ]
+}

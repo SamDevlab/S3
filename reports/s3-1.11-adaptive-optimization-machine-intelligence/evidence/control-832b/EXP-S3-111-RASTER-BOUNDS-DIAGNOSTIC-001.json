@@ -1,0 +1,183 @@
+{
+  "analyzer_sha256": "138f96b61f64a343c843111c3f39cc9280ce7e76975840e193cf7d28add494da",
+  "classification": "LOOP_CONTROL_RECOGNIZED_BOUNDS_UNPROVEN",
+  "experiment_id": "EXP-S3-111-RASTER-BOUNDS-DIAGNOSTIC-001",
+  "focused_test_sha256": "a897047c6deb67423ca6e0db30aee81727b5052b003bdbf81889afd0d84d9df5",
+  "limitations": [
+    "The positive dimension and cell-count guards are present, but non-affine product equality is intentionally not converted into an index-range proof.",
+    "The conditional column+1 neighbor guard is not modeled as a range fact.",
+    "Recognizing nested loop recurrences does not prove whole-loop independence, strict floating-point reduction legality, or SIMD legality.",
+    "Unknown paths are retained; no canonical/workload-specific compiler lowering rule is introduced."
+  ],
+  "machine": "x86_64",
+  "optimization": "O1",
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "python": "3.14.4",
+  "result": {
+    "all_slice_reads_proven": false,
+    "function": "raster_window_statistics",
+    "loops": [
+      {
+        "all_accesses_proven": false,
+        "bound": "bounded_height",
+        "bound_interval": [
+          1,
+          364
+        ],
+        "header": "while_condition_59",
+        "induction": "row",
+        "ir_recurrence": {
+          "all_abstract_backedges_update_once": true,
+          "backedge_steps": [
+            1
+          ],
+          "backedges": [
+            {
+              "other_store": false,
+              "tail": "while_exit_72",
+              "updates_saturated": 1
+            }
+          ],
+          "condition_recognizer": "CONDITION_RECOGNIZED",
+          "induction_memory": 14,
+          "induction_storage_does_not_escape": true,
+          "initializer": 0,
+          "scope": "IR CFG over-approximation plus source while condition; not a general loop proof or SIMD legality result",
+          "status": "PASS"
+        },
+        "slice_accesses": 4,
+        "source_line": 67
+      },
+      {
+        "all_accesses_proven": false,
+        "bound": "bounded_width",
+        "bound_interval": [
+          1,
+          364
+        ],
+        "header": "while_condition_68",
+        "induction": "column",
+        "ir_recurrence": {
+          "all_abstract_backedges_update_once": true,
+          "backedge_steps": [
+            1
+          ],
+          "backedges": [
+            {
+              "other_store": false,
+              "tail": "switch_continue_120",
+              "updates_saturated": 1
+            }
+          ],
+          "condition_recognizer": "CONDITION_RECOGNIZED",
+          "induction_memory": 23,
+          "induction_storage_does_not_escape": true,
+          "initializer": 0,
+          "scope": "IR CFG over-approximation plus source while condition; not a general loop proof or SIMD legality result",
+          "status": "PASS"
+        },
+        "slice_accesses": 4,
+        "source_line": 69
+      }
+    ],
+    "slice_reads": [
+      {
+        "array": "valid_mask",
+        "bounds_status": "UNKNOWN",
+        "conversion_safe": false,
+        "index_affine": {
+          "coefficients": {
+            "index": 1
+          },
+          "constant": 0
+        },
+        "index_interval": [
+          -9223372036854775808,
+          9223372036854775807
+        ],
+        "ir_index_type": "tryte",
+        "length_interval": [
+          1,
+          364
+        ],
+        "length_symbol": "mask_count",
+        "loop_header": null,
+        "proof_kind": null,
+        "source_line": 71
+      },
+      {
+        "array": "values",
+        "bounds_status": "UNKNOWN",
+        "conversion_safe": false,
+        "index_affine": {
+          "coefficients": {
+            "index": 1
+          },
+          "constant": 0
+        },
+        "index_interval": [
+          -9223372036854775808,
+          9223372036854775807
+        ],
+        "ir_index_type": "tryte",
+        "length_interval": [
+          1,
+          364
+        ],
+        "length_symbol": "cell_count",
+        "loop_header": null,
+        "proof_kind": null,
+        "source_line": 73
+      },
+      {
+        "array": "valid_mask",
+        "bounds_status": "UNKNOWN",
+        "conversion_safe": false,
+        "index_affine": null,
+        "index_interval": null,
+        "ir_index_type": "tryte",
+        "length_interval": [
+          1,
+          364
+        ],
+        "length_symbol": "mask_count",
+        "loop_header": null,
+        "proof_kind": null,
+        "source_line": 108
+      },
+      {
+        "array": "values",
+        "bounds_status": "UNKNOWN",
+        "conversion_safe": false,
+        "index_affine": null,
+        "index_interval": null,
+        "ir_index_type": "tryte",
+        "length_interval": [
+          1,
+          364
+        ],
+        "length_symbol": "cell_count",
+        "loop_header": null,
+        "proof_kind": null,
+        "source_line": 110
+      }
+    ],
+    "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+    "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+    "workload": "raster"
+  },
+  "schema": "s3-1.11-raster-guarded-slice-bounds-diagnostic-v1",
+  "source_revision": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+  "source_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+  "summary": {
+    "loop_recurrences_passed": 2,
+    "nested_counted_loops": 2,
+    "slice_bounds_proven": 0,
+    "slice_bounds_unknown": 4,
+    "slice_reads": 4,
+    "vectorization_authorized": false,
+    "whole_loop_independence_proven": false
+  },
+  "workload_source": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+  "workload_source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e"
+}
