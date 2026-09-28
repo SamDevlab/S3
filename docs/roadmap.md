@@ -578,24 +578,22 @@ Esta milestone implementa o primeiro alocador físico de registradores determin�
 - **Stack Fallback**: Registradores virtuais com alta pressão de registradores sofrem fallback automático e transparente para `STACK` residency (usando o slot de stack regular existente), sem quebra de compilação ou geração de pseudo-instruções de spill na S3 Assembly.
 - **Callee-Saved Save/Restore**: Funções preservam os registradores físicos utilizados salvando-os em posições dedicadas dentro de `FrameLayout` no prólogo e restaurando-os antes de qualquer retorno normal (`TRET` ou multi-retorno).
 - **Paridade Semântica e de Inicialização**: A validação de uso de registradores não inicializados permanece ativa e independente do conteúdo físico dos registradores, impedindo bypass por valores obsoletos (stale physical value bypass).
-- **Opt-In do Compilador**: O alocador de registradores nativo é fornecido como uma opção opt-in (`register_allocation=True` em `X8664Backend`). O caminho default (`False`) continua emitindo assembly stack-backed idêntico ao baseline.
+- **Exposição inicial**: Na entrega original da 1.21, o alocador era opt-in via `register_allocation=True`. A integração call-aware posterior da 1.22 alterou o default atual; consulte a seção 1.22 abaixo.
 - **Out of Scope**: Alocação de registradores caller-saved, spills em tempo de instrução, divisão de intervalos vivos (interval splitting), compactação de frame (remoção de slots lógicos inativos) e benchmarks de performance.
 
 ## Marco 1.22 - Full Register Allocation Call Integration
 
-Status: implementation authored; Linux differential and s3bench execution
-gates remain required
+Status: integrated in the current compiler source
 
-The opt-in x86-64 allocator now has the eleven-register pool, call-aware
-preference, explicit `TCALL` survivor preservation, backend call-spill slots,
-logical-slot staging for parameters and outgoing arguments, and conservative
-preservation around returning runtime helpers. Whole-function residency,
-stack fallback, initialization metadata, the existing hidden-sret ABI, and the
-stack-backed default remain unchanged. Parallel copies, interval splitting,
-general dynamic spilling, frame compaction, public language/IR/Assembly changes,
-and default enablement are out of scope. Correctness and performance evidence
-must be reported separately; the s3bench execution gate requires a real Linux
-run using the versioned 1.0.0 interface.
+The x86-64 allocator has the eleven-register pool, call-aware preference,
+explicit `TCALL` survivor preservation, backend call-spill slots, logical-slot
+staging for parameters and outgoing arguments, and conservative preservation
+around returning runtime helpers. `X8664Backend.register_allocation` currently
+defaults to `True`; setting it to `False` explicitly selects the stack-backed
+diagnostic path. Whole-function residency, stack fallback, initialization
+metadata, and the existing hidden-sret ABI remain in place. Parallel copies,
+interval splitting, general dynamic spilling, and frame compaction are not
+implemented. Correctness and performance evidence remain separate.
 
 ## S3 1.3 — Scientific Compute Engine and Native Expansion
 

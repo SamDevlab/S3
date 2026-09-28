@@ -84,6 +84,22 @@ A convergencia do fixpoint continua baseada em mudanca estrutural real na SSA
 retornada. Contadores alimentam telemetria, mas nao sao prova de convergencia
 nem autorizam transformacoes que a estrutura retornada nao realizou.
 
+## Loop-carried recurrence facts (S3 1.12)
+
+`analyze_loop_facts` now records a scalar induction or reduction only when the
+loop has one initializing preheader, the scalar storage does not escape, each
+loop-local store matches the same typed recurrence, and every abstractly
+reachable backedge carries exactly one update. The path walk includes multi-
+block continuations and does not use a function-wide store count, so sequential
+loops may safely reuse a scalar after reinitialization.
+
+These facts do not by themselves prove vector access bounds or general memory
+independence and do not authorize SIMD or code-generation changes. Ordered f64
+reductions are reported as `NOT_VECTORIZABLE` when reassociation would violate
+strict floating-point order; other loops remain `UNKNOWN` until their missing
+range, alias, and call-effect proofs are available. Unknown or mutating calls
+are surfaced explicitly in the legality report.
+
 ## Artefatos
 
 S3 Assembly usa `.s3asm 0.6.0`; texto legado 0.5 width-1 é normalizado. IR
@@ -250,7 +266,10 @@ environment with identical inputs, checksums, and complete toolchain metadata.
 
 ## Native register allocation foundation
 
-This section outlines the physical register contracts and CFG-aware liveness analysis introduced in Milestone 1.20 to prepare the S3 Linux x86-64 backend for a future register allocator.
+Milestones 1.20–1.22 established CFG-aware liveness and deterministic physical
+allocation for the Linux x86-64 backend. The current `X8664Backend` enables
+register allocation by default; callers can explicitly set
+`register_allocation=False` to retain the stack-backed diagnostic path.
 
 - **ABI System V AMD64**: The backend targets the standard System V AMD64 ABI on Linux.
 - **Physical Register Classes**: Registers are categorised as:
@@ -261,7 +280,7 @@ This section outlines the physical register contracts and CFG-aware liveness ana
   - Caller-Saved Registers: `rax`, `rcx`, `rdx`, `rsi`, `rdi`, `r8`, `r9`, `r10`, `r11`
   - Callee-Saved Registers: `rbx`, `rbp`, `r12`, `r13`, `r14`, `r15`
   - Emitter Scratch Registers: `rax`, `r10`, `r11`
-- **Initial Allocatable Pool**: Configured as `rbx`, `r12`, `r13`, `r14`, `r15` for use in the future allocator.
+- **Allocatable Pool**: The deterministic pool is `rbx`, `r12`, `r13`, `r14`, `r15`, `rdi`, `rsi`, `rdx`, `rcx`, `r8`, and `r9`. `PER_INSTRUCTION` mode reserves `r15` for its logical budget counter when that counter is register-resident.
 - **Scratch/Reserved Policy**: `rsp` and `rbp` are always reserved and non-allocatable. `rax`, `r10`, and `r11` are scratch registers reserved for the emitter. No register may belong to both the allocatable pool and reserved/scratch registers.
 - **Liveness Equations**: CFG-aware backwards register liveness analysis is performed on S3 Assembly. Successors of blocks are determined by terminators (`TJMP`, `TBR3`, `TRET`). Block equations are:
   - `live_out[B] = ∪ live_in[S]` for all successors `S`
@@ -269,24 +288,32 @@ This section outlines the physical register contracts and CFG-aware liveness ana
   Iterated until a fixed point is reached. Within blocks, instruction equations are:
   - `live_before[I] = uses[I] ∪ (live_after[I] - defs[I])`
 - **TCALL/Live-Across-Call**: Registers live across call instructions are identified as `live_before(call) ∩ live_after(call)`, excluding registers defined/returned by the call itself.
-- **Initialization Validity vs Liveness**: Value liveness (`REGISTER_VALUE_LIVENESS`) is distinct from variable initialization validity (`REGISTER_INITIALIZATION_VALIDITY`). The future allocator must not alter or bypass the uninitialized register checks.
-- **Production Status**: The production emitter remains stack-backed and does not use the register allocator or liveness sets.
+- **Initialization Validity vs Liveness**: Value liveness (`REGISTER_VALUE_LIVENESS`) is distinct from variable initialization validity (`REGISTER_INITIALIZATION_VALIDITY`). Allocation and code generation preserve observable uninitialized-register checks and logical initialization metadata.
+- **Stack Fallback**: Virtual registers that cannot be assigned a physical color remain in their logical frame slots; residency is whole-function, with no interval splitting or general dynamic spilling.
+- **Production Status**: The default native backend uses the deterministic allocator and its call-aware policies. Stack-backed generation is available by explicit configuration.
 
 ## Deterministic physical register allocation
 
 Milestone 1.21 implements deterministic physical register allocation on top of the System V AMD64 contract.
 
 - **Interference Graph**: Built using undirected edges between virtual registers. An edge is added between any two registers simultaneously live before or after any instruction. Furthermore, each defined register `d` in `defs[I]` interferes with all registers `la` in `live_after[I]` (except itself), protecting against clobbers from dead definitions.
-- **Greedy Coloring**: Order-determined greedy coloring assigns physical registers. Nodes are sorted primarily by degree descending, and secondarily by virtual register ID ascending. Available colors are chosen sequentially from `("rbx", "r12", "r13", "r14", "r15")`.
-- **Stack Fallback**: If all five physical registers are occupied by neighbors, the register is allocated to `STACK` residency (falling back to its existing frame value slot).
+- **Greedy Coloring**: Order-determined greedy coloring assigns physical registers. Nodes are sorted primarily by degree descending, and secondarily by virtual register ID ascending. Available colors come from the eleven-register pool described above, with call-aware preferences.
+- **Stack Fallback**: If all available physical registers are occupied by neighbors, the register is allocated to `STACK` residency (falling back to its existing frame value slot).
 - **Callee-Saved Preservation**: An 8-byte stack slot is allocated for each physical register used. The prologue saves these registers, and the normal epilogue restores them before `leave` and `ret`.
 - **Initialization Semantics**: All reads and writes to physical registers continue to update and check the logical initialization metadata bytes. Residual/stale physical register contents never bypass initialization checks.
-- **Opt-In Mode**: Controlled via `register_allocation=True` in `X8664Backend`. The default path (`False`) remains byte-for-byte identical to the original stack-backed compilation.
+- **Default Mode**: `X8664Backend.register_allocation` defaults to `True`. Setting it to `False` explicitly selects the stack-backed diagnostic path.
+
+The S3 1.12 candidate omits native data movement for a `TMOV` only when its
+distinct source and destination virtual registers are both proven to have the
+same non-stack physical color. It still executes the instruction-budget
+instrumentation, checks source initialization when observable, and marks the
+destination initialized when required. Different colors and stack endpoints
+continue through ordinary load/copy/store lowering.
 
 ## Call-aware physical allocation (Milestone 1.22)
 
-Milestone 1.22 extends the opt-in allocator without changing the public S3
-Assembly or the default backend path. The full deterministic pool is
+Milestone 1.22 extends the allocator without changing the public S3 Assembly.
+The full deterministic pool is
 `rbx,r12,r13,r14,r15,rdi,rsi,rdx,rcx,r8,r9`; `rsp,rbp,rax,r10,r11` remain
 reserved. Values that cross `TCALL` prefer callee-saved registers, while
 short-lived values prefer caller-saved registers.
@@ -307,5 +334,5 @@ physical contents only; initialization validity is still checked on every
 logical read and write. Returning helper calls preserve the complete used
 caller-saved set conservatively, while noreturn failure helpers need no
 artificial restore. Inline syscalls occur only in the external runtime, not in
-allocated S3 functions. Register allocation remains opt-in (`False` by
-default), and benchmark execution is classified separately from correctness.
+allocated S3 functions. Register allocation is enabled by default in
+`X8664Backend`; benchmark execution is classified separately from correctness.
