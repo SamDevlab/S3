@@ -311,7 +311,7 @@ def test_unknown_call_effect_is_explicit_and_fails_closed() -> None:
 
 
 def test_deterministic_generated_counted_loops_prove_exact_backedge_updates() -> None:
-    for seed in range(32):
+    for seed in range(256):
         initial = seed % 7
         step = 1 + (seed * 5) % 4
         source = _counted_loop_source(
@@ -332,7 +332,7 @@ def test_deterministic_generated_counted_loops_prove_exact_backedge_updates() ->
 
 
 def test_loop_renaming_metamorphism_preserves_recurrence_facts() -> None:
-    for seed in range(12):
+    for seed in range(64):
         initial = seed % 5
         step = 1 + seed % 3
         with_match = seed % 2 == 0
