@@ -1,0 +1,246 @@
+{
+  "limitations": [
+    "This analysis is pinned to the listed source files and their O1 IR only.",
+    "Local call effects are accepted only for a closed scalar-only call closure; unknown/external/reference calls fail closed.",
+    "The result does not prove scalar recurrence independence, edge feasibility, floating-point reassociation, bounds, or SIMD legality."
+  ],
+  "loops": [
+    {
+      "calls": [
+        {
+          "block": "while_body_33",
+          "callee": "absolute_f64",
+          "effect_closure": [
+            "absolute_f64"
+          ],
+          "effect_closure_status": "PASS",
+          "instruction_index": 39
+        }
+      ],
+      "local_scalar_store_count": 20,
+      "loop_blocks": 18,
+      "loop_header": "while_condition_32",
+      "reasons": [],
+      "reference_store_count": 0,
+      "reference_stores": [],
+      "scope": "No loop-carried write dependence on slice/reference storage is proven only for this exact IR. Scalar induction/accumulator stores, branch feasibility, strict-FP reductions, and complete iteration independence are outside this result. Read-only parameter aliasing is not a conflict.",
+      "slice_loads": [
+        {
+          "block": "while_body_33",
+          "instruction_index": 7,
+          "parameter": "ac_power_w"
+        },
+        {
+          "block": "while_body_33",
+          "instruction_index": 12,
+          "parameter": "load_w"
+        }
+      ],
+      "slice_memory_effect": "READ_ONLY",
+      "slice_store_count": 0,
+      "slice_stores": [],
+      "slice_write_dependence": "NO_LOOP_CARRIED_SLICE_WRITE_DEPENDENCE",
+      "source_path": "benchmarks/workloads/real_world/energy_series_aggregation.s3",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "status": "PASS",
+      "vectorization_authorized": false,
+      "whole_loop_independence": "NOT_PROVEN",
+      "workload": "energy",
+      "workload_function": "energy_series_aggregation"
+    },
+    {
+      "calls": [],
+      "local_scalar_store_count": 29,
+      "loop_blocks": 30,
+      "loop_header": "while_condition_29",
+      "reasons": [],
+      "reference_store_count": 0,
+      "reference_stores": [],
+      "scope": "No loop-carried write dependence on slice/reference storage is proven only for this exact IR. Scalar induction/accumulator stores, branch feasibility, strict-FP reductions, and complete iteration independence are outside this result. Read-only parameter aliasing is not a conflict.",
+      "slice_loads": [
+        {
+          "block": "while_body_30",
+          "instruction_index": 9,
+          "parameter": "coordinates"
+        },
+        {
+          "block": "while_body_30",
+          "instruction_index": 16,
+          "parameter": "coordinates"
+        },
+        {
+          "block": "while_body_30",
+          "instruction_index": 23,
+          "parameter": "coordinates"
+        }
+      ],
+      "slice_memory_effect": "READ_ONLY",
+      "slice_store_count": 0,
+      "slice_stores": [],
+      "slice_write_dependence": "NO_LOOP_CARRIED_SLICE_WRITE_DEPENDENCE",
+      "source_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "status": "PASS",
+      "vectorization_authorized": false,
+      "whole_loop_independence": "NOT_PROVEN",
+      "workload": "point-cloud",
+      "workload_function": "point_cloud_summary"
+    },
+    {
+      "calls": [],
+      "local_scalar_store_count": 9,
+      "loop_blocks": 6,
+      "loop_header": "while_condition_62",
+      "reasons": [],
+      "reference_store_count": 0,
+      "reference_stores": [],
+      "scope": "No loop-carried write dependence on slice/reference storage is proven only for this exact IR. Scalar induction/accumulator stores, branch feasibility, strict-FP reductions, and complete iteration independence are outside this result. Read-only parameter aliasing is not a conflict.",
+      "slice_loads": [
+        {
+          "block": "while_body_63",
+          "instruction_index": 9,
+          "parameter": "coordinates"
+        },
+        {
+          "block": "while_body_63",
+          "instruction_index": 19,
+          "parameter": "coordinates"
+        },
+        {
+          "block": "while_body_63",
+          "instruction_index": 29,
+          "parameter": "coordinates"
+        }
+      ],
+      "slice_memory_effect": "READ_ONLY",
+      "slice_store_count": 0,
+      "slice_stores": [],
+      "slice_write_dependence": "NO_LOOP_CARRIED_SLICE_WRITE_DEPENDENCE",
+      "source_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "status": "PASS",
+      "vectorization_authorized": false,
+      "whole_loop_independence": "NOT_PROVEN",
+      "workload": "point-cloud",
+      "workload_function": "point_cloud_summary"
+    },
+    {
+      "calls": [
+        {
+          "block": "switch_negative_115",
+          "callee": "absolute_f64",
+          "effect_closure": [
+            "absolute_f64"
+          ],
+          "effect_closure_status": "PASS",
+          "instruction_index": 10
+        }
+      ],
+      "local_scalar_store_count": 47,
+      "loop_blocks": 57,
+      "loop_header": "while_condition_59",
+      "reasons": [],
+      "reference_store_count": 0,
+      "reference_stores": [],
+      "scope": "No loop-carried write dependence on slice/reference storage is proven only for this exact IR. Scalar induction/accumulator stores, branch feasibility, strict-FP reductions, and complete iteration independence are outside this result. Read-only parameter aliasing is not a conflict.",
+      "slice_loads": [
+        {
+          "block": "switch_negative_108",
+          "instruction_index": 4,
+          "parameter": "valid_mask"
+        },
+        {
+          "block": "switch_negative_115",
+          "instruction_index": 6,
+          "parameter": "values"
+        },
+        {
+          "block": "switch_negative_81",
+          "instruction_index": 2,
+          "parameter": "values"
+        },
+        {
+          "block": "while_body_69",
+          "instruction_index": 13,
+          "parameter": "valid_mask"
+        }
+      ],
+      "slice_memory_effect": "READ_ONLY",
+      "slice_store_count": 0,
+      "slice_stores": [],
+      "slice_write_dependence": "NO_LOOP_CARRIED_SLICE_WRITE_DEPENDENCE",
+      "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "status": "PASS",
+      "vectorization_authorized": false,
+      "whole_loop_independence": "NOT_PROVEN",
+      "workload": "raster",
+      "workload_function": "raster_window_statistics"
+    },
+    {
+      "calls": [
+        {
+          "block": "switch_negative_115",
+          "callee": "absolute_f64",
+          "effect_closure": [
+            "absolute_f64"
+          ],
+          "effect_closure_status": "PASS",
+          "instruction_index": 10
+        }
+      ],
+      "local_scalar_store_count": 42,
+      "loop_blocks": 48,
+      "loop_header": "while_condition_68",
+      "reasons": [],
+      "reference_store_count": 0,
+      "reference_stores": [],
+      "scope": "No loop-carried write dependence on slice/reference storage is proven only for this exact IR. Scalar induction/accumulator stores, branch feasibility, strict-FP reductions, and complete iteration independence are outside this result. Read-only parameter aliasing is not a conflict.",
+      "slice_loads": [
+        {
+          "block": "switch_negative_108",
+          "instruction_index": 4,
+          "parameter": "valid_mask"
+        },
+        {
+          "block": "switch_negative_115",
+          "instruction_index": 6,
+          "parameter": "values"
+        },
+        {
+          "block": "switch_negative_81",
+          "instruction_index": 2,
+          "parameter": "values"
+        },
+        {
+          "block": "while_body_69",
+          "instruction_index": 13,
+          "parameter": "valid_mask"
+        }
+      ],
+      "slice_memory_effect": "READ_ONLY",
+      "slice_store_count": 0,
+      "slice_stores": [],
+      "slice_write_dependence": "NO_LOOP_CARRIED_SLICE_WRITE_DEPENDENCE",
+      "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "status": "PASS",
+      "vectorization_authorized": false,
+      "whole_loop_independence": "NOT_PROVEN",
+      "workload": "raster",
+      "workload_function": "raster_window_statistics"
+    }
+  ],
+  "optimization": "O1",
+  "python": "3.13.15",
+  "schema": "s3-1.11-loop-slice-memory-dependence-v1",
+  "source_revision": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+  "source_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+  "summary": {
+    "loops": 5,
+    "read_only_slice_memory_proven": 5,
+    "slice_write_dependence_proven_absent": 5,
+    "vectorization_authorized": false,
+    "whole_loop_independence_proven": 0
+  }
+}

@@ -1,0 +1,890 @@
+{
+  "classification": "ALLOCATOR_LOCATION_ELIGIBILITY_SCAN_NO_TRANSFORMATION",
+  "experiment_id": "EXP-S3-111-MOVE-COALESCE-001",
+  "native_build": "NOT_PERFORMED",
+  "provenance": {
+    "compiler_source_dirty": false,
+    "optimization": "O1",
+    "s3_commit": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+    "s3_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+    "target_host": "Linux x86_64",
+    "tool_sha256": "bf78dc6245c9d9903acef8e2730f204cb4a223c28484a12d50f13abf6a8411b8"
+  },
+  "schema_version": "1.0.0",
+  "timing": "NOT_MEASURED",
+  "workloads": [
+    {
+      "candidates": [
+        {
+          "allocated_same_physical_count": 0,
+          "candidate": "baseline",
+          "candidate_sites": [],
+          "interpretation": "Static allocation-location classification only. Same-register sites are potential emitter simplifications, not proof of removable logical budget work; stack and distinct-register copies are not candidates for omission.",
+          "location_relation_counts": {},
+          "tmov_count": 0
+        },
+        {
+          "allocated_same_physical_count": 0,
+          "candidate": "ssa_substitution",
+          "candidate_sites": [],
+          "interpretation": "Static allocation-location classification only. Same-register sites are potential emitter simplifications, not proof of removable logical budget work; stack and distinct-register copies are not candidates for omission.",
+          "location_relation_counts": {},
+          "tmov_count": 0
+        },
+        {
+          "allocated_same_physical_count": 8,
+          "candidate": "store_to_load",
+          "candidate_sites": [
+            {
+              "block": "entry",
+              "destination_location": "r8",
+              "destination_vreg": 211,
+              "instruction_index": 2,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r9",
+              "source_vreg": 7
+            },
+            {
+              "block": "entry",
+              "destination_location": "rcx",
+              "destination_vreg": 212,
+              "instruction_index": 6,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 9
+            },
+            {
+              "block": "entry",
+              "destination_location": "rdx",
+              "destination_vreg": 213,
+              "instruction_index": 10,
+              "location_relation": "SOURCE_STACK_DESTINATION_REGISTER",
+              "source_location": "STACK",
+              "source_vreg": 11
+            },
+            {
+              "block": "entry",
+              "destination_location": "r9",
+              "destination_vreg": 14,
+              "instruction_index": 13,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r9",
+              "source_vreg": 7
+            },
+            {
+              "block": "switch_neutral_5",
+              "destination_location": "r8",
+              "destination_vreg": 28,
+              "instruction_index": 1,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r8",
+              "source_vreg": 211
+            },
+            {
+              "block": "switch_positive_6",
+              "destination_location": "r8",
+              "destination_vreg": 31,
+              "instruction_index": 1,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r8",
+              "source_vreg": 211
+            },
+            {
+              "block": "switch_neutral_13",
+              "destination_location": "rcx",
+              "destination_vreg": 47,
+              "instruction_index": 1,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rcx",
+              "source_vreg": 212
+            },
+            {
+              "block": "switch_negative_19",
+              "destination_location": "rdx",
+              "destination_vreg": 60,
+              "instruction_index": 1,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rdx",
+              "source_vreg": 213
+            },
+            {
+              "block": "while_body_33",
+              "destination_location": "rdx",
+              "destination_vreg": 104,
+              "instruction_index": 6,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 101
+            },
+            {
+              "block": "while_body_33",
+              "destination_location": "rcx",
+              "destination_vreg": 108,
+              "instruction_index": 11,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rcx",
+              "source_vreg": 101
+            },
+            {
+              "block": "while_body_33",
+              "destination_location": "r9",
+              "destination_vreg": 114,
+              "instruction_index": 18,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 105
+            },
+            {
+              "block": "while_body_33",
+              "destination_location": "r9",
+              "destination_vreg": 120,
+              "instruction_index": 25,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 105
+            },
+            {
+              "block": "while_body_33",
+              "destination_location": "r9",
+              "destination_vreg": 123,
+              "instruction_index": 28,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 109
+            },
+            {
+              "block": "while_body_33",
+              "destination_location": "rdx",
+              "destination_vreg": 129,
+              "instruction_index": 35,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rdx",
+              "source_vreg": 105
+            },
+            {
+              "block": "while_body_33",
+              "destination_location": "rcx",
+              "destination_vreg": 131,
+              "instruction_index": 37,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rcx",
+              "source_vreg": 109
+            }
+          ],
+          "interpretation": "Static allocation-location classification only. Same-register sites are potential emitter simplifications, not proof of removable logical budget work; stack and distinct-register copies are not candidates for omission.",
+          "location_relation_counts": {
+            "DISTINCT_PHYSICAL_REGISTERS": 6,
+            "SAME_PHYSICAL_REGISTER": 8,
+            "SOURCE_STACK_DESTINATION_REGISTER": 1
+          },
+          "tmov_count": 15
+        }
+      ],
+      "function_symbol": "energy_series_aggregation",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "workload_id": "energy.pv-timeseries-aggregation.v1"
+    },
+    {
+      "candidates": [
+        {
+          "allocated_same_physical_count": 0,
+          "candidate": "baseline",
+          "candidate_sites": [],
+          "interpretation": "Static allocation-location classification only. Same-register sites are potential emitter simplifications, not proof of removable logical budget work; stack and distinct-register copies are not candidates for omission.",
+          "location_relation_counts": {},
+          "tmov_count": 0
+        },
+        {
+          "allocated_same_physical_count": 0,
+          "candidate": "ssa_substitution",
+          "candidate_sites": [],
+          "interpretation": "Static allocation-location classification only. Same-register sites are potential emitter simplifications, not proof of removable logical budget work; stack and distinct-register copies are not candidates for omission.",
+          "location_relation_counts": {},
+          "tmov_count": 0
+        },
+        {
+          "allocated_same_physical_count": 17,
+          "candidate": "store_to_load",
+          "candidate_sites": [
+            {
+              "block": "switch_continue_7",
+              "destination_location": "rcx",
+              "destination_vreg": 368,
+              "instruction_index": 2,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 20
+            },
+            {
+              "block": "switch_continue_7",
+              "destination_location": "rdx",
+              "destination_vreg": 369,
+              "instruction_index": 6,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r8",
+              "source_vreg": 22
+            },
+            {
+              "block": "switch_neutral_13",
+              "destination_location": "rcx",
+              "destination_vreg": 38,
+              "instruction_index": 1,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rcx",
+              "source_vreg": 368
+            },
+            {
+              "block": "switch_negative_19",
+              "destination_location": "rdx",
+              "destination_vreg": 53,
+              "instruction_index": 1,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rdx",
+              "source_vreg": 369
+            },
+            {
+              "block": "switch_negative_26",
+              "destination_location": "r8",
+              "destination_vreg": 74,
+              "instruction_index": 13,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r8",
+              "source_vreg": 65
+            },
+            {
+              "block": "switch_negative_26",
+              "destination_location": "rcx",
+              "destination_vreg": 77,
+              "instruction_index": 17,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rcx",
+              "source_vreg": 68
+            },
+            {
+              "block": "switch_negative_26",
+              "destination_location": "rdx",
+              "destination_vreg": 80,
+              "instruction_index": 21,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rdx",
+              "source_vreg": 71
+            },
+            {
+              "block": "while_body_30",
+              "destination_location": "rcx",
+              "destination_vreg": 110,
+              "instruction_index": 8,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 107
+            },
+            {
+              "block": "while_body_30",
+              "destination_location": "r8",
+              "destination_vreg": 370,
+              "instruction_index": 11,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r9",
+              "source_vreg": 111
+            },
+            {
+              "block": "while_body_30",
+              "destination_location": "rcx",
+              "destination_vreg": 114,
+              "instruction_index": 14,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 107
+            },
+            {
+              "block": "while_body_30",
+              "destination_location": "rcx",
+              "destination_vreg": 371,
+              "instruction_index": 19,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r13",
+              "source_vreg": 117
+            },
+            {
+              "block": "while_body_30",
+              "destination_location": "rdx",
+              "destination_vreg": 120,
+              "instruction_index": 22,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rdx",
+              "source_vreg": 107
+            },
+            {
+              "block": "while_body_30",
+              "destination_location": "rdx",
+              "destination_vreg": 372,
+              "instruction_index": 27,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r14",
+              "source_vreg": 123
+            },
+            {
+              "block": "while_body_30",
+              "destination_location": "STACK",
+              "destination_vreg": 128,
+              "instruction_index": 32,
+              "location_relation": "DESTINATION_STACK_SOURCE_REGISTER",
+              "source_location": "r9",
+              "source_vreg": 111
+            },
+            {
+              "block": "while_body_30",
+              "destination_location": "r13",
+              "destination_vreg": 134,
+              "instruction_index": 39,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r13",
+              "source_vreg": 117
+            },
+            {
+              "block": "while_body_30",
+              "destination_location": "r14",
+              "destination_vreg": 140,
+              "instruction_index": 46,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r14",
+              "source_vreg": 123
+            },
+            {
+              "block": "while_body_30",
+              "destination_location": "r9",
+              "destination_vreg": 144,
+              "instruction_index": 51,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r9",
+              "source_vreg": 111
+            },
+            {
+              "block": "while_exit_33",
+              "destination_location": "rcx",
+              "destination_vreg": 239,
+              "instruction_index": 8,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r8",
+              "source_vreg": 234
+            },
+            {
+              "block": "while_exit_33",
+              "destination_location": "rdx",
+              "destination_vreg": 373,
+              "instruction_index": 11,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 240
+            },
+            {
+              "block": "while_exit_33",
+              "destination_location": "r9",
+              "destination_vreg": 245,
+              "instruction_index": 16,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r8",
+              "source_vreg": 234
+            },
+            {
+              "block": "while_exit_33",
+              "destination_location": "rcx",
+              "destination_vreg": 374,
+              "instruction_index": 19,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r9",
+              "source_vreg": 246
+            },
+            {
+              "block": "while_exit_33",
+              "destination_location": "r8",
+              "destination_vreg": 251,
+              "instruction_index": 24,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r8",
+              "source_vreg": 234
+            },
+            {
+              "block": "while_exit_33",
+              "destination_location": "r8",
+              "destination_vreg": 375,
+              "instruction_index": 27,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r9",
+              "source_vreg": 252
+            },
+            {
+              "block": "switch_negative_38",
+              "destination_location": "r9",
+              "destination_vreg": 149,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r8",
+              "source_vreg": 370
+            },
+            {
+              "block": "switch_continue_41",
+              "destination_location": "r9",
+              "destination_vreg": 158,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 371
+            },
+            {
+              "block": "switch_negative_42",
+              "destination_location": "r9",
+              "destination_vreg": 163,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 371
+            },
+            {
+              "block": "switch_continue_45",
+              "destination_location": "r9",
+              "destination_vreg": 172,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 372
+            },
+            {
+              "block": "switch_negative_46",
+              "destination_location": "r9",
+              "destination_vreg": 177,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 372
+            },
+            {
+              "block": "switch_continue_49",
+              "destination_location": "r13",
+              "destination_vreg": 188,
+              "instruction_index": 3,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r8",
+              "source_vreg": 370
+            },
+            {
+              "block": "switch_negative_50",
+              "destination_location": "r8",
+              "destination_vreg": 191,
+              "instruction_index": 1,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r8",
+              "source_vreg": 370
+            },
+            {
+              "block": "switch_continue_53",
+              "destination_location": "r9",
+              "destination_vreg": 202,
+              "instruction_index": 3,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 371
+            },
+            {
+              "block": "switch_negative_54",
+              "destination_location": "rcx",
+              "destination_vreg": 205,
+              "instruction_index": 1,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rcx",
+              "source_vreg": 371
+            },
+            {
+              "block": "switch_continue_57",
+              "destination_location": "r8",
+              "destination_vreg": 216,
+              "instruction_index": 3,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 372
+            },
+            {
+              "block": "switch_negative_58",
+              "destination_location": "rdx",
+              "destination_vreg": 219,
+              "instruction_index": 1,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rdx",
+              "source_vreg": 372
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "r9",
+              "destination_vreg": 278,
+              "instruction_index": 8,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r14",
+              "source_vreg": 275
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "r13",
+              "destination_vreg": 281,
+              "instruction_index": 11,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 373
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "r13",
+              "destination_vreg": 285,
+              "instruction_index": 16,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r14",
+              "source_vreg": 275
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "r15",
+              "destination_vreg": 290,
+              "instruction_index": 21,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 374
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "r14",
+              "destination_vreg": 294,
+              "instruction_index": 26,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r14",
+              "source_vreg": 275
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "r15",
+              "destination_vreg": 299,
+              "instruction_index": 31,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r8",
+              "source_vreg": 375
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "STACK",
+              "destination_vreg": 305,
+              "instruction_index": 38,
+              "location_relation": "DESTINATION_STACK_SOURCE_REGISTER",
+              "source_location": "r9",
+              "source_vreg": 282
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "r9",
+              "destination_vreg": 307,
+              "instruction_index": 40,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r9",
+              "source_vreg": 282
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "r15",
+              "destination_vreg": 311,
+              "instruction_index": 44,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r13",
+              "source_vreg": 291
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "r13",
+              "destination_vreg": 313,
+              "instruction_index": 46,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r13",
+              "source_vreg": 291
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "r13",
+              "destination_vreg": 317,
+              "instruction_index": 50,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r14",
+              "source_vreg": 300
+            },
+            {
+              "block": "while_body_63",
+              "destination_location": "r14",
+              "destination_vreg": 319,
+              "instruction_index": 52,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r14",
+              "source_vreg": 300
+            },
+            {
+              "block": "while_exit_66",
+              "destination_location": "rsi",
+              "destination_vreg": 330,
+              "instruction_index": 2,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 373
+            }
+          ],
+          "interpretation": "Static allocation-location classification only. Same-register sites are potential emitter simplifications, not proof of removable logical budget work; stack and distinct-register copies are not candidates for omission.",
+          "location_relation_counts": {
+            "DESTINATION_STACK_SOURCE_REGISTER": 2,
+            "DISTINCT_PHYSICAL_REGISTERS": 28,
+            "SAME_PHYSICAL_REGISTER": 17
+          },
+          "tmov_count": 47
+        }
+      ],
+      "function_symbol": "point_cloud_summary",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "workload_id": "engineering.point-cloud-summary.v1"
+    },
+    {
+      "candidates": [
+        {
+          "allocated_same_physical_count": 0,
+          "candidate": "baseline",
+          "candidate_sites": [],
+          "interpretation": "Static allocation-location classification only. Same-register sites are potential emitter simplifications, not proof of removable logical budget work; stack and distinct-register copies are not candidates for omission.",
+          "location_relation_counts": {},
+          "tmov_count": 0
+        },
+        {
+          "allocated_same_physical_count": 0,
+          "candidate": "ssa_substitution",
+          "candidate_sites": [],
+          "interpretation": "Static allocation-location classification only. Same-register sites are potential emitter simplifications, not proof of removable logical budget work; stack and distinct-register copies are not candidates for omission.",
+          "location_relation_counts": {},
+          "tmov_count": 0
+        },
+        {
+          "allocated_same_physical_count": 6,
+          "candidate": "store_to_load",
+          "candidate_sites": [
+            {
+              "block": "entry",
+              "destination_location": "rcx",
+              "destination_vreg": 432,
+              "instruction_index": 6,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 11
+            },
+            {
+              "block": "entry",
+              "destination_location": "r8",
+              "destination_vreg": 433,
+              "instruction_index": 10,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 13
+            },
+            {
+              "block": "entry",
+              "destination_location": "rdx",
+              "destination_vreg": 434,
+              "instruction_index": 14,
+              "location_relation": "SOURCE_STACK_DESTINATION_REGISTER",
+              "source_location": "STACK",
+              "source_vreg": 15
+            },
+            {
+              "block": "switch_continue_15",
+              "destination_location": "r9",
+              "destination_vreg": 46,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 432
+            },
+            {
+              "block": "switch_neutral_36",
+              "destination_location": "r9",
+              "destination_vreg": 92,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 432
+            },
+            {
+              "block": "switch_negative_42",
+              "destination_location": "r8",
+              "destination_vreg": 108,
+              "instruction_index": 1,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "r8",
+              "source_vreg": 433
+            },
+            {
+              "block": "switch_negative_42",
+              "destination_location": "rcx",
+              "destination_vreg": 110,
+              "instruction_index": 3,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rcx",
+              "source_vreg": 432
+            },
+            {
+              "block": "switch_negative_49",
+              "destination_location": "rdx",
+              "destination_vreg": 121,
+              "instruction_index": 1,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rdx",
+              "source_vreg": 434
+            },
+            {
+              "block": "while_body_69",
+              "destination_location": "rdx",
+              "destination_vreg": 435,
+              "instruction_index": 10,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 186
+            },
+            {
+              "block": "while_body_69",
+              "destination_location": "rcx",
+              "destination_vreg": 189,
+              "instruction_index": 13,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rcx",
+              "source_vreg": 186
+            },
+            {
+              "block": "switch_negative_81",
+              "destination_location": "rcx",
+              "destination_vreg": 202,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 435
+            },
+            {
+              "block": "switch_negative_81",
+              "destination_location": "rcx",
+              "destination_vreg": 436,
+              "instruction_index": 4,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "r8",
+              "source_vreg": 203
+            },
+            {
+              "block": "switch_negative_88",
+              "destination_location": "r8",
+              "destination_vreg": 218,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 436
+            },
+            {
+              "block": "switch_negative_88",
+              "destination_location": "r8",
+              "destination_vreg": 221,
+              "instruction_index": 5,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 436
+            },
+            {
+              "block": "switch_continue_91",
+              "destination_location": "r9",
+              "destination_vreg": 234,
+              "instruction_index": 3,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 436
+            },
+            {
+              "block": "switch_continue_91",
+              "destination_location": "r8",
+              "destination_vreg": 243,
+              "instruction_index": 14,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 436
+            },
+            {
+              "block": "switch_continue_95",
+              "destination_location": "r8",
+              "destination_vreg": 257,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 436
+            },
+            {
+              "block": "switch_negative_96",
+              "destination_location": "r8",
+              "destination_vreg": 262,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 436
+            },
+            {
+              "block": "switch_continue_99",
+              "destination_location": "r9",
+              "destination_vreg": 273,
+              "instruction_index": 3,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 436
+            },
+            {
+              "block": "switch_negative_100",
+              "destination_location": "r8",
+              "destination_vreg": 276,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rcx",
+              "source_vreg": 436
+            },
+            {
+              "block": "switch_negative_108",
+              "destination_location": "r8",
+              "destination_vreg": 302,
+              "instruction_index": 1,
+              "location_relation": "DISTINCT_PHYSICAL_REGISTERS",
+              "source_location": "rdx",
+              "source_vreg": 435
+            },
+            {
+              "block": "switch_negative_115",
+              "destination_location": "rdx",
+              "destination_vreg": 319,
+              "instruction_index": 3,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rdx",
+              "source_vreg": 435
+            },
+            {
+              "block": "switch_negative_115",
+              "destination_location": "rcx",
+              "destination_vreg": 324,
+              "instruction_index": 8,
+              "location_relation": "SAME_PHYSICAL_REGISTER",
+              "source_location": "rcx",
+              "source_vreg": 436
+            }
+          ],
+          "interpretation": "Static allocation-location classification only. Same-register sites are potential emitter simplifications, not proof of removable logical budget work; stack and distinct-register copies are not candidates for omission.",
+          "location_relation_counts": {
+            "DISTINCT_PHYSICAL_REGISTERS": 16,
+            "SAME_PHYSICAL_REGISTER": 6,
+            "SOURCE_STACK_DESTINATION_REGISTER": 1
+          },
+          "tmov_count": 23
+        }
+      ],
+      "function_symbol": "raster_window_statistics",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "workload_id": "geospatial.raster-window-statistics.v1"
+    }
+  ]
+}

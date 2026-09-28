@@ -1,0 +1,189 @@
+{
+  "loops": [
+    {
+      "abstract_backedge_states": [
+        {
+          "other_store": false,
+          "tail": "switch_continue_52",
+          "updates_saturated": 1
+        }
+      ],
+      "abstract_exit_states": [],
+      "abstract_return_states": [],
+      "abstract_states_visited": 13,
+      "all_reachable_abstract_backedge_states_one_update": true,
+      "candidate_memory": 7,
+      "condition_recognizer": "CONDITION_RECOGNIZED",
+      "function": "energy_series_aggregation",
+      "function_wide_store_count": 2,
+      "in_loop_store_count": 1,
+      "loop_header": "while_condition_32",
+      "natural_loop_blocks": 18,
+      "opaque_terminators": [],
+      "preheader_store_count": 1,
+      "probe_status": "ONE_UPDATE_ON_ALL_REACHABLE_ABSTRACT_BACKEDGE_STATES",
+      "recurrence_store_sites_in_loop": [
+        {
+          "block": "switch_continue_52",
+          "instruction_index": 5,
+          "step": 1
+        }
+      ],
+      "scope_note": "Conservative abstract reachability over all IR branch targets; update counts saturate at 2. The result is CFG-shape evidence, not a source-level induction proof. It does not prove edge feasibility, termination, initialization semantics, bounds, alias safety, dependence, or SIMD legality.",
+      "selected_body": "while_body_33",
+      "source_path": "benchmarks/workloads/real_world/energy_series_aggregation.s3",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "workload": "energy"
+    },
+    {
+      "abstract_backedge_states": [
+        {
+          "other_store": false,
+          "tail": "switch_continue_61",
+          "updates_saturated": 1
+        }
+      ],
+      "abstract_exit_states": [],
+      "abstract_return_states": [],
+      "abstract_states_visited": 25,
+      "all_reachable_abstract_backedge_states_one_update": true,
+      "candidate_memory": 16,
+      "condition_recognizer": "CONDITION_RECOGNIZED",
+      "function": "point_cloud_summary",
+      "function_wide_store_count": 4,
+      "in_loop_store_count": 1,
+      "loop_header": "while_condition_29",
+      "natural_loop_blocks": 30,
+      "opaque_terminators": [],
+      "preheader_store_count": 1,
+      "probe_status": "ONE_UPDATE_ON_ALL_REACHABLE_ABSTRACT_BACKEDGE_STATES",
+      "recurrence_store_sites_in_loop": [
+        {
+          "block": "switch_continue_61",
+          "instruction_index": 5,
+          "step": 1
+        }
+      ],
+      "scope_note": "Conservative abstract reachability over all IR branch targets; update counts saturate at 2. The result is CFG-shape evidence, not a source-level induction proof. It does not prove edge feasibility, termination, initialization semantics, bounds, alias safety, dependence, or SIMD legality.",
+      "selected_body": "while_body_30",
+      "source_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "workload": "point-cloud"
+    },
+    {
+      "abstract_backedge_states": [
+        {
+          "other_store": false,
+          "tail": "while_body_63",
+          "updates_saturated": 1
+        }
+      ],
+      "abstract_exit_states": [],
+      "abstract_return_states": [],
+      "abstract_states_visited": 1,
+      "all_reachable_abstract_backedge_states_one_update": true,
+      "candidate_memory": 16,
+      "condition_recognizer": "CONDITION_RECOGNIZED",
+      "function": "point_cloud_summary",
+      "function_wide_store_count": 4,
+      "in_loop_store_count": 1,
+      "loop_header": "while_condition_62",
+      "natural_loop_blocks": 6,
+      "opaque_terminators": [],
+      "preheader_store_count": 1,
+      "probe_status": "ONE_UPDATE_ON_ALL_REACHABLE_ABSTRACT_BACKEDGE_STATES",
+      "recurrence_store_sites_in_loop": [
+        {
+          "block": "while_body_63",
+          "instruction_index": 62,
+          "step": 1
+        }
+      ],
+      "scope_note": "Conservative abstract reachability over all IR branch targets; update counts saturate at 2. The result is CFG-shape evidence, not a source-level induction proof. It does not prove edge feasibility, termination, initialization semantics, bounds, alias safety, dependence, or SIMD legality.",
+      "selected_body": "while_body_63",
+      "source_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "workload": "point-cloud"
+    },
+    {
+      "abstract_backedge_states": [
+        {
+          "other_store": false,
+          "tail": "while_exit_72",
+          "updates_saturated": 1
+        }
+      ],
+      "abstract_exit_states": [],
+      "abstract_return_states": [],
+      "abstract_states_visited": 52,
+      "all_reachable_abstract_backedge_states_one_update": true,
+      "candidate_memory": 14,
+      "condition_recognizer": "CONDITION_RECOGNIZED",
+      "function": "raster_window_statistics",
+      "function_wide_store_count": 2,
+      "in_loop_store_count": 1,
+      "loop_header": "while_condition_59",
+      "natural_loop_blocks": 57,
+      "opaque_terminators": [],
+      "preheader_store_count": 1,
+      "probe_status": "ONE_UPDATE_ON_ALL_REACHABLE_ABSTRACT_BACKEDGE_STATES",
+      "recurrence_store_sites_in_loop": [
+        {
+          "block": "while_exit_72",
+          "instruction_index": 5,
+          "step": 1
+        }
+      ],
+      "scope_note": "Conservative abstract reachability over all IR branch targets; update counts saturate at 2. The result is CFG-shape evidence, not a source-level induction proof. It does not prove edge feasibility, termination, initialization semantics, bounds, alias safety, dependence, or SIMD legality.",
+      "selected_body": "while_body_60",
+      "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "workload": "raster"
+    },
+    {
+      "abstract_backedge_states": [
+        {
+          "other_store": false,
+          "tail": "switch_continue_120",
+          "updates_saturated": 1
+        }
+      ],
+      "abstract_exit_states": [],
+      "abstract_return_states": [],
+      "abstract_states_visited": 43,
+      "all_reachable_abstract_backedge_states_one_update": true,
+      "candidate_memory": 23,
+      "condition_recognizer": "CONDITION_RECOGNIZED",
+      "function": "raster_window_statistics",
+      "function_wide_store_count": 2,
+      "in_loop_store_count": 1,
+      "loop_header": "while_condition_68",
+      "natural_loop_blocks": 48,
+      "opaque_terminators": [],
+      "preheader_store_count": 1,
+      "probe_status": "ONE_UPDATE_ON_ALL_REACHABLE_ABSTRACT_BACKEDGE_STATES",
+      "recurrence_store_sites_in_loop": [
+        {
+          "block": "switch_continue_120",
+          "instruction_index": 5,
+          "step": 1
+        }
+      ],
+      "scope_note": "Conservative abstract reachability over all IR branch targets; update counts saturate at 2. The result is CFG-shape evidence, not a source-level induction proof. It does not prove edge feasibility, termination, initialization semantics, bounds, alias safety, dependence, or SIMD legality.",
+      "selected_body": "while_body_69",
+      "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "workload": "raster"
+    }
+  ],
+  "optimization": "O1",
+  "python": "3.14.4",
+  "schema": "s3-1.11-loop-recurrence-probe-v1",
+  "source_revision": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+  "source_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+  "summary": {
+    "loops": 5,
+    "loops_with_one_update_on_all_reachable_abstract_backedge_states": 5,
+    "vectorization_authorized": false
+  }
+}

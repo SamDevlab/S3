@@ -1,0 +1,193 @@
+{
+  "artifacts": {
+    "baseline": {
+      "bytes": 160584,
+      "file_name": "energy.pv-timeseries-aggregation.v1.baseline.so",
+      "sha256": "6b4b944c54cc5ee6bf05b40f2c44e870626f8856fdb8169884a9634f44c0b2e8"
+    },
+    "candidate": {
+      "bytes": 160584,
+      "file_name": "energy.pv-timeseries-aggregation.v1.hot-fallthrough.so",
+      "sha256": "46c04d2fe7029429c7ced601fd98b6bca7d4eb85a53e627c8bd84b7858fe8a7f"
+    }
+  },
+  "candidate_experiment_id": "EXP-S3-111-HOT-FALLTHROUGH-001",
+  "classification": "CHARACTERIZATION_ONLY_NO_PROMOTION",
+  "correctness": {
+    "baseline_output_sha256": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+    "baseline_reference": "PASS",
+    "candidate_output_sha256": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+    "candidate_reference": "PASS",
+    "outputs_exactly_equal": true
+  },
+  "experiment_id": "EXP-S3-111-HOT-FALLTHROUGH-TIMING-001",
+  "interpretation": "One hot unconditional jump was removed structurally. This single workload characterization does not establish a general runtime benefit or causality.",
+  "protocol": {
+    "iterations_per_sample": 1000,
+    "native_speedup_claim": false,
+    "paired_order": [
+      [
+        "baseline",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "baseline"
+      ],
+      [
+        "baseline",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "baseline"
+      ],
+      [
+        "baseline",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "baseline"
+      ],
+      [
+        "baseline",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "baseline"
+      ],
+      [
+        "baseline",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "baseline"
+      ],
+      [
+        "baseline",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "baseline"
+      ],
+      [
+        "baseline",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "baseline"
+      ],
+      [
+        "baseline",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "baseline"
+      ],
+      [
+        "baseline",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "baseline"
+      ],
+      [
+        "baseline",
+        "candidate"
+      ],
+      [
+        "candidate",
+        "baseline"
+      ],
+      [
+        "baseline",
+        "candidate"
+      ]
+    ],
+    "paired_samples": 21,
+    "timing_class": "CHARACTERIZATION_ONLY",
+    "warmups_per_artifact": 3
+  },
+  "provenance": {
+    "candidate_experiment_sha256": "f1f03405e1ebdb5e79c69f57e736a518cfa15d639c6fc9dd27182b088c3e748a",
+    "hardware_counters": "NOT_USED",
+    "measurement": "S3 benchmark _measure; same workload/reference; paired order alternates",
+    "pmu": "NOT_PROBED_BY_THIS_EXPERIMENT",
+    "s3_commit": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+    "s3_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+    "target": "Linux x86-64",
+    "timing_tool_sha256": "5de4a060ea719a52be6c733e052f208d0d55d7c39a89b28c4f3bc5db9892cb5b",
+    "tracked_compiler_source_clean": true
+  },
+  "schema_version": "1.0.0",
+  "status": "PASS",
+  "timing": {
+    "baseline_median_ns_per_call": 21587.188,
+    "baseline_ns_per_call": [
+      29228.31,
+      27736.984,
+      27185.52,
+      27964.253,
+      33427.896,
+      26742.652,
+      25933.263,
+      18330.121,
+      27449.597,
+      26214.977,
+      26493.794,
+      21587.188,
+      20078.493,
+      18231.472,
+      19278.317,
+      20116.139,
+      17768.11,
+      17619.128,
+      17474.427,
+      17885.575,
+      17565.799
+    ],
+    "candidate_median_ns_per_call": 22750.156,
+    "candidate_ns_per_call": [
+      28157.258,
+      30521.915,
+      31075.299,
+      28992.941,
+      33997.43,
+      32465.57,
+      26660.495,
+      17577.019,
+      23217.591,
+      22750.156,
+      24813.784,
+      25130.091,
+      19825.986,
+      19253.201,
+      18015.354,
+      18456.1,
+      17039.985,
+      17736.657,
+      17030.134,
+      16951.506,
+      17004.705
+    ],
+    "paired_baseline_over_candidate": {
+      "baseline_over_candidate_median_ratio": 1.0260886379402536,
+      "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+      "material_change_threshold": 0.05,
+      "paired_bootstrap_95_percentile_interval": [
+        0.972722486960576,
+        1.042845831821653
+      ],
+      "resamples": 10000,
+      "seed": 111101
+    }
+  },
+  "workload_id": "energy.pv-timeseries-aggregation.v1"
+}

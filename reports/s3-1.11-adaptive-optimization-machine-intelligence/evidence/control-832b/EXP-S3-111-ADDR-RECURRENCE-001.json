@@ -1,0 +1,514 @@
+{
+  "candidate_diff": "--- baseline.s3\n+++ candidate.s3\n@@ -31,8 +31,8 @@\n                             mut total_y: f64 = 0.0\n                             mut total_z: f64 = 0.0\n                             mut point: i64 = 0\n+                            mut base: tryte = 0\n                             while point < bounded_point_count:\n-                                mut base: tryte = to_tryte(point * 3)\n                                 mut x: f64 = coordinates[base]\n                                 mut y: f64 = coordinates[base + 1]\n                                 mut z: f64 = coordinates[base + 2]\n@@ -82,19 +82,21 @@\n                                     1:\n                                         maximum_z = maximum_z\n                                 point = point + 1\n+                                base = base + 3\n                             mut count_as_f64: f64 = to_f64(bounded_point_count)\n                             mut center_x: f64 = total_x / count_as_f64\n                             mut center_y: f64 = total_y / count_as_f64\n                             mut center_z: f64 = total_z / count_as_f64\n                             mut squared_radius_sum: f64 = 0.0\n                             point = 0\n+                            base = 0\n                             while point < bounded_point_count:\n-                                mut base: tryte = to_tryte(point * 3)\n                                 mut dx: f64 = coordinates[base] - center_x\n                                 mut dy: f64 = coordinates[base + 1] - center_y\n                                 mut dz: f64 = coordinates[base + 2] - center_z\n                                 squared_radius_sum = squared_radius_sum + dx * dx + dy * dy + dz * dz\n                                 point = point + 1\n+                                base = base + 3\n                             output[0] = center_x\n                             output[1] = center_y\n                             output[2] = center_z\n",
+  "codegen": {
+    "baseline": {
+      "allocation": {
+        "address_taken_virtual_register_count": 0,
+        "assembly_move_count": 0,
+        "budget_register_allocator_capacity_probe": {
+          "comparison": "r15_reserved_for_per_instruction_budget_vs_allocator_may_use_r15",
+          "counterfactual_is_executable": false,
+          "counterfactual_stack_resident_virtual_register_count": 0,
+          "counterfactual_virtual_registers_assigned_r15": [],
+          "interpretation": "allocator-capacity sensitivity only; no emitted-code or runtime comparison",
+          "reserved_stack_resident_virtual_register_count": 0,
+          "stack_resident_delta_counterfactual_minus_reserved": 0
+        },
+        "call_count": 1,
+        "dynamic_spills": null,
+        "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+        "moves_assigned_same_physical_register": 0,
+        "peak_live_virtual_registers": 7,
+        "peak_values_live_across_call": 3,
+        "physical_register_count": 368,
+        "stack_resident_virtual_register_count": 0,
+        "stack_resident_virtual_registers": [],
+        "used_physical_registers": [
+          "rbx",
+          "r12",
+          "r13",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r15"
+        ],
+        "virtual_register_count": 368
+      },
+      "assembly_instruction_count": 517,
+      "assembly_opcode_counts": {
+        "TADD": 12,
+        "TBR3": 18,
+        "TCALL": 1,
+        "TCMP": 6,
+        "TCONST": 220,
+        "TCVT": 3,
+        "TDIV": 4,
+        "TJMP": 47,
+        "TLOAD": 91,
+        "TMUL": 6,
+        "TNDIFF": 3,
+        "TREL": 6,
+        "TRET": 7,
+        "TSLEN": 2,
+        "TSLOAD": 9,
+        "TSSTORE": 10,
+        "TSTORE": 72
+      },
+      "assembly_sha256": "a5161190f38d1d3ef05c224d05c8d4fee56d84e0890be7e280c36c5ab7b216c0",
+      "binary": {
+        "elf_file_bytes": 258832,
+        "exported_function_bytes": 26063,
+        "stack_frame_bytes": 3648,
+        "static_branches": 1367,
+        "static_calls": 1,
+        "static_instruction_budget_counter_references": 8,
+        "static_machine_instructions": 4732,
+        "static_memory_references": 1601,
+        "static_stack_references": 1536,
+        "text_section_bytes": 58112
+      },
+      "frame_bytes": 3648
+    },
+    "candidate": {
+      "allocation": {
+        "address_taken_virtual_register_count": 0,
+        "assembly_move_count": 0,
+        "budget_register_allocator_capacity_probe": {
+          "comparison": "r15_reserved_for_per_instruction_budget_vs_allocator_may_use_r15",
+          "counterfactual_is_executable": false,
+          "counterfactual_stack_resident_virtual_register_count": 0,
+          "counterfactual_virtual_registers_assigned_r15": [],
+          "interpretation": "allocator-capacity sensitivity only; no emitted-code or runtime comparison",
+          "reserved_stack_resident_virtual_register_count": 0,
+          "stack_resident_delta_counterfactual_minus_reserved": 0
+        },
+        "call_count": 1,
+        "dynamic_spills": null,
+        "dynamic_spills_status": "NOT_MEASURED_STATIC_STACK_RESIDENCE_IS_NOT_A_SPILL_COUNTER",
+        "moves_assigned_same_physical_register": 0,
+        "peak_live_virtual_registers": 7,
+        "peak_values_live_across_call": 3,
+        "physical_register_count": 370,
+        "stack_resident_virtual_register_count": 0,
+        "stack_resident_virtual_registers": [],
+        "used_physical_registers": [
+          "rbx",
+          "r12",
+          "r13",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r15"
+        ],
+        "virtual_register_count": 370
+      },
+      "assembly_instruction_count": 521,
+      "assembly_opcode_counts": {
+        "TADD": 14,
+        "TBR3": 18,
+        "TCALL": 1,
+        "TCMP": 6,
+        "TCONST": 224,
+        "TCVT": 1,
+        "TDIV": 4,
+        "TJMP": 47,
+        "TLOAD": 91,
+        "TMUL": 4,
+        "TNDIFF": 3,
+        "TREL": 6,
+        "TRET": 7,
+        "TSLEN": 2,
+        "TSLOAD": 9,
+        "TSSTORE": 10,
+        "TSTORE": 74
+      },
+      "assembly_sha256": "a12ef2b4a44f8241d35c5a671f94b48c266022c88057e3cee823fc8d07a9ddc1",
+      "binary": {
+        "elf_file_bytes": 262928,
+        "exported_function_bytes": 26271,
+        "stack_frame_bytes": 3664,
+        "static_branches": 1379,
+        "static_calls": 1,
+        "static_instruction_budget_counter_references": 8,
+        "static_machine_instructions": 4764,
+        "static_memory_references": 1609,
+        "static_stack_references": 1545,
+        "text_section_bytes": 58520
+      },
+      "frame_bytes": 3664
+    },
+    "native_metric_delta": {
+      "stack_frame_bytes": 16,
+      "static_branches": 12,
+      "static_machine_instructions": 32,
+      "static_memory_references": 8,
+      "static_stack_references": 9,
+      "text_section_bytes": 408
+    }
+  },
+  "correctness": {
+    "baseline_candidate_output_hash_equal": true,
+    "boundary_cases": {
+      "baseline": {
+        "0": {
+          "output": [
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5
+          ],
+          "status": 1
+        },
+        "1": {
+          "output": [
+            -0.75,
+            -0.625,
+            -0.5,
+            -0.75,
+            -0.625,
+            -0.5,
+            -0.75,
+            -0.625,
+            -0.5,
+            0.0
+          ],
+          "status": 0
+        },
+        "121": {
+          "output": [
+            -0.006198347107438017,
+            -0.002066115702479339,
+            0.002066115702479339,
+            -0.75,
+            -0.75,
+            -0.75,
+            0.75,
+            0.75,
+            0.75,
+            0.8083081922967467
+          ],
+          "status": 0
+        },
+        "122": {
+          "output": [
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5
+          ],
+          "status": 1
+        },
+        "64": {
+          "output": [
+            -0.0078125,
+            -0.009765625,
+            -0.01171875,
+            -0.75,
+            -0.75,
+            -0.75,
+            0.75,
+            0.75,
+            0.75,
+            0.8046187584412551
+          ],
+          "status": 0
+        },
+        "length_mismatch": {
+          "output": [
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5
+          ],
+          "status": 2
+        }
+      },
+      "candidate": {
+        "0": {
+          "output": [
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5
+          ],
+          "status": 1
+        },
+        "1": {
+          "output": [
+            -0.75,
+            -0.625,
+            -0.5,
+            -0.75,
+            -0.625,
+            -0.5,
+            -0.75,
+            -0.625,
+            -0.5,
+            0.0
+          ],
+          "status": 0
+        },
+        "121": {
+          "output": [
+            -0.006198347107438017,
+            -0.002066115702479339,
+            0.002066115702479339,
+            -0.75,
+            -0.75,
+            -0.75,
+            0.75,
+            0.75,
+            0.75,
+            0.8083081922967467
+          ],
+          "status": 0
+        },
+        "122": {
+          "output": [
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5
+          ],
+          "status": 1
+        },
+        "64": {
+          "output": [
+            -0.0078125,
+            -0.009765625,
+            -0.01171875,
+            -0.75,
+            -0.75,
+            -0.75,
+            0.75,
+            0.75,
+            0.75,
+            0.8046187584412551
+          ],
+          "status": 0
+        },
+        "length_mismatch": {
+          "output": [
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5,
+            9876.5
+          ],
+          "status": 2
+        }
+      }
+    },
+    "boundary_outputs_equal": true,
+    "native_status_equal": true,
+    "reference_output": "PASS_BOTH"
+  },
+  "decision": "NO_PROMOTION",
+  "experiment_id": "EXP-S3-111-ADDR-RECURRENCE-001",
+  "hypothesis": "carry a proven tryte coordinate base by +3 across each point-cloud loop instead of recomputing point*3 and converting on each iteration",
+  "limitations": [
+    "The experiment covers only the exact pinned point-cloud workload source.",
+    "The proof relies on the previously validated count/length guards and unit induction bounds.",
+    "Structural and timing observations do not establish a general optimizer or vectorization authority."
+  ],
+  "proof_scope": {
+    "base_sequence": "base(point) == 3 * point for point=0..point_count-1",
+    "candidate_post_last_increment_max": 363,
+    "coordinate_length_relation": "len(coordinates) == 3 * point_count",
+    "point_count_domain": [
+      1,
+      121
+    ],
+    "production_pipeline_changed": false,
+    "runtime_bounds_checks_changed": false,
+    "source_workload_changed": false,
+    "tryte_domain": [
+      -364,
+      364
+    ]
+  },
+  "schema": "s3-1.11-address-strength-reduction-v1",
+  "source": {
+    "candidate_source_sha256": "76c9a83c0eaf04301e293046e40a9120cefab9a8515e02fc4110ac2b6d539add",
+    "git_commit": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+    "git_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+    "machine": "x86_64",
+    "python": "3.14.4",
+    "workload_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+    "workload_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+    "worktree_status": "?? reports/s3-1.11-adaptive-optimization-machine-intelligence/\n?? s3_111_loop_predicate_diagnostics.py\n?? s3_111_value_cost_experiments.py\n?? scratch/s3-111-address-recurrence/\n?? test_s3_111_loop_predicate_diagnostics.py\n?? test_s3_111_value_cost_experiments.py\n?? tests/test_s3_111_address_strength_reduction.py\n?? tests/test_s3_111_guarded_slice_bounds.py\n?? tests/test_s3_111_live_range_experiments.py\n?? tests/test_s3_111_loop_access_shapes.py\n?? tests/test_s3_111_loop_predicate_diagnostics.py\n?? tests/test_s3_111_loop_recurrence_probe.py\n?? tests/test_s3_111_move_coalesce_scan.py\n?? tests/test_s3_111_observatory_attribution.py\n?? tests/test_s3_111_same_color_copy_experiment.py\n?? tests/test_s3_111_value_cost_experiments.py\n?? tools/s3_111_address_strength_reduction.py\n?? tools/s3_111_guarded_slice_bounds.py\n?? tools/s3_111_live_range_experiments.py\n?? tools/s3_111_loop_access_shapes.py\n?? tools/s3_111_loop_predicate_diagnostics.py\n?? tools/s3_111_loop_recurrence_probe.py\n?? tools/s3_111_move_coalesce_scan.py\n?? tools/s3_111_observatory_attribution.py\n?? tools/s3_111_same_color_copy_experiment.py\n?? tools/s3_111_value_cost_experiments.py"
+  },
+  "completed_at_utc": "2026-09-28T01:44:51.051221+00:00",
+  "experiment_tool_sha256": "1f9bfed5f7b435cf3f0e086074e986c0460f1bc81a36acf1a86452c17d0a8493",
+  "raw_report_sha256": "45f1ae518ef13f84c2763f86cac9da03cf52dea7b125cf317c40a6fb7aa880c1",
+  "timing": {
+    "baseline": {
+      "coefficient_of_variation": 0.1538558034638196,
+      "maximum_ns_per_call": 21168.853,
+      "mean_ns_per_call": 16089.636142857144,
+      "median_ns_per_call": 15089.911,
+      "minimum_ns_per_call": 13533.697,
+      "p95_ns_per_call": 20298.21,
+      "sample_count": 21,
+      "stddev_ns_per_call": 2475.483896199797
+    },
+    "baseline_over_candidate": {
+      "baseline_over_candidate_median_ratio": 1.045736009871944,
+      "classification": "INCONCLUSIVE",
+      "material_change_threshold": 0.05,
+      "paired_bootstrap_95_percentile_interval": [
+        0.9800634142462317,
+        1.105263683031594
+      ],
+      "resamples": 10000,
+      "seed": 111007
+    },
+    "candidate": {
+      "coefficient_of_variation": 0.17249251421439105,
+      "maximum_ns_per_call": 20711.119,
+      "mean_ns_per_call": 15540.044380952382,
+      "median_ns_per_call": 14491.405,
+      "minimum_ns_per_call": 12942.537,
+      "p95_ns_per_call": 20561.809,
+      "sample_count": 21,
+      "stddev_ns_per_call": 2680.5413262736965
+    },
+    "claim_class": "CHARACTERIZATION_ONLY",
+    "pmu": "NOT_MEASURED",
+    "protocol": {
+      "clock": "time.perf_counter_ns",
+      "iterations_per_sample": 1000,
+      "material_threshold": 0.05,
+      "paired_order": [
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ],
+        [
+          "candidate",
+          "baseline"
+        ],
+        [
+          "baseline",
+          "candidate"
+        ]
+      ],
+      "same_process_native_c_abi": true,
+      "samples": 21,
+      "seed": 111007,
+      "setup_and_build_excluded": true,
+      "warmups": 3
+    }
+  }
+}

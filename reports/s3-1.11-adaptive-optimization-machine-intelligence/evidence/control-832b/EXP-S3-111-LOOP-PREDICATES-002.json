@@ -1,0 +1,328 @@
+{
+  "loops": [
+    {
+      "backedges": [
+        "switch_continue_52"
+      ],
+      "condition_recognizer": "CONDITION_RECOGNIZED",
+      "exits": [
+        "while_exit_0_34",
+        "while_exit_1_35"
+      ],
+      "first_induction_predicate_failure": "BACKEDGE_TAIL_DIFFERS_FROM_SELECTED_BODY",
+      "function": "energy_series_aggregation",
+      "induction_memory_census": {
+        "candidate_memory": 7,
+        "positive_constant_update_count_in_loop": 1,
+        "scope_note": "Census only; block membership does not prove path coverage, dominance, alias safety, or one update per iteration.",
+        "store_count_function_wide": 2,
+        "store_count_in_loop": 1,
+        "store_count_in_preheader": 1,
+        "store_sites": [
+          {
+            "block": "switch_neutral_30",
+            "in_preheader": true,
+            "inside_natural_loop": false,
+            "instruction_index": 2
+          },
+          {
+            "block": "switch_continue_52",
+            "in_preheader": false,
+            "inside_natural_loop": true,
+            "instruction_index": 5
+          }
+        ],
+        "update_sites": [
+          {
+            "block": "switch_continue_52",
+            "inside_natural_loop": true,
+            "instruction_index": 3,
+            "step": 1
+          }
+        ]
+      },
+      "induction_recognized_by_analyzer": false,
+      "interpretation": "Diagnostic of current static recognizer only; no legality, dependence, profitability, or SIMD claim.",
+      "loop_header": "while_condition_32",
+      "natural_loop_blocks": 18,
+      "preheaders": [
+        "switch_neutral_30"
+      ],
+      "selected_body": "while_body_33",
+      "source_path": "benchmarks/workloads/real_world/energy_series_aggregation.s3",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+      "vector_bounds_proofs_for_function": 0,
+      "workload": "energy"
+    },
+    {
+      "backedges": [
+        "switch_continue_61"
+      ],
+      "condition_recognizer": "CONDITION_RECOGNIZED",
+      "exits": [
+        "while_exit_0_31",
+        "while_exit_1_32"
+      ],
+      "first_induction_predicate_failure": "BACKEDGE_TAIL_DIFFERS_FROM_SELECTED_BODY",
+      "function": "point_cloud_summary",
+      "induction_memory_census": {
+        "candidate_memory": 16,
+        "positive_constant_update_count_in_loop": 1,
+        "scope_note": "Census only; block membership does not prove path coverage, dominance, alias safety, or one update per iteration.",
+        "store_count_function_wide": 4,
+        "store_count_in_loop": 1,
+        "store_count_in_preheader": 1,
+        "store_sites": [
+          {
+            "block": "switch_negative_26",
+            "in_preheader": true,
+            "inside_natural_loop": false,
+            "instruction_index": 35
+          },
+          {
+            "block": "while_exit_33",
+            "in_preheader": false,
+            "inside_natural_loop": false,
+            "instruction_index": 31
+          },
+          {
+            "block": "switch_continue_61",
+            "in_preheader": false,
+            "inside_natural_loop": true,
+            "instruction_index": 5
+          },
+          {
+            "block": "while_body_63",
+            "in_preheader": false,
+            "inside_natural_loop": false,
+            "instruction_index": 62
+          }
+        ],
+        "update_sites": [
+          {
+            "block": "switch_continue_61",
+            "inside_natural_loop": true,
+            "instruction_index": 3,
+            "step": 1
+          },
+          {
+            "block": "while_body_63",
+            "inside_natural_loop": false,
+            "instruction_index": 60,
+            "step": 1
+          }
+        ]
+      },
+      "induction_recognized_by_analyzer": false,
+      "interpretation": "Diagnostic of current static recognizer only; no legality, dependence, profitability, or SIMD claim.",
+      "loop_header": "while_condition_29",
+      "natural_loop_blocks": 30,
+      "preheaders": [
+        "switch_negative_26"
+      ],
+      "selected_body": "while_body_30",
+      "source_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "vector_bounds_proofs_for_function": 0,
+      "workload": "point-cloud"
+    },
+    {
+      "backedges": [
+        "while_body_63"
+      ],
+      "condition_recognizer": "CONDITION_RECOGNIZED",
+      "exits": [
+        "while_exit_0_64",
+        "while_exit_1_65"
+      ],
+      "first_induction_predicate_failure": "INDUCTION_STORE_COUNT_NOT_TWO",
+      "function": "point_cloud_summary",
+      "induction_memory_census": {
+        "candidate_memory": 16,
+        "positive_constant_update_count_in_loop": 1,
+        "scope_note": "Census only; block membership does not prove path coverage, dominance, alias safety, or one update per iteration.",
+        "store_count_function_wide": 4,
+        "store_count_in_loop": 1,
+        "store_count_in_preheader": 1,
+        "store_sites": [
+          {
+            "block": "switch_negative_26",
+            "in_preheader": false,
+            "inside_natural_loop": false,
+            "instruction_index": 35
+          },
+          {
+            "block": "while_exit_33",
+            "in_preheader": true,
+            "inside_natural_loop": false,
+            "instruction_index": 31
+          },
+          {
+            "block": "switch_continue_61",
+            "in_preheader": false,
+            "inside_natural_loop": false,
+            "instruction_index": 5
+          },
+          {
+            "block": "while_body_63",
+            "in_preheader": false,
+            "inside_natural_loop": true,
+            "instruction_index": 62
+          }
+        ],
+        "update_sites": [
+          {
+            "block": "switch_continue_61",
+            "inside_natural_loop": false,
+            "instruction_index": 3,
+            "step": 1
+          },
+          {
+            "block": "while_body_63",
+            "inside_natural_loop": true,
+            "instruction_index": 60,
+            "step": 1
+          }
+        ]
+      },
+      "induction_recognized_by_analyzer": false,
+      "interpretation": "Diagnostic of current static recognizer only; no legality, dependence, profitability, or SIMD claim.",
+      "loop_header": "while_condition_62",
+      "natural_loop_blocks": 6,
+      "preheaders": [
+        "while_exit_33"
+      ],
+      "selected_body": "while_body_63",
+      "source_path": "benchmarks/workloads/real_world/point_cloud_summary.s3",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9",
+      "vector_bounds_proofs_for_function": 0,
+      "workload": "point-cloud"
+    },
+    {
+      "backedges": [
+        "while_exit_72"
+      ],
+      "condition_recognizer": "CONDITION_RECOGNIZED",
+      "exits": [
+        "while_exit_0_61",
+        "while_exit_1_62"
+      ],
+      "first_induction_predicate_failure": "BACKEDGE_TAIL_DIFFERS_FROM_SELECTED_BODY",
+      "function": "raster_window_statistics",
+      "induction_memory_census": {
+        "candidate_memory": 14,
+        "positive_constant_update_count_in_loop": 1,
+        "scope_note": "Census only; block membership does not prove path coverage, dominance, alias safety, or one update per iteration.",
+        "store_count_function_wide": 2,
+        "store_count_in_loop": 1,
+        "store_count_in_preheader": 1,
+        "store_sites": [
+          {
+            "block": "switch_negative_56",
+            "in_preheader": true,
+            "inside_natural_loop": false,
+            "instruction_index": 5
+          },
+          {
+            "block": "while_exit_72",
+            "in_preheader": false,
+            "inside_natural_loop": true,
+            "instruction_index": 5
+          }
+        ],
+        "update_sites": [
+          {
+            "block": "while_exit_72",
+            "inside_natural_loop": true,
+            "instruction_index": 3,
+            "step": 1
+          }
+        ]
+      },
+      "induction_recognized_by_analyzer": false,
+      "interpretation": "Diagnostic of current static recognizer only; no legality, dependence, profitability, or SIMD claim.",
+      "loop_header": "while_condition_59",
+      "natural_loop_blocks": 57,
+      "preheaders": [
+        "switch_negative_56"
+      ],
+      "selected_body": "while_body_60",
+      "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "vector_bounds_proofs_for_function": 0,
+      "workload": "raster"
+    },
+    {
+      "backedges": [
+        "switch_continue_120"
+      ],
+      "condition_recognizer": "CONDITION_RECOGNIZED",
+      "exits": [
+        "while_exit_0_70",
+        "while_exit_1_71"
+      ],
+      "first_induction_predicate_failure": "BACKEDGE_TAIL_DIFFERS_FROM_SELECTED_BODY",
+      "function": "raster_window_statistics",
+      "induction_memory_census": {
+        "candidate_memory": 23,
+        "positive_constant_update_count_in_loop": 2,
+        "scope_note": "Census only; block membership does not prove path coverage, dominance, alias safety, or one update per iteration.",
+        "store_count_function_wide": 2,
+        "store_count_in_loop": 1,
+        "store_count_in_preheader": 1,
+        "store_sites": [
+          {
+            "block": "while_body_60",
+            "in_preheader": true,
+            "inside_natural_loop": false,
+            "instruction_index": 2
+          },
+          {
+            "block": "switch_continue_120",
+            "in_preheader": false,
+            "inside_natural_loop": true,
+            "instruction_index": 5
+          }
+        ],
+        "update_sites": [
+          {
+            "block": "switch_continue_103",
+            "inside_natural_loop": true,
+            "instruction_index": 3,
+            "step": 1
+          },
+          {
+            "block": "switch_continue_120",
+            "inside_natural_loop": true,
+            "instruction_index": 3,
+            "step": 1
+          }
+        ]
+      },
+      "induction_recognized_by_analyzer": false,
+      "interpretation": "Diagnostic of current static recognizer only; no legality, dependence, profitability, or SIMD claim.",
+      "loop_header": "while_condition_68",
+      "natural_loop_blocks": 48,
+      "preheaders": [
+        "while_body_60"
+      ],
+      "selected_body": "while_body_69",
+      "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+      "vector_bounds_proofs_for_function": 0,
+      "workload": "raster"
+    }
+  ],
+  "optimization": "O1",
+  "python": "3.14.4",
+  "schema": "s3-1.11-loop-predicate-diagnostics-v1",
+  "source_revision": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+  "source_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+  "summary": {
+    "condition_recognized": 5,
+    "induction_predicates_passed": 0,
+    "loops": 5,
+    "simd_authorized": false,
+    "unknown_vector_legality_retained": 5
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "artifacts": {
+    "baseline": {
+      "bytes": 160584,
+      "file_name": "energy.pv-timeseries-aggregation.v1.baseline.so",
+      "sha256": "6b4b944c54cc5ee6bf05b40f2c44e870626f8856fdb8169884a9634f44c0b2e8"
+    },
+    "baseline_assembly_sha256": "08cbb0d4f17c898b22da46901320f57c0392c35a499473f739431b9fb0082130",
+    "candidate": {
+      "bytes": 160584,
+      "file_name": "energy.pv-timeseries-aggregation.v1.hot-fallthrough.so",
+      "sha256": "46c04d2fe7029429c7ced601fd98b6bca7d4eb85a53e627c8bd84b7858fe8a7f"
+    },
+    "candidate_assembly_sha256": "3109bb740cc11d454a88484de84fe9d4fffe53a55b7bf150565b30c72695433f"
+  },
+  "candidate": {
+    "block_executions": 168,
+    "edge_count_basis": "source block is a single-successor TJMP; its recorded entry count equals this edge count",
+    "edge_executions": 168,
+    "eligibility": "PROFILED_TJMP_TO_DOMINATING_LOOP_HEADER",
+    "function": "energy_series_aggregation",
+    "source_block": "switch_continue_52",
+    "source_block_index": 53,
+    "target_block": "while_condition_32",
+    "target_block_index": 33,
+    "workload_id": "energy.pv-timeseries-aggregation.v1"
+  },
+  "classification": "PROFILE_SELECTED_SINGLE_BACKEDGE_LAYOUT_PROTOTYPE",
+  "control": {
+    "analysis_tool_sha256": "0b769e1bb75464a2b97e9814d71cf8244b426955ff95b0b813dd209545eb77b1",
+    "compiler_source_dirty": false,
+    "edge_analysis_sha256": "3a44cbf38eadc5f91c422f0cf735a79b9aeb0e3caa2308c82ada8fbb6860dff3",
+    "instruction_budget_mode": "per-instruction",
+    "logical_profile_sha256": "cb41a728b1af004835dda6df008db0eed6956165fb2f031a969776a0dd288434",
+    "optimization": "O1",
+    "pmu_used": false,
+    "register_allocation": true,
+    "s3_commit": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+    "s3_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+    "target": "Linux x86-64",
+    "timing_performed": false,
+    "transform_scope": "reorder emitted native basic-block text and remove one proven adjacent unconditional jump; no Assembly IR, compiler source, allocator, or semantics change"
+  },
+  "experiment_id": "EXP-S3-111-HOT-FALLTHROUGH-001",
+  "native_speedup_claim": false,
+  "native_structure": {
+    "baseline": {
+      "elf_file_bytes": 160584,
+      "exported_function_bytes": 15179,
+      "stack_frame_bytes": 2144,
+      "static_branches": 789,
+      "static_calls": 1,
+      "static_instruction_budget_counter_references": 12,
+      "static_machine_instructions": 2754,
+      "static_memory_references": 953,
+      "static_stack_references": 907,
+      "text_section_bytes": 36304
+    },
+    "candidate": {
+      "elf_file_bytes": 160584,
+      "exported_function_bytes": 15177,
+      "stack_frame_bytes": 2144,
+      "static_branches": 788,
+      "static_calls": 1,
+      "static_instruction_budget_counter_references": 12,
+      "static_machine_instructions": 2753,
+      "static_memory_references": 953,
+      "static_stack_references": 907,
+      "text_section_bytes": 36302
+    },
+    "candidate_minus_baseline": {
+      "elf_file_bytes": 0,
+      "exported_function_bytes": -2,
+      "stack_frame_bytes": 0,
+      "static_branches": -1,
+      "static_calls": 0,
+      "static_instruction_budget_counter_references": 0,
+      "static_machine_instructions": -1,
+      "static_memory_references": 0,
+      "static_stack_references": 0,
+      "text_section_bytes": -2
+    }
+  },
+  "schema_version": "1.0.0",
+  "status": "PASS_NATIVE_CORRECTNESS",
+  "timing_class": "NOT_MEASURED",
+  "workload": {
+    "baseline_candidate_values_equal": true,
+    "baseline_output_sha256": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+    "candidate_output_sha256": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+    "native_status": 0,
+    "reference_correctness": "PASS_BASELINE_AND_CANDIDATE",
+    "source_bytes_canonical_lf": 3648,
+    "source_path": "benchmarks/workloads/real_world/energy_series_aggregation.s3",
+    "source_sha256_canonical_lf": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84",
+    "workload_id": "energy.pv-timeseries-aggregation.v1"
+  }
+}

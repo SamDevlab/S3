@@ -1,0 +1,2096 @@
+{
+  "campaign": "S3_1_5_REAL_WORLD_COMPUTE_QUALIFICATION_AND_NATIVE_GAP_CLOSURE",
+  "candidate_artifacts": {
+    "C_O1": {
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "flags": [
+        "-O1",
+        "-fno-fast-math",
+        "-ffp-contract=off",
+        "-fno-tree-vectorize",
+        "-fPIC",
+        "-shared"
+      ],
+      "optimization": "-O1",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/libreal_world_reference.so",
+      "source_sha256": "9a45f455a7184608a69fe4eaed3c9b0c3ade50fe57d79c8289281f929cb2854b"
+    },
+    "S3_O0_BASELINE": {
+      "assembly_instruction_count": 308,
+      "assembly_path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/energy.pv-timeseries-aggregation.v1-o0.s",
+      "assembly_sha256": "08cbb0d4f17c898b22da46901320f57c0392c35a499473f739431b9fb0082130",
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "instruction_budget_mode": "per-instruction",
+      "native_policy": "baseline",
+      "native_policy_summary": {
+        "compact_ea_sites_applied": 0,
+        "compact_ea_sites_considered": 0,
+        "effective_policy": "baseline",
+        "fallback_reason_counts": {},
+        "function_decisions": {
+          "absolute_f64": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "energy_series_aggregation": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "main": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          }
+        },
+        "functions_considered": 3,
+        "functions_fallback": 0,
+        "functions_optimized": 0,
+        "requested_policy": "baseline"
+      },
+      "optimization": "O0",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/energy.pv-timeseries-aggregation.v1-o0.so",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84"
+    },
+    "S3_O1_BASELINE": {
+      "assembly_instruction_count": 308,
+      "assembly_path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/energy.pv-timeseries-aggregation.v1-o1.s",
+      "assembly_sha256": "08cbb0d4f17c898b22da46901320f57c0392c35a499473f739431b9fb0082130",
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "instruction_budget_mode": "per-instruction",
+      "native_policy": "baseline",
+      "native_policy_summary": {
+        "compact_ea_sites_applied": 0,
+        "compact_ea_sites_considered": 0,
+        "effective_policy": "baseline",
+        "fallback_reason_counts": {},
+        "function_decisions": {
+          "absolute_f64": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "energy_series_aggregation": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "main": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          }
+        },
+        "functions_considered": 3,
+        "functions_fallback": 0,
+        "functions_optimized": 0,
+        "requested_policy": "baseline"
+      },
+      "optimization": "O1",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/energy.pv-timeseries-aggregation.v1-o1.so",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84"
+    },
+    "S3_O1_COMPACT_EA_energy.pv-timeseries-aggregation.v1": {
+      "assembly_instruction_count": 308,
+      "assembly_path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/energy.pv-timeseries-aggregation.v1-o1-compact-ea.s",
+      "assembly_sha256": "08cbb0d4f17c898b22da46901320f57c0392c35a499473f739431b9fb0082130",
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "instruction_budget_mode": "per-instruction",
+      "native_policy": "compact-ea",
+      "native_policy_summary": {
+        "compact_ea_sites_applied": 0,
+        "compact_ea_sites_considered": 89,
+        "effective_policy": "baseline",
+        "fallback_reason_counts": {
+          "no_indexed_memory_operations": 2,
+          "reference_operations_present": 1
+        },
+        "function_decisions": {
+          "absolute_f64": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "compact_ea_fallback:no_indexed_memory_operations",
+            "requested_policy": "compact-ea",
+            "sites_considered": 0
+          },
+          "energy_series_aggregation": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "compact_ea_fallback:reference_operations_present",
+            "requested_policy": "compact-ea",
+            "sites_considered": 89
+          },
+          "main": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "compact_ea_fallback:no_indexed_memory_operations",
+            "requested_policy": "compact-ea",
+            "sites_considered": 0
+          }
+        },
+        "functions_considered": 3,
+        "functions_fallback": 3,
+        "functions_optimized": 0,
+        "requested_policy": "compact-ea"
+      },
+      "optimization": "O1",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/energy.pv-timeseries-aggregation.v1-o1-compact-ea.so",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84"
+    },
+    "S3_O1_COMPACT_EA_engineering.point-cloud-summary.v1": {
+      "assembly_instruction_count": 517,
+      "assembly_path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/engineering.point-cloud-summary.v1-o1-compact-ea.s",
+      "assembly_sha256": "a5161190f38d1d3ef05c224d05c8d4fee56d84e0890be7e280c36c5ab7b216c0",
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "instruction_budget_mode": "per-instruction",
+      "native_policy": "compact-ea",
+      "native_policy_summary": {
+        "compact_ea_sites_applied": 0,
+        "compact_ea_sites_considered": 163,
+        "effective_policy": "baseline",
+        "fallback_reason_counts": {
+          "index_initialization_not_proven": 1,
+          "no_indexed_memory_operations": 1
+        },
+        "function_decisions": {
+          "main": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "compact_ea_fallback:no_indexed_memory_operations",
+            "requested_policy": "compact-ea",
+            "sites_considered": 0
+          },
+          "point_cloud_summary": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "compact_ea_fallback:index_initialization_not_proven",
+            "requested_policy": "compact-ea",
+            "sites_considered": 163
+          }
+        },
+        "functions_considered": 2,
+        "functions_fallback": 2,
+        "functions_optimized": 0,
+        "requested_policy": "compact-ea"
+      },
+      "optimization": "O1",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/engineering.point-cloud-summary.v1-o1-compact-ea.so",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9"
+    },
+    "S3_O1_COMPACT_EA_geospatial.raster-window-statistics.v1": {
+      "assembly_instruction_count": 665,
+      "assembly_path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/geospatial.raster-window-statistics.v1-o1-compact-ea.s",
+      "assembly_sha256": "73ae26b6c3e4a6d03a7951834f4a2e1b291a737bb73a89d9ccb650c15f2ce9ed",
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "instruction_budget_mode": "per-instruction",
+      "native_policy": "compact-ea",
+      "native_policy_summary": {
+        "compact_ea_sites_applied": 0,
+        "compact_ea_sites_considered": 187,
+        "effective_policy": "baseline",
+        "fallback_reason_counts": {
+          "index_initialization_not_proven": 1,
+          "no_indexed_memory_operations": 2
+        },
+        "function_decisions": {
+          "absolute_f64": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "compact_ea_fallback:no_indexed_memory_operations",
+            "requested_policy": "compact-ea",
+            "sites_considered": 0
+          },
+          "main": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "compact_ea_fallback:no_indexed_memory_operations",
+            "requested_policy": "compact-ea",
+            "sites_considered": 0
+          },
+          "raster_window_statistics": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "compact_ea_fallback:index_initialization_not_proven",
+            "requested_policy": "compact-ea",
+            "sites_considered": 187
+          }
+        },
+        "functions_considered": 3,
+        "functions_fallback": 3,
+        "functions_optimized": 0,
+        "requested_policy": "compact-ea"
+      },
+      "optimization": "O1",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/geospatial.raster-window-statistics.v1-o1-compact-ea.so",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e"
+    },
+    "S3_O1_EXACT_SEGMENT_energy.pv-timeseries-aggregation.v1": {
+      "assembly_instruction_count": 308,
+      "assembly_path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/energy.pv-timeseries-aggregation.v1-o1-exact-segment.s",
+      "assembly_sha256": "65de5e77d4d9c8a59fcda58ed8280cee73f10f583d6572b160668a3008fd14b8",
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "instruction_budget_mode": "exact-segment",
+      "native_policy": "baseline",
+      "native_policy_summary": {
+        "compact_ea_sites_applied": 0,
+        "compact_ea_sites_considered": 0,
+        "effective_policy": "baseline",
+        "fallback_reason_counts": {},
+        "function_decisions": {
+          "absolute_f64": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "energy_series_aggregation": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "main": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          }
+        },
+        "functions_considered": 3,
+        "functions_fallback": 0,
+        "functions_optimized": 0,
+        "requested_policy": "baseline"
+      },
+      "optimization": "O1",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/energy.pv-timeseries-aggregation.v1-o1-exact-segment.so",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84"
+    },
+    "S3_O1_EXACT_SEGMENT_engineering.point-cloud-summary.v1": {
+      "assembly_instruction_count": 517,
+      "assembly_path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/engineering.point-cloud-summary.v1-o1-exact-segment.s",
+      "assembly_sha256": "1935641801dd24827acf7f84623a926e2c0413504827878b8ddc6afc52fd18ed",
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "instruction_budget_mode": "exact-segment",
+      "native_policy": "baseline",
+      "native_policy_summary": {
+        "compact_ea_sites_applied": 0,
+        "compact_ea_sites_considered": 0,
+        "effective_policy": "baseline",
+        "fallback_reason_counts": {},
+        "function_decisions": {
+          "main": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "point_cloud_summary": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          }
+        },
+        "functions_considered": 2,
+        "functions_fallback": 0,
+        "functions_optimized": 0,
+        "requested_policy": "baseline"
+      },
+      "optimization": "O1",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/engineering.point-cloud-summary.v1-o1-exact-segment.so",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9"
+    },
+    "S3_O1_EXACT_SEGMENT_geospatial.raster-window-statistics.v1": {
+      "assembly_instruction_count": 665,
+      "assembly_path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/geospatial.raster-window-statistics.v1-o1-exact-segment.s",
+      "assembly_sha256": "99d2de7c081833137771df3e13130befcdf98f93909c42933f01eec4b690884c",
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "instruction_budget_mode": "exact-segment",
+      "native_policy": "baseline",
+      "native_policy_summary": {
+        "compact_ea_sites_applied": 0,
+        "compact_ea_sites_considered": 0,
+        "effective_policy": "baseline",
+        "fallback_reason_counts": {},
+        "function_decisions": {
+          "absolute_f64": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "main": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "raster_window_statistics": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          }
+        },
+        "functions_considered": 3,
+        "functions_fallback": 0,
+        "functions_optimized": 0,
+        "requested_policy": "baseline"
+      },
+      "optimization": "O1",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/geospatial.raster-window-statistics.v1-o1-exact-segment.so",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e"
+    },
+    "S3_O1_LOOP_HYBRID_energy.pv-timeseries-aggregation.v1": {
+      "assembly_instruction_count": 308,
+      "assembly_path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/energy.pv-timeseries-aggregation.v1-o1-loop-hybrid.s",
+      "assembly_sha256": "049b167c375ee60fb6b5c3fc181dff524baacbeab35eb15902b639f274ed3ab1",
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "instruction_budget_mode": "loop-hybrid",
+      "native_policy": "baseline",
+      "native_policy_summary": {
+        "compact_ea_sites_applied": 0,
+        "compact_ea_sites_considered": 0,
+        "effective_policy": "baseline",
+        "fallback_reason_counts": {},
+        "function_decisions": {
+          "absolute_f64": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "energy_series_aggregation": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "main": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          }
+        },
+        "functions_considered": 3,
+        "functions_fallback": 0,
+        "functions_optimized": 0,
+        "requested_policy": "baseline"
+      },
+      "optimization": "O1",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/energy.pv-timeseries-aggregation.v1-o1-loop-hybrid.so",
+      "source_sha256": "a146f2ec7bd7f9bf72ea35c04026174874012acdb31541d805bf5f0a4a613c84"
+    },
+    "S3_O1_LOOP_HYBRID_engineering.point-cloud-summary.v1": {
+      "assembly_instruction_count": 517,
+      "assembly_path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/engineering.point-cloud-summary.v1-o1-loop-hybrid.s",
+      "assembly_sha256": "25221788aa4e5787ad45480414de4ad8f49dfb2836dd5ad6d3d736f1f509b89b",
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "instruction_budget_mode": "loop-hybrid",
+      "native_policy": "baseline",
+      "native_policy_summary": {
+        "compact_ea_sites_applied": 0,
+        "compact_ea_sites_considered": 0,
+        "effective_policy": "baseline",
+        "fallback_reason_counts": {},
+        "function_decisions": {
+          "main": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "point_cloud_summary": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          }
+        },
+        "functions_considered": 2,
+        "functions_fallback": 0,
+        "functions_optimized": 0,
+        "requested_policy": "baseline"
+      },
+      "optimization": "O1",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/engineering.point-cloud-summary.v1-o1-loop-hybrid.so",
+      "source_sha256": "59e752e91159ece4e3a813bc8586f338544ddac52e4b5e755a219d85779238e9"
+    },
+    "S3_O1_LOOP_HYBRID_geospatial.raster-window-statistics.v1": {
+      "assembly_instruction_count": 665,
+      "assembly_path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/geospatial.raster-window-statistics.v1-o1-loop-hybrid.s",
+      "assembly_sha256": "b63b674d883b52b041e1020c9f540943adead44c5f6375aeb6b8db0dd4c185ed",
+      "compiler": "/usr/bin/cc",
+      "compiler_version": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+      "instruction_budget_mode": "loop-hybrid",
+      "native_policy": "baseline",
+      "native_policy_summary": {
+        "compact_ea_sites_applied": 0,
+        "compact_ea_sites_considered": 0,
+        "effective_policy": "baseline",
+        "fallback_reason_counts": {},
+        "function_decisions": {
+          "absolute_f64": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "main": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          },
+          "raster_window_statistics": {
+            "applied": false,
+            "effective_policy": "baseline",
+            "reason": "baseline_default",
+            "requested_policy": "baseline",
+            "sites_considered": 0
+          }
+        },
+        "functions_considered": 3,
+        "functions_fallback": 0,
+        "functions_optimized": 0,
+        "requested_policy": "baseline"
+      },
+      "optimization": "O1",
+      "path": "/tmp/s3-1.11-baseline-evidence-832b-v2/benchmark/geospatial.raster-window-statistics.v1-o1-loop-hybrid.so",
+      "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e"
+    }
+  },
+  "compiler_source_sha256": {
+    "bootstrap/s3/backends/x86_64/backend.py": "de5a8a8889ed2f1913ef9b40a199a2cc4e7bc7860cc8912392c915818e917a6e",
+    "bootstrap/s3/backends/x86_64/emitter.py": "168e169a419574226db4055bdbbb1edcad0b1574498af3bc529c261ac64014c4",
+    "bootstrap/s3/codegen.py": "de82372e9db96abe830c527e330aade00b8aacbb7237a32f8000bbf9cad1b0c4",
+    "bootstrap/s3/memory_effects.py": "308474d95d6d3540d94c88f7d657e33f4a8477294a921d45677a2f8966d68561",
+    "bootstrap/s3/optimizer.py": "3fe339c62dfab83b8cda7c101518b3aa7506501bfbf3a1ae307f11c2ecd6de1f"
+  },
+  "cpu_model": "AMD Ryzen 5 3400G with Radeon Vega Graphics",
+  "ended_at_utc": "2026-09-27T23:00:16.896563+00:00",
+  "hardware_counter_capability": {
+    "perf_event_paranoid": "4",
+    "probe_detail": [
+      "To make the adjusted perf_event_paranoid setting permanent preserve it",
+      "in /etc/sysctl.conf (e.g. kernel.perf_event_paranoid = <setting>)"
+    ],
+    "probe_exit": 1,
+    "status": "UNAVAILABLE_BY_POLICY"
+  },
+  "host": {
+    "machine": "x86_64",
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "python": "3.14.4"
+  },
+  "protocol": {
+    "c_flags": [
+      "-O1",
+      "-fno-fast-math",
+      "-ffp-contract=off",
+      "-fno-tree-vectorize"
+    ],
+    "default_instruction_budget_mode": "per-instruction",
+    "instruction_budget_modes": [
+      "per-instruction",
+      "exact-segment",
+      "loop-hybrid"
+    ],
+    "max_s3_instructions": 1000000000,
+    "s3_native_policies": [
+      "baseline",
+      "compact-ea experimental"
+    ],
+    "s3_optimization_levels": [
+      "O0",
+      "O1"
+    ],
+    "simd": "not enabled; scalar C vectorization disabled for this comparison"
+  },
+  "schema_version": "1.0.0",
+  "source_revision": {
+    "git_commit": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+    "git_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+    "identity_source": "explicit_source_checkout_provenance",
+    "worktree_clean": true
+  },
+  "started_at_utc": "2026-09-27T23:00:07.042327+00:00",
+  "tools": {
+    "objdump": "GNU objdump (GNU Binutils for Ubuntu) 2.46",
+    "size": "GNU size (GNU Binutils for Ubuntu) 2.46"
+  },
+  "workloads": {
+    "energy.pv-timeseries-aggregation.v1": {
+      "binary_metrics": {
+        "C_O1": {
+          "elf_file_bytes": 15656,
+          "exported_function_bytes": 233,
+          "stack_frame_bytes": 0,
+          "static_branches": 5,
+          "static_calls": 0,
+          "static_instruction_budget_counter_references": 0,
+          "static_machine_instructions": 49,
+          "static_memory_references": 13,
+          "static_stack_references": 0,
+          "text_section_bytes": 1334
+        },
+        "S3_O0_BASELINE": {
+          "elf_file_bytes": 160584,
+          "exported_function_bytes": 15179,
+          "stack_frame_bytes": 2144,
+          "static_branches": 789,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 12,
+          "static_machine_instructions": 2754,
+          "static_memory_references": 953,
+          "static_stack_references": 907,
+          "text_section_bytes": 36304
+        },
+        "S3_O1_BASELINE": {
+          "elf_file_bytes": 160584,
+          "exported_function_bytes": 15179,
+          "stack_frame_bytes": 2144,
+          "static_branches": 789,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 12,
+          "static_machine_instructions": 2754,
+          "static_memory_references": 953,
+          "static_stack_references": 907,
+          "text_section_bytes": 36304
+        },
+        "S3_O1_COMPACT_EA": {
+          "elf_file_bytes": 160584,
+          "exported_function_bytes": 15179,
+          "stack_frame_bytes": 2144,
+          "static_branches": 789,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 12,
+          "static_machine_instructions": 2754,
+          "static_memory_references": 953,
+          "static_stack_references": 907,
+          "text_section_bytes": 36304
+        },
+        "S3_O1_EXACT_SEGMENT": {
+          "elf_file_bytes": 172744,
+          "exported_function_bytes": 31334,
+          "stack_frame_bytes": 2128,
+          "static_branches": 1320,
+          "static_calls": 2,
+          "static_instruction_budget_counter_references": 722,
+          "static_machine_instructions": 5005,
+          "static_memory_references": 2323,
+          "static_stack_references": 1551,
+          "text_section_bytes": 52472
+        },
+        "S3_O1_LOOP_HYBRID": {
+          "elf_file_bytes": 168648,
+          "exported_function_bytes": 24744,
+          "stack_frame_bytes": 2128,
+          "static_branches": 1023,
+          "static_calls": 2,
+          "static_instruction_budget_counter_references": 654,
+          "static_machine_instructions": 3893,
+          "static_memory_references": 1877,
+          "static_stack_references": 1187,
+          "text_section_bytes": 45651
+        }
+      },
+      "compact_ea_applied": false,
+      "compact_ea_decisions": {
+        "absolute_f64": {
+          "applied": false,
+          "effective_policy": "baseline",
+          "reason": "compact_ea_fallback:no_indexed_memory_operations",
+          "requested_policy": "compact-ea",
+          "sites_considered": 0
+        },
+        "energy_series_aggregation": {
+          "applied": false,
+          "effective_policy": "baseline",
+          "reason": "compact_ea_fallback:reference_operations_present",
+          "requested_policy": "compact-ea",
+          "sites_considered": 89
+        },
+        "main": {
+          "applied": false,
+          "effective_policy": "baseline",
+          "reason": "compact_ea_fallback:no_indexed_memory_operations",
+          "requested_policy": "compact-ea",
+          "sites_considered": 0
+        }
+      },
+      "compact_ea_vs_baseline_ratio": 1.007545084238617,
+      "correctness": "PASS_ALL_BUILDS",
+      "dataset_id": "pvlib-denver-synthetic-week-v1",
+      "dataset_sha256": "dcf7e356a75be9597f2732c1739a2f93f73d657bfdaa4207634aff2e5481afca",
+      "native_candidate_output_sha256": {
+        "C_O1": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+        "S3_O0_BASELINE": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+        "S3_O1_BASELINE": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+        "S3_O1_COMPACT_EA": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+        "S3_O1_EXACT_SEGMENT": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74",
+        "S3_O1_LOOP_HYBRID": "5f8ea95fcf8bc698b46f47801ea8e429c41f207813de7942d40c1f186f766a74"
+      },
+      "o1_s3_over_c_ratio": 7.98650761073491,
+      "paired_comparisons": {
+        "baseline_vs_compact_ea": {
+          "baseline_over_candidate_median_ratio": 1.0029692267727968,
+          "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            0.9993038991753667,
+            1.010512961749369
+          ],
+          "resamples": 10000,
+          "seed": 1506
+        },
+        "o0_vs_o1": {
+          "baseline_over_candidate_median_ratio": 1.0080659298878267,
+          "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            0.9993940314584072,
+            1.0182837650319374
+          ],
+          "resamples": 10000,
+          "seed": 1503
+        },
+        "per_vs_exact_segment": {
+          "baseline_over_candidate_median_ratio": 1.1248116059486861,
+          "classification": "MATERIAL_IMPROVEMENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            1.10118129811616,
+            1.1294751364401792
+          ],
+          "resamples": 10000,
+          "seed": 1504
+        },
+        "per_vs_loop_hybrid": {
+          "baseline_over_candidate_median_ratio": 1.132026109364666,
+          "classification": "MATERIAL_IMPROVEMENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            1.1140733045794526,
+            1.1472193279735738
+          ],
+          "resamples": 10000,
+          "seed": 1505
+        },
+        "s3_o1_vs_c_o1": {
+          "baseline_over_candidate_median_ratio": 7.997786672024213,
+          "classification": "MATERIAL_IMPROVEMENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            7.850269872055086,
+            8.131369754799445
+          ],
+          "resamples": 10000,
+          "seed": 1502
+        }
+      },
+      "per_over_exact_segment_ratio": 1.1187650405176768,
+      "per_over_loop_hybrid_ratio": 1.1280154950763834,
+      "reference_engine": "pvlib",
+      "reference_engine_version": "0.15.2",
+      "static_ir_metrics": {
+        "S3_O0_BASELINE": {
+          "TADD": 4,
+          "TBR3": 14,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 135,
+          "TCVT": 2,
+          "TDIV": 2,
+          "TJMP": 31,
+          "TLOAD": 44,
+          "TMUL": 1,
+          "TNDIFF": 2,
+          "TREL": 2,
+          "TRET": 9,
+          "TSLEN": 3,
+          "TSLOAD": 2,
+          "TSSTORE": 5,
+          "TSTORE": 45
+        },
+        "S3_O1_BASELINE": {
+          "TADD": 4,
+          "TBR3": 14,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 135,
+          "TCVT": 2,
+          "TDIV": 2,
+          "TJMP": 31,
+          "TLOAD": 44,
+          "TMUL": 1,
+          "TNDIFF": 2,
+          "TREL": 2,
+          "TRET": 9,
+          "TSLEN": 3,
+          "TSLOAD": 2,
+          "TSSTORE": 5,
+          "TSTORE": 45
+        },
+        "S3_O1_COMPACT_EA": {
+          "TADD": 4,
+          "TBR3": 14,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 135,
+          "TCVT": 2,
+          "TDIV": 2,
+          "TJMP": 31,
+          "TLOAD": 44,
+          "TMUL": 1,
+          "TNDIFF": 2,
+          "TREL": 2,
+          "TRET": 9,
+          "TSLEN": 3,
+          "TSLOAD": 2,
+          "TSSTORE": 5,
+          "TSTORE": 45
+        },
+        "S3_O1_EXACT_SEGMENT": {
+          "TADD": 4,
+          "TBR3": 14,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 135,
+          "TCVT": 2,
+          "TDIV": 2,
+          "TJMP": 31,
+          "TLOAD": 44,
+          "TMUL": 1,
+          "TNDIFF": 2,
+          "TREL": 2,
+          "TRET": 9,
+          "TSLEN": 3,
+          "TSLOAD": 2,
+          "TSSTORE": 5,
+          "TSTORE": 45
+        },
+        "S3_O1_LOOP_HYBRID": {
+          "TADD": 4,
+          "TBR3": 14,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 135,
+          "TCVT": 2,
+          "TDIV": 2,
+          "TJMP": 31,
+          "TLOAD": 44,
+          "TMUL": 1,
+          "TNDIFF": 2,
+          "TREL": 2,
+          "TRET": 9,
+          "TSLEN": 3,
+          "TSLOAD": 2,
+          "TSSTORE": 5,
+          "TSTORE": 45
+        }
+      },
+      "timing_protocol": {
+        "iterations_per_sample": 1000,
+        "material_change_threshold": 0.05,
+        "paired_bootstrap_resamples": 10000,
+        "paired_order": [
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ]
+        ],
+        "paired_order_seed": 1501,
+        "samples": 21,
+        "scope": "same-process scalar C ABI calls; input/setup/build excluded; ctypes dispatch included equally",
+        "timing_clock": "time.perf_counter_ns",
+        "warmups": 3
+      },
+      "timings": {
+        "C_O1": {
+          "coefficient_of_variation": 0.19674014864351214,
+          "maximum_ns_per_call": 3718.32,
+          "mean_ns_per_call": 2305.5117142857143,
+          "median_ns_per_call": 2121.937,
+          "minimum_ns_per_call": 2046.778,
+          "p95_ns_per_call": 3502.024,
+          "sample_count": 21,
+          "stddev_ns_per_call": 453.5867173679299
+        },
+        "S3_O0_BASELINE": {
+          "coefficient_of_variation": 0.14198149498177395,
+          "maximum_ns_per_call": 27911.584,
+          "mean_ns_per_call": 18107.028,
+          "median_ns_per_call": 17089.696,
+          "minimum_ns_per_call": 16856.477,
+          "p95_ns_per_call": 22106.076,
+          "sample_count": 21,
+          "stddev_ns_per_call": 2570.8629051168405
+        },
+        "S3_O1_BASELINE": {
+          "coefficient_of_variation": 0.1337785167804465,
+          "maximum_ns_per_call": 27580.919,
+          "mean_ns_per_call": 17718.276380952382,
+          "median_ns_per_call": 16946.866,
+          "minimum_ns_per_call": 16695.8,
+          "p95_ns_per_call": 18968.924,
+          "sample_count": 21,
+          "stddev_ns_per_call": 2370.3247341498272
+        },
+        "S3_O1_COMPACT_EA": {
+          "coefficient_of_variation": 0.057441086566051666,
+          "maximum_ns_per_call": 20477.771,
+          "mean_ns_per_call": 17134.858952380953,
+          "median_ns_per_call": 16819.958,
+          "minimum_ns_per_call": 16523.202,
+          "p95_ns_per_call": 19510.176,
+          "sample_count": 21,
+          "stddev_ns_per_call": 984.2449163807997
+        },
+        "S3_O1_EXACT_SEGMENT": {
+          "coefficient_of_variation": 0.06919261053796959,
+          "maximum_ns_per_call": 18803.107,
+          "mean_ns_per_call": 15626.37319047619,
+          "median_ns_per_call": 15147.833,
+          "minimum_ns_per_call": 14758.39,
+          "p95_ns_per_call": 17280.491,
+          "sample_count": 21,
+          "stddev_ns_per_call": 1081.2295542895884
+        },
+        "S3_O1_LOOP_HYBRID": {
+          "coefficient_of_variation": 0.13930721883987815,
+          "maximum_ns_per_call": 24056.944,
+          "mean_ns_per_call": 15883.275142857143,
+          "median_ns_per_call": 15023.611,
+          "minimum_ns_per_call": 14519.034,
+          "p95_ns_per_call": 19757.412,
+          "sample_count": 21,
+          "stddev_ns_per_call": 2212.654886219997
+        }
+      }
+    },
+    "engineering.point-cloud-summary.v1": {
+      "binary_metrics": {
+        "C_O1": {
+          "elf_file_bytes": 15656,
+          "exported_function_bytes": 411,
+          "stack_frame_bytes": 0,
+          "static_branches": 8,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 0,
+          "static_machine_instructions": 94,
+          "static_memory_references": 23,
+          "static_stack_references": 0,
+          "text_section_bytes": 1334
+        },
+        "S3_O0_BASELINE": {
+          "elf_file_bytes": 258832,
+          "exported_function_bytes": 26063,
+          "stack_frame_bytes": 3648,
+          "static_branches": 1367,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 8,
+          "static_machine_instructions": 4732,
+          "static_memory_references": 1601,
+          "static_stack_references": 1536,
+          "text_section_bytes": 58112
+        },
+        "S3_O1_BASELINE": {
+          "elf_file_bytes": 258832,
+          "exported_function_bytes": 26063,
+          "stack_frame_bytes": 3648,
+          "static_branches": 1367,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 8,
+          "static_machine_instructions": 4732,
+          "static_memory_references": 1601,
+          "static_stack_references": 1536,
+          "text_section_bytes": 58112
+        },
+        "S3_O1_COMPACT_EA": {
+          "elf_file_bytes": 258832,
+          "exported_function_bytes": 26063,
+          "stack_frame_bytes": 3648,
+          "static_branches": 1367,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 8,
+          "static_machine_instructions": 4732,
+          "static_memory_references": 1601,
+          "static_stack_references": 1536,
+          "text_section_bytes": 58112
+        },
+        "S3_O1_EXACT_SEGMENT": {
+          "elf_file_bytes": 283280,
+          "exported_function_bytes": 53490,
+          "stack_frame_bytes": 3632,
+          "static_branches": 2281,
+          "static_calls": 2,
+          "static_instruction_budget_counter_references": 1172,
+          "static_machine_instructions": 8594,
+          "static_memory_references": 3890,
+          "static_stack_references": 2635,
+          "text_section_bytes": 85281
+        },
+        "S3_O1_LOOP_HYBRID": {
+          "elf_file_bytes": 275088,
+          "exported_function_bytes": 45069,
+          "stack_frame_bytes": 3632,
+          "static_branches": 1893,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 1106,
+          "static_machine_instructions": 7165,
+          "static_memory_references": 3329,
+          "static_stack_references": 2160,
+          "text_section_bytes": 76820
+        }
+      },
+      "compact_ea_applied": false,
+      "compact_ea_decisions": {
+        "main": {
+          "applied": false,
+          "effective_policy": "baseline",
+          "reason": "compact_ea_fallback:no_indexed_memory_operations",
+          "requested_policy": "compact-ea",
+          "sites_considered": 0
+        },
+        "point_cloud_summary": {
+          "applied": false,
+          "effective_policy": "baseline",
+          "reason": "compact_ea_fallback:index_initialization_not_proven",
+          "requested_policy": "compact-ea",
+          "sites_considered": 163
+        }
+      },
+      "compact_ea_vs_baseline_ratio": 1.0073562736131527,
+      "correctness": "PASS_ALL_BUILDS",
+      "dataset_id": "synthetic-regular-point-cloud-64-v1",
+      "dataset_sha256": "346178eab37077a8bd7989d60836a2b54fb27948c36dabd18e7a58b2e41042f8",
+      "native_candidate_output_sha256": {
+        "C_O1": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+        "S3_O0_BASELINE": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+        "S3_O1_BASELINE": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+        "S3_O1_COMPACT_EA": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+        "S3_O1_EXACT_SEGMENT": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07",
+        "S3_O1_LOOP_HYBRID": "6bdc5b40a566f1b9487ff18c96ceb2a7ab53c740c666b4f8bf10de84bee6dc07"
+      },
+      "o1_s3_over_c_ratio": 8.644895886952002,
+      "paired_comparisons": {
+        "baseline_vs_compact_ea": {
+          "baseline_over_candidate_median_ratio": 1.0095630450355852,
+          "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            1.0028475860375783,
+            1.0200938636222399
+          ],
+          "resamples": 10000,
+          "seed": 1506
+        },
+        "o0_vs_o1": {
+          "baseline_over_candidate_median_ratio": 1.006902318757431,
+          "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            0.9791235942790859,
+            1.0275905610737248
+          ],
+          "resamples": 10000,
+          "seed": 1503
+        },
+        "per_vs_exact_segment": {
+          "baseline_over_candidate_median_ratio": 1.088001966097133,
+          "classification": "MATERIAL_IMPROVEMENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            1.0626255219518388,
+            1.1102998359767662
+          ],
+          "resamples": 10000,
+          "seed": 1504
+        },
+        "per_vs_loop_hybrid": {
+          "baseline_over_candidate_median_ratio": 1.093198648849026,
+          "classification": "MATERIAL_IMPROVEMENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            1.072873143419228,
+            1.1124553520834446
+          ],
+          "resamples": 10000,
+          "seed": 1505
+        },
+        "s3_o1_vs_c_o1": {
+          "baseline_over_candidate_median_ratio": 8.588095219460273,
+          "classification": "MATERIAL_IMPROVEMENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            8.493733544309917,
+            8.899333017240348
+          ],
+          "resamples": 10000,
+          "seed": 1502
+        }
+      },
+      "per_over_exact_segment_ratio": 1.0965472957817803,
+      "per_over_loop_hybrid_ratio": 1.0970292594280056,
+      "reference_engine": "Open3D",
+      "reference_engine_version": "0.20.0",
+      "static_ir_metrics": {
+        "S3_O0_BASELINE": {
+          "TADD": 12,
+          "TBR3": 18,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 220,
+          "TCVT": 3,
+          "TDIV": 4,
+          "TJMP": 47,
+          "TLOAD": 91,
+          "TMUL": 6,
+          "TNDIFF": 3,
+          "TREL": 6,
+          "TRET": 7,
+          "TSLEN": 2,
+          "TSLOAD": 9,
+          "TSSTORE": 10,
+          "TSTORE": 72
+        },
+        "S3_O1_BASELINE": {
+          "TADD": 12,
+          "TBR3": 18,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 220,
+          "TCVT": 3,
+          "TDIV": 4,
+          "TJMP": 47,
+          "TLOAD": 91,
+          "TMUL": 6,
+          "TNDIFF": 3,
+          "TREL": 6,
+          "TRET": 7,
+          "TSLEN": 2,
+          "TSLOAD": 9,
+          "TSSTORE": 10,
+          "TSTORE": 72
+        },
+        "S3_O1_COMPACT_EA": {
+          "TADD": 12,
+          "TBR3": 18,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 220,
+          "TCVT": 3,
+          "TDIV": 4,
+          "TJMP": 47,
+          "TLOAD": 91,
+          "TMUL": 6,
+          "TNDIFF": 3,
+          "TREL": 6,
+          "TRET": 7,
+          "TSLEN": 2,
+          "TSLOAD": 9,
+          "TSSTORE": 10,
+          "TSTORE": 72
+        },
+        "S3_O1_EXACT_SEGMENT": {
+          "TADD": 12,
+          "TBR3": 18,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 220,
+          "TCVT": 3,
+          "TDIV": 4,
+          "TJMP": 47,
+          "TLOAD": 91,
+          "TMUL": 6,
+          "TNDIFF": 3,
+          "TREL": 6,
+          "TRET": 7,
+          "TSLEN": 2,
+          "TSLOAD": 9,
+          "TSSTORE": 10,
+          "TSTORE": 72
+        },
+        "S3_O1_LOOP_HYBRID": {
+          "TADD": 12,
+          "TBR3": 18,
+          "TCALL": 1,
+          "TCMP": 6,
+          "TCONST": 220,
+          "TCVT": 3,
+          "TDIV": 4,
+          "TJMP": 47,
+          "TLOAD": 91,
+          "TMUL": 6,
+          "TNDIFF": 3,
+          "TREL": 6,
+          "TRET": 7,
+          "TSLEN": 2,
+          "TSLOAD": 9,
+          "TSSTORE": 10,
+          "TSTORE": 72
+        }
+      },
+      "timing_protocol": {
+        "iterations_per_sample": 1000,
+        "material_change_threshold": 0.05,
+        "paired_bootstrap_resamples": 10000,
+        "paired_order": [
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ]
+        ],
+        "paired_order_seed": 1501,
+        "samples": 21,
+        "scope": "same-process scalar C ABI calls; input/setup/build excluded; ctypes dispatch included equally",
+        "timing_clock": "time.perf_counter_ns",
+        "warmups": 3
+      },
+      "timings": {
+        "C_O1": {
+          "coefficient_of_variation": 0.16471530892360275,
+          "maximum_ns_per_call": 2450.802,
+          "mean_ns_per_call": 1696.852380952381,
+          "median_ns_per_call": 1561.956,
+          "minimum_ns_per_call": 1505.886,
+          "p95_ns_per_call": 2382.862,
+          "sample_count": 21,
+          "stddev_ns_per_call": 279.4975641263223
+        },
+        "S3_O0_BASELINE": {
+          "coefficient_of_variation": 0.18545034725651643,
+          "maximum_ns_per_call": 22202.542,
+          "mean_ns_per_call": 14630.514,
+          "median_ns_per_call": 13482.797,
+          "minimum_ns_per_call": 13221.054,
+          "p95_ns_per_call": 21520.651,
+          "sample_count": 21,
+          "stddev_ns_per_call": 2713.233901841325
+        },
+        "S3_O1_BASELINE": {
+          "coefficient_of_variation": 0.17998669407522896,
+          "maximum_ns_per_call": 20851.944,
+          "mean_ns_per_call": 15014.255285714284,
+          "median_ns_per_call": 13502.947,
+          "minimum_ns_per_call": 13089.64,
+          "p95_ns_per_call": 20415.71,
+          "sample_count": 21,
+          "stddev_ns_per_call": 2702.3661728772463
+        },
+        "S3_O1_COMPACT_EA": {
+          "coefficient_of_variation": 0.16771691324458404,
+          "maximum_ns_per_call": 21446.944,
+          "mean_ns_per_call": 14624.29780952381,
+          "median_ns_per_call": 13404.341,
+          "minimum_ns_per_call": 13123.305,
+          "p95_ns_per_call": 19206.769,
+          "sample_count": 21,
+          "stddev_ns_per_call": 2452.742086982865
+        },
+        "S3_O1_EXACT_SEGMENT": {
+          "coefficient_of_variation": 0.2366524994439806,
+          "maximum_ns_per_call": 21522.563,
+          "mean_ns_per_call": 13659.614857142858,
+          "median_ns_per_call": 12314.058,
+          "minimum_ns_per_call": 12075.946,
+          "p95_ns_per_call": 21460.944,
+          "sample_count": 21,
+          "stddev_ns_per_call": 3232.5819973849893
+        },
+        "S3_O1_LOOP_HYBRID": {
+          "coefficient_of_variation": 0.17305610129281543,
+          "maximum_ns_per_call": 20689.306,
+          "mean_ns_per_call": 13319.247952380952,
+          "median_ns_per_call": 12308.648,
+          "minimum_ns_per_call": 12044.842,
+          "p95_ns_per_call": 18117.406,
+          "sample_count": 21,
+          "stddev_ns_per_call": 2304.9771227913625
+        }
+      }
+    },
+    "geospatial.raster-window-statistics.v1": {
+      "binary_metrics": {
+        "C_O1": {
+          "elf_file_bytes": 15656,
+          "exported_function_bytes": 498,
+          "stack_frame_bytes": 0,
+          "static_branches": 17,
+          "static_calls": 0,
+          "static_instruction_budget_counter_references": 0,
+          "static_machine_instructions": 123,
+          "static_memory_references": 19,
+          "static_stack_references": 11,
+          "text_section_bytes": 1334
+        },
+        "S3_O0_BASELINE": {
+          "elf_file_bytes": 312136,
+          "exported_function_bytes": 31238,
+          "stack_frame_bytes": 4192,
+          "static_branches": 1719,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 18,
+          "static_machine_instructions": 5672,
+          "static_memory_references": 1898,
+          "static_stack_references": 1821,
+          "text_section_bytes": 68547
+        },
+        "S3_O1_BASELINE": {
+          "elf_file_bytes": 312136,
+          "exported_function_bytes": 31216,
+          "stack_frame_bytes": 4192,
+          "static_branches": 1715,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 18,
+          "static_machine_instructions": 5666,
+          "static_memory_references": 1898,
+          "static_stack_references": 1821,
+          "text_section_bytes": 68491
+        },
+        "S3_O1_COMPACT_EA": {
+          "elf_file_bytes": 312136,
+          "exported_function_bytes": 31216,
+          "stack_frame_bytes": 4192,
+          "static_branches": 1715,
+          "static_calls": 1,
+          "static_instruction_budget_counter_references": 18,
+          "static_machine_instructions": 5666,
+          "static_memory_references": 1898,
+          "static_stack_references": 1821,
+          "text_section_bytes": 68491
+        },
+        "S3_O1_EXACT_SEGMENT": {
+          "elf_file_bytes": 340680,
+          "exported_function_bytes": 65470,
+          "stack_frame_bytes": 4192,
+          "static_branches": 2891,
+          "static_calls": 2,
+          "static_instruction_budget_counter_references": 1592,
+          "static_machine_instructions": 10399,
+          "static_memory_references": 4786,
+          "static_stack_references": 3110,
+          "text_section_bytes": 102248
+        },
+        "S3_O1_LOOP_HYBRID": {
+          "elf_file_bytes": 328392,
+          "exported_function_bytes": 52842,
+          "stack_frame_bytes": 4192,
+          "static_branches": 2294,
+          "static_calls": 2,
+          "static_instruction_budget_counter_references": 1442,
+          "static_machine_instructions": 8284,
+          "static_memory_references": 3939,
+          "static_stack_references": 2434,
+          "text_section_bytes": 89389
+        }
+      },
+      "compact_ea_applied": false,
+      "compact_ea_decisions": {
+        "absolute_f64": {
+          "applied": false,
+          "effective_policy": "baseline",
+          "reason": "compact_ea_fallback:no_indexed_memory_operations",
+          "requested_policy": "compact-ea",
+          "sites_considered": 0
+        },
+        "main": {
+          "applied": false,
+          "effective_policy": "baseline",
+          "reason": "compact_ea_fallback:no_indexed_memory_operations",
+          "requested_policy": "compact-ea",
+          "sites_considered": 0
+        },
+        "raster_window_statistics": {
+          "applied": false,
+          "effective_policy": "baseline",
+          "reason": "compact_ea_fallback:index_initialization_not_proven",
+          "requested_policy": "compact-ea",
+          "sites_considered": 187
+        }
+      },
+      "compact_ea_vs_baseline_ratio": 0.9900347180232949,
+      "correctness": "PASS_ALL_BUILDS",
+      "dataset_id": "synthetic-projected-raster-8x8-v1",
+      "dataset_sha256": "3a182a6f587c30c9f38c0c25dba394729ea4563568dc00e9c3999091a4593f3c",
+      "native_candidate_output_sha256": {
+        "C_O1": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+        "S3_O0_BASELINE": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+        "S3_O1_BASELINE": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+        "S3_O1_COMPACT_EA": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+        "S3_O1_EXACT_SEGMENT": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc",
+        "S3_O1_LOOP_HYBRID": "60587afe0ddedafe7e443b119731361cf64228c4ebf13759e7ced80f5e9174dc"
+      },
+      "o1_s3_over_c_ratio": 4.701109428795088,
+      "paired_comparisons": {
+        "baseline_vs_compact_ea": {
+          "baseline_over_candidate_median_ratio": 0.9967644980118969,
+          "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            0.9854582340573307,
+            1.0024802637150982
+          ],
+          "resamples": 10000,
+          "seed": 1506
+        },
+        "o0_vs_o1": {
+          "baseline_over_candidate_median_ratio": 1.0352326956734272,
+          "classification": "NO_MATERIAL_CHANGE_WITHIN_5_PERCENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            1.0242432891246593,
+            1.0387336524152397
+          ],
+          "resamples": 10000,
+          "seed": 1503
+        },
+        "per_vs_exact_segment": {
+          "baseline_over_candidate_median_ratio": 1.0802281302559094,
+          "classification": "MATERIAL_IMPROVEMENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            1.0711482227394693,
+            1.0884481190222928
+          ],
+          "resamples": 10000,
+          "seed": 1504
+        },
+        "per_vs_loop_hybrid": {
+          "baseline_over_candidate_median_ratio": 1.0472860969176319,
+          "classification": "INCONCLUSIVE",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            1.0418447049750252,
+            1.0634079802277556
+          ],
+          "resamples": 10000,
+          "seed": 1505
+        },
+        "s3_o1_vs_c_o1": {
+          "baseline_over_candidate_median_ratio": 4.711313795657275,
+          "classification": "MATERIAL_IMPROVEMENT",
+          "material_change_threshold": 0.05,
+          "paired_bootstrap_95_percentile_interval": [
+            4.656395788462784,
+            4.758299204871066
+          ],
+          "resamples": 10000,
+          "seed": 1502
+        }
+      },
+      "per_over_exact_segment_ratio": 1.0767301656263675,
+      "per_over_loop_hybrid_ratio": 1.0473554716494249,
+      "reference_engine": "Rasterio",
+      "reference_engine_version": "1.4.4",
+      "static_ir_metrics": {
+        "S3_O0_BASELINE": {
+          "TADD": 11,
+          "TBR3": 35,
+          "TCALL": 1,
+          "TCMP": 16,
+          "TCONST": 289,
+          "TCVT": 6,
+          "TDIV": 2,
+          "TJMP": 86,
+          "TLOAD": 85,
+          "TMUL": 2,
+          "TNDIFF": 1,
+          "TREL": 3,
+          "TRET": 15,
+          "TSLEN": 3,
+          "TSLOAD": 4,
+          "TSSTORE": 6,
+          "TSTORE": 102
+        },
+        "S3_O1_BASELINE": {
+          "TADD": 11,
+          "TBR3": 35,
+          "TCALL": 1,
+          "TCMP": 16,
+          "TCONST": 289,
+          "TCVT": 6,
+          "TDIV": 2,
+          "TJMP": 84,
+          "TLOAD": 85,
+          "TMUL": 2,
+          "TNDIFF": 1,
+          "TREL": 3,
+          "TRET": 15,
+          "TSLEN": 3,
+          "TSLOAD": 4,
+          "TSSTORE": 6,
+          "TSTORE": 102
+        },
+        "S3_O1_COMPACT_EA": {
+          "TADD": 11,
+          "TBR3": 35,
+          "TCALL": 1,
+          "TCMP": 16,
+          "TCONST": 289,
+          "TCVT": 6,
+          "TDIV": 2,
+          "TJMP": 84,
+          "TLOAD": 85,
+          "TMUL": 2,
+          "TNDIFF": 1,
+          "TREL": 3,
+          "TRET": 15,
+          "TSLEN": 3,
+          "TSLOAD": 4,
+          "TSSTORE": 6,
+          "TSTORE": 102
+        },
+        "S3_O1_EXACT_SEGMENT": {
+          "TADD": 11,
+          "TBR3": 35,
+          "TCALL": 1,
+          "TCMP": 16,
+          "TCONST": 289,
+          "TCVT": 6,
+          "TDIV": 2,
+          "TJMP": 84,
+          "TLOAD": 85,
+          "TMUL": 2,
+          "TNDIFF": 1,
+          "TREL": 3,
+          "TRET": 15,
+          "TSLEN": 3,
+          "TSLOAD": 4,
+          "TSSTORE": 6,
+          "TSTORE": 102
+        },
+        "S3_O1_LOOP_HYBRID": {
+          "TADD": 11,
+          "TBR3": 35,
+          "TCALL": 1,
+          "TCMP": 16,
+          "TCONST": 289,
+          "TCVT": 6,
+          "TDIV": 2,
+          "TJMP": 84,
+          "TLOAD": 85,
+          "TMUL": 2,
+          "TNDIFF": 1,
+          "TREL": 3,
+          "TRET": 15,
+          "TSLEN": 3,
+          "TSLOAD": 4,
+          "TSSTORE": 6,
+          "TSTORE": 102
+        }
+      },
+      "timing_protocol": {
+        "iterations_per_sample": 1000,
+        "material_change_threshold": 0.05,
+        "paired_bootstrap_resamples": 10000,
+        "paired_order": [
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT"
+          ],
+          [
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE",
+            "S3_O0_BASELINE",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1"
+          ],
+          [
+            "S3_O0_BASELINE",
+            "C_O1",
+            "S3_O1_LOOP_HYBRID",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_COMPACT_EA",
+            "S3_O1_BASELINE"
+          ],
+          [
+            "S3_O1_COMPACT_EA",
+            "S3_O1_EXACT_SEGMENT",
+            "S3_O1_LOOP_HYBRID",
+            "C_O1",
+            "S3_O0_BASELINE",
+            "S3_O1_BASELINE"
+          ]
+        ],
+        "paired_order_seed": 1501,
+        "samples": 21,
+        "scope": "same-process scalar C ABI calls; input/setup/build excluded; ctypes dispatch included equally",
+        "timing_clock": "time.perf_counter_ns",
+        "warmups": 3
+      },
+      "timings": {
+        "C_O1": {
+          "coefficient_of_variation": 0.04200243426123584,
+          "maximum_ns_per_call": 2876.815,
+          "mean_ns_per_call": 2475.1170476190478,
+          "median_ns_per_call": 2445.042,
+          "minimum_ns_per_call": 2396.802,
+          "p95_ns_per_call": 2594.249,
+          "sample_count": 21,
+          "stddev_ns_per_call": 103.96094108148318
+        },
+        "S3_O0_BASELINE": {
+          "coefficient_of_variation": 0.07682379140480616,
+          "maximum_ns_per_call": 15169.453,
+          "mean_ns_per_call": 12255.517476190476,
+          "median_ns_per_call": 11872.624,
+          "minimum_ns_per_call": 11602.138,
+          "p95_ns_per_call": 14525.352,
+          "sample_count": 21,
+          "stddev_ns_per_call": 941.5153181488137
+        },
+        "S3_O1_BASELINE": {
+          "coefficient_of_variation": 0.03919770264162042,
+          "maximum_ns_per_call": 13413.049,
+          "mean_ns_per_call": 11625.34680952381,
+          "median_ns_per_call": 11494.41,
+          "minimum_ns_per_call": 11287.583,
+          "p95_ns_per_call": 12128.32,
+          "sample_count": 21,
+          "stddev_ns_per_call": 455.6868873454249
+        },
+        "S3_O1_COMPACT_EA": {
+          "coefficient_of_variation": 0.021162114469720075,
+          "maximum_ns_per_call": 12497.144,
+          "mean_ns_per_call": 11664.202523809523,
+          "median_ns_per_call": 11610.108,
+          "minimum_ns_per_call": 11405.642,
+          "p95_ns_per_call": 11984.463,
+          "sample_count": 21,
+          "stddev_ns_per_call": 246.83918900685492
+        },
+        "S3_O1_EXACT_SEGMENT": {
+          "coefficient_of_variation": 0.041113475356003765,
+          "maximum_ns_per_call": 12390.723,
+          "mean_ns_per_call": 10832.723,
+          "median_ns_per_call": 10675.293,
+          "minimum_ns_per_call": 10512.715,
+          "p95_ns_per_call": 11504.011,
+          "sample_count": 21,
+          "stddev_ns_per_call": 445.3708900989152
+        },
+        "S3_O1_LOOP_HYBRID": {
+          "coefficient_of_variation": 0.011966869092831442,
+          "maximum_ns_per_call": 11360.432,
+          "mean_ns_per_call": 10992.21119047619,
+          "median_ns_per_call": 10974.698,
+          "minimum_ns_per_call": 10816.11,
+          "p95_ns_per_call": 11273.244,
+          "sample_count": 21,
+          "stddev_ns_per_call": 131.54235235718542
+        }
+      }
+    }
+  }
+}

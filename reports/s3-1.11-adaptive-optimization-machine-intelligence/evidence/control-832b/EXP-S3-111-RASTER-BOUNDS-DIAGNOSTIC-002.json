@@ -1,0 +1,197 @@
+{
+  "analyzer_sha256": "619dd61574b71b7543e24850bd04f7863f1d6aafbd62a3838b58484f151fe344",
+  "classification": "ALL_PINNED_RASTER_SLICE_BOUNDS_PROVEN; WHOLE_LOOP_LEGALITY_UNKNOWN",
+  "experiment_id": "EXP-S3-111-RASTER-BOUNDS-DIAGNOSTIC-002",
+  "focused_test_sha256": "1cc715e249d5d44d796dc5aa7318d774453f94b0efdc1a90133fbcbb1a03de3a",
+  "limitations": [
+    "The proof recognizes only the syntactic two-dimensional row-major expression with explicit positive product equality, proven zero/unit induction recurrences, and a strict positive column-neighbor guard.",
+    "Product, induction, and length facts are invalidated on modeled reassignment; unsupported syntax and missing guards remain UNKNOWN.",
+    "This proves four scalar slice index bounds for the pinned workload only; it does not prove complete scalar independence, strict floating-point reduction legality, or SIMD legality.",
+    "No production optimizer, emitter, or runtime behavior was modified."
+  ],
+  "machine": "x86_64",
+  "optimization": "O1",
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "python": "3.14.4",
+  "result": {
+    "all_slice_reads_proven": true,
+    "function": "raster_window_statistics",
+    "loops": [
+      {
+        "all_accesses_proven": true,
+        "bound": "bounded_height",
+        "bound_interval": [
+          1,
+          364
+        ],
+        "header": "while_condition_59",
+        "induction": "row",
+        "ir_recurrence": {
+          "all_abstract_backedges_update_once": true,
+          "backedge_steps": [
+            1
+          ],
+          "backedges": [
+            {
+              "other_store": false,
+              "tail": "while_exit_72",
+              "updates_saturated": 1
+            }
+          ],
+          "condition_recognizer": "CONDITION_RECOGNIZED",
+          "induction_memory": 14,
+          "induction_storage_does_not_escape": true,
+          "initializer": 0,
+          "scope": "IR CFG over-approximation plus source while condition; not a general loop proof or SIMD legality result",
+          "status": "PASS"
+        },
+        "slice_accesses": 4,
+        "source_line": 67
+      },
+      {
+        "all_accesses_proven": true,
+        "bound": "bounded_width",
+        "bound_interval": [
+          1,
+          364
+        ],
+        "header": "while_condition_68",
+        "induction": "column",
+        "ir_recurrence": {
+          "all_abstract_backedges_update_once": true,
+          "backedge_steps": [
+            1
+          ],
+          "backedges": [
+            {
+              "other_store": false,
+              "tail": "switch_continue_120",
+              "updates_saturated": 1
+            }
+          ],
+          "condition_recognizer": "CONDITION_RECOGNIZED",
+          "induction_memory": 23,
+          "induction_storage_does_not_escape": true,
+          "initializer": 0,
+          "scope": "IR CFG over-approximation plus source while condition; not a general loop proof or SIMD legality result",
+          "status": "PASS"
+        },
+        "slice_accesses": 4,
+        "source_line": 69
+      }
+    ],
+    "slice_reads": [
+      {
+        "array": "valid_mask",
+        "bounds_status": "PROVEN",
+        "conversion_safe": true,
+        "index_affine": {
+          "coefficients": {
+            "index": 1
+          },
+          "constant": 0
+        },
+        "index_interval": [
+          0,
+          363
+        ],
+        "ir_index_type": "tryte",
+        "length_interval": [
+          1,
+          364
+        ],
+        "length_symbol": "mask_count",
+        "loop_header": "while_condition_68",
+        "proof_kind": "GUARDED_RECTANGULAR_ROW_MAJOR_INDEX",
+        "source_line": 71
+      },
+      {
+        "array": "values",
+        "bounds_status": "PROVEN",
+        "conversion_safe": true,
+        "index_affine": {
+          "coefficients": {
+            "index": 1
+          },
+          "constant": 0
+        },
+        "index_interval": [
+          0,
+          363
+        ],
+        "ir_index_type": "tryte",
+        "length_interval": [
+          1,
+          364
+        ],
+        "length_symbol": "cell_count",
+        "loop_header": "while_condition_68",
+        "proof_kind": "GUARDED_RECTANGULAR_ROW_MAJOR_INDEX",
+        "source_line": 73
+      },
+      {
+        "array": "valid_mask",
+        "bounds_status": "PROVEN",
+        "conversion_safe": true,
+        "index_affine": null,
+        "index_interval": [
+          1,
+          363
+        ],
+        "ir_index_type": "tryte",
+        "length_interval": [
+          1,
+          364
+        ],
+        "length_symbol": "mask_count",
+        "loop_header": "while_condition_68",
+        "proof_kind": "GUARDED_RECTANGULAR_ROW_MAJOR_NEIGHBOR",
+        "source_line": 108
+      },
+      {
+        "array": "values",
+        "bounds_status": "PROVEN",
+        "conversion_safe": true,
+        "index_affine": null,
+        "index_interval": [
+          1,
+          363
+        ],
+        "ir_index_type": "tryte",
+        "length_interval": [
+          1,
+          364
+        ],
+        "length_symbol": "cell_count",
+        "loop_header": "while_condition_68",
+        "proof_kind": "GUARDED_RECTANGULAR_ROW_MAJOR_NEIGHBOR",
+        "source_line": 110
+      }
+    ],
+    "source_path": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+    "source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e",
+    "workload": "raster"
+  },
+  "schema": "s3-1.11-raster-guarded-slice-bounds-diagnostic-v1",
+  "source_revision": "832b1cc04fe1f6174e482eb3a245e08af3d53211",
+  "source_tree": "dc1138890655169088f9371ce32a9050cfc3af8d",
+  "summary": {
+    "focused_campaign_linux_exit": 0,
+    "focused_campaign_tests": 39,
+    "focused_campaign_windows_exit": 0,
+    "loop_recurrences_passed": 2,
+    "nested_counted_loops": 2,
+    "proof_kinds": [
+      "GUARDED_RECTANGULAR_ROW_MAJOR_INDEX",
+      "GUARDED_RECTANGULAR_ROW_MAJOR_NEIGHBOR"
+    ],
+    "slice_bounds_proven": 4,
+    "slice_bounds_unknown": 0,
+    "slice_reads": 4,
+    "vectorization_authorized": false,
+    "whole_loop_independence_proven": false
+  },
+  "supersedes": "EXP-S3-111-RASTER-BOUNDS-DIAGNOSTIC-001",
+  "workload_source": "benchmarks/workloads/real_world/raster_window_statistics.s3",
+  "workload_source_sha256": "6d5d8081991d05e7f89ebe6965bb6664b8f11c33595e062c1b165b0a44c9763e"
+}
