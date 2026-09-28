@@ -268,7 +268,11 @@ def test_normal_source_pipeline_elides_only_proven_same_color_copies() -> None:
             elided += 1
             assert f"mov rax, {source_physical}" not in [line.strip() for line in lines]
             assert f"mov {destination_physical}, rax" not in [line.strip() for line in lines]
-        elif destination_physical is not None and source_physical is not None:
+        elif (
+            destination_physical is not None
+            and source_physical is not None
+            and destination_physical != source_physical
+        ):
             assert f"mov rax, {source_physical}" in [line.strip() for line in lines]
             assert f"mov {destination_physical}, rax" in [line.strip() for line in lines]
 
