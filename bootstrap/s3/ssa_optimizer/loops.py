@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, replace
 from typing import Dict, List, Set, Tuple
 
@@ -43,6 +44,24 @@ class InductionInfo:
     step: int
     update_block: str
     update_index: int
+
+
+@dataclass(frozen=True, slots=True)
+class LoopCarriedRecurrenceInfo:
+    """A scalar recurrence proven to update once on every reachable backedge."""
+
+    loop_header: str
+    memory: int
+    condition_memory: int
+    condition_relation: str
+    element_type: IRType
+    kind: str
+    operation: str
+    initial_value: int | float
+    step: int | None
+    update_sites: tuple[tuple[str, int], ...]
+    backedge_updates: tuple[tuple[str, int], ...]
+    ordered: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,6 +144,7 @@ class ReductionAnalysisMetrics:
 class LoopAnalysisResult:
     loops: tuple[LoopInfo, ...]
     inductions: tuple[InductionInfo, ...]
+    recurrences: tuple[LoopCarriedRecurrenceInfo, ...]
     range_facts: tuple[RangeFact, ...]
     proofs: tuple[VectorBoundsProof, ...]
     metrics: LoopAnalysisMetrics
@@ -443,6 +463,278 @@ def _recognize_induction(
     )
 
 
+def _register_types(function: IRFunction) -> dict[int, IRType]:
+    return {item.index: item.type for item in function.registers} | {
+        item.register: item.type for item in function.parameters
+    }
+
+
+def _induction_condition_memory(
+    function: IRFunction,
+    loop: LoopInfo,
+    definitions: dict[int, IRInstruction],
+    definition_sites: dict[int, tuple[str, int, IRInstruction]],
+) -> int | None:
+    header = next((item for item in function.blocks if item.name == loop.header), None)
+    if header is None or not header.instructions:
+        return None
+    terminator = header.instructions[-1]
+    if terminator.opcode is not IROpcode.BRANCH3 or len(terminator.operands) != 1:
+        return None
+    comparison = definitions.get(terminator.operands[0])
+    comparison_site = definition_sites.get(terminator.operands[0])
+    if comparison is None or comparison.opcode is not IROpcode.COMPARE or len(comparison.operands) != 2:
+        return None
+    if comparison_site is None or comparison_site[0] != loop.header:
+        return None
+    load_register = _copy_source(comparison.operands[0], definitions)
+    load = definitions.get(load_register)
+    site = definition_sites.get(load_register)
+    if (
+        load is None
+        or load.opcode is not IROpcode.LOAD
+        or load.memory is None
+        or site is None
+        or site[0] != loop.header
+    ):
+        return None
+    return load.memory
+
+
+def _recurrence_update(
+    memory: int,
+    block_name: str,
+    store_index: int,
+    store: IRInstruction,
+    definitions: dict[int, IRInstruction],
+    definition_sites: dict[int, tuple[str, int, IRInstruction]],
+    register_types: dict[int, IRType],
+    element_type: IRType,
+) -> tuple[str, str, int | None] | None:
+    if store.opcode is not IROpcode.STORE or store.memory != memory or len(store.operands) != 2:
+        return None
+    value_register = _copy_source(store.operands[1], definitions)
+    operation = definitions.get(value_register)
+    operation_site = definition_sites.get(value_register)
+    if (
+        operation is None
+        or operation.opcode not in {IROpcode.ADD, IROpcode.MULTIPLY}
+        or len(operation.operands) != 2
+        or operation_site is None
+        or operation_site[0] != block_name
+        or operation_site[1] >= store_index
+        or register_types.get(value_register) is not element_type
+    ):
+        return None
+
+    accumulator_load: IRInstruction | None = None
+    other_register: int | None = None
+    for accumulator_register, candidate_register in (
+        (operation.operands[0], operation.operands[1]),
+        (operation.operands[1], operation.operands[0]),
+    ):
+        source_register = _copy_source(accumulator_register, definitions)
+        source = definitions.get(source_register)
+        source_site = definition_sites.get(source_register)
+        if (
+            source is not None
+            and source.opcode is IROpcode.LOAD
+            and source.memory == memory
+            and register_types.get(source_register) is element_type
+            and source_site is not None
+            and source_site[0] == block_name
+            and source_site[1] < operation_site[1]
+        ):
+            accumulator_load = source
+            other_register = candidate_register
+            break
+    if accumulator_load is None or other_register is None:
+        return None
+
+    constant = _constant_register(other_register, definitions)
+    if register_types.get(other_register) is not element_type:
+        return None
+    operation_name = "add" if operation.opcode is IROpcode.ADD else "multiply"
+    if (
+        element_type is IRType.I64
+        and operation.opcode is IROpcode.ADD
+        and isinstance(constant, int)
+        and not isinstance(constant, bool)
+        and constant > 0
+    ):
+        return "INDUCTION", operation_name, constant
+    if constant is None:
+        return "REDUCTION", operation_name, None
+    return None
+
+
+def _prove_loop_carried_recurrences(
+    function: IRFunction,
+    loop: LoopInfo,
+    condition_body: str,
+    condition_memory: int,
+    definitions: dict[int, IRInstruction],
+    definition_sites: dict[int, tuple[str, int, IRInstruction]],
+    blocks: dict[str, IRBasicBlock],
+) -> tuple[LoopCarriedRecurrenceInfo, ...]:
+    if len(loop.preheaders) != 1 or not loop.backedges:
+        return ()
+    preheader = loop.preheaders[0]
+    preheader_block = blocks[preheader]
+    if (
+        not preheader_block.instructions
+        or preheader_block.instructions[-1].opcode is not IROpcode.JUMP
+        or preheader_block.instructions[-1].targets != (loop.header,)
+    ):
+        return ()
+
+    register_types = _register_types(function)
+    escaped_memories = {
+        instruction.memory
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode
+        in {
+            IROpcode.ADDRESS_OF,
+            IROpcode.AGGREGATE_ADDRESS_OF,
+            IROpcode.AGGREGATE_FIELD_ADDRESS,
+        }
+        and instruction.memory is not None
+    }
+    proven: list[LoopCarriedRecurrenceInfo] = []
+
+    for memory_object in function.memory_objects:
+        memory = memory_object.index
+        if (
+            memory_object.length != 1
+            or not memory_object.mutable
+            or memory_object.element_type not in {IRType.I64, IRType.F64, IRType.TRYTE}
+            or memory in escaped_memories
+        ):
+            continue
+        initializers = [
+            instruction
+            for instruction in preheader_block.instructions
+            if instruction.opcode is IROpcode.STORE and instruction.memory == memory
+        ]
+        if len(initializers) != 1 or len(initializers[0].operands) != 2:
+            continue
+        initial_value = _constant_register(initializers[0].operands[1], definitions)
+        initial_register = _copy_source(initializers[0].operands[1], definitions)
+        if (
+            isinstance(initial_value, bool)
+            or not isinstance(initial_value, (int, float))
+            or register_types.get(initial_register) is not memory_object.element_type
+            or memory_object.element_type is IRType.I64 and not isinstance(initial_value, int)
+        ):
+            continue
+
+        events: dict[str, list[tuple[int, str, str, int | None]]] = {}
+        rejected = False
+        expected_kind: str | None = None
+        expected_operation: str | None = None
+        expected_step: int | None = None
+        for block_name in loop.blocks:
+            block = blocks[block_name]
+            for index, instruction in enumerate(block.instructions):
+                if instruction.opcode is not IROpcode.STORE or instruction.memory != memory:
+                    continue
+                update = _recurrence_update(
+                    memory,
+                    block_name,
+                    index,
+                    instruction,
+                    definitions,
+                    definition_sites,
+                    register_types,
+                    memory_object.element_type,
+                )
+                if update is None:
+                    rejected = True
+                    break
+                kind, operation, step = update
+                if expected_kind is None:
+                    expected_kind, expected_operation, expected_step = kind, operation, step
+                elif kind != expected_kind or operation != expected_operation or step != expected_step:
+                    rejected = True
+                    break
+                events.setdefault(block_name, []).append((index, kind, operation, step))
+            if rejected:
+                break
+        if rejected or not events:
+            continue
+
+        # The induction cell used by the counted-loop condition is the only
+        # state classified as an induction variable. Other proven recurrences
+        # are scalar reductions; their legality is handled separately below.
+        if memory == condition_memory:
+            if expected_kind != "INDUCTION":
+                continue
+        elif expected_kind != "REDUCTION":
+            continue
+
+        pending = deque([(condition_body, 0)])
+        visited: set[tuple[str, int]] = set()
+        backedge_states: set[tuple[str, int]] = set()
+        opaque_path = False
+        while pending:
+            block_name, update_count = pending.popleft()
+            state = (block_name, min(update_count, 2))
+            if state in visited:
+                continue
+            visited.add(state)
+            block = blocks[block_name]
+            for index, _kind, _operation, _step in events.get(block_name, ()):
+                if index < len(block.instructions) - 1:
+                    update_count = min(2, update_count + 1)
+            if not block.instructions:
+                opaque_path = True
+                continue
+            terminator = block.instructions[-1]
+            if terminator.opcode is IROpcode.RETURN:
+                continue
+            if terminator.opcode not in {IROpcode.JUMP, IROpcode.BRANCH3} or not terminator.targets:
+                opaque_path = True
+                continue
+            for target in terminator.targets:
+                if target == loop.header:
+                    backedge_states.add((block_name, update_count))
+                elif target in loop.blocks:
+                    pending.append((target, update_count))
+
+        if (
+            opaque_path
+            or not backedge_states
+            or any(count != 1 for _tail, count in backedge_states)
+        ):
+            continue
+
+        update_sites = tuple(
+            sorted(
+                (block_name, index)
+                for block_name, items in events.items()
+                for index, _kind, _operation, _step in items
+            )
+        )
+        proven.append(
+            LoopCarriedRecurrenceInfo(
+                loop_header=loop.header,
+                memory=memory,
+                condition_memory=condition_memory,
+                condition_relation="LESS_THAN",
+                element_type=memory_object.element_type,
+                kind=expected_kind or "UNKNOWN",
+                operation=expected_operation or "unknown",
+                initial_value=initial_value,
+                step=expected_step,
+                update_sites=update_sites,
+                backedge_updates=tuple(sorted(backedge_states)),
+                ordered=expected_kind == "REDUCTION",
+            )
+        )
+    return tuple(proven)
+
+
 def _recognize_ordered_reduction(
     function: IRFunction,
     loop: LoopInfo,
@@ -575,12 +867,12 @@ def _recognize_ordered_reduction(
 def analyze_loop_facts(
     function: IRFunction,
 ) -> LoopAnalysisResult:
-    """Derive conservative natural-loop, induction and vector-range facts.
+    """Derive conservative CFG recurrence facts and narrower vector-range proofs.
 
-    This deliberately accepts only a single-block, positive-stride loop body
-    and an immutable vector parameter. The recurrence accepts any non-negative
-    constant start and positive constant step; unknown calls, vector mutation,
-    alternate induction writes, and non-canonical control flow produce no fact.
+    Recurrences require a constant preheader initializer, non-escaping scalar
+    storage, typed updates, and exactly one update on every reachable backedge.
+    Bounds proofs retain the stricter canonical single-body and immutable-vector
+    requirements; recurrence recognition alone never marks an access safe.
     """
 
     blocks = {block.name: block for block in function.blocks}
@@ -601,6 +893,7 @@ def analyze_loop_facts(
     loops = discover_loop_info(function)
     proofs: list[VectorBoundsProof] = []
     inductions: list[InductionInfo] = []
+    recurrences: list[LoopCarriedRecurrenceInfo] = []
     range_facts: list[RangeFact] = []
     reductions: list[ReductionInfo] = []
 
@@ -615,6 +908,22 @@ def analyze_loop_facts(
             or any(arm not in loop.blocks for arm in condition.relation_arms)
         ):
             continue
+        condition_memory = _induction_condition_memory(
+            function, loop, definitions, definition_sites
+        )
+        if condition_memory is None:
+            continue
+        recurrences.extend(
+            _prove_loop_carried_recurrences(
+                function,
+                loop,
+                condition.body,
+                condition_memory,
+                definitions,
+                definition_sites,
+                blocks,
+            )
+        )
         induction = _recognize_induction(
             function, loop, condition.body, definitions, blocks
         )
@@ -811,6 +1120,7 @@ def analyze_loop_facts(
     return LoopAnalysisResult(
         loops=loops,
         inductions=tuple(inductions),
+        recurrences=tuple(recurrences),
         range_facts=tuple(range_facts),
         proofs=tuple(proofs),
         metrics=metrics,

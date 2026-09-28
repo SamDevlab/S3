@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import tools.s3_111_guarded_slice_bounds as guarded_slice_bounds
 from bootstrap.s3 import ast
 from tools.s3_111_guarded_slice_bounds import (
     Affine,
@@ -20,8 +21,8 @@ from tools.s3_111_loop_predicate_diagnostics import WORKLOADS
 def test_guarded_workload_slice_bounds_are_proven_fail_closed() -> None:
     report = analyze_workloads()
 
-    assert report["source_revision"] == "832b1cc04fe1f6174e482eb3a245e08af3d53211"
-    assert report["source_tree"] == "dc1138890655169088f9371ce32a9050cfc3af8d"
+    assert report["experiment_control_sha"] == "832b1cc04fe1f6174e482eb3a245e08af3d53211"
+    assert report["experiment_control_tree"] == "dc1138890655169088f9371ce32a9050cfc3af8d"
     assert report["summary"] == {
         "dependence_proofs": 0,
         "functions": 2,
@@ -46,6 +47,27 @@ def test_guarded_workload_slice_bounds_are_proven_fail_closed() -> None:
     ]
     assert all(item["bounds_status"] == "PROVEN" for item in point["slice_reads"])
     assert all(loop["ir_recurrence"]["status"] == "PASS" for loop in point["loops"])
+
+
+def test_synthetic_pr_checkout_does_not_replace_experiment_control(monkeypatch) -> None:
+    checkout_sha = "88ab58f807cdb5c23b99f32d8b6569295c9ef60e"
+    checkout_tree = "a" * 40
+    monkeypatch.setattr(
+        guarded_slice_bounds,
+        "_checkout_identity",
+        lambda: (checkout_sha, checkout_tree),
+    )
+
+    report = analyze_workloads()
+
+    assert report["experiment_control_sha"] == "832b1cc04fe1f6174e482eb3a245e08af3d53211"
+    assert report["experiment_control_tree"] == "dc1138890655169088f9371ce32a9050cfc3af8d"
+    assert report["checkout_sha"] == checkout_sha
+    assert report["checkout_tree"] == checkout_tree
+    assert report["checkout_sha"] != report["experiment_control_sha"]
+    assert report["summary"]["slice_bounds_proven"] == 11
+    assert report["summary"]["slice_bounds_unknown"] == 0
+    assert report["summary"]["vectorization_authorized"] is False
 
 
 def test_grouped_slice_bound_requires_the_length_equality_guard() -> None:

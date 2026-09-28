@@ -27,6 +27,8 @@ from tools.s3_111_loop_recurrence_probe import probe_loop_recurrence
 
 _I64_MIN = -(1 << 63)
 _I64_MAX = (1 << 63) - 1
+EXPERIMENT_CONTROL_SHA = "832b1cc04fe1f6174e482eb3a245e08af3d53211"
+EXPERIMENT_CONTROL_TREE = "dc1138890655169088f9371ce32a9050cfc3af8d"
 
 
 def _source_sha256(data: bytes) -> str:
@@ -985,6 +987,18 @@ def _analyze_function(
     }
 
 
+def _checkout_identity() -> tuple[str, str]:
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, check=True,
+        capture_output=True, text=True,
+    ).stdout.strip()
+    tree = subprocess.run(
+        ["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, check=True,
+        capture_output=True, text=True,
+    ).stdout.strip()
+    return commit, tree
+
+
 def analyze_workloads() -> dict[str, Any]:
     selected = [item for item in WORKLOADS if item[0] in {"energy", "point-cloud"}]
     functions = [
@@ -996,16 +1010,13 @@ def analyze_workloads() -> dict[str, Any]:
         for function in functions for item in function["slice_reads"]
     )
     total = sum(len(function["slice_reads"]) for function in functions)
+    checkout_sha, checkout_tree = _checkout_identity()
     return {
-        "schema": "s3-1.11-guarded-slice-bounds-v1",
-        "source_revision": subprocess.run(
-            ["git", "rev-parse", "HEAD"], cwd=ROOT, check=True,
-            capture_output=True, text=True,
-        ).stdout.strip(),
-        "source_tree": subprocess.run(
-            ["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, check=True,
-            capture_output=True, text=True,
-        ).stdout.strip(),
+        "schema": "s3-1.11-guarded-slice-bounds-v2",
+        "experiment_control_sha": EXPERIMENT_CONTROL_SHA,
+        "experiment_control_tree": EXPERIMENT_CONTROL_TREE,
+        "checkout_sha": checkout_sha,
+        "checkout_tree": checkout_tree,
         "optimization": "O1",
         "python": platform.python_version(),
         "language_contracts": {

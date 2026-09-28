@@ -42,7 +42,10 @@ def test_same_color_copy_omission_keeps_per_instruction_budget_tick() -> None:
 
     baseline_copy = _origin_lines(baseline_text, baseline_origins, "TMOV")
     candidate_copy = _origin_lines(candidate_text, candidate_origins, "TMOV")
-    assert sum(line.strip().startswith("mov ") for line in baseline_copy) == 2
-    assert sum(line.strip().startswith("mov ") for line in candidate_copy) == 0
+    assert baseline_copy == candidate_copy
+    assert sum(
+        line.strip().startswith("mov ") and "ptr" not in line
+        for line in baseline_copy
+    ) == 0
     assert sum(line.strip() == "dec r15" for line in baseline_copy) == 1
     assert sum(line.strip() == "dec r15" for line in candidate_copy) == 1

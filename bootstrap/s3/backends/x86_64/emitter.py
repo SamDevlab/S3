@@ -1188,6 +1188,17 @@ class X8664Emitter:
             destination, source = registers
             if destination == source:
                 return instrumentation + self._check_register_initialized(layout, source)
+            if self.register_allocation and self.current_plan is not None:
+                destination_physical = self.current_plan.physical_register(destination)
+                source_physical = self.current_plan.physical_register(source)
+                if (
+                    destination_physical is not None
+                    and destination_physical == source_physical
+                ):
+                    return instrumentation + [
+                        *self._check_register_initialized(layout, source),
+                        *self._write_register(layout, destination, source_physical),
+                    ]
             # TMOV copies a value version; do not alias a mutable logical register.
             return instrumentation + [
                 *self._read_register(layout, source, "rax"),

@@ -1,11 +1,11 @@
 # Active S3 project track
 
-Last reviewed: 2026-09-26.
+Last reviewed: 2026-09-28.
 
 ## Active track
 
 ```text
-ACTIVE_TRACK=S3_1_7_NATIVE_LOWERING_CODEGEN_INTELLIGENCE_AND_INDEPENDENT_COMPUTE_LAB
+ACTIVE_TRACK=S3_1_12_CAPABILITY_BREAKOUT_PRODUCTION_COMPILER_ADVANCEMENT_CAUSAL_OPTIMIZATION_LOOP_SEMANTICS_AND_COMPUTE_EXPANSION
 CURRENT_PUBLIC_STABLE=v1.0.0
 CURRENT_PRERELEASE=NONE
 STABLE_V1_0_RELEASED=YES
@@ -49,22 +49,31 @@ S3_1_5_GITHUB_ACTIONS=REMOTE_CI_UNAVAILABLE_RUNNER_0_STEPS_0
 S3_1_5_MERGE_COMMIT=92b59bd20d7a35103789fdbd3358faa18237977b
 S3_1_6_STATE=MERGED_PR320
 S3_1_6_MERGE_COMMIT=4ddc7a64a4c395460181db0e8957f085d8bb12a
-S3_1_7_IMPLEMENTATION_STARTED=YES
-S3_1_7_STATE=IN_PROGRESS
-S3_1_7_BRANCH=feat/s3-1.7-native-lowering-codegen-expansion
-S3_1_7_BASE=4ddc7a64a4c395460181db0e8957f085d8bb12a
-S3_1_7_BENCHMARK_MAIN=e5f3236f868d5522e1e0e92e245a51c7b3e91064
-S3_1_7_PUBLIC_DEFAULT_CHANGE=NO
-S3_1_7_MERGE_AUTHORIZED=NO
+S3_1_11_STATE=MERGED_PR325
+S3_1_11_MERGE_COMMIT=a1ecc29908dfb42480376961927fd6c50552ecf3
+S3_BENCH_1_11_STATE=MERGED_PR29
+S3_BENCH_1_11_MERGE_COMMIT=d425aaca241549bae797d88d08fd7832ad221255
+S3_1_12_IMPLEMENTATION_STARTED=YES
+S3_1_12_STATE=IN_PROGRESS_PR_NOT_OPENED
+S3_1_12_BRANCH=feat/s3-1.12-capability-breakout
+S3_1_12_BASE=a1ecc29908dfb42480376961927fd6c50552ecf3
+S3_1_12_MERGE_AUTHORIZED=NO
+S3_1_12_REGISTER_ALLOCATION_DEFAULT=YES
+S3_1_12_SAME_COLOR_TMOV_ELISION=IMPLEMENTED_FOCUSED_GATES_PASS_LINUX_CI_PENDING
+S3_1_12_LOOP_ANALYSIS=CONTINUATION_RECURRENCES_PROVEN_5_OF_5_STRICT_F64_LOOPS_CLASSIFIED_2_NOT_VECTORIZABLE_3_UNKNOWN_NO_SIMD
+S3_1_12_BENCH_BRANCH=research/s3-1.12-capability-breakout-lab
+S3_1_12_BENCH_BASE=d425aaca241549bae797d88d08fd7832ad221255
+REGISTER_ALLOCATION_DEFAULT=YES
+REGISTER_ALLOCATABLE_POOL=11_CALL_AWARE_REGISTERS
 LOOP_HYBRID_AVAILABLE=YES_EXPLICIT
 EXACT_SEGMENT_DEFAULT=NO
 ```
 
-S3 `v1.0.0` remains the public stable release of the Python reference toolchain. PR #313 is merged; its cumulative source baseline brings the #301–#309 capabilities into `main`. This does not change the reference compiler or establish full self-hosting. PR #318 merged 1.5 through `92b59bd20d7a35103789fdbd3358faa18237977b`; PR #320 merged 1.6 through `4ddc7a64a4c395460181db0e8957f085d8bb12a9`, which is the 1.7 S3 base.
+S3 `v1.0.0` remains the public stable release of the Python reference toolchain. PR #325 integrates the 1.11 compiler-research campaign at `a1ecc29908dfb42480376961927fd6c50552ecf3`; S3-Benchmarks PR #29 is integrated at `d425aaca241549bae797d88d08fd7832ad221255`. The active post-1.11 campaign is S3 1.12 on independent branches based directly on those two `main` heads. This does not change the reference compiler or establish full self-hosting.
 
-The active development track is **S3 1.7 — Native Lowering, Codegen Intelligence and Independent Compute Lab**. S3 1.4 is integrated through PR #317 at `506108a679f586b5786d0ab020de4e9f10f964f0`; S3 1.5 is integrated through PR #318; S3 1.6 is integrated through PR #320. S3 1.3 is integrated through PR #316 at `da6efaf0a97c8cef08aea2f196aca37199311332`; its certified Linux full suite and 33/33 scientific checksum record remain historical evidence. The selected P2 and `s3.v1.science` are in `main`; `PER_INSTRUCTION` remains the default.
+The current backend reality is that `X8664Backend.register_allocation` defaults to `True`, using a deterministic call-aware pool of eleven allocatable registers with stack fallback. The `PER_INSTRUCTION` budget mode reserves `r15` for its live budget counter; the public instruction-budget default remains `PER_INSTRUCTION`. The 1.12 branch elides same-color TMOV data movement in the production emitter while preserving logical initialization checks and budget instrumentation. Production loop analysis now proves one scalar recurrence update on every reachable backedge for all five pinned loops; two loops with ordered f64 reductions are classified `NOT_VECTORIZABLE`, while three remain `UNKNOWN` because vector range/dependence proofs are incomplete. No SIMD or vector transformation is authorized. Provenance-focused tests passed on Python 3.11, 3.12, 3.13, and 3.14; the combined TMOV, loop, allocation, budget, and backend focused gate passed on Python 3.13. Linux-native CI has not yet been observed.
 
-The 1.5 source freeze `c924148c6d95948778351c7dd1362259caff670c` and its historical Linux full-suite result (4461 passed, 1 skipped, exit 0) remain recorded evidence. PR #318 is merged. The 1.7 experiment starts from the post-1.6 S3 base above and a separate S3-Benchmarks main base; it investigates native initialization-marker traffic with a proof-gated, fail-closed lowering change. No public default changes are proposed, and no speedup is claimed without independent correctness and measurement evidence.
+S3 1.3–1.6 and the 1.5 source freeze remain historical evidence; their prior validation and performance claims are unchanged. S3 1.11's bounded research established candidates and rejected lines, but its report-only analyses are not treated as production capability. The 1.12 campaign is converting only proven generic results into the normal compiler path and will retain strict-FP and per-instruction budget defaults.
 
 The 1.3 performance record remains unchanged: in its representative structural workload, the BASE-to-FINAL PER process median was effectively neutral (-1.98%) while assembly source and ELF grew about 119%; exact-segment `.text` overhead measured +55.4% versus PER for that workload. These results do not justify default promotion. The underlying PR #313 parent-stack blocker was resolved and is not being re-investigated.
 
@@ -98,13 +107,14 @@ R4's deterministic minimizer and replay/triage contracts were integrated through
 
 R5's bounded Linux x86-64 campaign recorded 256/256 PASS, hosted O0/O1 for all 256 cases, and native O0/O1 for the bounded 32-case shard on candidate `d277a862223e8d07b39fd9a687dd1ce0651af63b`. The campaign report and output hashes remain in [`R5_MAINTENANCE_CLOSURE.md`](../../reports/s3-1.1-reliability-20260916/R5_MAINTENANCE_CLOSURE.md). R0–R5 technical closure is integrated through merged PR #294. PR #295 is a separate release-preparation Draft PR, currently conflicting with `main`; no new release is implied.
 
-GitHub Actions remains blocked before workflow steps by the account billing/quota condition reported for PR #313; no Actions rerun or workflow weakening was performed. Issue #284 remains OPEN and also tracks the unprotected `main` branch and absent required checks.
+The runner/billing observations associated with PR #313 and issue #284 are historical infrastructure notes, not evidence that the current 1.12 candidate's workflows have run. No old workflow was rerun; the new candidate's natural checks will be observed after its Draft PR is opened.
 
 ## Immediate priorities
 
-1. Complete the 1.7 compiler experiment and independent benchmark-lab evidence, then publish one Draft PR per repository.
-2. Keep `PER_INSTRUCTION` as default; exact-segment and loop-hybrid remain opt-in despite measured gains.
-3. Do not merge, release, tag, publish to PyPI, or promote a default in this campaign.
+1. Continue converting 1.11 findings into generic production capabilities; same-color TMOV elision and continuation-aware recurrence facts are implemented, with correctness/eligibility boundaries still under review.
+2. Add independent Bench execution capability only if it replaces one-off experiments with a reusable candidate/ablation runner.
+3. Freeze behavior, validate on Linux, update concise evidence, and open Draft PRs only for substantive capability deltas.
+4. Do not merge, release, tag, publish to PyPI, or change strict-FP or budget defaults in this campaign.
 
 ## Out of scope
 
@@ -125,4 +135,4 @@ GitHub Actions jobs have been failing before any step is assigned (`runner_id=0`
 
 ## Next operational step
 
-The post-PR #320 integration at `4ddc7a64a4c395460181db0e8957f085d8bb12a9` is the S3 1.7 base. The S3-Benchmarks campaign is independently based on `e5f3236f868d5522e1e0e92e245a51c7b3e91064`; do not stack it on open Draft PRs #15, #23, or #24, and do not import S3 compiler internals into that repository. The next operational step is to finish the proof-gated native experiment, validate correctness before timing, and preserve exact source pins and raw evidence. Both campaign PRs remain Draft; no merge, release, tag, publication, or default promotion is authorized.
+The S3 1.12 implementation worktree is based at `a1ecc29908dfb42480376961927fd6c50552ecf3`; its independent Bench worktree is based at `d425aaca241549bae797d88d08fd7832ad221255`. The campaign branches are not stacked on prior Draft PRs. Their planned PRs remain unopened until capability and validation gates warrant publication. No merge, release, tag, publication, or default promotion is authorized.
