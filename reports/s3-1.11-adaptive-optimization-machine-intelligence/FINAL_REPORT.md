@@ -185,9 +185,19 @@ summaries, hashes, experiment results, tools, and tests remain reviewable.
 ```text
 S3_BRANCH=feat/s3-1.11-adaptive-optimization-machine-intelligence
 S3_PR_BASE=main
-S3_PR_STATE=NOT_YET_PUBLISHED
+S3_PR_NUMBER=325
+S3_PR_URL=https://github.com/SamDevlab/S3/pull/325
+S3_PR_STATE=OPEN_DRAFT
+S3_INITIAL_PUBLICATION_COMMIT=f2084e8d22c3749a385668d6f530c8c06e596bfd
+S3_EVIDENCE_FILE_COUNT=73
+S3_EVIDENCE_TOTAL_BYTES=1340746 (all 73 published blobs, including tools/tests)
+S3_LARGEST_COMMITTED_ARTIFACT=reports/s3-1.11-adaptive-optimization-machine-intelligence/evidence/control-832b/EXP-S3-111-EDGE-PROFILE-001.json,217225
+INTERMEDIATE_ARTIFACTS_COMMITTED=0 generated binaries/caches; superseded diagnostic JSON retained intentionally
+LARGE_RAW_EVIDENCE_ARTIFACTS_COMMITTED=0 (4 excluded files preserved locally)
 BENCH_BRANCH=research/s3-1.11-adaptive-optimization-lab
 BENCH_PR_BASE=main
-BENCH_PR_STATE=NOT_YET_PUBLISHED
+BENCH_PR_NUMBER=29
+BENCH_PR_URL=https://github.com/SamDevlab/S3-Benchmarks/pull/29
+BENCH_PR_STATE=OPEN_DRAFT
 STOP_HUMAN_GATE=REVIEW_S3_1_11
 ```
