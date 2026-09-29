@@ -280,7 +280,7 @@ fn generic_punctuation_kind(unit: i64) -> i64:
         1:
             return 100 + unit
 
-fn generic_lexer_scan_tokens(source: &vector<i64>, ids: &mut vector<i64>, kinds: &mut vector<i64>, starts: &mut vector<i64>, ends: &mut vector<i64>) -> i64:
+export fn generic_lexer_scan_tokens(source: &vector<i64>, ids: &mut vector<i64>, kinds: &mut vector<i64>, starts: &mut vector<i64>, ends: &mut vector<i64>) -> i64:
     mut cursor: i64 = 0
     mut length: i64 = vector_len<i64>(source)
     mut token_count: i64 = 0
@@ -402,6 +402,89 @@ fn generic_lexer_scan_tokens(source: &vector<i64>, ids: &mut vector<i64>, kinds:
     discard vector_push<i64>(ends, length)
     return token_count + 1
 
+export fn generic_lexer_scan(source: &vector<i64>) -> vector<i64>:
+    mut ids: vector<i64> = vector_new<i64>(1025)
+    mut kinds: vector<i64> = vector_new<i64>(1025)
+    mut starts: vector<i64> = vector_new<i64>(1025)
+    mut ends: vector<i64> = vector_new<i64>(1025)
+    mut count: i64 = generic_lexer_scan_tokens(source, &mut ids, &mut kinds, &mut starts, &mut ends)
+    mut stream: vector<i64> = vector_new<i64>(1 + count * 3)
+    discard vector_push<i64>(&mut stream, count)
+    mut index: i64 = 0
+    while index < count:
+        discard vector_push<i64>(&mut stream, vector_get<i64>(&kinds, index))
+        discard vector_push<i64>(&mut stream, vector_get<i64>(&starts, index))
+        discard vector_push<i64>(&mut stream, vector_get<i64>(&ends, index))
+        index = index + 1
+    return stream
+
+export fn generic_token_count(stream: &vector<i64>) -> i64:
+    match vector_len<i64>(stream) > 0:
+        -1:
+            mut count: i64 = vector_get<i64>(stream, 0)
+            match count >= 0:
+                -1:
+                    match vector_len<i64>(stream) == 1 + count * 3:
+                        -1:
+                            return count
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return 0
+        1:
+            return 0
+
+export fn generic_token_kind(stream: &vector<i64>, index: i64) -> i64:
+    match index >= 0:
+        -1:
+            match index < generic_token_count(stream):
+                -1:
+                    return vector_get<i64>(stream, 1 + index * 3)
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+export fn generic_token_start(stream: &vector<i64>, index: i64) -> i64:
+    match index >= 0:
+        -1:
+            match index < generic_token_count(stream):
+                -1:
+                    return vector_get<i64>(stream, 2 + index * 3)
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+export fn generic_token_end(stream: &vector<i64>, index: i64) -> i64:
+    match index >= 0:
+        -1:
+            match index < generic_token_count(stream):
+                -1:
+                    return vector_get<i64>(stream, 3 + index * 3)
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
 export fn generic_lexer_scan_digest(source: &vector<i64>) -> i64:
     mut ids: vector<i64> = vector_new<i64>(64)
     mut kinds: vector<i64> = vector_new<i64>(64)
@@ -489,7 +572,7 @@ export fn generic_lexer_native_case(case_id: i64) -> i64:
     discard vector_push<i64>(&mut source, 10)
     return generic_lexer_scan_digest(&source)
 
-fn generic_native_parser_kind(kinds: &vector<i64>, cursor: i64) -> i64:
+export fn generic_native_parser_kind(kinds: &vector<i64>, cursor: i64) -> i64:
     match cursor <=> vector_len<i64>(kinds):
         -1:
             return vector_get<i64>(kinds, cursor)
@@ -498,7 +581,7 @@ fn generic_native_parser_kind(kinds: &vector<i64>, cursor: i64) -> i64:
         1:
             return -1
 
-fn generic_native_parser_take(kinds: &vector<i64>, cursor: i64, wanted: i64) -> trit:
+export fn generic_native_parser_take(kinds: &vector<i64>, cursor: i64, wanted: i64) -> trit:
     match generic_native_parser_kind(kinds, cursor) == wanted:
         -1:
             return -1
@@ -515,7 +598,7 @@ fn generic_native_parser_name_digest(source: &vector<i64>, start: i64, end: i64)
         cursor = cursor + 1
     return digest
 
-fn generic_native_parser_integer_value(source: &vector<i64>, start: i64, end: i64) -> i64:
+export fn generic_native_parser_integer_value(source: &vector<i64>, start: i64, end: i64) -> i64:
     mut cursor: i64 = start
     mut value: i64 = 0
     while cursor < end:
@@ -526,7 +609,7 @@ fn generic_native_parser_integer_value(source: &vector<i64>, start: i64, end: i6
 fn generic_native_parser_pack(cursor: i64, node: i64) -> i64:
     return cursor * 64 + node + 1
 
-fn generic_native_parser_packed_cursor(packed: i64) -> i64:
+export fn generic_native_parser_packed_cursor(packed: i64) -> i64:
     mut cursor: i64 = 0
     mut remainder: i64 = packed
     while remainder >= 64:
@@ -534,7 +617,7 @@ fn generic_native_parser_packed_cursor(packed: i64) -> i64:
         cursor = cursor + 1
     return cursor
 
-fn generic_native_parser_packed_node(packed: i64) -> i64:
+export fn generic_native_parser_packed_node(packed: i64) -> i64:
     mut remainder: i64 = packed
     while remainder >= 64:
         remainder = remainder - 64
@@ -566,7 +649,7 @@ fn generic_native_parser_add_node(
     discard vector_push<i64>(node_values, value)
     return node_id
 
-fn generic_native_parser_expression(
+export fn generic_native_parser_expression(
     source: &vector<i64>,
     kinds: &vector<i64>,
     starts: &vector<i64>,
@@ -870,6 +953,154 @@ fn generic_native_parser_expression(
                 scanning = 0
     return left_result
 
+export fn generic_native_parser_parse_expression(
+    source: &vector<i64>,
+    stream: &vector<i64>,
+    cursor: i64,
+    minimum_precedence: i64
+) -> vector<i64>:
+    mut token_count: i64 = generic_token_count(stream)
+    mut kinds: vector<i64> = vector_new<i64>(token_count)
+    mut starts: vector<i64> = vector_new<i64>(token_count)
+    mut ends: vector<i64> = vector_new<i64>(token_count)
+    mut token_index: i64 = 0
+    while token_index < token_count:
+        discard vector_push<i64>(&mut kinds, generic_token_kind(stream, token_index))
+        discard vector_push<i64>(&mut starts, generic_token_start(stream, token_index))
+        discard vector_push<i64>(&mut ends, generic_token_end(stream, token_index))
+        token_index = token_index + 1
+    mut node_kinds: vector<i64> = vector_new<i64>(64)
+    mut node_operators: vector<i64> = vector_new<i64>(64)
+    mut node_left: vector<i64> = vector_new<i64>(64)
+    mut node_right: vector<i64> = vector_new<i64>(64)
+    mut node_starts: vector<i64> = vector_new<i64>(64)
+    mut node_ends: vector<i64> = vector_new<i64>(64)
+    mut node_values: vector<i64> = vector_new<i64>(64)
+    mut packed_result: i64 = generic_native_parser_expression(
+        source,
+        &kinds,
+        &starts,
+        &ends,
+        cursor,
+        minimum_precedence,
+        &mut node_kinds,
+        &mut node_operators,
+        &mut node_left,
+        &mut node_right,
+        &mut node_starts,
+        &mut node_ends,
+        &mut node_values
+    )
+    mut node_count: i64 = vector_len<i64>(&node_kinds)
+    mut tree: vector<i64> = vector_new<i64>(2 + node_count * 7)
+    discard vector_push<i64>(&mut tree, packed_result)
+    discard vector_push<i64>(&mut tree, node_count)
+    mut node: i64 = 0
+    while node < node_count:
+        discard vector_push<i64>(&mut tree, vector_get<i64>(&node_kinds, node))
+        discard vector_push<i64>(&mut tree, vector_get<i64>(&node_operators, node))
+        discard vector_push<i64>(&mut tree, vector_get<i64>(&node_left, node))
+        discard vector_push<i64>(&mut tree, vector_get<i64>(&node_right, node))
+        discard vector_push<i64>(&mut tree, vector_get<i64>(&node_starts, node))
+        discard vector_push<i64>(&mut tree, vector_get<i64>(&node_ends, node))
+        discard vector_push<i64>(&mut tree, vector_get<i64>(&node_values, node))
+        node = node + 1
+    return tree
+
+export fn generic_expression_packed_result(tree: &vector<i64>) -> i64:
+    match vector_len<i64>(tree) >= 2:
+        -1:
+            return vector_get<i64>(tree, 0)
+        0:
+            return -1
+        1:
+            return -1
+
+export fn generic_expression_node_count(tree: &vector<i64>) -> i64:
+    match vector_len<i64>(tree) >= 2:
+        -1:
+            mut count: i64 = vector_get<i64>(tree, 1)
+            match count >= 0:
+                -1:
+                    match vector_len<i64>(tree) == 2 + count * 7:
+                        -1:
+                            return count
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+fn generic_expression_field(tree: &vector<i64>, index: i64, field: i64) -> i64:
+    match index >= 0:
+        -1:
+            match index < generic_expression_node_count(tree):
+                -1:
+                    match field >= 0:
+                        -1:
+                            match field < 7:
+                                -1:
+                                    return vector_get<i64>(tree, 2 + index * 7 + field)
+                                0:
+                                    return -1
+                                1:
+                                    return -1
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+export fn generic_expression_node_kind(tree: &vector<i64>, index: i64) -> i64:
+    return generic_expression_field(tree, index, 0)
+
+export fn generic_expression_node_operator(tree: &vector<i64>, index: i64) -> i64:
+    return generic_expression_field(tree, index, 1)
+
+export fn generic_expression_node_left(tree: &vector<i64>, index: i64) -> i64:
+    return generic_expression_field(tree, index, 2)
+
+export fn generic_expression_node_right(tree: &vector<i64>, index: i64) -> i64:
+    return generic_expression_field(tree, index, 3)
+
+export fn generic_expression_node_value(tree: &vector<i64>, index: i64) -> i64:
+    return generic_expression_field(tree, index, 6)
+
+export fn generic_expression_node_start(tree: &vector<i64>, index: i64) -> i64:
+    return generic_expression_field(tree, index, 4)
+
+export fn generic_expression_node_end(tree: &vector<i64>, index: i64) -> i64:
+    return generic_expression_field(tree, index, 5)
+
+export fn generic_native_parser_program_type_code_for_token(
+    source: &vector<i64>,
+    stream: &vector<i64>,
+    token_index: i64
+) -> i64:
+    mut token_count: i64 = generic_token_count(stream)
+    mut starts: vector<i64> = vector_new<i64>(token_count)
+    mut ends: vector<i64> = vector_new<i64>(token_count)
+    mut index: i64 = 0
+    while index < token_count:
+        discard vector_push<i64>(&mut starts, generic_token_start(stream, index))
+        discard vector_push<i64>(&mut ends, generic_token_end(stream, index))
+        index = index + 1
+    return generic_native_parser_program_type_code(source, &starts, &ends, token_index)
+
 fn generic_native_parser_tree_digest(
     node: i64,
     node_kinds: &vector<i64>,
@@ -1151,7 +1382,7 @@ fn generic_native_parser_program_word_code(
             length = length
     return 0
 
-fn generic_native_parser_program_indent(
+export fn generic_native_parser_program_indent(
     source: &vector<i64>,
     position: i64
 ) -> i64:
@@ -1196,7 +1427,7 @@ fn generic_native_parser_program_indent(
         cursor = cursor + 1
     return indent
 
-fn generic_native_parser_program_type_code(
+export fn generic_native_parser_program_type_code(
     source: &vector<i64>,
     starts: &vector<i64>,
     ends: &vector<i64>,

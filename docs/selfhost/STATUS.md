@@ -12,6 +12,33 @@
 
 `STAGE1_V4=NOT_AUTHORIZED`
 
+## S3 1.13 candidate snapshot (2026-09-28)
+
+On the unmerged branch `feat/s3-1.13-selfhost-compiler-composition`, an
+experimental S3-written compiler compiled a bounded `i64` source subset to
+verified S3 Assembly. The Python compiler remains the reference and default;
+this candidate is not promoted and does not establish full self-hosting.
+
+```text
+REFERENCE_COMPILER=PYTHON
+STAGE1_S3_COMPILER=EXPERIMENTAL_SOURCE_TO_ARTIFACT_SUBSET
+FIRST_REAL_STAGE1_COMPILER_ARTIFACT=YES
+FULL_SELFHOST=NO
+CURRENT_SELFHOST_FRONTIER=EXPAND_STAGE1_SUBSET_AND_BEGIN_BOUNDED_SELF_SOURCE_COMPILATION
+FULL_SUITE_WINDOWS_EXIT=1
+FULL_SUITE_WINDOWS_FAILURES=5_PINNED_FIXTURE_LINE_ENDING_MISMATCH
+CAMPAIGN_COMPLETE=NO
+```
+
+The five Windows failures were the same pinned-fixture SHA assertion in
+`tests/test_s3_16_public_dataset_agent_kernels.py`; `core.autocrlf=true`
+produced CRLF bytes where the pinned Git blob has a final LF. The fixture and
+manifest were unchanged. The full-suite pass/skip totals were not retained.
+This candidate snapshot is not evidence that the repository-wide regression
+gate is green. See
+[`../../reports/s3-1.13-selfhost-compiler-composition/STAGE1_COMPOSITION_PROGRESS.md`](../../reports/s3-1.13-selfhost-compiler-composition/STAGE1_COMPOSITION_PROGRESS.md)
+for scope and qualification evidence.
+
 S3 continues to evolve through the normal language, compiler, runtime, optimizer,
 backend, tooling, and interoperability roadmap. Full compiler self-hosting is a
 research/maturity objective and is not a release gate for the language.
@@ -172,7 +199,7 @@ STATEMENT_ORDER_PRESERVED=PASS
 STATEMENT_BLOCK_BOUNDARY=PASS
 NATIVE_STATEMENT_SEQUENCE_NEGATIVES=PASS
 NATIVE_LINUX_STATEMENT_SEQUENCE=PASS
-NEXT_BLOCKER=NATIVE_LOCAL_BINDING
+HISTORICAL_NEXT_BLOCKER_AT_2026_09_19=NATIVE_LOCAL_BINDING
 ```
 
 This remains partial ordinary-frontend execution evidence only. It does not
@@ -201,7 +228,7 @@ NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_INTEGER_BINARY_PRECEDENCE_PARENTHE
 FINAL_FUNCTIONAL_HEAD=0cceff303f0337fe45db9b80a2e7b6e814ff979e
 FULL_SUITE=PASS
 FULL_SUITE_SHA=0cceff303f0337fe45db9b80a2e7b6e814ff979e
-NEXT_BLOCKER=NATIVE_STATEMENT_SEQUENCE
+HISTORICAL_NEXT_BLOCKER_AT_2026_09_19=NATIVE_STATEMENT_SEQUENCE
 HOST_EXECUTION_SUPPORT=PRESENT_AS_EXPECTED
 HOST_SEMANTIC_DECISIONS=DECREASING_BUT_PRESENT
 ```

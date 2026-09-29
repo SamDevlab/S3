@@ -1,0 +1,255 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from bootstrap.s3 import run_source
+from bootstrap.s3.assembly import parse_assembly
+from bootstrap.s3.diagnostics import S3Error
+from bootstrap.s3.emulator import Emulator
+from bootstrap.s3.ir_emulator import execute_ir
+from bootstrap.s3.pipeline import compile_sources
+
+
+_STAGE1_MODULES = (
+    "selfhost/substrate/generic_lexer_state.s3",
+    "selfhost/substrate/verifier_kernel.s3",
+    "selfhost/substrate/output_sink.s3",
+    "selfhost/compiler/stage1_compiler_v1.s3",
+)
+
+
+def _stage1_artifact(source: str) -> bytes:
+    repository = Path(__file__).parents[1]
+    modules = {
+        path: (repository / path).read_text(encoding="utf-8")
+        for path in _STAGE1_MODULES
+    }
+    source_bytes = source.encode("ascii")
+    main_lines = [
+        "module main",
+        "from selfhost.compiler.stage1_compiler_v1 import Stage1CompileResult",
+        "from selfhost.compiler.stage1_compiler_v1 import stage1_compile",
+        "fn main() -> vector<i64>:",
+        f"    mut source: vector<i64> = vector_new<i64>({len(source_bytes)})",
+    ]
+    main_lines.extend(
+        f"    discard vector_push<i64>(&mut source, {byte})"
+        for byte in source_bytes
+    )
+    main_lines.extend(
+        (
+            "    mut result: Stage1CompileResult = stage1_compile(source)",
+            "    mut envelope: vector<i64> = vector_new<i64>(result.output_length + 4)",
+            "    discard vector_push<i64>(&mut envelope, result.status)",
+            "    discard vector_push<i64>(&mut envelope, result.phase)",
+            "    discard vector_push<i64>(&mut envelope, result.error_code)",
+            "    discard vector_push<i64>(&mut envelope, result.output_length)",
+            "    mut output_index: i64 = 0",
+            "    while output_index < result.output_length:",
+            "        discard vector_push<i64>(&mut envelope, vector_get<i64>(&result.output, output_index))",
+            "        output_index = output_index + 1",
+            "    return envelope",
+        )
+    )
+    modules["main.s3"] = "\n".join(main_lines) + "\n"
+
+    stage0 = compile_sources(modules, entry_module="main")
+    output = execute_ir(stage0.ir)
+    envelope = tuple(int(output[index]) for index in range(output.length))
+    status, phase, error_code, output_length = envelope[:4]
+    if status == 0:
+        assert output_length == 0, f"failed Stage1 compilation emitted {output_length} bytes"
+        return b""
+    assert status == 1, f"Stage1 compilation failed: phase={phase}, error_code={error_code}"
+    return bytes(envelope[4 : 4 + output_length])
+
+
+def _reference_accepts(source: str) -> bool:
+    try:
+        compile_sources({"main.s3": source}, entry_module="main")
+    except S3Error:
+        return False
+    return True
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "fn main() -> i64:\n    return 2 + 3\n",
+        "fn main() -> i64:\n    return 12 + 30\n",
+    ),
+)
+def test_stage1_candidate_emits_executable_assembly_for_arithmetic(source: str) -> None:
+    artifact_bytes = _stage1_artifact(source)
+    assert artifact_bytes
+
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert Emulator().execute(artifact) == run_source(source)
+
+
+def test_stage1_candidate_composes_two_functions_with_a_zero_argument_call() -> None:
+    source = (
+        "fn helper() -> i64:\n"
+        "    return 37\n"
+        "\n"
+        "fn main() -> i64:\n"
+        "    return helper()\n"
+    )
+    artifact_bytes = _stage1_artifact(source)
+    assert artifact_bytes
+    assert b"TCALL" in artifact_bytes
+
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert Emulator().execute(artifact) == run_source(source) == 37
+
+
+def test_stage1_candidate_resolves_forward_function_references() -> None:
+    source = (
+        "fn main() -> i64:\n"
+        "    return add(19, 23)\n"
+        "\n"
+        "fn add(a: i64, b: i64) -> i64:\n"
+        "    return a + b\n"
+    )
+    artifact_bytes = _stage1_artifact(source)
+    assert artifact_bytes
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert Emulator().execute(artifact) == run_source(source) == 42
+
+
+def test_stage1_candidate_lowers_typed_parameters_and_positional_call_arguments() -> None:
+    source = (
+        "fn add(a: i64, b: i64) -> i64:\n"
+        "    return a + b\n"
+        "\n"
+        "fn main() -> i64:\n"
+        "    return add(17, 25)\n"
+    )
+    artifact_bytes = _stage1_artifact(source)
+    assert artifact_bytes
+    assert b"TCALL" in artifact_bytes
+
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert Emulator().execute(artifact) == run_source(source) == 42
+
+
+def test_stage1_candidate_lowers_immutable_locals_across_function_calls() -> None:
+    source = (
+        "fn add(a: i64, b: i64) -> i64:\n"
+        "    total: i64 = a + b\n"
+        "    return total\n"
+        "\n"
+        "fn main() -> i64:\n"
+        "    answer: i64 = add(17, 25)\n"
+        "    return answer\n"
+    )
+    artifact_bytes = _stage1_artifact(source)
+    assert artifact_bytes
+
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert Emulator().execute(artifact) == run_source(source) == 42
+
+
+def test_stage1_candidate_composes_nested_calls_and_parenthesized_arithmetic() -> None:
+    source = (
+        "fn multiply(a: i64, b: i64) -> i64:\n"
+        "    return (a * b)\n"
+        "\n"
+        "fn add(a: i64, b: i64) -> i64:\n"
+        "    return a + b\n"
+        "\n"
+        "fn main() -> i64:\n"
+        "    return add(multiply(3, 4), 2)\n"
+    )
+    artifact_bytes = _stage1_artifact(source)
+    assert artifact_bytes
+    assert b"TCALL" in artifact_bytes
+    assert b"TMUL" in artifact_bytes
+
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert Emulator().execute(artifact) == run_source(source) == 14
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "fn main() -> i64:\n    return missing + 1\n",
+        "fn main() -> i64:\n    value: i64 = 1\n    value: i64 = 2\n    return value\n",
+        "fn add(value: i64, value: i64) -> i64:\n    return value\nfn main() -> i64:\n    return add(1, 2)\n",
+        "fn add(a: i64, b: i64) -> i64:\n    return a + b\nfn main() -> i64:\n    return add(1)\n",
+        "fn main() -> i64:\n    value: i64 = 1\n",
+        "fn main() -> i64:\n    return 1\n    value: i64 = 2\n",
+        "fn main() -> i64:\n    return true\n",
+        "fn main() -> i64:\n    return (1 + 2\n",
+    ),
+)
+def test_stage1_candidate_rejects_unsupported_or_invalid_bindings(source: str) -> None:
+    assert not _reference_accepts(source)
+    assert _stage1_artifact(source) == b""
+
+
+def test_stage1_candidate_has_no_host_compiler_fallbacks() -> None:
+    repository = Path(__file__).parents[1]
+    candidate_sources = "\n".join(
+        (repository / path).read_text(encoding="utf-8")
+        for path in _STAGE1_MODULES
+    ).casefold()
+    for forbidden in (
+        "bootstrap.s3",
+        "compile_source(",
+        "compile_program(",
+        "run_source(",
+        "reference_lowerer",
+        "host_compiler_callback",
+    ):
+        assert forbidden not in candidate_sources
+
+
+def test_stage1_candidate_output_is_deterministic() -> None:
+    source = "fn main() -> i64:\n    return 12 + 30\n"
+    assert _stage1_artifact(source) == _stage1_artifact(source)
+
+
+def test_stage1_candidate_rejects_unlowered_identifier_without_artifact() -> None:
+    source = "fn main() -> i64:\n    return value + 1\n"
+    assert _stage1_artifact(source) == b""
+
+
+def test_s3_output_sink_append_bytes_overflow_is_transactional() -> None:
+    repository = Path(__file__).parents[1]
+    source = """\
+module main
+from selfhost.substrate.output_sink import OutputSinkState
+from selfhost.substrate.output_sink import output_sink_new
+from selfhost.substrate.output_sink import output_sink_append
+from selfhost.substrate.output_sink import output_sink_append_bytes
+fn main() -> i64:
+    mut sink: OutputSinkState = output_sink_new(2)
+    sink = output_sink_append(sink, 65)
+    mut bytes: vector<i64> = vector_new<i64>(2)
+    discard vector_push<i64>(&mut bytes, 66)
+    discard vector_push<i64>(&mut bytes, 67)
+    sink = output_sink_append_bytes(sink, bytes)
+    mut failed: i64 = 0
+    match sink.failed == 1:
+        -1:
+            failed = 1
+        0:
+            discard 0
+        1:
+            discard 0
+    return failed * 1000000 + vector_len<i64>(&sink.buffer) * 10000 + vector_get<i64>(&sink.buffer, 0)
+"""
+    compilation = compile_sources(
+        {
+            "selfhost/substrate/output_sink.s3": (
+                repository / "selfhost/substrate/output_sink.s3"
+            ).read_text(encoding="utf-8"),
+            "main.s3": source,
+        },
+        entry_module="main",
+    )
+
+    assert execute_ir(compilation.ir) == 1_010_065

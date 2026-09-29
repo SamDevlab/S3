@@ -220,6 +220,15 @@
         "native assembly source"
       ],
       "default_changed": false
+    },
+    "s3_1_13_stage1_compiler": {
+      "status": "EXPERIMENTAL_UNMERGED_CANDIDATE",
+      "source_to_artifact": "BOUNDED_I64_SUBSET_TO_VERIFIED_S3_ASSEMBLY",
+      "first_real_stage1_compiler_artifact": true,
+      "full_selfhost": false,
+      "production_default": false,
+      "candidate_source_sha256": "894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c",
+      "repository_full_suite": "WINDOWS_EXIT_1_FIVE_PINNED_FIXTURE_LINE_ENDING_FAILURES"
     }
   },
   "roadmap_provider_status": {
