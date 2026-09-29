@@ -213,6 +213,47 @@ def test_external_adapter_reports_build_timeout_without_disabling_it(tmp_path, m
         ExternalCompilerAdapter("rust", toolchain).build(case, tmp_path / "build")
 
 
+def test_zig_adapter_uses_build_local_caches(tmp_path, monkeypatch):
+    source = tmp_path / "portable.zig"
+    source.write_text("pub fn main() void {}", encoding="utf-8")
+    case = Case(
+        campaign="test",
+        benchmark_id="cache.v1",
+        workload_version="1.0.0",
+        category="runtime",
+        suite="portable",
+        implementation="zig",
+        adapter="zig",
+        execution_mode="native",
+        optimization_mode="Debug",
+        input_id="one",
+        input_size=1,
+        expected_checksum="1",
+        timeout_seconds=30,
+        build_timeout_seconds=75,
+        timed_region="program",
+        source=source,
+        configuration={"compiler_flags": {"Debug": []}},
+    )
+    observed_env = {}
+
+    def fake_run_command(arguments, *, cwd, timeout_seconds, env=None, **kwargs):
+        assert timeout_seconds == 75
+        observed_env.update(env or {})
+        emit = next(argument for argument in arguments if argument.startswith("-femit-bin="))
+        Path(emit.split("=", 1)[1]).write_text("binary", encoding="utf-8")
+        return CommandResult(tuple(arguments), "", "", 0, False, False, 1)
+
+    monkeypatch.setattr(adapters, "run_command", fake_run_command)
+    toolchain = Toolchain("zig", "zig", "test", True, ("zig", "version"))
+    build_dir = tmp_path / "build"
+
+    ExternalCompilerAdapter("zig", toolchain).build(case, build_dir)
+
+    assert observed_env["ZIG_GLOBAL_CACHE_DIR"] == str(build_dir / ".zig-global-cache")
+    assert observed_env["ZIG_LOCAL_CACHE_DIR"] == str(build_dir / ".zig-local-cache")
+
+
 def test_missing_toolchain_is_explicitly_unavailable(monkeypatch):
     monkeypatch.setattr(shutil, "which", lambda command: None)
     detected = detect_toolchains()

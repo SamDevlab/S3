@@ -407,10 +407,18 @@ class ExternalCompilerAdapter:
             compile_duration = compile_result.duration_ns
             link_duration = None
         elif self._language == "zig":
+            zig_global_cache = build_dir / ".zig-global-cache"
+            zig_local_cache = build_dir / ".zig-local-cache"
+            zig_global_cache.mkdir(parents=True, exist_ok=True)
+            zig_local_cache.mkdir(parents=True, exist_ok=True)
+            zig_env = os.environ.copy()
+            zig_env["ZIG_GLOBAL_CACHE_DIR"] = os.fspath(zig_global_cache)
+            zig_env["ZIG_LOCAL_CACHE_DIR"] = os.fspath(zig_local_cache)
             compile_result = run_command(
                 [self._toolchain.command, "build-exe", os.fspath(case.source), *flags, f"-femit-bin={executable}"],
                 cwd=build_dir,
                 timeout_seconds=case.build_timeout_seconds,
+                env=zig_env,
             )
             _require_command_success(compile_result, "Zig build")
             compile_duration = compile_result.duration_ns

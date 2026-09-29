@@ -222,6 +222,7 @@ def run_command(
     cwd: Path,
     timeout_seconds: float,
     clock: Callable[[], int] = time.perf_counter_ns,
+    env: Mapping[str, str] | None = None,
 ) -> CommandResult:
     if not arguments or any(not isinstance(value, str) or not value for value in arguments):
         raise ValueError("command arguments must be non-empty strings")
@@ -237,6 +238,7 @@ def run_command(
             shell=False,
             timeout=timeout_seconds,
             check=False,
+            env=dict(env) if env is not None else None,
         )
         duration = clock() - start
         stdout, stdout_truncated = _bounded_output(completed.stdout)
