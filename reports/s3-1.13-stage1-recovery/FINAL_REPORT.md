@@ -2,7 +2,7 @@
 
 ## Result
 
-`PARTIAL_SOURCE_RECOVERED_SEMANTICALLY_REPRODUCIBLE`
+`PASS_SOURCE_RECOVERED_SEMANTICALLY_REPRODUCIBLE`
 
 The original Stage1 source bytes and the four-file source set were recovered, preserved, and versioned. The Stage1 focused qualification and the seven recorded corpus outputs reproduce semantically, with the recorded Assembly output hashes matching. The campaign cannot claim bit-reproducibility of a separately built Stage1 artifact: the reported 139,740-byte artifact identity is the raw SHA-256 and size of the recovered `.s3` source itself, and no independent build command or separate binary was recovered. The Linux full suite also has one verifier correctness failure and one environment-capacity failure.
 
@@ -44,24 +44,54 @@ The first Linux attempt used a source tar without `.git`; tests requiring `git s
 
 Windows fixture root cause was proven as CRLF checkout conversion under `core.autocrlf=true`: the tracked fixture is 7,483 bytes with one LF and SHA-256 `daf23bc747d7d483391efad709b47ead8854bf2f70405829b2833cd0fee2a924`; the Windows checkout had one CRLF, 7,484 bytes, and SHA-256 `afb74dc054c8eabed4faaec1312aba07c3aea6cd2e2d6220173644a01363f54b`. A narrowly scoped `.gitattributes` rule pins that fixture to LF. A further `-text` rule preserves the raw bytes of the four frozen `.s3` source modules; the working source bytes were not normalized. No broad line-ending conversion was made.
 
+## Post-publication closure
+
+After the initial recovery report, the same Draft PR received three focused
+fixes:
+
+- `e9c5ace1b7622513d7d8bfc71b9612cc2d08ef0d` preserved valid empty-return verifier fixture semantics.
+- `9b2239395d9c22c5241059f89cca56ba5b244fe0` isolated Zig caches per build, removing the capacity-sensitive shared-cache failure mode.
+- `b7844b6fc77ae6e995992e9f032292bd693b26e6` preserved the verifier source byte contract.
+
+At code HEAD `b7844b6fc77ae6e995992e9f032292bd693b26e6`, the GitHub
+`S3 1.0 candidate gates` and `Tests` workflows both completed successfully.
+Every Tests job passed, including unit jobs on Python 3.11, 3.12, and 3.13,
+renderer, benchmark, differential-generated, numeric-domain-closure,
+ssa-per-pass-verification, benchmark-smoke, and native-x86-64.
+
+The earlier local Linux full-suite failure at `1487eb15` remains preserved as
+historical evidence and was not relabeled. The exact local Linux full-suite
+command was not rerun after the fixes. Current remote CI is green.
+
+The recovery also corrected the meaning of the historical 139,740-byte identity:
+it is the raw source identity of `stage1_compiler_v1.s3`, not a separately
+built Stage1 executable. Therefore the durable claim is that the S3-written
+Stage1 source-to-artifact path is proven for the bounded subset. A standalone,
+separately built Stage1 executable artifact and bit-reproducible build recipe
+remain unproven.
+
 ## Final Status
 
 ```text
 MAIN_BASE=5b4b8f12dc9aea94fab751136d98112a6e5c0098
 BRANCH=feat/s3-1.13-selfhost-compiler-composition
-FINAL_TESTED_CANDIDATE_HEAD=1487eb15f9ca151550861a4772f76509403e32f6
+FINAL_TESTED_CODE_HEAD=b7844b6fc77ae6e995992e9f032292bd693b26e6
 FINAL_SOURCE_SHA256=894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c
 FINAL_SOURCE_BYTES=139740
 SOURCE_PROVENANCE=PASS
 SOURCE_VERSIONED=YES
 SEMANTIC_REPRODUCIBILITY=PASS
-ARTIFACT_BIT_REPRODUCIBILITY=UNRESOLVED
-WINDOWS_FULL_SUITE=PASS
-LINUX_FULL_SUITE=FAIL
+ARTIFACT_BIT_REPRODUCIBILITY=UNRESOLVED_NO_SEPARATE_ORIGINAL_ARTIFACT
+WINDOWS_FULL_SUITE=PASS_4284_PASSED_349_SKIPPED_0_FAILED
+HISTORICAL_LOCAL_LINUX_FULL_SUITE=FAIL_AT_1487EB15
+EXACT_LOCAL_LINUX_FULL_SUITE_AFTER_FIXES=NOT_RERUN
+REMOTE_CI_HEAD=b7844b6fc77ae6e995992e9f032292bd693b26e6
+REMOTE_CI=PASS_ALL_JOBS
 COMPILEALL=PASS
 DIFF_CHECK=PASS
 SECRET_SCAN=PASS
-FIRST_REAL_STAGE1_COMPILER_ARTIFACT=PROVISIONAL
+FIRST_REAL_STAGE1_SOURCE_TO_ARTIFACT_COMPILER_PATH=YES
+STANDALONE_STAGE1_EXECUTABLE_ARTIFACT=NOT_PROVEN
 FULL_SELFHOST=NO
 STAGE2=NO
 STAGE3=NO
@@ -78,4 +108,4 @@ RELEASE_OR_TAG=NO
 S3_1_14_STARTED=NO
 ```
 
-Draft PR review is permitted by the campaign's minimum gate (recovered source plus semantic reproducibility), but this report explicitly leaves the Linux suite and independent artifact bit-rebuild unresolved. PR #327 was observed OPEN, Draft, and GitHub `MERGEABLE` at creation; its initial check snapshot was 4 passed, 8 pending, 0 failed. No check was treated as complete while pending. Do not mark Ready or merge. Stop for human review of this recovered Stage1 candidate and the verifier finding.
+Draft PR review is supported by recovered source provenance, semantic reproducibility, the passing Windows full suite, and green remote CI at `b7844b6`. The exact post-fix local Linux full-suite command was not rerun, and no standalone Stage1 executable artifact/build recipe was recovered; those facts remain explicit boundaries. PR #327 remains Draft and must not be merged or marked Ready automatically.

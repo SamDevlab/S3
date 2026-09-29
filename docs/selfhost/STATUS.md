@@ -22,22 +22,29 @@ this candidate is not promoted and does not establish full self-hosting.
 ```text
 REFERENCE_COMPILER=PYTHON
 STAGE1_S3_COMPILER=EXPERIMENTAL_SOURCE_TO_ARTIFACT_SUBSET
-FIRST_REAL_STAGE1_COMPILER_ARTIFACT=YES
+FIRST_REAL_STAGE1_SOURCE_TO_ARTIFACT_COMPILER_PATH=YES
+STANDALONE_STAGE1_EXECUTABLE_ARTIFACT=NOT_PROVEN
 FULL_SELFHOST=NO
 CURRENT_SELFHOST_FRONTIER=EXPAND_STAGE1_SUBSET_AND_BEGIN_BOUNDED_SELF_SOURCE_COMPILATION
-FULL_SUITE_WINDOWS_EXIT=1
-FULL_SUITE_WINDOWS_FAILURES=5_PINNED_FIXTURE_LINE_ENDING_MISMATCH
-CAMPAIGN_COMPLETE=NO
+WINDOWS_FULL_SUITE=PASS_4284_PASSED_349_SKIPPED_0_FAILED
+REMOTE_CI_HEAD=b7844b6fc77ae6e995992e9f032292bd693b26e6
+REMOTE_CI=PASS_ALL_JOBS
+EXACT_LOCAL_LINUX_FULL_SUITE_AFTER_FIXES=NOT_RERUN
+RECOVERY_CLOSURE=PASS_SOURCE_RECOVERED_SEMANTICALLY_REPRODUCIBLE
 ```
 
-The five Windows failures were the same pinned-fixture SHA assertion in
-`tests/test_s3_16_public_dataset_agent_kernels.py`; `core.autocrlf=true`
-produced CRLF bytes where the pinned Git blob has a final LF. The fixture and
-manifest were unchanged. The full-suite pass/skip totals were not retained.
-This candidate snapshot is not evidence that the repository-wide regression
-gate is green. See
-[`../../reports/s3-1.13-selfhost-compiler-composition/STAGE1_COMPOSITION_PROGRESS.md`](../../reports/s3-1.13-selfhost-compiler-composition/STAGE1_COMPOSITION_PROGRESS.md)
-for scope and qualification evidence.
+The earlier Windows SHA failures were proven to be checkout line-ending
+conversion under `core.autocrlf=true` and were fixed with narrowly scoped
+`.gitattributes` rules. The recovered candidate later passed the Windows full
+suite with 4,284 passed, 349 skipped, and 0 failed. A subsequent verifier
+compatibility fix and Zig cache isolation were published on the same Draft PR;
+at code HEAD `b7844b6fc77ae6e995992e9f032292bd693b26e6`, every GitHub Actions job
+in both the candidate-gates and Tests workflows passed, including unit jobs on
+Python 3.11/3.12/3.13 and native x86-64. The exact local Linux full-suite command
+was not rerun after those fixes, so remote CI success is recorded separately
+rather than rewriting the historical local transcript. See the recovery report
+for provenance and the distinction between the confirmed source-to-artifact
+compiler path and an unproven standalone Stage1 executable artifact.
 
 S3 continues to evolve through the normal language, compiler, runtime, optimizer,
 backend, tooling, and interoperability roadmap. Full compiler self-hosting is a

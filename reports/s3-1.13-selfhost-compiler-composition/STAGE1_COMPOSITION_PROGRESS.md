@@ -1,14 +1,16 @@
 # S3 1.13 Stage1 Composition Qualification
 
-Status is local and uncommitted on `feat/s3-1.13-selfhost-compiler-composition`,
-based on `5b4b8f12dc9aea94fab751136d98112a6e5c0098`. The original checkout was
-not used. This report supplements the historical Gate Zero inventory and does
-not rewrite its base-state findings.
+Status is versioned on Draft PR #327, branch
+`feat/s3-1.13-selfhost-compiler-composition`, based on
+`5b4b8f12dc9aea94fab751136d98112a6e5c0098`. This report supplements the
+historical Gate Zero inventory and preserves earlier failed-gate evidence rather
+than rewriting it.
 
 ## Result
 
 ```text
-FIRST_REAL_STAGE1_COMPILER_ARTIFACT=YES
+FIRST_REAL_STAGE1_SOURCE_TO_ARTIFACT_COMPILER_PATH=YES
+STANDALONE_STAGE1_EXECUTABLE_ARTIFACT=NOT_PROVEN
 STAGE1_SUBSET=EXPERIMENTAL_I64_SOURCE_TO_S3_ASSEMBLY
 CANONICAL_SELFHOST_IR=NativeIR
 GENERIC_LOWERING=PASS
@@ -22,7 +24,7 @@ HOST_EMITTER_FALLBACK=NO
 FULL_SELFHOST=NO
 STAGE2=NOT_ATTEMPTED
 STAGE3=NOT_ATTEMPTED
-CAMPAIGN_COMPLETE=NO
+RECOVERY_CLOSURE=PASS_SOURCE_RECOVERED_SEMANTICALLY_REPRODUCIBLE
 ```
 
 The Python Stage0 compiler built the candidate from S3 modules. Stage1 itself
@@ -46,14 +48,17 @@ BASE=5b4b8f12dc9aea94fab751136d98112a6e5c0098
 STAGE1_COMPILER_SHA256=894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c
 STAGE1_COMPILER_BYTES=139740
 STAGE1_SOURCE_FREEZE_TREE=4a5fc8f3ce57f66c35bc8610f3ec365e8390c5f16c0a5d08354e30fd50f93224
-SOURCE_CHANGED_AFTER_FREEZE=NO
+STAGE1_COMPILER_SOURCE_CHANGED_AFTER_FREEZE=NO
+SUPPORTING_VERIFIER_CHANGED_AFTER_FREEZE=YES_COMPATIBILITY_FIX
 CANONICAL_SELFHOST_COMPILER_CHANGED=NO
 ```
 
-The source-tree digest covers the four candidate modules: generic lexer/parser
-state, verifier kernel, OutputSink, and `stage1_compiler_v1.s3`. Their individual
-SHA-256 values are recorded in this report's qualification evidence and were
-checked again on the Linux VM before native execution.
+The historical source-tree digest covers the four recovered candidate modules:
+generic lexer/parser state, verifier kernel, OutputSink, and
+`stage1_compiler_v1.s3`. Their recovered SHA-256 values remain provenance
+evidence. The Stage1 compiler source itself stayed byte-identical; the supporting
+verifier later received compatibility fixes required to preserve its pre-1.13
+valid fixture semantics.
 
 ## Corpus And Artifact Evidence
 
@@ -100,36 +105,38 @@ AI_CAPABILITIES_JSON=VALID
 LINUX_NATIVE_UNSEEN_SOURCE=PASS
 ```
 
-The one post-freeze full suite run on Windows terminated with exit 1 and five
-failures, all in `tests/test_s3_16_public_dataset_agent_kernels.py`. Each
-failed before its substantive test at the same pinned-fixture SHA assertion.
-The manifest expects the Git blob SHA-256
-`daf23bc747d7d483391efad709b47ead8854bf2f70405829b2833cd0fee2a924`; the
-Windows worktree bytes hash to
-`afb74dc054c8eabed4faaec1312aba07c3aea6cd2e2d6220173644a01363f54b` because
-`core.autocrlf=true` converts the fixture's final LF to CRLF. Git reports both
-fixture and manifest unchanged. A Linux focused run using the exact Git blob
-passed (`1 passed`), confirming the checkout line-ending cause. Neither fixture
-nor manifest was altered. The full-suite pass/skip totals were not retained in
-the terminal capture and are intentionally not reconstructed or invented.
+The earlier Windows run failed only at five pinned-fixture SHA assertions.
+The root cause was proven as LF-to-CRLF checkout conversion under
+`core.autocrlf=true`; narrowly scoped `.gitattributes` rules fixed the
+platform-sensitive fixture without broad source rewriting. A later Windows full
+suite passed with 4,284 passed, 349 skipped, 0 failed.
 
-Consequently the compiler artifact is proven, but the repository-wide
-regression gate is not green in this Windows checkout. No full-suite rerun was
-started. The failure is independent of the S3 1.13 files, but the campaign is
-not marked fully complete until the platform-sensitive test gate is resolved
-and qualified under the campaign's one-run policy.
+The first corrected local Linux full-suite run at `1487eb15` retained two
+failures as historical evidence: one verifier compatibility regression in the
+valid `branch_program` fixture and one Zig `NoSpaceLeft` cache-capacity
+failure. The branch then added three focused fixes: preserve valid empty-return
+verifier fixtures, isolate Zig caches per build, and preserve the verifier source
+byte contract. At code HEAD
+`b7844b6fc77ae6e995992e9f032292bd693b26e6`, both GitHub Actions workflows
+completed successfully; every Tests job passed, including Python 3.11/3.12/3.13
+unit jobs, renderer, benchmark, differential, numeric-domain, SSA verification,
+and native x86-64. The exact local Linux full-suite command was not rerun after
+those fixes, so remote CI success is not mislabeled as a replacement local
+transcript.
 
 ## Deferred Frontier And Actions
 
 The Stage1 source (139740 bytes) exceeds its 4096-byte input bound and uses
 language constructs outside the accepted subset. Self-emission is therefore
-`DEFERRED`, not simulated. Stage2, Stage3, fixed point, benchmark, T4, PR,
-commit, push, merge, release, tag, and default promotion were not performed.
+`DEFERRED`, not simulated. Stage2, Stage3, fixed point, release, tag, merge,
+and default promotion were not performed. The recovered implementation and
+evidence are versioned on Draft PR #327; commit and push therefore occurred,
+but the PR remains unmerged and not Ready.
 
 ```text
 REFERENCE_COMPILER=PYTHON
 STAGE1_S3_COMPILER=EXPERIMENTAL_SOURCE_TO_ARTIFACT_SUBSET
 CURRENT_SELFHOST_FRONTIER=EXPAND_STAGE1_SUBSET_AND_BEGIN_BOUNDED_SELF_SOURCE_COMPILATION
 S1_13_HUMAN_REVIEW=REQUIRED
-STOP_HUMAN_GATE=REVIEW_S3_1_13_FIRST_REAL_STAGE1_COMPILER_ARTIFACT
+STOP_HUMAN_GATE=REVIEW_S3_1_13_RECOVERED_STAGE1_PR327
 ```

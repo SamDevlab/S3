@@ -148,5 +148,30 @@
   "merge_performed": false,
   "release_or_tag": false,
   "s3_1_14_started": false,
-  "result": "PARTIAL_SOURCE_RECOVERED_SEMANTICALLY_REPRODUCIBLE"
+  "result": "PASS_SOURCE_RECOVERED_SEMANTICALLY_REPRODUCIBLE",
+  "post_recovery_closure": {
+    "code_head": "b7844b6fc77ae6e995992e9f032292bd693b26e6",
+    "verifier_compatibility_fix": "e9c5ace1b7622513d7d8bfc71b9612cc2d08ef0d",
+    "zig_cache_isolation_fix": "9b2239395d9c22c5241059f89cca56ba5b244fe0",
+    "verifier_source_byte_fix": "b7844b6fc77ae6e995992e9f032292bd693b26e6",
+    "windows_full_suite": "PASS_4284_PASSED_349_SKIPPED_0_FAILED",
+    "historical_local_linux_full_suite": "FAIL_AT_1487EB15",
+    "exact_local_linux_full_suite_after_fixes": "NOT_RERUN",
+    "remote_ci": "PASS_ALL_JOBS",
+    "remote_ci_jobs": [
+      "python_3_11_unit",
+      "python_3_12_unit",
+      "python_3_13_unit",
+      "renderer",
+      "benchmark",
+      "benchmark_smoke",
+      "differential_generated",
+      "numeric_domain_closure",
+      "ssa_per_pass_verification",
+      "native_x86_64"
+    ],
+    "first_real_stage1_source_to_artifact_compiler_path": true,
+    "standalone_stage1_executable_artifact": "NOT_PROVEN",
+    "full_selfhost": false
+  }
 }

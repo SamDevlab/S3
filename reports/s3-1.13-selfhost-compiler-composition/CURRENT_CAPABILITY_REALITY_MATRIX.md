@@ -81,9 +81,12 @@ It supersedes the Gate Zero classifications only for this local branch.
 | First real Stage1 artifact | `S3_NATIVE_EXECUTABLE` | Seven implementation cases and one post-freeze unseen source produced artifacts; the unseen artifact parsed and executed to the Python reference result. |
 | Full self-hosting / Stage2 / Stage3 | `MISSING` | Self-source exceeds the Stage1 source bound and includes unsupported constructs; self-emission was deferred, and Stage2/Stage3 were not attempted. |
 | Production/default compiler replacement | `MISSING` | Python remains the reference and package default; the Stage1 compiler is experimental and unmerged. |
-| Repository-wide final regression gate | `MISSING` | The one Windows full-suite run exited 1 with five pinned-fixture SHA failures caused by checkout line-ending normalization; totals for passes/skips were not retained. No rerun was started. |
+| Repository-wide final regression gate | `PASS_REMOTE_CI` | The Windows full suite passed with 4,284 passed, 349 skipped, 0 failed. After verifier compatibility and Zig cache fixes, code HEAD `b7844b6fc77ae6e995992e9f032292bd693b26e6` passed every GitHub Actions job, including unit jobs on Python 3.11/3.12/3.13 and native x86-64. The exact local Linux full-suite command was not rerun after the fixes, so that historical transcript remains separate. |
 
-`FIRST_REAL_STAGE1_COMPILER_ARTIFACT=YES` is therefore a precise candidate
-capability claim, not `FULL_SELFHOST=YES` and not a claim that the whole
-campaign passed. See `STAGE1_COMPOSITION_PROGRESS.md` and
+`FIRST_REAL_STAGE1_SOURCE_TO_ARTIFACT_COMPILER_PATH=YES` is the precise
+candidate capability claim. The recovered S3 source receives bounded S3 source,
+lowers to `NativeIR`, verifies, and emits S3 Assembly without Python semantic,
+lowering, verifier, or emitter fallback. A separately built standalone Stage1
+executable artifact and its bit-reproducible build recipe were not recovered,
+so `STANDALONE_STAGE1_EXECUTABLE_ARTIFACT=NOT_PROVEN` and `FULL_SELFHOST=NO`. See `STAGE1_COMPOSITION_PROGRESS.md` and
 `STAGE1_ARTIFACT_MANIFEST.json` for the bounded scope and evidence.
