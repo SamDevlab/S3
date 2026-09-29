@@ -1,0 +1,138 @@
+{
+  "campaign": "S3_1_13_STAGE1_CANDIDATE_RECOVERY_AND_REPRODUCIBILITY_CLOSURE_V1",
+  "main_base": "5b4b8f12dc9aea94fab751136d98112a6e5c0098",
+  "recovered_from": "C:/Users/samue/.codex/worktrees/s3-1-13-stage1-compiler/S3-language",
+  "recovery_identity": {
+    "source_path_at_recovery": "selfhost/compiler/stage1_compiler_v1.s3",
+    "expected_path_absent": "selfhost/compiler/s3c_stage1.s3",
+    "source_was_untracked_at_recovery": true,
+    "pre_recovery_git_commit": null,
+    "versioned_by_commit": "f5c6e7cdf7fd221e47e9e9eac41ccd7cd6c14231",
+    "final_source_commit": "1487eb15f9ca151550861a4772f76509403e32f6",
+    "final_commit_tree": "9dce4b61062ca233a9f7495e30847a3fd06b9f4a"
+  },
+  "source_files": [
+    {
+      "path": "selfhost/compiler/stage1_compiler_v1.s3",
+      "bytes": 139740,
+      "sha256": "894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c",
+      "git_blob_sha": "75f9af5347c7d6c0b8b6f8a1808c82a69c84de65",
+      "line_endings": "LF",
+      "utf8_bom": false
+    },
+    {
+      "path": "selfhost/substrate/generic_lexer_state.s3",
+      "bytes": 207645,
+      "sha256": "298d8c459caf68a34e402a3439800a7905f93e364a30f6a089f9516cafd134d8",
+      "git_blob_sha": "feee5b37143e1e303d966b54ed644bf776531d02",
+      "line_endings": "MIXED",
+      "utf8_bom": false
+    },
+    {
+      "path": "selfhost/substrate/output_sink.s3",
+      "bytes": 5009,
+      "sha256": "f2bd628b4da29ba73eb666911f6792f01edee6b6f7b8855209066f1c8468ad8d",
+      "git_blob_sha": "add8eec817891c4dc9de133b0058f9aa76395187",
+      "line_endings": "LF",
+      "utf8_bom": false
+    },
+    {
+      "path": "selfhost/substrate/verifier_kernel.s3",
+      "bytes": 94295,
+      "sha256": "fd591e9d2a2234ebfe50e558859f8db627777d9d7440695fa337a89acce6107a",
+      "git_blob_sha": "4a145429d5552ebc3b4a2aa05828e579127cdbca",
+      "line_endings": "MIXED",
+      "utf8_bom": false
+    }
+  ],
+  "recovered_source_manifest_sha256": "89820fc7d8db1f0db5608e6051902638b34d9fb1b5231ab192f418650b30fd09",
+  "historical_source_tree_fingerprint": "4a5fc8f3ce57f66c35bc8610f3ec365e8390c5f16c0a5d08354e30fd50f93224",
+  "original_artifact_sha256": "894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c",
+  "original_artifact_bytes": 139740,
+  "rebuilt_artifact_sha256": null,
+  "rebuilt_artifact_bytes": null,
+  "artifact_identity_note": "The historical artifact SHA-256 and byte count equal the raw recovered Stage1 source. No separate built artifact or authoritative build recipe was recovered; bit-reproducibility is unresolved.",
+  "bit_reproducible": null,
+  "semantic_reproducible": true,
+  "semantic_evidence": {
+    "focused_test_command": "python -m pytest -q -rA tests/test_s3_1_13_stage1_compiler.py",
+    "focused_passed": 19,
+    "focused_failed": 0,
+    "recorded_original_cases_reproduced": 7,
+    "recorded_assembly_hashes_exact": true,
+    "original_post_freeze_unseen_source_recovered": false,
+    "recovery_unseen_source": {
+      "source_sha256": "7bce0b35710e35932e2cf07ed3467b39e868aff7129be68e2164a955320e8bf9",
+      "source_bytes": 196,
+      "artifact_sha256": "5ce5f8301ac4a352dc06fa3f922dfa96f8e7e1b61c884c7a199a68b6dc3b93bb",
+      "artifact_bytes": 612,
+      "parse": "PASS",
+      "candidate_result": 38,
+      "reference_result": 38
+    },
+    "host_semantic_fallback": false,
+    "host_lowering_fallback": false,
+    "host_emitter_fallback": false
+  },
+  "windows_full_suite": {
+    "passed": 4284,
+    "skipped": 349,
+    "failed": 0,
+    "exit": 0,
+    "source_sha256": "894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c",
+    "transcript": "C:/Users/samue/AppData/Local/Temp/s3-1.13-stage1-recovery-20260929-062653/windows-full-suite-final.txt"
+  },
+  "linux_full_suite": {
+    "head": "1487eb15f9ca151550861a4772f76509403e32f6",
+    "selected": 4633,
+    "passed": 4631,
+    "skipped": 0,
+    "failed": 2,
+    "exit": 1,
+    "transcript": "C:/Users/samue/AppData/Local/Temp/s3-1.13-stage1-recovery-20260929-062653/linux-full-suite-git-1487eb15.txt",
+    "failures": [
+      {
+        "test": "tests/test_generic_syntax_ir_verifier.py::test_native_verifier_differential_matrix_is_immutable_and_repeatable",
+        "case": 1,
+        "source_shape": "branch_program",
+        "hosted_result": 100080774,
+        "expected": "accepted valid case and stable digest",
+        "classification": "REPRODUCIBLE_VERIFIER_SEMANTIC_FAILURE"
+      },
+      {
+        "test": "tests/test_s3bench_cross_language.py::test_available_external_toolchains_match_one_checksum",
+        "error": "Zig build: NoSpaceLeft",
+        "classification": "GUEST_ROOT_FILESYSTEM_FULL",
+        "evidence": "Guest /dev/sda2 was 100% full; focused test passed with Zig caches redirected to /tmp."
+      }
+    ]
+  },
+  "focused_zig_diagnosis": {
+    "test": "tests/test_s3bench_cross_language.py::test_available_external_toolchains_match_one_checksum",
+    "pass": 1,
+    "exit": 0,
+    "zig_global_cache_dir": "/tmp/s3-1.13-zig-global-1487eb15",
+    "zig_local_cache_dir": "/tmp/s3-1.13-zig-local-1487eb15",
+    "transcript_local": "C:/Users/samue/AppData/Local/Temp/s3-1.13-stage1-recovery-20260929-062653/linux-zig-focused-1487eb15.txt"
+  },
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "tracked_high_signal_secret_scan": "PASS",
+  "windows_fixture_line_ending_fix": {
+    "root_cause": "core.autocrlf=true converted one LF to CRLF in the checked-out raw-byte fixture.",
+    "tracked_sha256": "daf23bc747d7d483391efad709b47ead8854bf2f70405829b2833cd0fee2a924",
+    "tracked_bytes": 7483,
+    "windows_checkout_sha256_before_fix": "afb74dc054c8eabed4faaec1312aba07c3aea6cd2e2d6220173644a01363f54b",
+    "windows_checkout_bytes_before_fix": 7484,
+    "fix": "Scoped .gitattributes text/eol rules for the fixture; -text rules preserve the four recovered .s3 modules."
+  },
+  "full_selfhost": false,
+  "stage2": false,
+  "stage3": false,
+  "default_compiler": "PYTHON",
+  "stage1_status": "EXPERIMENTAL",
+  "merge_performed": false,
+  "release_or_tag": false,
+  "s3_1_14_started": false,
+  "result": "PARTIAL_SOURCE_RECOVERED_SEMANTICALLY_REPRODUCIBLE"
+}
