@@ -922,7 +922,7 @@ fn opcode_shape_valid(opcode: i64, result_count: i64, operand_count: i64, immedi
                 -1:
                     match result_count == 0:
                         -1:
-                            return operand_count == 1
+                            return operand_count <= 1
                         0:
                             return 0
                         1:
