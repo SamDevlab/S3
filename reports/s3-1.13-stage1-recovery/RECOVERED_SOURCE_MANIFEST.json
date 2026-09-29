@@ -118,6 +118,20 @@
   "compileall": "PASS",
   "diff_check": "PASS",
   "tracked_high_signal_secret_scan": "PASS",
+  "pull_request": {
+    "number": 327,
+    "url": "https://github.com/SamDevlab/S3/pull/327",
+    "state_at_creation": "OPEN",
+    "draft_at_creation": true,
+    "mergeable_at_creation": "MERGEABLE",
+    "initial_checks_at_creation": {
+      "passed": 4,
+      "pending": 8,
+      "failed": 0
+    },
+    "ready_for_review_automatically_set": false,
+    "merge_performed": false
+  },
   "windows_fixture_line_ending_fix": {
     "root_cause": "core.autocrlf=true converted one LF to CRLF in the checked-out raw-byte fixture.",
     "tracked_sha256": "daf23bc747d7d483391efad709b47ead8854bf2f70405829b2833cd0fee2a924",

@@ -67,9 +67,15 @@ STAGE2=NO
 STAGE3=NO
 DEFAULT_COMPILER=PYTHON
 STAGE1=EXPERIMENTAL
+PR=https://github.com/SamDevlab/S3/pull/327
+PR_STATE=OPEN
+PR_DRAFT=YES
+PR_MERGEABLE_AT_INITIAL_PUBLICATION=MERGEABLE
+PR_CHECKS_AT_INITIAL_PUBLICATION=4_PASS_8_PENDING_0_FAIL
 MERGE_PERFORMED=NO
+READY_FOR_REVIEW_AUTOMATICALLY_SET=NO
 RELEASE_OR_TAG=NO
 S3_1_14_STARTED=NO
 ```
 
-Draft PR review is permitted by the campaign's minimum gate (recovered source plus semantic reproducibility), but this report explicitly leaves the Linux suite and independent artifact bit-rebuild unresolved. Do not mark Ready or merge. Stop for human review of this recovered Stage1 candidate and the verifier finding.
+Draft PR review is permitted by the campaign's minimum gate (recovered source plus semantic reproducibility), but this report explicitly leaves the Linux suite and independent artifact bit-rebuild unresolved. PR #327 was observed OPEN, Draft, and GitHub `MERGEABLE` at creation; its initial check snapshot was 4 passed, 8 pending, 0 failed. No check was treated as complete while pending. Do not mark Ready or merge. Stop for human review of this recovered Stage1 candidate and the verifier finding.
