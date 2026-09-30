@@ -36,9 +36,10 @@ WINDOWS_FULL_SUITE=PASS_4309_PASSED_349_SKIPPED_0_FAILED
 WINDOWS_FULL_SUITE_BASE_HEAD=7bfb8edca51d238b7d6ecd245c635fd106790c0c
 WINDOWS_FULL_SUITE_SCOPE=COMPLETE_LOCAL_WORKING_TREE
 WINDOWS_FULL_SUITE_SUBTESTS_PASSED=572
-REMOTE_CI_HEAD=b7844b6fc77ae6e995992e9f032292bd693b26e6
-REMOTE_CI=PASS_ALL_JOBS
-REMOTE_CI_COVERS_CURRENT_CANDIDATE=NO
+REMOTE_CI_HEAD=1f89bfa043cb81b6b5da1ebfb19a031ecce74a17
+REMOTE_CI=PASS_12_OF_12_CHECKS
+REMOTE_CI_FAILED=0
+REMOTE_CI_PENDING=0
 EXACT_LOCAL_LINUX_FULL_SUITE_AFTER_FIXES=NOT_RERUN
 RECOVERY_CLOSURE=PASS_SOURCE_RECOVERED_SEMANTICALLY_REPRODUCIBLE
 ```
@@ -50,9 +51,11 @@ suite with 4,284 passed, 349 skipped, and 0 failed. A subsequent verifier
 compatibility fix and Zig cache isolation were published on the same Draft PR;
 at code HEAD `b7844b6fc77ae6e995992e9f032292bd693b26e6`, every GitHub Actions job
 in both the candidate-gates and Tests workflows passed, including unit jobs on
-Python 3.11/3.12/3.13 and native x86-64. The exact local Linux full-suite command
-was not rerun after those fixes, so remote CI success is recorded separately
-rather than rewriting the historical local transcript. See the recovery report
+Python 3.11/3.12/3.13 and native x86-64. The 2026-09-29 Stage1 artifact
+candidate was then tested locally with 4,309 passed, 349 skipped, and 572
+subtests passed. Commit `1f89bfa043cb81b6b5da1ebfb19a031ecce74a17` passed all
+12 natural PR checks. The exact local Linux full-suite command was not rerun
+after those fixes. See the recovery report
 for provenance and the distinction between the confirmed source-to-artifact
 compiler path and the standalone candidate's previous status at that checkpoint.
 

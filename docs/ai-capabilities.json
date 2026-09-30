@@ -246,8 +246,10 @@
       "windows_full_suite": "PASS_4309_PASSED_349_SKIPPED_0_FAILED",
       "windows_full_suite_subtests_passed": 572,
       "windows_full_suite_base_head": "7bfb8edca51d238b7d6ecd245c635fd106790c0c",
-      "remote_ci_head": "b7844b6fc77ae6e995992e9f032292bd693b26e6",
-      "remote_ci": "PASS_ALL_JOBS_HISTORICAL_HEAD_CURRENT_CANDIDATE_PENDING",
+      "remote_ci_head": "1f89bfa043cb81b6b5da1ebfb19a031ecce74a17",
+      "remote_ci": "PASS_12_OF_12_CHECKS",
+      "remote_ci_failed": 0,
+      "remote_ci_pending": 0,
       "exact_local_linux_full_suite_after_fixes": "NOT_RERUN"
     }
   },

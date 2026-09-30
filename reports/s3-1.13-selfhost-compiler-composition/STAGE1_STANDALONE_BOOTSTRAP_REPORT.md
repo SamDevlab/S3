@@ -293,12 +293,19 @@ COMPILEALL_BOOTSTRAP=PASS
 AI_CAPABILITIES_JSON=PASS
 DIFF_CHECK=PASS
 LOCAL_LINUX_FULL_SUITE=NOT_AVAILABLE
-REMOTE_CI_FOR_THIS_LOCAL_CANDIDATE=PENDING_PUBLICATION
+REMOTE_CI_HEAD=1f89bfa043cb81b6b5da1ebfb19a031ecce74a17
+REMOTE_CI_CHECKS=12
+REMOTE_CI_PASSED=12
+REMOTE_CI_FAILED=0
+REMOTE_CI_PENDING=0
 ```
 
 The prior all-green remote CI evidence at `b7844b6fc77ae6e995992e9f032292bd693b26e6`
-is historical and does not cover this working-tree candidate. A natural CI run
-for the published candidate is still required. The PR remains Draft.
+is historical. The natural GitHub Actions run for implementation commit
+`1f89bfa043cb81b6b5da1ebfb19a031ecce74a17` completed with all 12 checks
+passing, zero failures, and zero pending. A following commit, if any, is limited
+to this validation receipt and other documentation; compiler and test logic
+remain unchanged. The PR remains Draft.
 
 The experimental CLI supports source-file input, Assembly-file output,
 deterministic diagnostics for rejected input, artifact verification failures,
