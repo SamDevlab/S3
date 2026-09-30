@@ -306,13 +306,8 @@ def test_stage1_v2_real_reference_vector_helpers_execute_natively(
         _stage1_artifact(candidate_source, compiler_version="v2").decode("ascii")
     )
 
-    reference_source = """\
-fn stage1_emission_value_count(view: &vector<i64>) -> i64:
-    return 0
-fn stage1_emission_instruction_count(view: &vector<i64>) -> i64:
-    return 0
-fn stage1_emission_value_id(view: &vector<i64>, index: i64) -> i64:
-    return 0
+    reference_source = "\n\n".join(source_functions) + """
+
 fn main() -> i64:
     mut count_view: vector<i64> = vector_new<i64>(2)
     discard vector_push<i64>(&mut count_view, 41)
