@@ -364,9 +364,9 @@ fn main() -> i64:
     mut count_view: vector<i64> = vector_new<i64>(2)
     discard vector_push<i64>(&mut count_view, 41)
     discard vector_push<i64>(&mut count_view, 3)
-    mut instruction_view: vector<i64> = vector_new<i64>(2)
-    discard vector_push<i64>(&mut instruction_view, 41)
-    discard vector_push<i64>(&mut instruction_view, 7)
+    mut instruction_count_view: vector<i64> = vector_new<i64>(2)
+    discard vector_push<i64>(&mut instruction_count_view, 41)
+    discard vector_push<i64>(&mut instruction_count_view, 7)
     mut value_view: vector<i64> = vector_new<i64>(5)
     discard vector_push<i64>(&mut value_view, 41)
     discard vector_push<i64>(&mut value_view, 7)
@@ -375,7 +375,7 @@ fn main() -> i64:
     discard vector_push<i64>(&mut value_view, 99)
 {vector_setup("operand_view", [41, *([0] * 44), 73])}
 {vector_setup("instruction_view", [2, 0, 1, 0, 0, 0, 0, 0, 88])}
-    return stage1_emission_value_count(&count_view) + stage1_emission_instruction_count(&instruction_view) * 100 + stage1_emission_value_id(&value_view, 1) * 10000 + stage1_emission_operand_id(&operand_view, 1) * 1000000 + stage1_emission_instruction_field(&instruction_view, 0, 2) * 100000000
+    return stage1_emission_value_count(&count_view) + stage1_emission_instruction_count(&instruction_count_view) * 100 + stage1_emission_value_id(&value_view, 1) * 10000 + stage1_emission_operand_id(&operand_view, 1) * 1000000 + stage1_emission_instruction_field(&instruction_view, 0, 2) * 100000000
 """
     reference = compile_sources(
         {"main.s3": reference_source}, entry_module="main"
