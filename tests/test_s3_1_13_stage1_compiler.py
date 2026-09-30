@@ -296,6 +296,12 @@ def test_stage1_v2_compiles_real_reference_vector_helpers(
         "fn main() -> i64:\n    return vector_get<i64>(1, 0)\n",
         "fn main() -> i64:\n    return vector_get<i64>(1)\n",
         "fn main() -> i64:\n    return vector_get<i64>(1, 0, 2)\n",
+        "fn read(view: &vector<i64>) -> i64:\n    return vector_len<f64>(view)\n"
+        "fn main() -> i64:\n    return 0\n",
+        "fn read(view: &vector<i64>) -> i64:\n    return vector_len<i64>()\n"
+        "fn main() -> i64:\n    return 0\n",
+        "fn read(view: &vector<i64>) -> i64:\n    return vector_len<i64>(view, 0)\n"
+        "fn main() -> i64:\n    return 0\n",
         "fn read(view: &vector<i64>) -> i64:\n    return vector_get<i64>(view, 0)\n"
         "fn main() -> i64:\n    return read(1)\n",
     ),
@@ -312,6 +318,27 @@ def test_stage1_v2_rejects_mutable_local_reassignment_without_store_lowering() -
         "    return value\n"
     )
     assert _stage1_artifact(source, compiler_version="v2") == b""
+
+
+def test_stage1_v2_lowers_typed_vector_len_builtin() -> None:
+    source = (
+        "fn vector_count(view: &vector<i64>) -> i64:\n"
+        "    return vector_len<i64>(view)\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+    artifact_bytes = _stage1_artifact(source, compiler_version="v2")
+    assert artifact_bytes
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    count_function = next(
+        function for function in artifact.functions
+        if function.name == "vector_count"
+    )
+    assert any(
+        instruction.callee == "i64_vector_len"
+        for instruction in count_function.instructions
+    )
+    assert Emulator().execute(artifact) == 0
 
 
 @pytest.mark.s3_native
@@ -334,6 +361,11 @@ def test_stage1_v2_real_reference_vector_helpers_execute_natively(
         "stage1_emission_operand_id",
         "stage1_emission_instruction_field",
     )
+    vector_len_probe_name = "stage1_v2_vector_len_probe"
+    vector_len_probe = (
+        f"fn {vector_len_probe_name}(view: &vector<i64>) -> i64:\n"
+        "    return vector_len<i64>(view)"
+    )
     source_functions = []
     for name in function_names:
         start = raw.index(f"fn {name}(")
@@ -341,7 +373,7 @@ def test_stage1_v2_real_reference_vector_helpers_execute_natively(
         source_functions.append(raw[start:end])
 
     candidate_source = (
-        "\n\n".join(source_functions)
+        "\n\n".join((*source_functions, vector_len_probe))
         + "\n\nfn main() -> i64:\n    return 0\n"
     )
     candidate = parse_assembly(
@@ -359,6 +391,7 @@ def test_stage1_v2_real_reference_vector_helpers_execute_natively(
         return "\n".join(lines)
 
     reference_source = "\n\n".join(source_functions) + f"""
+{vector_len_probe}
 
 fn main() -> i64:
     mut count_view: vector<i64> = vector_new<i64>(2)
@@ -375,14 +408,15 @@ fn main() -> i64:
     discard vector_push<i64>(&mut value_view, 99)
 {vector_setup("operand_view", [41, *([0] * 44), 73])}
 {vector_setup("instruction_view", [2, 0, 1, 0, 0, 0, 0, 0, 88])}
-    return stage1_emission_value_count(&count_view) + stage1_emission_instruction_count(&instruction_count_view) * 100 + stage1_emission_value_id(&value_view, 1) * 10000 + stage1_emission_operand_id(&operand_view, 1) * 1000000 + stage1_emission_instruction_field(&instruction_view, 0, 2) * 100000000
+    return stage1_emission_value_count(&count_view) + stage1_emission_instruction_count(&instruction_count_view) * 100 + stage1_emission_value_id(&value_view, 1) * 10000 + stage1_emission_operand_id(&operand_view, 1) * 1000000 + stage1_emission_instruction_field(&instruction_view, 0, 2) * 100000000 + stage1_v2_vector_len_probe(&count_view) * 10000000000
 """
     reference = compile_sources(
         {"main.s3": reference_source}, entry_module="main"
     )
+    candidate_function_names = (*function_names, vector_len_probe_name)
     candidate_by_name = {}
     for function in candidate.functions:
-        if function.name not in function_names:
+        if function.name not in candidate_function_names:
             continue
         renamed_name = f"__s3mod_main__{function.name}"
         renamed_blocks = tuple(
@@ -392,7 +426,7 @@ fn main() -> i64:
                     replace(
                         instruction,
                         callee=f"__s3mod_main__{instruction.callee}"
-                        if instruction.callee in function_names
+                        if instruction.callee in candidate_function_names
                         else instruction.callee,
                     )
                     if instruction.callee is not None
@@ -406,7 +440,7 @@ fn main() -> i64:
             function, name=renamed_name, blocks=renamed_blocks
         )
     assert set(candidate_by_name) == {
-        f"__s3mod_main__{name}" for name in function_names
+        f"__s3mod_main__{name}" for name in candidate_function_names
     }
     composed_functions = tuple(
         candidate_by_name.get(function.name, function)
@@ -423,8 +457,8 @@ fn main() -> i64:
 
     assert completed.returncode == 0
     assert completed.stderr == ""
-    assert completed.stdout.strip() == "program returned: 8873990741"
-    assert execute_ir(reference.ir) == 8_873_990_741
+    assert completed.stdout.strip() == "program returned: 28873990741"
+    assert execute_ir(reference.ir) == 28_873_990_741
 
 
 def test_s3_output_sink_append_bytes_overflow_is_transactional() -> None:

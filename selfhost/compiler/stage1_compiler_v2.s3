@@ -255,27 +255,17 @@ fn stage1_lower_call_argument_sequence(
                 program=program, arguments=arguments, accepted=0
             )
 
-fn stage1_source_name_is_vector_get(
+fn stage1_source_span_matches_bytes(
     source: &vector<i64>,
     start: i64,
-    end: i64
+    end: i64,
+    expected: &vector<i64>
 ) -> i64:
-    match end - start == 10:
+    match end - start == vector_len<i64>(expected):
         -1:
-            mut expected: vector<i64> = vector_new<i64>(10)
-            discard vector_push<i64>(&mut expected, 118)
-            discard vector_push<i64>(&mut expected, 101)
-            discard vector_push<i64>(&mut expected, 99)
-            discard vector_push<i64>(&mut expected, 116)
-            discard vector_push<i64>(&mut expected, 111)
-            discard vector_push<i64>(&mut expected, 114)
-            discard vector_push<i64>(&mut expected, 95)
-            discard vector_push<i64>(&mut expected, 103)
-            discard vector_push<i64>(&mut expected, 101)
-            discard vector_push<i64>(&mut expected, 116)
             mut index: i64 = 0
-            while index < 10:
-                match vector_get<i64>(source, start + index) == vector_get<i64>(&expected, index):
+            while index < vector_len<i64>(expected):
+                match vector_get<i64>(source, start + index) == vector_get<i64>(expected, index):
                     -1:
                         discard 0
                     0:
@@ -288,6 +278,61 @@ fn stage1_source_name_is_vector_get(
             return 0
         1:
             return 0
+
+fn stage1_source_name_is_vector_get(
+    source: &vector<i64>,
+    start: i64,
+    end: i64
+) -> i64:
+    mut expected: vector<i64> = vector_new<i64>(10)
+    discard vector_push<i64>(&mut expected, 118)
+    discard vector_push<i64>(&mut expected, 101)
+    discard vector_push<i64>(&mut expected, 99)
+    discard vector_push<i64>(&mut expected, 116)
+    discard vector_push<i64>(&mut expected, 111)
+    discard vector_push<i64>(&mut expected, 114)
+    discard vector_push<i64>(&mut expected, 95)
+    discard vector_push<i64>(&mut expected, 103)
+    discard vector_push<i64>(&mut expected, 101)
+    discard vector_push<i64>(&mut expected, 116)
+    return stage1_source_span_matches_bytes(source, start, end, &expected)
+
+fn stage1_source_name_is_vector_len(
+    source: &vector<i64>,
+    start: i64,
+    end: i64
+) -> i64:
+    mut expected: vector<i64> = vector_new<i64>(10)
+    discard vector_push<i64>(&mut expected, 118)
+    discard vector_push<i64>(&mut expected, 101)
+    discard vector_push<i64>(&mut expected, 99)
+    discard vector_push<i64>(&mut expected, 116)
+    discard vector_push<i64>(&mut expected, 111)
+    discard vector_push<i64>(&mut expected, 114)
+    discard vector_push<i64>(&mut expected, 95)
+    discard vector_push<i64>(&mut expected, 108)
+    discard vector_push<i64>(&mut expected, 101)
+    discard vector_push<i64>(&mut expected, 110)
+    return stage1_source_span_matches_bytes(source, start, end, &expected)
+
+fn stage1_generic_vector_builtin_id(
+    source: &vector<i64>,
+    start: i64,
+    end: i64
+) -> i64:
+    match stage1_source_name_is_vector_get(source, start, end) == 1:
+        -1:
+            return 1000
+        0:
+            match stage1_source_name_is_vector_len(source, start, end) == 1:
+                -1:
+                    return 1001
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return 1000
 
 fn stage1_lower_call_arguments_to_id(
     node: i64,
@@ -365,14 +410,15 @@ fn stage1_lower_call_with_arguments(
                 0:
                     match call_type_code == 2:
                         -1:
-                            match stage1_source_name_is_vector_get(
+                            mut builtin_id: i64 = stage1_generic_vector_builtin_id(
                                 source,
                                 generic_expression_node_start(tree, callee_node),
                                 generic_expression_node_end(tree, callee_node)
-                            ) == 1:
+                            )
+                            match builtin_id >= 0:
                                 -1:
                                     return stage1_lower_call_arguments_to_id(
-                                        node, source, tree, program, function_id, block_id, 1000,
+                                        node, source, tree, program, function_id, block_id, builtin_id,
                                         symbol_name_starts, symbol_name_ends, symbol_value_ids
                                     )
                                 0:
@@ -2947,7 +2993,12 @@ fn stage1_intern_parameter_type(
         1:
             return Stage1InternedTypeResult(program=program, type_id=-1, accepted=0)
 
-fn stage1_register_i64_vector_get(program: NativeIR) -> NativeIRAppendResult:
+fn stage1_register_i64_vector_external(
+    program: NativeIR,
+    function_id: i64,
+    name: &vector<i64>,
+    parameter_count: i64
+) -> NativeIRAppendResult:
     mut reference_type: Stage1InternedTypeResult = stage1_intern_parameter_type(
         program, 1
     )
@@ -2955,34 +3006,52 @@ fn stage1_register_i64_vector_get(program: NativeIR) -> NativeIRAppendResult:
         -1:
             mut reference_type_id: i64 = reference_type.type_id
             mut typed_program: NativeIR = reference_type.program
-            mut name: vector<i64> = vector_new<i64>(14)
-            discard vector_push<i64>(&mut name, 105)
-            discard vector_push<i64>(&mut name, 54)
-            discard vector_push<i64>(&mut name, 52)
-            discard vector_push<i64>(&mut name, 95)
-            discard vector_push<i64>(&mut name, 118)
-            discard vector_push<i64>(&mut name, 101)
-            discard vector_push<i64>(&mut name, 99)
-            discard vector_push<i64>(&mut name, 116)
-            discard vector_push<i64>(&mut name, 111)
-            discard vector_push<i64>(&mut name, 114)
-            discard vector_push<i64>(&mut name, 95)
-            discard vector_push<i64>(&mut name, 103)
-            discard vector_push<i64>(&mut name, 101)
-            discard vector_push<i64>(&mut name, 116)
             mut external: NativeIRAppendResult = native_ir_append_external_function_source(
-                typed_program, 1000, 1, 0, &name, 0, 14
+                typed_program,
+                function_id,
+                1,
+                0,
+                name,
+                0,
+                vector_len<i64>(name)
             )
             match external.accepted == 1:
                 -1:
                     mut first_parameter: NativeIRAppendResult = native_ir_append_typed_parameter(
-                        external.program, 1000, 0, reference_type_id
+                        external.program, function_id, 0, reference_type_id
                     )
                     match first_parameter.accepted == 1:
                         -1:
-                            return native_ir_append_typed_parameter(
-                                first_parameter.program, 1000, 1, 0
-                            )
+                            match parameter_count == 1:
+                                -1:
+                                    return first_parameter
+                                0:
+                                    match parameter_count == 2:
+                                        -1:
+                                            return native_ir_append_typed_parameter(
+                                                first_parameter.program,
+                                                function_id,
+                                                1,
+                                                0
+                                            )
+                                        0:
+                                            return NativeIRAppendResult(
+                                                program=first_parameter.program,
+                                                accepted=0,
+                                                value_id=-1
+                                            )
+                                        1:
+                                            return NativeIRAppendResult(
+                                                program=first_parameter.program,
+                                                accepted=0,
+                                                value_id=-1
+                                            )
+                                1:
+                                    return NativeIRAppendResult(
+                                        program=first_parameter.program,
+                                        accepted=0,
+                                        value_id=-1
+                                    )
                         0:
                             return first_parameter
                         1:
@@ -2999,6 +3068,42 @@ fn stage1_register_i64_vector_get(program: NativeIR) -> NativeIRAppendResult:
             return NativeIRAppendResult(
                 program=reference_type.program, accepted=0, value_id=-1
             )
+
+fn stage1_register_i64_vector_get(program: NativeIR) -> NativeIRAppendResult:
+    mut name: vector<i64> = vector_new<i64>(14)
+    discard vector_push<i64>(&mut name, 105)
+    discard vector_push<i64>(&mut name, 54)
+    discard vector_push<i64>(&mut name, 52)
+    discard vector_push<i64>(&mut name, 95)
+    discard vector_push<i64>(&mut name, 118)
+    discard vector_push<i64>(&mut name, 101)
+    discard vector_push<i64>(&mut name, 99)
+    discard vector_push<i64>(&mut name, 116)
+    discard vector_push<i64>(&mut name, 111)
+    discard vector_push<i64>(&mut name, 114)
+    discard vector_push<i64>(&mut name, 95)
+    discard vector_push<i64>(&mut name, 103)
+    discard vector_push<i64>(&mut name, 101)
+    discard vector_push<i64>(&mut name, 116)
+    return stage1_register_i64_vector_external(program, 1000, &name, 2)
+
+fn stage1_register_i64_vector_len(program: NativeIR) -> NativeIRAppendResult:
+    mut name: vector<i64> = vector_new<i64>(14)
+    discard vector_push<i64>(&mut name, 105)
+    discard vector_push<i64>(&mut name, 54)
+    discard vector_push<i64>(&mut name, 52)
+    discard vector_push<i64>(&mut name, 95)
+    discard vector_push<i64>(&mut name, 118)
+    discard vector_push<i64>(&mut name, 101)
+    discard vector_push<i64>(&mut name, 99)
+    discard vector_push<i64>(&mut name, 116)
+    discard vector_push<i64>(&mut name, 111)
+    discard vector_push<i64>(&mut name, 114)
+    discard vector_push<i64>(&mut name, 95)
+    discard vector_push<i64>(&mut name, 108)
+    discard vector_push<i64>(&mut name, 101)
+    discard vector_push<i64>(&mut name, 110)
+    return stage1_register_i64_vector_external(program, 1001, &name, 1)
 
 fn stage1_register_parameters(
     program: NativeIR,
@@ -3379,6 +3484,16 @@ export fn stage1_compile(source: vector<i64>) -> Stage1CompileResult:
             return stage1_empty_result(3, 29)
         1:
             return stage1_empty_result(3, 29)
+    mut vector_len_registration: NativeIRAppendResult = stage1_register_i64_vector_len(
+        program
+    )
+    match vector_len_registration.accepted == 1:
+        -1:
+            program = vector_len_registration.program
+        0:
+            return stage1_empty_result(3, 30)
+        1:
+            return stage1_empty_result(3, 30)
     match function_count > 0:
         -1:
             discard 0
