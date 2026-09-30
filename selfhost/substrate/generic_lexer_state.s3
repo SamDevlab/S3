@@ -594,7 +594,9 @@ fn generic_native_parser_name_digest(source: &vector<i64>, start: i64, end: i64)
     mut cursor: i64 = start
     mut digest: i64 = 0
     while cursor < end:
-        digest = digest * 31 + vector_get<i64>(source, cursor)
+        mut scaled: i64 = digest * 31 + vector_get<i64>(source, cursor)
+        mut quotient: i64 = scaled / 1000000000039
+        digest = scaled - quotient * 1000000000039
         cursor = cursor + 1
     return digest
 

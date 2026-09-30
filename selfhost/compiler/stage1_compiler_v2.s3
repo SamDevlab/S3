@@ -2344,6 +2344,78 @@ fn stage1_body_compile_failure(
         accepted=0
     )
 
+fn stage1_source_span_is_mut(
+    source: &vector<i64>,
+    start: i64,
+    end: i64
+) -> i64:
+    match end - start == 3:
+        -1:
+            match vector_get<i64>(source, start) == 109:
+                -1:
+                    match vector_get<i64>(source, start + 1) == 117:
+                        -1:
+                            match vector_get<i64>(source, start + 2) == 116:
+                                -1:
+                                    return 1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn stage1_local_declaration_name_cursor(
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    cursor: i64
+) -> i64:
+    match generic_token_kind(tokens, cursor) == 1:
+        -1:
+            match generic_token_kind(tokens, cursor + 1) == 158:
+                -1:
+                    return cursor
+                0:
+                    match stage1_source_span_is_mut(
+                        source,
+                        generic_token_start(tokens, cursor),
+                        generic_token_end(tokens, cursor)
+                    ) == 1:
+                        -1:
+                            match generic_token_kind(tokens, cursor + 1) == 1:
+                                -1:
+                                    match generic_token_kind(tokens, cursor + 2) == 158:
+                                        -1:
+                                            return cursor + 1
+                                        0:
+                                            return -1
+                                        1:
+                                            return -1
+                                0:
+                                    return -1
+                                1:
+                                    return -1
+                        0:
+                            return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
 fn stage1_lower_source_expression(
     source: &vector<i64>,
     tokens: &vector<i64>,
@@ -2507,6 +2579,16 @@ fn stage1_compile_body_sequence(
                                 0:
                                     match generic_token_kind(tokens, current_cursor) == 1:
                                         -1:
+                                            mut declaration_name_cursor: i64 = stage1_local_declaration_name_cursor(
+                                                source, tokens, current_cursor
+                                            )
+                                            match declaration_name_cursor >= 0:
+                                                -1:
+                                                    current_cursor = declaration_name_cursor
+                                                0:
+                                                    discard 0
+                                                1:
+                                                    discard 0
                                             match generic_token_kind(tokens, current_cursor + 1) == 158:
                                                 -1:
                                                     match generic_native_parser_program_type_code_for_token(

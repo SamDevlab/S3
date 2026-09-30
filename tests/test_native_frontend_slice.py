@@ -107,6 +107,14 @@ _COMPARISON_PROGRAM_SOURCE = (
     "        a = a + 1\n"
     "    return a\n"
 )
+_NAME_DIGEST_MODULUS = 1_000_000_000_039
+
+
+def _bounded_name_digest(source: str, start: int, end: int) -> int:
+    digest = 0
+    for unit in source[start:end].encode("utf-8"):
+        digest = (digest * 31 + unit) % _NAME_DIGEST_MODULUS
+    return digest
 
 
 def _candidate_source(case_id: int) -> str:
@@ -277,9 +285,9 @@ def _independent_parser_digest(source: str) -> int:
         for _, token in tokens.tokens.items()
         if token.kind is TokenKind.IDENTIFIER and token.text != "i64"
     )
-    name_digest = 0
-    for unit in source[name_token.span.start:name_token.span.end].encode("utf-8"):
-        name_digest = name_digest * 31 + unit
+    name_digest = _bounded_name_digest(
+        source, name_token.span.start, name_token.span.end
+    )
     native_token_count = len(tokens) - sum(
         token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
         for _, token in tokens.tokens.items()
@@ -335,9 +343,9 @@ def _independent_binary_parser_digest(source: str) -> int:
         for _, token in tokens.tokens.items()
         if token.kind is TokenKind.IDENTIFIER and token.text != "i64"
     )
-    name_digest = 0
-    for unit in source[name_token.span.start:name_token.span.end].encode("utf-8"):
-        name_digest = name_digest * 31 + unit
+    name_digest = _bounded_name_digest(
+        source, name_token.span.start, name_token.span.end
+    )
     native_token_count = len(tokens) - sum(
         token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
         for _, token in tokens.tokens.items()
@@ -376,9 +384,7 @@ def _independent_identifier_parser_digest(source: str) -> int:
             assert isinstance(payload, IntegerPayload)
             return digest + payload.value * 109
         if node.kind is NodeKind.IDENTIFIER:
-            name_digest = 0
-            for unit in source[node.span.start:node.span.end].encode("utf-8"):
-                name_digest = name_digest * 31 + unit
+            name_digest = _bounded_name_digest(source, node.span.start, node.span.end)
             return digest + name_digest * 109
         assert node.kind is NodeKind.BINARY
         children = arena.child_ids(node.id)
@@ -397,9 +403,9 @@ def _independent_identifier_parser_digest(source: str) -> int:
         for _, token in tokens.tokens.items()
         if token.kind is TokenKind.IDENTIFIER and token.text != "i64"
     )
-    name_digest = 0
-    for unit in source[name_token.span.start:name_token.span.end].encode("utf-8"):
-        name_digest = name_digest * 31 + unit
+    name_digest = _bounded_name_digest(
+        source, name_token.span.start, name_token.span.end
+    )
     native_token_count = len(tokens) - sum(
         token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
         for _, token in tokens.tokens.items()
@@ -429,9 +435,7 @@ def _sequence_tree_digest(arena, source: str, node_id: int) -> int:
         assert isinstance(payload, IntegerPayload)
         return digest + payload.value * 109
     if node.kind is NodeKind.IDENTIFIER:
-        name_digest = 0
-        for unit in source[node.span.start:node.span.end].encode("utf-8"):
-            name_digest = name_digest * 31 + unit
+        name_digest = _bounded_name_digest(source, node.span.start, node.span.end)
         return digest + name_digest * 109
     assert node.kind is NodeKind.BINARY
     children = arena.child_ids(node.id)
@@ -469,9 +473,9 @@ def _independent_sequence_parser_digest(source: str) -> int:
         for _, token in tokens.tokens.items()
         if token.kind is TokenKind.IDENTIFIER and token.text != "i64"
     )
-    name_digest = 0
-    for unit in source[name_token.span.start:name_token.span.end].encode("utf-8"):
-        name_digest = name_digest * 31 + unit
+    name_digest = _bounded_name_digest(
+        source, name_token.span.start, name_token.span.end
+    )
     native_token_count = len(tokens) - sum(
         token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
         for _, token in tokens.tokens.items()
@@ -489,10 +493,7 @@ def _independent_sequence_parser_digest(source: str) -> int:
 
 
 def _program_name_digest(source: str, start: int, end: int) -> int:
-    digest = 0
-    for unit in source[start:end].encode("utf-8"):
-        digest = digest * 31 + unit
-    return digest
+    return _bounded_name_digest(source, start, end)
 
 
 def _program_identifier_token(source: str, start: int, end: int):
@@ -808,6 +809,12 @@ def test_native_expression_parser_preserves_generic_call_type_argument(
     expected: int,
 ) -> None:
     assert run_source(_candidate_generic_call_parser_source(expression)) == expected
+
+
+def test_native_expression_parser_bounds_long_identifier_digest() -> None:
+    name = "stage1_emission_value_count"
+    expected = 300 + _bounded_name_digest(name, 0, len(name))
+    assert run_source(_candidate_generic_call_parser_source(name)) == expected
 
 
 @pytest.mark.parametrize(

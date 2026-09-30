@@ -23,7 +23,12 @@ _STAGE1_MODULES = (
 )
 
 
-def _stage1_artifact(source: str, *, compiler_version: str = "v1") -> bytes:
+def _stage1_artifact(
+    source: str,
+    *,
+    compiler_version: str = "v1",
+    diagnostics: list[int] | None = None,
+) -> bytes:
     repository = Path(__file__).parents[1]
     compiler_module = f"stage1_compiler_{compiler_version}"
     module_paths = (
@@ -67,6 +72,8 @@ def _stage1_artifact(source: str, *, compiler_version: str = "v1") -> bytes:
     output = execute_ir(stage0.ir)
     envelope = tuple(int(output[index]) for index in range(output.length))
     status, phase, error_code, output_length = envelope[:4]
+    if diagnostics is not None:
+        diagnostics.extend(envelope[:4])
     if status == 0:
         assert output_length == 0, f"failed Stage1 compilation emitted {output_length} bytes"
         return b""
@@ -226,33 +233,56 @@ def test_stage1_candidate_rejects_unlowered_identifier_without_artifact() -> Non
 
 
 @pytest.mark.parametrize(
-    ("function_name", "signature"),
+    ("function_name", "signature", "dependencies"),
     (
-        ("stage1_emission_value_count", "view: &vector<i64>"),
-        ("stage1_emission_instruction_count", "view: &vector<i64>"),
-        ("stage1_emission_value_id", "view: &vector<i64>, index: i64"),
+        ("stage1_emission_value_count", "view: &vector<i64>", ()),
+        ("stage1_emission_instruction_count", "view: &vector<i64>", ()),
+        ("stage1_emission_value_id", "view: &vector<i64>, index: i64", ()),
+        (
+            "stage1_emission_operand_id",
+            "view: &vector<i64>, index: i64",
+            ("stage1_emission_value_count",),
+        ),
+        (
+            "stage1_emission_instruction_field",
+            "view: &vector<i64>, index: i64, field: i64",
+            ("stage1_emission_value_count",),
+        ),
     ),
 )
 def test_stage1_v2_compiles_real_reference_vector_helpers(
     function_name: str,
     signature: str,
+    dependencies: tuple[str, ...],
 ) -> None:
     repository = Path(__file__).parents[1]
     raw = (repository / "selfhost/compiler/stage1_compiler_v1.s3").read_text(
         encoding="utf-8"
     )
-    start = raw.index(f"fn {function_name}(")
-    end = raw.index("\n\n", start)
-    original_function = raw[start:end]
+    selected_functions = []
+    for name in (*dependencies, function_name):
+        start = raw.index(f"fn {name}(")
+        end = raw.index("\n\n", start)
+        selected_functions.append(raw[start:end])
+    original_function = selected_functions[-1]
     assert f"fn {function_name}({signature}) -> i64:" in original_function
-    source = f"{original_function}\n\nfn main() -> i64:\n    return 0\n"
+    source = "\n\n".join(
+        (*selected_functions, "fn main() -> i64:\n    return 0")
+    ) + "\n"
 
-    artifact_bytes = _stage1_artifact(source, compiler_version="v2")
-    assert artifact_bytes
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
     assert artifact_bytes.startswith(b".s3asm 0.7.0\n")
     assert b".param r0, reference, vector, immutable, value\n" in artifact_bytes
     assert b"TCALL r" in artifact_bytes
-    if function_name == "stage1_emission_value_id":
+    if function_name in {
+        "stage1_emission_value_id",
+        "stage1_emission_operand_id",
+        "stage1_emission_instruction_field",
+    }:
         assert b"TADD r" in artifact_bytes
 
     artifact = parse_assembly(artifact_bytes.decode("ascii"))
@@ -274,6 +304,16 @@ def test_stage1_v2_rejects_invalid_typed_vector_calls(source: str) -> None:
     assert _stage1_artifact(source, compiler_version="v2") == b""
 
 
+def test_stage1_v2_rejects_mutable_local_reassignment_without_store_lowering() -> None:
+    source = (
+        "fn main() -> i64:\n"
+        "    mut value: i64 = 1\n"
+        "    value = 2\n"
+        "    return value\n"
+    )
+    assert _stage1_artifact(source, compiler_version="v2") == b""
+
+
 @pytest.mark.s3_native
 @pytest.mark.skipif(
     platform.system() != "Linux"
@@ -291,6 +331,8 @@ def test_stage1_v2_real_reference_vector_helpers_execute_natively(
         "stage1_emission_value_count",
         "stage1_emission_instruction_count",
         "stage1_emission_value_id",
+        "stage1_emission_operand_id",
+        "stage1_emission_instruction_field",
     )
     source_functions = []
     for name in function_names:
@@ -306,7 +348,17 @@ def test_stage1_v2_real_reference_vector_helpers_execute_natively(
         _stage1_artifact(candidate_source, compiler_version="v2").decode("ascii")
     )
 
-    reference_source = "\n\n".join(source_functions) + """
+    def vector_setup(name: str, values: list[int]) -> str:
+        lines = [
+            f"    mut {name}: vector<i64> = vector_new<i64>({len(values)})"
+        ]
+        lines.extend(
+            f"    discard vector_push<i64>(&mut {name}, {value})"
+            for value in values
+        )
+        return "\n".join(lines)
+
+    reference_source = "\n\n".join(source_functions) + f"""
 
 fn main() -> i64:
     mut count_view: vector<i64> = vector_new<i64>(2)
@@ -321,7 +373,9 @@ fn main() -> i64:
     discard vector_push<i64>(&mut value_view, 13)
     discard vector_push<i64>(&mut value_view, 17)
     discard vector_push<i64>(&mut value_view, 99)
-    return stage1_emission_value_count(&count_view) + stage1_emission_instruction_count(&instruction_view) * 100 + stage1_emission_value_id(&value_view, 1) * 10000
+{vector_setup("operand_view", [41, *([0] * 44), 73])}
+{vector_setup("instruction_view", [2, 0, 1, 0, 0, 0, 0, 0, 88])}
+    return stage1_emission_value_count(&count_view) + stage1_emission_instruction_count(&instruction_view) * 100 + stage1_emission_value_id(&value_view, 1) * 10000 + stage1_emission_operand_id(&operand_view, 1) * 1000000 + stage1_emission_instruction_field(&instruction_view, 0, 2) * 100000000
 """
     reference = compile_sources(
         {"main.s3": reference_source}, entry_module="main"
@@ -351,8 +405,8 @@ fn main() -> i64:
 
     assert completed.returncode == 0
     assert completed.stderr == ""
-    assert completed.stdout.strip() == "program returned: 990741"
-    assert execute_ir(reference.ir) == 990741
+    assert completed.stdout.strip() == "program returned: 8873990741"
+    assert execute_ir(reference.ir) == 8_873_990_741
 
 
 def test_s3_output_sink_append_bytes_overflow_is_transactional() -> None:
