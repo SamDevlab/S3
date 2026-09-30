@@ -1,0 +1,3431 @@
+{
+  "blocker_distribution_overlapping": {
+    "aggregate_operation": 24,
+    "loop_control_flow": 20,
+    "missing_return": 16,
+    "mutable_storage": 33,
+    "nested_calls": 21,
+    "reference_operation": 19,
+    "structured_branching": 32,
+    "unsupported_aggregate_signature": 6,
+    "unsupported_binary_operator": 1,
+    "unsupported_builtin_call": 11,
+    "unsupported_expression_AddressOfExpression": 7,
+    "unsupported_expression_FieldAccessExpression": 7,
+    "unsupported_expression_RecordExpression": 8,
+    "unsupported_expression_UnaryExpression": 4,
+    "unsupported_local_type": 13,
+    "unsupported_reference_signature": 38,
+    "unsupported_statement_AssignmentStatement": 3,
+    "unsupported_statement_DiscardStatement": 7,
+    "unsupported_statement_SwitchStatement": 22,
+    "unsupported_statement_WhileStatement": 16,
+    "unsupported_vector_signature": 6,
+    "vector_operation": 39
+  },
+  "capability_projection": {
+    "functions_unlocked_by_references_only": 0,
+    "functions_unlocked_by_references_plus_vectors_and_i64_vector_get": 3,
+    "functions_unlocked_by_typed_ir_only": 0,
+    "functions_unlocked_by_vectors_only": 0,
+    "functions_using_reference_signature_types": 38,
+    "functions_using_vector_signature_types": 44,
+    "projection_scope": "signature and body subset only; excludes dependency closure and runtime/backend gates",
+    "reference_vector_get_candidate_functions": [
+      "stage1_emission_value_count",
+      "stage1_emission_instruction_count",
+      "stage1_emission_value_id"
+    ]
+  },
+  "function_attributed_source_bytes": 135088,
+  "functions": [
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "native_ir_empty"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_empty_ir",
+      "parameters": [],
+      "primary_blocker": "unsupported_aggregate_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "NativeIR",
+      "secondary_blockers": [
+        "unsupported_builtin_call"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "() -> NativeIR",
+      "signature_supported_by_v1": false,
+      "source_bytes": 64,
+      "source_end": 4716,
+      "source_start": 4652,
+      "unsupported_operations": [],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": false,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": false
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_new"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_empty_result",
+      "parameters": [
+        {
+          "name": "phase",
+          "type": "i64"
+        },
+        {
+          "name": "error_code",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_aggregate_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1CompileResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "unsupported_expression_RecordExpression",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(i64, i64) -> Stage1CompileResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 358,
+      "source_end": 5074,
+      "source_start": 4716,
+      "unsupported_operations": [
+        "RecordExpression"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": false,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_len"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_result",
+      "parameters": [
+        {
+          "name": "status",
+          "type": "i64"
+        },
+        {
+          "name": "phase",
+          "type": "i64"
+        },
+        {
+          "name": "error_code",
+          "type": "i64"
+        },
+        {
+          "name": "output",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "instruction_count",
+          "type": "i64"
+        },
+        {
+          "name": "value_count",
+          "type": "i64"
+        },
+        {
+          "name": "verification",
+          "type": "NativeVerification"
+        }
+      ],
+      "primary_blocker": "unsupported_vector_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1CompileResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "mutable_storage",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_expression_RecordExpression",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(i64, i64, i64, vector<i64>, i64, i64, NativeVerification) -> Stage1CompileResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 768,
+      "source_end": 5842,
+      "source_start": 5074,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "RecordExpression",
+        "SwitchStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_lower_from_append",
+      "parameters": [
+        {
+          "name": "append",
+          "type": "NativeIRAppendResult"
+        }
+      ],
+      "primary_blocker": "unsupported_aggregate_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1LowerResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "unsupported_expression_RecordExpression"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(NativeIRAppendResult) -> Stage1LowerResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 216,
+      "source_end": 6058,
+      "source_start": 5842,
+      "unsupported_operations": [
+        "FieldAccessExpression",
+        "RecordExpression"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": false,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": false
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_lower_preserved_failure",
+      "parameters": [
+        {
+          "name": "program",
+          "type": "NativeIR"
+        }
+      ],
+      "primary_blocker": "unsupported_aggregate_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1LowerResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "unsupported_expression_RecordExpression"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(NativeIR) -> Stage1LowerResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 147,
+      "source_end": 6205,
+      "source_start": 6058,
+      "unsupported_operations": [
+        "RecordExpression",
+        "UnaryExpression"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": false,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": false
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_expression_node_kind",
+        "generic_expression_node_left",
+        "generic_expression_node_right",
+        "stage1_lower_call_argument_sequence",
+        "stage1_lower_expression",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_lower_call_argument_sequence",
+        "stage1_lower_expression"
+      ],
+      "name": "stage1_lower_call_argument_sequence",
+      "parameters": [
+        {
+          "name": "argument_link",
+          "type": "i64"
+        },
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tree",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "program",
+          "type": "NativeIR"
+        },
+        {
+          "name": "function_id",
+          "type": "i64"
+        },
+        {
+          "name": "block_id",
+          "type": "i64"
+        },
+        {
+          "name": "arguments",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "symbol_name_starts",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "symbol_name_ends",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "symbol_value_ids",
+          "type": "&vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1CallArgumentResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "missing_return",
+        "nested_calls",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(i64, &vector<i64>, &vector<i64>, NativeIR, i64, i64, vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>) -> Stage1CallArgumentResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 3171,
+      "source_end": 9376,
+      "source_start": 6205,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "RecordExpression",
+        "SwitchStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_expression_node_end",
+        "generic_expression_node_kind",
+        "generic_expression_node_left",
+        "generic_expression_node_right",
+        "generic_expression_node_start",
+        "i64_vector_clone",
+        "native_ir_append_call_arguments",
+        "stage1_find_function_id_by_source_name",
+        "stage1_lower_call_argument_sequence",
+        "stage1_lower_from_append",
+        "stage1_lower_preserved_failure",
+        "vector_new"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_find_function_id_by_source_name",
+        "stage1_lower_call_argument_sequence",
+        "stage1_lower_from_append",
+        "stage1_lower_preserved_failure"
+      ],
+      "name": "stage1_lower_call_with_arguments",
+      "parameters": [
+        {
+          "name": "node",
+          "type": "i64"
+        },
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tree",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "program",
+          "type": "NativeIR"
+        },
+        {
+          "name": "function_id",
+          "type": "i64"
+        },
+        {
+          "name": "block_id",
+          "type": "i64"
+        },
+        {
+          "name": "symbol_name_starts",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "symbol_name_ends",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "symbol_value_ids",
+          "type": "&vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1LowerResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "missing_return",
+        "mutable_storage",
+        "nested_calls",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_builtin_call",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(i64, &vector<i64>, &vector<i64>, NativeIR, i64, i64, &vector<i64>, &vector<i64>, &vector<i64>) -> Stage1LowerResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 2765,
+      "source_end": 12141,
+      "source_start": 9376,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "SwitchStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "stage1_source_spans_equal",
+        "vector_get",
+        "vector_len"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_source_spans_equal"
+      ],
+      "name": "stage1_find_symbol_value",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "name_starts",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "name_ends",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "value_ids",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "wanted_start",
+          "type": "i64"
+        },
+        {
+          "name": "wanted_end",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "nested_calls",
+        "structured_branching",
+        "unsupported_expression_UnaryExpression",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, i64, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 671,
+      "source_end": 12812,
+      "source_start": 12141,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "UnaryExpression",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_expression_node_count",
+        "generic_expression_node_end",
+        "generic_expression_node_kind",
+        "generic_expression_node_left",
+        "generic_expression_node_operator",
+        "generic_expression_node_right",
+        "generic_expression_node_start",
+        "generic_expression_node_value",
+        "native_ir_append_instruction_for_function",
+        "stage1_find_symbol_value",
+        "stage1_lower_call_with_arguments",
+        "stage1_lower_expression",
+        "stage1_lower_from_append",
+        "stage1_lower_preserved_failure"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_find_symbol_value",
+        "stage1_lower_call_with_arguments",
+        "stage1_lower_expression",
+        "stage1_lower_from_append",
+        "stage1_lower_preserved_failure"
+      ],
+      "name": "stage1_lower_expression",
+      "parameters": [
+        {
+          "name": "node",
+          "type": "i64"
+        },
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tree",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "program",
+          "type": "NativeIR"
+        },
+        {
+          "name": "function_id",
+          "type": "i64"
+        },
+        {
+          "name": "block_id",
+          "type": "i64"
+        },
+        {
+          "name": "symbol_name_starts",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "symbol_name_ends",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "symbol_value_ids",
+          "type": "&vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1LowerResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "missing_return",
+        "mutable_storage",
+        "nested_calls",
+        "structured_branching",
+        "unsupported_builtin_call",
+        "unsupported_statement_SwitchStatement"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(i64, &vector<i64>, &vector<i64>, NativeIR, i64, i64, &vector<i64>, &vector<i64>, &vector<i64>) -> Stage1LowerResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 8111,
+      "source_end": 20923,
+      "source_start": 12812,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "RecordExpression",
+        "SwitchStatement",
+        "UnaryExpression"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_get",
+        "vector_len",
+        "vector_new",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_emit_decimal",
+      "parameters": [
+        {
+          "name": "output",
+          "type": "&mut vector<i64>"
+        },
+        {
+          "name": "value",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "nested_calls",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_local_type",
+        "unsupported_statement_AssignmentStatement",
+        "unsupported_statement_DiscardStatement",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&mut vector<i64>, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 2296,
+      "source_end": 23219,
+      "source_start": 20923,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "stage1_emit_decimal",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_emit_decimal"
+      ],
+      "name": "stage1_emit_register",
+      "parameters": [
+        {
+          "name": "output",
+          "type": "&mut vector<i64>"
+        },
+        {
+          "name": "register_id",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "unsupported_statement_DiscardStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&mut vector<i64>, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 185,
+      "source_end": 23404,
+      "source_start": 23219,
+      "unsupported_operations": [],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_get"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_emission_value_count",
+      "parameters": [
+        {
+          "name": "view",
+          "type": "&vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": true,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 96,
+      "source_end": 23500,
+      "source_start": 23404,
+      "unsupported_operations": [],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_get"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_emission_instruction_count",
+      "parameters": [
+        {
+          "name": "view",
+          "type": "&vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": true,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 102,
+      "source_end": 23602,
+      "source_start": 23500,
+      "unsupported_operations": [],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_get"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_emission_value_id",
+      "parameters": [
+        {
+          "name": "view",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "index",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": true,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 113,
+      "source_end": 23715,
+      "source_start": 23602,
+      "unsupported_operations": [
+        "BinaryExpression"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "stage1_emission_value_count",
+        "vector_get"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_emission_value_count"
+      ],
+      "name": "stage1_emission_operand_id",
+      "parameters": [
+        {
+          "name": "view",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "index",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "mutable_storage",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 190,
+      "source_end": 23905,
+      "source_start": 23715,
+      "unsupported_operations": [
+        "BinaryExpression"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "stage1_emission_value_count",
+        "vector_get"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_emission_value_count"
+      ],
+      "name": "stage1_emission_instruction_field",
+      "parameters": [
+        {
+          "name": "view",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "index",
+          "type": "i64"
+        },
+        {
+          "name": "field",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "mutable_storage",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, i64, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 318,
+      "source_end": 24223,
+      "source_start": 23905,
+      "unsupported_operations": [
+        "BinaryExpression"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "stage1_emission_instruction_count",
+        "stage1_emission_instruction_field",
+        "stage1_emission_operand_id",
+        "stage1_emission_value_count",
+        "stage1_emission_value_id",
+        "stage1_emit_decimal",
+        "stage1_emit_register",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_emission_instruction_count",
+        "stage1_emission_instruction_field",
+        "stage1_emission_operand_id",
+        "stage1_emission_value_count",
+        "stage1_emission_value_id",
+        "stage1_emit_decimal",
+        "stage1_emit_register"
+      ],
+      "name": "stage1_emit_single_main_program",
+      "parameters": [
+        {
+          "name": "view",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "output",
+          "type": "&mut vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "nested_calls",
+        "structured_branching",
+        "unsupported_statement_DiscardStatement",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &mut vector<i64>) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 10598,
+      "source_end": 34821,
+      "source_start": 24223,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_new"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_function_header_failure",
+      "parameters": [],
+      "primary_blocker": "unsupported_aggregate_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1FunctionHeader",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "unsupported_expression_RecordExpression",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "() -> Stage1FunctionHeader",
+      "signature_supported_by_v1": false,
+      "source_bytes": 316,
+      "source_end": 35137,
+      "source_start": 34821,
+      "unsupported_operations": [
+        "RecordExpression",
+        "UnaryExpression"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": false,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_new"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_parameter_parse_failure",
+      "parameters": [],
+      "primary_blocker": "unsupported_aggregate_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1ParameterParse",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "unsupported_expression_RecordExpression",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "() -> Stage1ParameterParse",
+      "signature_supported_by_v1": false,
+      "source_bytes": 222,
+      "source_end": 35359,
+      "source_start": 35137,
+      "unsupported_operations": [
+        "RecordExpression",
+        "UnaryExpression"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": false,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "stage1_parameter_name_seen",
+        "stage1_source_spans_equal",
+        "vector_get",
+        "vector_len"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_parameter_name_seen",
+        "stage1_source_spans_equal"
+      ],
+      "name": "stage1_parameter_name_seen",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "name_starts",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "name_ends",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "wanted_start",
+          "type": "i64"
+        },
+        {
+          "name": "wanted_end",
+          "type": "i64"
+        },
+        {
+          "name": "index",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "missing_return",
+        "nested_calls",
+        "structured_branching",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, &vector<i64>, i64, i64, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 1029,
+      "source_end": 36388,
+      "source_start": 35359,
+      "unsupported_operations": [
+        "BinaryExpression",
+        "SwitchStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "stage1_parameter_name_seen",
+        "stage1_parameter_names_unique",
+        "vector_get",
+        "vector_len"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_parameter_name_seen",
+        "stage1_parameter_names_unique"
+      ],
+      "name": "stage1_parameter_names_unique",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "name_starts",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "name_ends",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "index",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "missing_return",
+        "nested_calls",
+        "structured_branching",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, &vector<i64>, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 808,
+      "source_end": 37196,
+      "source_start": 36388,
+      "unsupported_operations": [
+        "BinaryExpression",
+        "SwitchStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_native_parser_program_type_code_for_token",
+        "generic_token_count",
+        "generic_token_end",
+        "generic_token_kind",
+        "generic_token_start",
+        "stage1_parameter_parse_failure",
+        "vector_new",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_parameter_parse_failure"
+      ],
+      "name": "stage1_parse_parameters",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "start_cursor",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1ParameterParse",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "loop_control_flow",
+        "mutable_storage",
+        "nested_calls",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_builtin_call",
+        "unsupported_local_type",
+        "unsupported_statement_SwitchStatement",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, i64) -> Stage1ParameterParse",
+      "signature_supported_by_v1": false,
+      "source_bytes": 4215,
+      "source_end": 41411,
+      "source_start": 37196,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "RecordExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_native_parser_program_indent",
+        "generic_token_count",
+        "generic_token_kind",
+        "generic_token_start"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_function_body_end",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "body_cursor",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "missing_return",
+        "mutable_storage",
+        "nested_calls",
+        "structured_branching",
+        "unsupported_builtin_call",
+        "unsupported_statement_SwitchStatement",
+        "unsupported_statement_WhileStatement"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 4826,
+      "source_end": 46237,
+      "source_start": 41411,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "UnaryExpression",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_native_parser_program_type_code_for_token",
+        "generic_token_count",
+        "generic_token_end",
+        "generic_token_kind",
+        "generic_token_start",
+        "stage1_function_body_end",
+        "stage1_function_header_failure",
+        "stage1_parameter_names_unique",
+        "stage1_parse_parameters"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_function_body_end",
+        "stage1_function_header_failure",
+        "stage1_parameter_names_unique",
+        "stage1_parse_parameters"
+      ],
+      "name": "stage1_parse_function_header_core",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "cursor",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1FunctionHeader",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "missing_return",
+        "mutable_storage",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_builtin_call",
+        "unsupported_expression_FieldAccessExpression",
+        "unsupported_local_type",
+        "unsupported_statement_SwitchStatement"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, i64) -> Stage1FunctionHeader",
+      "signature_supported_by_v1": false,
+      "source_bytes": 3214,
+      "source_end": 49451,
+      "source_start": 46237,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "RecordExpression",
+        "SwitchStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": true,
+      "calls": [
+        "stage1_parse_function_header_core"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_parse_function_header_core"
+      ],
+      "name": "stage1_parse_function_header",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "cursor",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1FunctionHeader",
+      "secondary_blockers": [],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, i64) -> Stage1FunctionHeader",
+      "signature_supported_by_v1": false,
+      "source_bytes": 198,
+      "source_end": 49649,
+      "source_start": 49451,
+      "unsupported_operations": [],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_get"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_source_spans_equal",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "first_start",
+          "type": "i64"
+        },
+        {
+          "name": "first_end",
+          "type": "i64"
+        },
+        {
+          "name": "second_start",
+          "type": "i64"
+        },
+        {
+          "name": "second_end",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "trit",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "missing_return",
+        "mutable_storage",
+        "structured_branching",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, i64, i64, i64, i64) -> trit",
+      "signature_supported_by_v1": false,
+      "source_bytes": 698,
+      "source_end": 50347,
+      "source_start": 49649,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "UnaryExpression",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "i64_vector_get",
+        "i64_vector_len",
+        "vector_get"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_find_function_id_by_source_name",
+      "parameters": [
+        {
+          "name": "function_ids",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_name_first",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_name_count",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_name_bytes",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "name_start",
+          "type": "i64"
+        },
+        {
+          "name": "name_end",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "structured_branching",
+        "unsupported_binary_operator",
+        "unsupported_expression_UnaryExpression",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, i64, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 1543,
+      "source_end": 51890,
+      "source_start": 50347,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "UnaryExpression",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_get",
+        "vector_len"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_output_chunk",
+      "parameters": [
+        {
+          "name": "output",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "start",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "structured_branching",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 647,
+      "source_end": 52537,
+      "source_start": 51890,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_expression_node_count",
+        "generic_expression_packed_result",
+        "generic_lexer_scan",
+        "generic_native_parser_packed_cursor",
+        "generic_native_parser_packed_node",
+        "generic_native_parser_parse_expression",
+        "generic_native_parser_program_indent",
+        "generic_native_parser_program_type_code_for_token",
+        "generic_token_count",
+        "generic_token_end",
+        "generic_token_kind",
+        "generic_token_start",
+        "native_ir_append_block",
+        "native_ir_append_function",
+        "native_ir_append_instruction",
+        "native_ir_emission_view",
+        "native_ir_empty",
+        "output_sink_append_bytes",
+        "output_sink_commit",
+        "output_sink_new",
+        "stage1_emission_instruction_count",
+        "stage1_emission_value_count",
+        "stage1_emit_single_main_program",
+        "stage1_empty_result",
+        "stage1_lower_expression",
+        "stage1_result",
+        "vector_get",
+        "vector_len",
+        "vector_new",
+        "verify_program"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_emission_instruction_count",
+        "stage1_emission_value_count",
+        "stage1_emit_single_main_program",
+        "stage1_empty_result",
+        "stage1_lower_expression",
+        "stage1_result"
+      ],
+      "name": "stage1_compile_single_main",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_vector_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1CompileResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "mutable_storage",
+        "nested_calls",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_builtin_call",
+        "unsupported_expression_AddressOfExpression",
+        "unsupported_expression_FieldAccessExpression",
+        "unsupported_expression_UnaryExpression",
+        "unsupported_local_type",
+        "unsupported_statement_AssignmentStatement",
+        "unsupported_statement_DiscardStatement",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(vector<i64>) -> Stage1CompileResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 8779,
+      "source_end": 61316,
+      "source_start": 52537,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "SwitchStatement",
+        "UnaryExpression"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_new",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_literal_bytes",
+      "parameters": [
+        {
+          "name": "literal_id",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_vector_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "vector<i64>",
+      "secondary_blockers": [
+        "mutable_storage",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_local_type",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(i64) -> vector<i64>",
+      "signature_supported_by_v1": false,
+      "source_bytes": 19082,
+      "source_end": 80398,
+      "source_start": 61316,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "BinaryExpression",
+        "SwitchStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "stage1_literal_bytes",
+        "vector_get",
+        "vector_len",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_literal_bytes"
+      ],
+      "name": "stage1_emit_literal",
+      "parameters": [
+        {
+          "name": "output",
+          "type": "&mut vector<i64>"
+        },
+        {
+          "name": "literal_id",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "nested_calls",
+        "reference_operation",
+        "unsupported_local_type",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&mut vector<i64>, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 315,
+      "source_end": 80713,
+      "source_start": 80398,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "i64_vector_get",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_emit_ir_function_name",
+      "parameters": [
+        {
+          "name": "function_name_first",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_name_count",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_name_bytes",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_index",
+          "type": "i64"
+        },
+        {
+          "name": "output",
+          "type": "&mut vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "nested_calls",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, &vector<i64>, i64, &mut vector<i64>) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 541,
+      "source_end": 81254,
+      "source_start": 80713,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "i64_vector_get",
+        "i64_vector_len",
+        "stage1_emit_literal",
+        "stage1_emit_register"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_emit_literal",
+        "stage1_emit_register"
+      ],
+      "name": "stage1_emit_ir_register_declarations",
+      "parameters": [
+        {
+          "name": "value_ids",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "definition_function_ids",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "parameter_value_ids",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_id",
+          "type": "i64"
+        },
+        {
+          "name": "output",
+          "type": "&mut vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "structured_branching",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, &vector<i64>, i64, &mut vector<i64>) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 1526,
+      "source_end": 82780,
+      "source_start": 81254,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "i64_vector_get",
+        "stage1_emit_literal",
+        "stage1_emit_register"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_emit_literal",
+        "stage1_emit_register"
+      ],
+      "name": "stage1_emit_ir_parameters",
+      "parameters": [
+        {
+          "name": "function_parameter_first",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_parameter_count",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "parameter_value_ids",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_index",
+          "type": "i64"
+        },
+        {
+          "name": "output",
+          "type": "&mut vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "nested_calls",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, &vector<i64>, i64, &mut vector<i64>) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 656,
+      "source_end": 83436,
+      "source_start": 82780,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "i64_vector_get",
+        "i64_vector_len",
+        "stage1_emit_ir_function_name"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_emit_ir_function_name"
+      ],
+      "name": "stage1_emit_ir_callee_name",
+      "parameters": [
+        {
+          "name": "function_ids",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_name_first",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_name_count",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_name_bytes",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "callee_id",
+          "type": "i64"
+        },
+        {
+          "name": "output",
+          "type": "&mut vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "structured_branching",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, i64, &mut vector<i64>) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 724,
+      "source_end": 84160,
+      "source_start": 83436,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "i64_vector_get",
+        "stage1_emit_decimal",
+        "stage1_emit_ir_callee_name",
+        "stage1_emit_literal",
+        "stage1_emit_register"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_emit_decimal",
+        "stage1_emit_ir_callee_name",
+        "stage1_emit_literal",
+        "stage1_emit_register"
+      ],
+      "name": "stage1_emit_ir_instruction",
+      "parameters": [
+        {
+          "name": "instruction_opcodes",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "instruction_operand_first",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "instruction_operand_count",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "instruction_result_first",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "instruction_immediates",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "instruction_callee_function_ids",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "result_value_ids",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "operand_value_ids",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_ids",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_name_first",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_name_count",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_name_bytes",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "instruction_index",
+          "type": "i64"
+        },
+        {
+          "name": "output",
+          "type": "&mut vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "nested_calls",
+        "structured_branching",
+        "unsupported_statement_DiscardStatement",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, i64, &mut vector<i64>) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 4945,
+      "source_end": 89105,
+      "source_start": 84160,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "i64_vector_get",
+        "i64_vector_len",
+        "stage1_emit_ir_function_name",
+        "stage1_emit_ir_instruction",
+        "stage1_emit_ir_parameters",
+        "stage1_emit_ir_register_declarations",
+        "stage1_emit_literal"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_emit_ir_function_name",
+        "stage1_emit_ir_instruction",
+        "stage1_emit_ir_parameters",
+        "stage1_emit_ir_register_declarations",
+        "stage1_emit_literal"
+      ],
+      "name": "stage1_emit_native_program",
+      "parameters": [
+        {
+          "name": "program",
+          "type": "NativeIR"
+        },
+        {
+          "name": "output",
+          "type": "&mut vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "loop_control_flow",
+        "mutable_storage",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_statement_DiscardStatement",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(NativeIR, &mut vector<i64>) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 2459,
+      "source_end": 91564,
+      "source_start": 89105,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_token_count",
+        "generic_token_kind"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_skip_body_newlines",
+      "parameters": [
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "start_cursor",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "mutable_storage",
+        "structured_branching",
+        "unsupported_builtin_call",
+        "unsupported_statement_WhileStatement"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 416,
+      "source_end": 91980,
+      "source_start": 91564,
+      "unsupported_operations": [
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_body_compile_failure",
+      "parameters": [
+        {
+          "name": "program",
+          "type": "NativeIR"
+        },
+        {
+          "name": "symbol_name_starts",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "symbol_name_ends",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "symbol_value_ids",
+          "type": "vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_vector_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1BodyCompileResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "unsupported_expression_RecordExpression"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(NativeIR, vector<i64>, vector<i64>, vector<i64>) -> Stage1BodyCompileResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 439,
+      "source_end": 92419,
+      "source_start": 91980,
+      "unsupported_operations": [
+        "RecordExpression",
+        "UnaryExpression"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": false,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_expression_node_count",
+        "generic_expression_packed_result",
+        "generic_native_parser_packed_cursor",
+        "generic_native_parser_packed_node",
+        "generic_native_parser_parse_expression",
+        "stage1_lower_expression"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_lower_expression"
+      ],
+      "name": "stage1_lower_source_expression",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "expression_cursor",
+          "type": "i64"
+        },
+        {
+          "name": "program",
+          "type": "NativeIR"
+        },
+        {
+          "name": "function_id",
+          "type": "i64"
+        },
+        {
+          "name": "block_id",
+          "type": "i64"
+        },
+        {
+          "name": "symbol_name_starts",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "symbol_name_ends",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "symbol_value_ids",
+          "type": "&vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1ExpressionLowerResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "missing_return",
+        "mutable_storage",
+        "nested_calls",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_builtin_call",
+        "unsupported_expression_AddressOfExpression",
+        "unsupported_local_type",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, i64, NativeIR, i64, i64, &vector<i64>, &vector<i64>, &vector<i64>) -> Stage1ExpressionLowerResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 2260,
+      "source_end": 94679,
+      "source_start": 92419,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "RecordExpression",
+        "SwitchStatement",
+        "UnaryExpression"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_native_parser_program_indent",
+        "generic_native_parser_program_type_code_for_token",
+        "generic_token_end",
+        "generic_token_kind",
+        "generic_token_start",
+        "stage1_body_compile_failure",
+        "stage1_compile_body_sequence",
+        "stage1_find_symbol_value",
+        "stage1_lower_source_expression",
+        "stage1_skip_body_newlines",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_body_compile_failure",
+        "stage1_compile_body_sequence",
+        "stage1_find_symbol_value",
+        "stage1_lower_source_expression",
+        "stage1_skip_body_newlines"
+      ],
+      "name": "stage1_compile_body_sequence",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "cursor",
+          "type": "i64"
+        },
+        {
+          "name": "body_end_cursor",
+          "type": "i64"
+        },
+        {
+          "name": "program",
+          "type": "NativeIR"
+        },
+        {
+          "name": "function_id",
+          "type": "i64"
+        },
+        {
+          "name": "block_id",
+          "type": "i64"
+        },
+        {
+          "name": "symbol_name_starts",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "symbol_name_ends",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "symbol_value_ids",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "statement_count",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1BodyCompileResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "missing_return",
+        "mutable_storage",
+        "nested_calls",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, &vector<i64>, i64, i64, NativeIR, i64, i64, vector<i64>, vector<i64>, vector<i64>, i64) -> Stage1BodyCompileResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 19539,
+      "source_end": 114218,
+      "source_start": 94679,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "RecordExpression",
+        "SwitchStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "i64_vector_get",
+        "native_ir_append_block_for_function",
+        "native_ir_append_instruction_for_function",
+        "stage1_compile_body_sequence",
+        "stage1_function_body_end",
+        "stage1_lower_from_append",
+        "stage1_lower_preserved_failure",
+        "vector_get",
+        "vector_new",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_compile_body_sequence",
+        "stage1_function_body_end",
+        "stage1_lower_from_append",
+        "stage1_lower_preserved_failure"
+      ],
+      "name": "stage1_compile_registered_function",
+      "parameters": [
+        {
+          "name": "initial_program",
+          "type": "NativeIR"
+        },
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "expression_cursors",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "parameter_name_starts",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "parameter_name_ends",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_index",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1LowerResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "loop_control_flow",
+        "missing_return",
+        "mutable_storage",
+        "nested_calls",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_builtin_call",
+        "unsupported_expression_AddressOfExpression",
+        "unsupported_expression_FieldAccessExpression",
+        "unsupported_expression_UnaryExpression",
+        "unsupported_local_type",
+        "unsupported_statement_SwitchStatement",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(NativeIR, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, i64) -> Stage1LowerResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 3300,
+      "source_end": 117518,
+      "source_start": 114218,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "SwitchStatement",
+        "UnaryExpression",
+        "WhileStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "stage1_compile_function_sequence",
+        "stage1_compile_registered_function",
+        "stage1_lower_preserved_failure"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_compile_function_sequence",
+        "stage1_compile_registered_function",
+        "stage1_lower_preserved_failure"
+      ],
+      "name": "stage1_compile_function_sequence",
+      "parameters": [
+        {
+          "name": "initial_program",
+          "type": "NativeIR"
+        },
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "expression_cursors",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "parameter_name_starts",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "parameter_name_ends",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "function_index",
+          "type": "i64"
+        },
+        {
+          "name": "function_count",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1LowerResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "missing_return",
+        "mutable_storage",
+        "structured_branching",
+        "unsupported_local_type",
+        "unsupported_statement_SwitchStatement"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(NativeIR, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, &vector<i64>, i64, i64) -> Stage1LowerResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 1598,
+      "source_end": 119116,
+      "source_start": 117518,
+      "unsupported_operations": [
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "RecordExpression",
+        "SwitchStatement",
+        "UnaryExpression"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_function_scan_state",
+      "parameters": [
+        {
+          "name": "program",
+          "type": "NativeIR"
+        },
+        {
+          "name": "name_starts",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "name_ends",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "parameter_name_starts",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "parameter_name_ends",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "expression_cursors",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "cursor",
+          "type": "i64"
+        },
+        {
+          "name": "function_count",
+          "type": "i64"
+        },
+        {
+          "name": "main_count",
+          "type": "i64"
+        },
+        {
+          "name": "accepted",
+          "type": "i64"
+        },
+        {
+          "name": "error_code",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_vector_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1FunctionScanState",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "unsupported_expression_RecordExpression"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(NativeIR, vector<i64>, vector<i64>, vector<i64>, vector<i64>, vector<i64>, i64, i64, i64, i64, i64) -> Stage1FunctionScanState",
+      "signature_supported_by_v1": false,
+      "source_bytes": 788,
+      "source_end": 119904,
+      "source_start": 119116,
+      "unsupported_operations": [
+        "RecordExpression"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": false,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": false,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": false,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "vector_get",
+        "vector_new",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [],
+      "name": "stage1_source_name_is_main",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "name_start",
+          "type": "i64"
+        },
+        {
+          "name": "name_end",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "i64",
+      "secondary_blockers": [
+        "loop_control_flow",
+        "missing_return",
+        "mutable_storage",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(&vector<i64>, i64, i64) -> i64",
+      "signature_supported_by_v1": false,
+      "source_bytes": 933,
+      "source_end": 120837,
+      "source_start": 119904,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": false,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "native_ir_append_parameter",
+        "stage1_register_parameters",
+        "vector_get",
+        "vector_len",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_register_parameters"
+      ],
+      "name": "stage1_register_parameters",
+      "parameters": [
+        {
+          "name": "program",
+          "type": "NativeIR"
+        },
+        {
+          "name": "function_id",
+          "type": "i64"
+        },
+        {
+          "name": "parameter_index",
+          "type": "i64"
+        },
+        {
+          "name": "parameter_name_starts",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "parameter_name_ends",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "registered_name_starts",
+          "type": "vector<i64>"
+        },
+        {
+          "name": "registered_name_ends",
+          "type": "vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1ParameterRegistrationResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "missing_return",
+        "nested_calls",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(NativeIR, i64, i64, &vector<i64>, &vector<i64>, vector<i64>, vector<i64>) -> Stage1ParameterRegistrationResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 2568,
+      "source_end": 123405,
+      "source_start": 120837,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "RecordExpression",
+        "SwitchStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "i64_vector_clone",
+        "native_ir_append_function_source",
+        "native_ir_empty",
+        "stage1_function_scan_state",
+        "stage1_parse_function_header",
+        "stage1_register_parameters",
+        "stage1_source_name_is_main",
+        "stage1_source_spans_equal",
+        "vector_get",
+        "vector_push"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_function_scan_state",
+        "stage1_parse_function_header",
+        "stage1_register_parameters",
+        "stage1_source_name_is_main",
+        "stage1_source_spans_equal"
+      ],
+      "name": "stage1_register_function_at",
+      "parameters": [
+        {
+          "name": "initial_state",
+          "type": "Stage1FunctionScanState"
+        },
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "cursor",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1FunctionScanState",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "loop_control_flow",
+        "missing_return",
+        "mutable_storage",
+        "nested_calls",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_expression_AddressOfExpression",
+        "unsupported_expression_FieldAccessExpression",
+        "unsupported_local_type",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(Stage1FunctionScanState, &vector<i64>, &vector<i64>, i64) -> Stage1FunctionScanState",
+      "signature_supported_by_v1": false,
+      "source_bytes": 7656,
+      "source_end": 131061,
+      "source_start": 123405,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_token_kind",
+        "i64_vector_clone",
+        "stage1_function_scan_state",
+        "stage1_register_function_at",
+        "stage1_scan_functions"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_function_scan_state",
+        "stage1_register_function_at",
+        "stage1_scan_functions"
+      ],
+      "name": "stage1_scan_non_newline",
+      "parameters": [
+        {
+          "name": "initial_state",
+          "type": "Stage1FunctionScanState"
+        },
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "token_count",
+          "type": "i64"
+        },
+        {
+          "name": "cursor",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1FunctionScanState",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "missing_return",
+        "mutable_storage",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_expression_AddressOfExpression",
+        "unsupported_expression_FieldAccessExpression",
+        "unsupported_local_type",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(Stage1FunctionScanState, &vector<i64>, &vector<i64>, i64, i64) -> Stage1FunctionScanState",
+      "signature_supported_by_v1": false,
+      "source_bytes": 2770,
+      "source_end": 133831,
+      "source_start": 131061,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "SwitchStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_token_kind",
+        "i64_vector_clone",
+        "stage1_function_scan_state",
+        "stage1_scan_non_newline"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_function_scan_state",
+        "stage1_scan_non_newline"
+      ],
+      "name": "stage1_scan_functions",
+      "parameters": [
+        {
+          "name": "initial_state",
+          "type": "Stage1FunctionScanState"
+        },
+        {
+          "name": "source",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "tokens",
+          "type": "&vector<i64>"
+        },
+        {
+          "name": "token_count",
+          "type": "i64"
+        },
+        {
+          "name": "start_cursor",
+          "type": "i64"
+        }
+      ],
+      "primary_blocker": "unsupported_reference_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1FunctionScanState",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "loop_control_flow",
+        "mutable_storage",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_expression_AddressOfExpression",
+        "unsupported_expression_FieldAccessExpression",
+        "unsupported_local_type",
+        "unsupported_statement_WhileStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(Stage1FunctionScanState, &vector<i64>, &vector<i64>, i64, i64) -> Stage1FunctionScanState",
+      "signature_supported_by_v1": false,
+      "source_bytes": 2002,
+      "source_end": 135833,
+      "source_start": 133831,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "SwitchStatement",
+        "WhileStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": false,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    },
+    {
+      "body_supported_by_v1": false,
+      "calls": [
+        "generic_lexer_scan",
+        "generic_token_count",
+        "i64_vector_clone",
+        "i64_vector_len",
+        "native_ir_empty",
+        "output_sink_append_bytes",
+        "output_sink_commit",
+        "output_sink_new",
+        "stage1_compile_function_sequence",
+        "stage1_emit_native_program",
+        "stage1_empty_result",
+        "stage1_function_scan_state",
+        "stage1_result",
+        "stage1_scan_functions",
+        "vector_len",
+        "vector_new",
+        "verify_program"
+      ],
+      "dependency_closed": false,
+      "local_calls": [
+        "stage1_compile_function_sequence",
+        "stage1_emit_native_program",
+        "stage1_empty_result",
+        "stage1_function_scan_state",
+        "stage1_result",
+        "stage1_scan_functions"
+      ],
+      "name": "stage1_compile",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "vector<i64>"
+        }
+      ],
+      "primary_blocker": "unsupported_vector_signature",
+      "representable": false,
+      "representable_with_reference_vector_get_subset": false,
+      "return_type": "Stage1CompileResult",
+      "secondary_blockers": [
+        "aggregate_operation",
+        "mutable_storage",
+        "nested_calls",
+        "reference_operation",
+        "structured_branching",
+        "unsupported_builtin_call",
+        "unsupported_expression_AddressOfExpression",
+        "unsupported_expression_FieldAccessExpression",
+        "unsupported_local_type",
+        "unsupported_statement_AssignmentStatement",
+        "unsupported_statement_DiscardStatement",
+        "unsupported_statement_SwitchStatement",
+        "vector_operation"
+      ],
+      "self_compile_attempted": false,
+      "self_compile_result": "NOT_ATTEMPTED",
+      "self_contained_representable": false,
+      "signature": "(vector<i64>) -> Stage1CompileResult",
+      "signature_supported_by_v1": false,
+      "source_bytes": 3907,
+      "source_end": 139740,
+      "source_start": 135833,
+      "unsupported_operations": [
+        "AddressOfExpression",
+        "AssignmentStatement",
+        "BinaryExpression",
+        "FieldAccessExpression",
+        "SwitchStatement"
+      ],
+      "uses_aggregates": true,
+      "uses_dynamic_memory": true,
+      "uses_indexing": false,
+      "uses_nested_calls": true,
+      "uses_references": true,
+      "uses_strings": false,
+      "uses_unsupported_control_flow": true,
+      "uses_vectors": true
+    }
+  ],
+  "functions_representable": 0,
+  "functions_total": 50,
+  "primary_blocker_distribution": {
+    "unsupported_aggregate_signature": 6,
+    "unsupported_reference_signature": 38,
+    "unsupported_vector_signature": 6
+  },
+  "schema": "s3-stage1-representability-matrix",
+  "schema_version": "1.0.0",
+  "source_bytes": 139740,
+  "source_path": "selfhost/compiler/stage1_compiler_v1.s3",
+  "source_sha256": "894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c",
+  "v1_gate": {
+    "body_subset": "final return; immutable i64 locals; integer literals; bound identifiers; local calls; i64 addition and multiplication",
+    "supported_parameter_type": "i64",
+    "supported_return_type": "i64"
+  }
+}
