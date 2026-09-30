@@ -504,7 +504,7 @@ fn typed_argument_program(source_type: i64, expected_type: i64) -> NativeIR:
     mut vector_type_id: i64 = vector_type.value_id
     program = vector_type.program
     mut reference_type: NativeIRAppendResult = native_ir_intern_composite_type(
-        program, 3, vector_type_id, 1, -1
+        program, 3, vector_type_id, 0, -1
     )
     mut reference_type_id: i64 = reference_type.value_id
     program = reference_type.program
@@ -647,6 +647,176 @@ fn main() -> i64:
     return result
 """
     assert run_source(verifier + probe) == 2047
+
+
+def test_native_ir_external_vector_builtin_has_a_verified_typed_signature() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(encoding="utf-8")
+    probe = """
+record ExternalCallProbe:
+    program: NativeIR
+    external_accepted: i64
+    external_reference_parameter_accepted: i64
+    caller_accepted: i64
+    caller_reference_parameter_accepted: i64
+    block_accepted: i64
+    call_accepted: i64
+    call_value_id: i64
+
+fn external_vector_len_probe() -> ExternalCallProbe:
+    mut program: NativeIR = native_ir_empty()
+    mut vector_type: NativeIRAppendResult = native_ir_intern_composite_type(
+        program, 2, native_ir_type_i64(), 0, -1
+    )
+    mut vector_type_id: i64 = vector_type.value_id
+    program = vector_type.program
+    mut reference_type: NativeIRAppendResult = native_ir_intern_composite_type(
+        program, 3, vector_type_id, 1, -1
+    )
+    mut reference_type_id: i64 = reference_type.value_id
+    program = reference_type.program
+    mut source: vector<i64> = vector_new<i64>(20)
+    discard vector_push<i64>(&mut source, 118)
+    discard vector_push<i64>(&mut source, 101)
+    discard vector_push<i64>(&mut source, 99)
+    discard vector_push<i64>(&mut source, 116)
+    discard vector_push<i64>(&mut source, 111)
+    discard vector_push<i64>(&mut source, 114)
+    discard vector_push<i64>(&mut source, 95)
+    discard vector_push<i64>(&mut source, 108)
+    discard vector_push<i64>(&mut source, 101)
+    discard vector_push<i64>(&mut source, 110)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 99)
+    discard vector_push<i64>(&mut source, 97)
+    discard vector_push<i64>(&mut source, 108)
+    discard vector_push<i64>(&mut source, 108)
+    discard vector_push<i64>(&mut source, 101)
+    discard vector_push<i64>(&mut source, 114)
+    mut external: NativeIRAppendResult = native_ir_append_external_function_source(
+        program, 7, 1, native_ir_type_i64(), &source, 0, 10
+    )
+    mut external_accepted: i64 = external.accepted
+    program = external.program
+    mut external_reference: NativeIRAppendResult = native_ir_append_typed_parameter(
+        program, 7, 0, reference_type_id
+    )
+    mut external_reference_accepted: i64 = external_reference.accepted
+    program = external_reference.program
+    mut caller: NativeIRAppendResult = native_ir_append_function_source(
+        program, 8, 1, &source, 11, 17
+    )
+    mut caller_accepted: i64 = caller.accepted
+    program = caller.program
+    mut caller_reference: NativeIRAppendResult = native_ir_append_typed_parameter(
+        program, 8, 0, reference_type_id
+    )
+    mut caller_reference_accepted: i64 = caller_reference.accepted
+    mut caller_reference_id: i64 = caller_reference.value_id
+    program = caller_reference.program
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 8, 0, 1
+    )
+    mut block_accepted: i64 = block.accepted
+    program = block.program
+    mut arguments: i64_vector = i64_vector_new<i64>(1)
+    discard i64_vector_push(&mut arguments, caller_reference_id)
+    mut call: NativeIRAppendResult = native_ir_append_call_arguments(
+        program, 8, 0, 7, &arguments
+    )
+    mut call_accepted: i64 = call.accepted
+    mut call_value_id: i64 = call.value_id
+    program = call.program
+    mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        program, 8, 0, 1, 0, call_value_id, -1, -1
+    )
+    program = returned.program
+    return ExternalCallProbe(
+        program=program,
+        external_accepted=external_accepted,
+        external_reference_parameter_accepted=external_reference_accepted,
+        caller_accepted=caller_accepted,
+        caller_reference_parameter_accepted=caller_reference_accepted,
+        block_accepted=block_accepted,
+        call_accepted=call_accepted,
+        call_value_id=call_value_id
+    )
+
+fn valid_external_call_probe() -> i64:
+    mut state: ExternalCallProbe = external_vector_len_probe()
+    mut score: i64 = native_ir_trit_to_i64(state.external_accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(state.external_reference_parameter_accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(state.caller_accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(state.caller_reference_parameter_accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(state.block_accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(state.call_accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(state.call_value_id >= 0)
+    mut function_id: i64 = 7
+    mut function_external: i64 = native_ir_function_is_external(
+        &state.program.function_ids,
+        &state.program.function_external_flags,
+        function_id
+    )
+    mut verified: NativeIRVerifiedResult = verify_program(state.program)
+    score = score * 2 + verified.verification.accepted
+    score = score * 2 + native_ir_trit_to_i64(
+        verified.verification.digest_before == verified.verification.digest_after
+    )
+    score = score * 2 + native_ir_trit_to_i64(function_external == 1)
+    return score
+
+fn wrong_external_call_argument_probe() -> i64:
+    mut state: ExternalCallProbe = external_vector_len_probe()
+    discard i64_vector_set(&mut state.program.parameter_type_ids, 1, native_ir_type_i64())
+    discard i64_vector_set(&mut state.program.value_type_ids, 1, native_ir_type_i64())
+    mut verified: NativeIRVerifiedResult = verify_program(state.program)
+    return native_ir_trit_to_i64(verified.verification.accepted == 0)
+
+fn external_block_builder_probe() -> i64:
+    mut state: ExternalCallProbe = external_vector_len_probe()
+    mut attempted: NativeIRAppendResult = native_ir_append_block_for_function(
+        state.program, 7, 1, 1
+    )
+    return native_ir_trit_to_i64(attempted.accepted == 0) * native_ir_trit_to_i64(
+        i64_vector_len(&attempted.program.block_ids) == 1
+    )
+
+fn external_body_verifier_probe() -> i64:
+    mut state: ExternalCallProbe = external_vector_len_probe()
+    mut forged: NativeIR = state.program
+    discard i64_vector_reserve(&mut forged.block_ids, 2)
+    discard i64_vector_reserve(&mut forged.block_function_ids, 2)
+    discard i64_vector_reserve(&mut forged.block_instruction_first, 2)
+    discard i64_vector_reserve(&mut forged.block_instruction_count, 2)
+    discard i64_vector_reserve(&mut forged.block_terminator_kinds, 2)
+    discard i64_vector_push(&mut forged.block_ids, 1)
+    discard i64_vector_push(&mut forged.block_function_ids, 7)
+    discard i64_vector_push(&mut forged.block_instruction_first, 2)
+    discard i64_vector_push(&mut forged.block_instruction_count, 0)
+    discard i64_vector_push(&mut forged.block_terminator_kinds, 1)
+    discard i64_vector_set(&mut forged.function_block_count, 0, 1)
+    mut verified: NativeIRVerifiedResult = verify_program(forged)
+    return native_ir_trit_to_i64(verified.verification.accepted == 0) * native_ir_trit_to_i64(
+        verified.verification.digest_before == verified.verification.digest_after
+    )
+
+fn external_invalid_linkage_probe() -> i64:
+    mut state: ExternalCallProbe = external_vector_len_probe()
+    discard i64_vector_set(&mut state.program.function_external_flags, 0, 2)
+    mut verified: NativeIRVerifiedResult = verify_program(state.program)
+    return native_ir_trit_to_i64(verified.verification.accepted == 0) * native_ir_trit_to_i64(
+        verified.verification.digest_before == verified.verification.digest_after
+    )
+
+fn main() -> i64:
+    mut result: i64 = native_ir_trit_to_i64(valid_external_call_probe() == 1023)
+    result = result * 2 + wrong_external_call_argument_probe()
+    result = result * 2 + external_block_builder_probe()
+    result = result * 2 + external_body_verifier_probe()
+    result = result * 2 + external_invalid_linkage_probe()
+    return result
+"""
+    assert run_source(verifier + probe) == 31
 
 
 @pytest.mark.s3_native

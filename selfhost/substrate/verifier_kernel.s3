@@ -21,6 +21,7 @@ export record NativeIR:
     function_ids: i64_vector
     function_result_widths: i64_vector
     function_result_type_ids: i64_vector
+    function_external_flags: i64_vector
     function_name_first: i64_vector
     function_name_count: i64_vector
     function_parameter_first: i64_vector
@@ -101,6 +102,7 @@ export fn native_ir_empty() -> NativeIR:
         function_ids=i64_vector_new<i64>(16),
         function_result_widths=i64_vector_new<i64>(16),
         function_result_type_ids=i64_vector_new<i64>(16),
+        function_external_flags=i64_vector_new<i64>(16),
         function_name_first=i64_vector_new<i64>(16),
         function_name_count=i64_vector_new<i64>(16),
         function_parameter_first=i64_vector_new<i64>(16),
@@ -154,6 +156,28 @@ export fn native_ir_type_i64() -> i64:
 
 export fn native_ir_type_bool() -> i64:
     return 1
+
+export fn native_ir_function_is_external(
+    function_ids: &i64_vector,
+    function_external_flags: &i64_vector,
+    function_id: i64
+) -> i64:
+    mut index: i64 = 0
+    while index < i64_vector_len(function_ids):
+        match i64_vector_get(function_ids, index) == function_id:
+            -1:
+                match index < i64_vector_len(function_external_flags):
+                    -1:
+                        return i64_vector_get(function_external_flags, index)
+                    0:
+                        return -1
+                    1:
+                        return -1
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    return -1
 
 fn native_ir_trit_to_i64(value: trit) -> i64:
     match value:
@@ -380,6 +404,7 @@ fn native_ir_typed_metadata_valid(
     type_mutability_flags: &i64_vector,
     type_lengths: &i64_vector,
     function_ids: &i64_vector,
+    function_external_flags: &i64_vector,
     function_result_type_ids: &i64_vector,
     parameter_value_ids: &i64_vector,
     parameter_type_ids: &i64_vector,
@@ -479,6 +504,13 @@ fn native_ir_typed_metadata_valid(
             return 0
         1:
             return 0
+    match i64_vector_len(function_external_flags) == i64_vector_len(function_ids):
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
     match i64_vector_len(parameter_type_ids) == i64_vector_len(parameter_value_ids):
         -1:
             discard 0
@@ -501,6 +533,22 @@ fn native_ir_typed_metadata_valid(
                 discard 0
             0:
                 return 0
+            1:
+                return 0
+        index = index + 1
+    index = 0
+    while index < i64_vector_len(function_external_flags):
+        match i64_vector_get(function_external_flags, index) == 0:
+            -1:
+                discard 0
+            0:
+                match i64_vector_get(function_external_flags, index) == 1:
+                    -1:
+                        discard 0
+                    0:
+                        return 0
+                    1:
+                        return 0
             1:
                 return 0
         index = index + 1
@@ -536,6 +584,42 @@ fn native_ir_typed_metadata_valid(
                 return 0
         index = index + 1
     return 1
+
+fn native_ir_external_body_valid(
+    function_ids: &i64_vector,
+    function_external_flags: &i64_vector,
+    block_function_ids: &i64_vector,
+    instruction_function_ids: &i64_vector
+) -> trit:
+    mut function_index: i64 = 0
+    while function_index < i64_vector_len(function_ids):
+        match i64_vector_get(function_external_flags, function_index) == 1:
+            -1:
+                mut function_id: i64 = i64_vector_get(function_ids, function_index)
+                mut block_index: i64 = 0
+                while block_index < i64_vector_len(block_function_ids):
+                    match i64_vector_get(block_function_ids, block_index) == function_id:
+                        -1:
+                            return 0
+                        0:
+                            block_index = block_index + 1
+                        1:
+                            block_index = block_index + 1
+                mut instruction_index: i64 = 0
+                while instruction_index < i64_vector_len(instruction_function_ids):
+                    match i64_vector_get(instruction_function_ids, instruction_index) == function_id:
+                        -1:
+                            return 0
+                        0:
+                            instruction_index = instruction_index + 1
+                        1:
+                            instruction_index = instruction_index + 1
+            0:
+                discard 0
+            1:
+                discard 0
+        function_index = function_index + 1
+    return -1
 
 fn native_ir_return_signature_valid(
     function_ids: &i64_vector,
@@ -661,6 +745,9 @@ export fn native_ir_append_function(program: NativeIR, function_id: i64, result_
     updated.function_result_type_ids = native_ir_vector_append_if(
         updated.function_result_type_ids, 0, accepted
     )
+    updated.function_external_flags = native_ir_vector_append_if(
+        updated.function_external_flags, 0, accepted
+    )
     updated.function_name_first = native_ir_vector_append_if(
         updated.function_name_first, name_first, accepted
     )
@@ -737,6 +824,83 @@ export fn native_ir_append_function_source(
                         name_index = name_index + 1
                     discard i64_vector_set(&mut updated.function_name_count, function_index, name_count)
                     return NativeIRAppendResult(program=updated, accepted=1, value_id=-1)
+                0:
+                    return appended
+                1:
+                    return appended
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+
+export fn native_ir_append_external_function_source(
+    program: NativeIR,
+    function_id: i64,
+    result_width: i64,
+    result_type_id: i64,
+    source: &vector<i64>,
+    name_start: i64,
+    name_end: i64
+) -> NativeIRAppendResult:
+    match native_ir_type_id_valid(&program.type_kinds, result_type_id) == 1:
+        -1:
+            mut appended: NativeIRAppendResult = native_ir_append_function_source(
+                program, function_id, result_width, source, name_start, name_end
+            )
+            match appended.accepted == 1:
+                -1:
+                    mut updated: NativeIR = appended.program
+                    mut function_index: i64 = i64_vector_len(&updated.function_ids) - 1
+                    discard i64_vector_set(
+                        &mut updated.function_result_type_ids,
+                        function_index,
+                        result_type_id
+                    )
+                    discard i64_vector_set(
+                        &mut updated.function_external_flags,
+                        function_index,
+                        1
+                    )
+                    return NativeIRAppendResult(
+                        program=updated, accepted=1, value_id=function_id
+                    )
+                0:
+                    return appended
+                1:
+                    return appended
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+
+export fn native_ir_append_external_function(
+    program: NativeIR,
+    function_id: i64,
+    result_width: i64,
+    result_type_id: i64
+) -> NativeIRAppendResult:
+    match native_ir_type_id_valid(&program.type_kinds, result_type_id) == 1:
+        -1:
+            mut appended: NativeIRAppendResult = native_ir_append_function(
+                program, function_id, result_width
+            )
+            match appended.accepted == 1:
+                -1:
+                    mut updated: NativeIR = appended.program
+                    mut function_index: i64 = i64_vector_len(&updated.function_ids) - 1
+                    discard i64_vector_set(
+                        &mut updated.function_result_type_ids,
+                        function_index,
+                        result_type_id
+                    )
+                    discard i64_vector_set(
+                        &mut updated.function_external_flags,
+                        function_index,
+                        1
+                    )
+                    return NativeIRAppendResult(
+                        program=updated, accepted=1, value_id=function_id
+                    )
                 0:
                     return appended
                 1:
@@ -903,7 +1067,17 @@ export fn native_ir_append_block_for_function(
                 scan_function = scan_function + 1
     match found_function == 1:
         -1:
-            discard 0
+            match native_ir_function_is_external(
+                &program.function_ids,
+                &program.function_external_flags,
+                function_id
+            ) == 0:
+                -1:
+                    discard 0
+                0:
+                    accepted = 0
+                1:
+                    accepted = 0
         0:
             accepted = 0
         1:
@@ -1335,7 +1509,7 @@ export fn native_ir_append_call_arguments(
             accepted = 0
     match callee_index >= 0:
         -1:
-            match i64_vector_len(&program.function_name_bytes) > 0:
+            match callee_index < i64_vector_len(&program.function_parameter_count):
                 -1:
                     match i64_vector_len(arguments) == i64_vector_get(
                         &program.function_parameter_count, callee_index
@@ -1577,6 +1751,7 @@ fn opcode_shape_valid(opcode: i64, result_count: i64, operand_count: i64, immedi
 fn checksum(
     function_ids: &i64_vector,
     function_result_widths: &i64_vector,
+    function_external_flags: &i64_vector,
     function_name_first: &i64_vector,
     function_name_count: &i64_vector,
     function_parameter_first: &i64_vector,
@@ -1623,6 +1798,7 @@ fn checksum(
     while index < i64_vector_len(function_ids):
         total = total + i64_vector_get(function_ids, index) * 3
         total = total + i64_vector_get(function_result_widths, index) * 5
+        total = total + native_ir_safe_get(function_external_flags, index) * 233
         total = total + native_ir_safe_get(function_name_first, index) * 127
         total = total + native_ir_safe_get(function_name_count, index) * 131
         total = total + native_ir_safe_get(function_parameter_first, index) * 137
@@ -1741,6 +1917,7 @@ fn native_ir_type_checksum(
 
 fn native_ir_named_metadata_valid(
     function_ids: &i64_vector,
+    function_external_flags: &i64_vector,
     function_name_first: &i64_vector,
     function_name_count: &i64_vector,
     function_parameter_first: &i64_vector,
@@ -1794,6 +1971,13 @@ fn native_ir_named_metadata_valid(
         1:
             return 0
     match i64_vector_len(function_block_count) == function_count:
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    match i64_vector_len(function_external_flags) == function_count:
         -1:
             discard 0
         0:
@@ -1864,6 +2048,31 @@ fn native_ir_named_metadata_valid(
                 return 0
             1:
                 return 0
+        match i64_vector_get(function_external_flags, function_index) == 0:
+            -1:
+                match block_count > 0:
+                    -1:
+                        discard 0
+                    0:
+                        return 0
+                    1:
+                        return 0
+            0:
+                match i64_vector_get(function_external_flags, function_index) == 1:
+                    -1:
+                        match block_count == 0:
+                            -1:
+                                discard 0
+                            0:
+                                return 0
+                            1:
+                                return 0
+                    0:
+                        return 0
+                    1:
+                        return 0
+            1:
+                return 0
         function_index = function_index + 1
     mut parameter_index: i64 = 0
     while parameter_index < i64_vector_len(parameter_value_ids):
@@ -1893,6 +2102,7 @@ fn verification_result(program: NativeIR, accepted: i64, code: i64, before: i64)
         digest_before=before,
         digest_after=checksum(
             &program.function_ids, &program.function_result_widths,
+            &program.function_external_flags,
             &program.function_name_first, &program.function_name_count,
             &program.function_parameter_first, &program.function_parameter_count,
             &program.function_block_first, &program.function_block_count,
@@ -1928,6 +2138,7 @@ fn verification_result(program: NativeIR, accepted: i64, code: i64, before: i64)
 export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
     before: i64 = checksum(
         &program.function_ids, &program.function_result_widths,
+        &program.function_external_flags,
         &program.function_name_first, &program.function_name_count,
         &program.function_parameter_first, &program.function_parameter_count,
         &program.function_block_first, &program.function_block_count,
@@ -1959,10 +2170,23 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
     match native_ir_typed_metadata_valid(
         &program.type_kinds, &program.type_element_ids,
         &program.type_mutability_flags, &program.type_lengths,
-        &program.function_ids, &program.function_result_type_ids,
+        &program.function_ids, &program.function_external_flags,
+        &program.function_result_type_ids,
         &program.parameter_value_ids, &program.parameter_type_ids,
         &program.value_ids, &program.value_type_ids
     ) == 1:
+        -1:
+            discard 0
+        0:
+            return verification_result(program, 0, 15, before)
+        1:
+            return verification_result(program, 0, 15, before)
+    match native_ir_external_body_valid(
+        &program.function_ids,
+        &program.function_external_flags,
+        &program.block_function_ids,
+        &program.instruction_function_ids
+    ):
         -1:
             discard 0
         0:
@@ -1973,6 +2197,7 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
         -1:
             match native_ir_named_metadata_valid(
                 &program.function_ids,
+                &program.function_external_flags,
                 &program.function_name_first,
                 &program.function_name_count,
                 &program.function_parameter_first,
@@ -2539,6 +2764,7 @@ fn scalar_program() -> NativeIR:
     mut function_ids: i64_vector = i64_vector_new<i64>(64)
     mut function_result_widths: i64_vector = i64_vector_new<i64>(64)
     mut function_result_type_ids: i64_vector = i64_vector_new<i64>(64)
+    mut function_external_flags: i64_vector = i64_vector_new<i64>(64)
     mut function_name_first: i64_vector = i64_vector_new<i64>(64)
     mut function_name_count: i64_vector = i64_vector_new<i64>(64)
     mut function_parameter_first: i64_vector = i64_vector_new<i64>(64)
@@ -2588,6 +2814,7 @@ fn scalar_program() -> NativeIR:
     discard i64_vector_push(&mut function_ids, 0)
     discard i64_vector_push(&mut function_result_widths, 1)
     discard i64_vector_push(&mut function_result_type_ids, 0)
+    discard i64_vector_push(&mut function_external_flags, 0)
     discard i64_vector_push(&mut function_name_first, 0)
     discard i64_vector_push(&mut function_name_count, 0)
     discard i64_vector_push(&mut function_parameter_first, 0)
@@ -2649,6 +2876,7 @@ fn scalar_program() -> NativeIR:
     return NativeIR(
         function_ids=function_ids, function_result_widths=function_result_widths,
         function_result_type_ids=function_result_type_ids,
+        function_external_flags=function_external_flags,
         function_name_first=function_name_first, function_name_count=function_name_count,
         function_parameter_first=function_parameter_first,
         function_parameter_count=function_parameter_count,
@@ -2737,6 +2965,7 @@ fn call_program(result_width: i64) -> NativeIR:
     discard i64_vector_push(&mut program.function_ids, 1)
     discard i64_vector_push(&mut program.function_result_widths, 1)
     discard i64_vector_push(&mut program.function_result_type_ids, 0)
+    discard i64_vector_push(&mut program.function_external_flags, 0)
     discard i64_vector_set(&mut program.instruction_opcodes, 0, 3)
     discard i64_vector_set(&mut program.instruction_callee_function_ids, 0, 0)
     discard i64_vector_set(&mut program.instruction_result_count, 0, result_width)
@@ -2759,6 +2988,7 @@ fn bad_multi_result_program() -> NativeIR:
     discard i64_vector_push(&mut program.function_ids, 1)
     discard i64_vector_push(&mut program.function_result_widths, 1)
     discard i64_vector_push(&mut program.function_result_type_ids, 0)
+    discard i64_vector_push(&mut program.function_external_flags, 0)
     discard i64_vector_set(&mut program.instruction_opcodes, 0, 3)
     discard i64_vector_set(&mut program.instruction_callee_function_ids, 0, 0)
     discard i64_vector_set(&mut program.instruction_result_count, 0, -1)
@@ -2796,6 +3026,7 @@ fn duplicate_function_program() -> NativeIR:
     discard i64_vector_push(&mut program.function_ids, 0)
     discard i64_vector_push(&mut program.function_result_widths, 1)
     discard i64_vector_push(&mut program.function_result_type_ids, 0)
+    discard i64_vector_push(&mut program.function_external_flags, 0)
     return program
 
 fn duplicate_value_program() -> NativeIR:
