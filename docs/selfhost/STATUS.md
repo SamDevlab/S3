@@ -12,7 +12,7 @@
 
 `STAGE1_V4=NOT_AUTHORIZED`
 
-## S3 1.13 candidate snapshot (2026-09-28)
+## S3 1.13 candidate snapshot (2026-09-29)
 
 On the unmerged branch `feat/s3-1.13-selfhost-compiler-composition`, an
 experimental S3-written compiler compiled a bounded `i64` source subset to
@@ -23,12 +23,22 @@ this candidate is not promoted and does not establish full self-hosting.
 REFERENCE_COMPILER=PYTHON
 STAGE1_S3_COMPILER=EXPERIMENTAL_SOURCE_TO_ARTIFACT_SUBSET
 FIRST_REAL_STAGE1_SOURCE_TO_ARTIFACT_COMPILER_PATH=YES
-STANDALONE_STAGE1_EXECUTABLE_ARTIFACT=NOT_PROVEN
+STAGE1_ARTIFACT=VERIFIED_SERIALIZED_S3_IR
+STANDALONE_STAGE1=PROVEN_FRESH_PROCESS_HOSTED_IR
+NATIVE_STANDALONE_BINARY=NOT_PROVEN
+REFERENCE_COMPILER_IMPORT_DURING_STAGE1_EXECUTION=NO
+UNSEEN_SUPPORTED_PROGRAMS=7
+ARTIFACT_BUILD_REPRODUCIBILITY=PASS_COLD_PROCESSES
+BOUNDED_SELF_SOURCE_COMPILATION=NOT_PROVEN
 FULL_SELFHOST=NO
 CURRENT_SELFHOST_FRONTIER=EXPAND_STAGE1_SUBSET_AND_BEGIN_BOUNDED_SELF_SOURCE_COMPILATION
-WINDOWS_FULL_SUITE=PASS_4284_PASSED_349_SKIPPED_0_FAILED
+WINDOWS_FULL_SUITE=PASS_4309_PASSED_349_SKIPPED_0_FAILED
+WINDOWS_FULL_SUITE_BASE_HEAD=7bfb8edca51d238b7d6ecd245c635fd106790c0c
+WINDOWS_FULL_SUITE_SCOPE=COMPLETE_LOCAL_WORKING_TREE
+WINDOWS_FULL_SUITE_SUBTESTS_PASSED=572
 REMOTE_CI_HEAD=b7844b6fc77ae6e995992e9f032292bd693b26e6
 REMOTE_CI=PASS_ALL_JOBS
+REMOTE_CI_COVERS_CURRENT_CANDIDATE=NO
 EXACT_LOCAL_LINUX_FULL_SUITE_AFTER_FIXES=NOT_RERUN
 RECOVERY_CLOSURE=PASS_SOURCE_RECOVERED_SEMANTICALLY_REPRODUCIBLE
 ```
@@ -44,7 +54,24 @@ Python 3.11/3.12/3.13 and native x86-64. The exact local Linux full-suite comman
 was not rerun after those fixes, so remote CI success is recorded separately
 rather than rewriting the historical local transcript. See the recovery report
 for provenance and the distinction between the confirmed source-to-artifact
-compiler path and an unproven standalone Stage1 executable artifact.
+compiler path and the standalone candidate's previous status at that checkpoint.
+
+The 2026-09-29 continuation adds a reproducible build entrypoint that persists
+the verified Stage1 IR as `stage1.ir.json`, then invokes it in a fresh Python
+process through `bootstrap.s3.ir_emulator`. The tested invocation blocks imports
+of the Python source compiler, lexer, parser, semantics, lowering, codegen,
+module compiler, and whole-program compiler. Seven unseen supported programs
+were compiled, their emitted Assembly parsed and independently verified, and
+their emulator results matched explicit expected values and `run_source`.
+This proves independent invocation from the reference source compiler, not a
+self-contained native executable: Python and the generic S3 IR runtime remain
+required. The unmodified `stage1_empty_ir` record-result probe and the 95-byte
+`stage1_emission_value_count` vector-reference helper are both outside the
+current Stage1 input subset. The latter is rejected at function-header
+registration (phase 3, code 25); an AST inventory found zero of 50 complete
+Stage1 functions with an all-`i64` signature. The measured build, runtime,
+process-isolation, reproducibility, and self-source frontier are recorded in
+`reports/s3-1.13-selfhost-compiler-composition/STAGE1_STANDALONE_BOOTSTRAP_REPORT.md`.
 
 S3 continues to evolve through the normal language, compiler, runtime, optimizer,
 backend, tooling, and interoperability roadmap. Full compiler self-hosting is a

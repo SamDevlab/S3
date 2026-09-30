@@ -6,6 +6,12 @@ Status is versioned on Draft PR #327, branch
 historical Gate Zero inventory and preserves earlier failed-gate evidence rather
 than rewriting it.
 
+The artifact status below is the historical result at its recorded checkpoint.
+The 2026-09-29 persisted-IR build and fresh-process invocation are documented in
+`STAGE1_STANDALONE_BOOTSTRAP_REPORT.md`; they supersede only that checkpoint's
+`STANDALONE_STAGE1_EXECUTABLE_ARTIFACT=NOT_PROVEN` classification. They do not
+change the recorded native qualification history or establish full self-hosting.
+
 ## Result
 
 ```text

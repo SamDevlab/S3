@@ -18,6 +18,7 @@ crypto = ["cryptography>=43"]
 
 [project.scripts]
 s3 = "bootstrap.s3.cli:main"
+s3-stage1 = "bootstrap.s3.stage1_artifact:main"
 
 [tool.setuptools.packages.find]
 include = ["bootstrap*"]

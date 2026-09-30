@@ -95,7 +95,13 @@ def _width(type_name: IRType) -> TernaryWidth:
     return TernaryWidth.TRIT if type_name is IRType.TRIT else TernaryWidth.TRYTE
 
 
-def execute_ir(module: IRModule, entry: str = "main", optimization: object = None) -> object:
+def execute_ir(
+    module: IRModule,
+    entry: str = "main",
+    optimization: object = None,
+    *,
+    arguments: tuple[object, ...] = (),
+) -> object:
     global functions_module, resource_runtime
     functions_module = module
     resource_runtime = SourceResourceRuntime()
@@ -103,7 +109,7 @@ def execute_ir(module: IRModule, entry: str = "main", optimization: object = Non
     functions = {function.name: function for function in module.functions}
     if entry not in functions:
         raise IRExecutionError(f"missing entry function '{entry}'")
-    return _execute_function(functions, functions[entry], (), ())
+    return _execute_function(functions, functions[entry], arguments, ())
 
 
 def _execute_function(functions, function, arguments, caller):
@@ -114,8 +120,7 @@ def _execute_function(functions, function, arguments, caller):
     }
     frame = _Frame(function, registers, memory)
     for parameter, value in zip(function.parameters, arguments, strict=True):
-        frame.registers[parameter.register].value = value
-        frame.registers[parameter.register].initialized = True
+        _write(frame, parameter.register, value)
     blocks = {block.name: block for block in function.blocks}
     while True:
         block = blocks[frame.block]

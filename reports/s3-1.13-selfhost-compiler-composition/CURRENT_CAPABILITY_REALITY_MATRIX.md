@@ -79,14 +79,19 @@ It supersedes the Gate Zero classifications only for this local branch.
 |---|---|---|
 | S3-written source-to-artifact compiler | `S3_NATIVE_PIPELINE_CONNECTED` | `selfhost/compiler/stage1_compiler_v1.s3` scans and parses the frozen subset, lowers to `NativeIR`, invokes the S3 verifier, emits S3 Assembly and commits bounded output. |
 | First real Stage1 artifact | `S3_NATIVE_EXECUTABLE` | Seven implementation cases and one post-freeze unseen source produced artifacts; the unseen artifact parsed and executed to the Python reference result. |
-| Full self-hosting / Stage2 / Stage3 | `MISSING` | Self-source exceeds the Stage1 source bound and includes unsupported constructs; self-emission was deferred, and Stage2/Stage3 were not attempted. |
+| Persisted Stage1 compiler artifact (2026-09-29 continuation) | `PROVEN_HOSTED_IR_ARTIFACT` | A trusted Python build persists verified S3 IR; a fresh Python process executes it through the generic IR emulator without importing the reference source compiler, compiles seven unseen supported sources, and emits verified Assembly. This is not a standalone native binary. |
+| Bounded self-source / full self-hosting / Stage2 / Stage3 | `NOT_PROVEN` | AST inventory found 0/50 Stage1 functions with the current all-`i64` signature; the 95-byte original `stage1_emission_value_count` vector-reference helper is rejected at signature registration (phase 3/code 25), and `stage1_empty_ir` is rejected at its `NativeIR` result record. The full source is 139,740 bytes versus the 4,096-byte Stage1 input bound. Stage2/Stage3 were not attempted. |
 | Production/default compiler replacement | `MISSING` | Python remains the reference and package default; the Stage1 compiler is experimental and unmerged. |
-| Repository-wide final regression gate | `PASS_REMOTE_CI` | The Windows full suite passed with 4,284 passed, 349 skipped, 0 failed. After verifier compatibility and Zig cache fixes, code HEAD `b7844b6fc77ae6e995992e9f032292bd693b26e6` passed every GitHub Actions job, including unit jobs on Python 3.11/3.12/3.13 and native x86-64. The exact local Linux full-suite command was not rerun after the fixes, so that historical transcript remains separate. |
+| Complete local suite for this candidate | `PASS_WINDOWS_FULL_SUITE` | `python -m pytest` on the complete local working tree based on `7bfb8edca51d238b7d6ecd245c635fd106790c0c`: 4,309 passed, 349 skipped, 572 subtests passed, exit 0. The unchanged canonical Stage1 source SHA-256 is `894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c` (139,740 bytes). |
+| Previously published remote CI | `PASS_REMOTE_CI_HISTORICAL` | Code HEAD `b7844b6fc77ae6e995992e9f032292bd693b26e6` passed all GitHub Actions jobs, including Python 3.11/3.12/3.13 and native x86-64. This predates the current working-tree candidate and does not validate it; natural CI remains pending publication. The exact local Linux full-suite command was not rerun after those fixes. |
 
-`FIRST_REAL_STAGE1_SOURCE_TO_ARTIFACT_COMPILER_PATH=YES` is the precise
-candidate capability claim. The recovered S3 source receives bounded S3 source,
+`FIRST_REAL_STAGE1_SOURCE_TO_ARTIFACT_COMPILER_PATH=YES` remains the precise
+source compiler claim. The recovered S3 source receives bounded S3 source,
 lowers to `NativeIR`, verifies, and emits S3 Assembly without Python semantic,
-lowering, verifier, or emitter fallback. A separately built standalone Stage1
-executable artifact and its bit-reproducible build recipe were not recovered,
-so `STANDALONE_STAGE1_EXECUTABLE_ARTIFACT=NOT_PROVEN` and `FULL_SELFHOST=NO`. See `STAGE1_COMPOSITION_PROGRESS.md` and
-`STAGE1_ARTIFACT_MANIFEST.json` for the bounded scope and evidence.
+lowering, verifier, or emitter fallback. The continuation separately proves a
+reproducible persisted-IR build and independent invocation from the reference
+source compiler; the runtime still depends on Python and `ir_emulator`. This
+does not prove a native Stage1 executable, bounded self-source compilation, or
+full self-hosting. See `STAGE1_COMPOSITION_PROGRESS.md`,
+`STAGE1_ARTIFACT_MANIFEST.json`, and
+`STAGE1_STANDALONE_BOOTSTRAP_REPORT.md`.

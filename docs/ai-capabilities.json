@@ -17,6 +17,11 @@
       "default": false
     },
     {
+      "name": "stage1-serialized-ir-compiler-artifact",
+      "maturity": "experimental-candidate",
+      "default": false
+    },
+    {
       "name": "s3-opcode-classifier",
       "maturity": "differential-reference",
       "default": false
@@ -228,13 +233,21 @@
       "full_selfhost": false,
       "production_default": false,
       "candidate_source_sha256": "894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c",
-      "repository_full_suite": "WINDOWS_FULL_PASS_REMOTE_CI_PASS_EXACT_LOCAL_LINUX_POSTFIX_NOT_RERUN",
-      "claim_precision": "SOURCE_TO_ARTIFACT_PATH_CONFIRMED_STANDALONE_STAGE1_EXECUTABLE_NOT_PROVEN",
+      "repository_full_suite": "WINDOWS_LOCAL_FULL_PASS_4309_349_0_REMOTE_CI_FOR_CANDIDATE_PENDING",
+      "claim_precision": "VERIFIED_SERIALIZED_S3_IR_WITH_FRESH_PROCESS_HOSTED_INVOCATION_NATIVE_EXECUTABLE_NOT_PROVEN",
       "standalone_stage1_executable_artifact": "NOT_PROVEN",
-      "artifact_bit_reproducibility": "UNRESOLVED_NO_SEPARATE_ORIGINAL_ARTIFACT_OR_BUILD_RECIPE",
-      "windows_full_suite": "PASS_4284_PASSED_349_SKIPPED_0_FAILED",
+      "persisted_stage1_artifact": "VERIFIED_SERIALIZED_S3_IR",
+      "fresh_process_hosted_invocation": "PASS",
+      "post_build_python_runtime_required": true,
+      "reference_compiler_import_during_invocation": false,
+      "unseen_supported_programs": 7,
+      "bounded_self_source_compilation": "NOT_PROVEN",
+      "artifact_bit_reproducibility": "PASS_SERIALIZED_IR_BUNDLE_COLD_PROCESSES; HISTORICAL_EXECUTABLE_UNRESOLVED",
+      "windows_full_suite": "PASS_4309_PASSED_349_SKIPPED_0_FAILED",
+      "windows_full_suite_subtests_passed": 572,
+      "windows_full_suite_base_head": "7bfb8edca51d238b7d6ecd245c635fd106790c0c",
       "remote_ci_head": "b7844b6fc77ae6e995992e9f032292bd693b26e6",
-      "remote_ci": "PASS_ALL_JOBS",
+      "remote_ci": "PASS_ALL_JOBS_HISTORICAL_HEAD_CURRENT_CANDIDATE_PENDING",
       "exact_local_linux_full_suite_after_fixes": "NOT_RERUN"
     }
   },
