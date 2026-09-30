@@ -17,8 +17,14 @@ from .diagnostics import (
 from .static_text import StaticTextDecodeError, decode_static_text
 
 
-ASSEMBLY_FORMAT_VERSION = "0.6.0"
-ASSEMBLY_LEGACY_FORMAT_VERSION = "0.5.0"
+ASSEMBLY_FORMAT_VERSION = "0.7.0"
+ASSEMBLY_LEGACY_FORMAT_VERSION = "0.6.0"
+ASSEMBLY_PREVIOUS_LEGACY_FORMAT_VERSION = "0.5.0"
+SUPPORTED_ASSEMBLY_FORMAT_VERSIONS = (
+    ASSEMBLY_FORMAT_VERSION,
+    ASSEMBLY_LEGACY_FORMAT_VERSION,
+    ASSEMBLY_PREVIOUS_LEGACY_FORMAT_VERSION,
+)
 
 
 class AssemblyError(Exception):
@@ -123,7 +129,16 @@ class AssemblyParameter:
     reference_is_slice: bool = False
 
     def render(self) -> str:
-        return f"    .param r{self.register}, {self.type.value}"
+        fields = [f".param r{self.register}", self.type.value]
+        if self.reference_target is not None:
+            fields.extend(
+                (
+                    self.reference_target.value,
+                    "mutable" if self.reference_mutable else "immutable",
+                    "slice" if self.reference_is_slice else "value",
+                )
+            )
+        return "    " + ", ".join(fields)
 
 
 @dataclass(frozen=True, slots=True)
@@ -228,6 +243,12 @@ class AssemblyInstruction:
                     operands += f", r{self.registers[1]}"
             else:
                 operands = ", ".join(f"r{register}" for register in self.registers)
+            if self.opcode is AssemblyOpcode.TADDR and self.reference_target is not None:
+                operands += (
+                    f", {self.reference_target.value}, "
+                    f"{'mutable' if self.reference_mutable else 'immutable'}, "
+                    f"{'slice' if self.reference_is_slice else 'value'}"
+                )
         elif self.opcode in {AssemblyOpcode.TAGGLOAD, AssemblyOpcode.TAGGFIELDADDR, AssemblyOpcode.TREFLOAD, AssemblyOpcode.TREFSTORE}:
             operands = ", ".join(f"r{register}" for register in self.registers)
         elif self.opcode is AssemblyOpcode.TSLEN:
@@ -312,6 +333,14 @@ class AssemblyFunction:
                 if parameter.reference_target is None:
                     return None
                 return parameter.reference_target, parameter.reference_mutable
+        for instruction in self.instructions:
+            if (
+                instruction.opcode is AssemblyOpcode.TADDR
+                and instruction.registers
+                and instruction.registers[0] == register
+                and instruction.reference_target is not None
+            ):
+                return instruction.reference_target, instruction.reference_mutable
         return None
 
     def reference_storage_size(self, register: int) -> int:
@@ -346,11 +375,13 @@ class AssemblyProgram:
 
 
 _IDENTIFIER = r"[A-Za-z_][A-Za-z0-9_]*"
-_TYPE = r"trit|tryte|i64|f64|string|bytes|text|reference"
+_TYPE = r"trit|tryte|i64|f64|string|bytes|text|vector|reference"
 _STATIC_STRING_ID = r"s[0-9]+"
 _FUNCTION_PATTERN = re.compile(rf"^\.function\s+({_IDENTIFIER})\s*->\s*(.+)$")
 _DECLARATION_PATTERN = re.compile(
-    rf"^\.(param|register)\s+(r[0-9]+)\s*,\s*({_TYPE})$"
+    rf"^\.(param|register)\s+(r[0-9]+)\s*,\s*({_TYPE})"
+    rf"(?:\s*,\s*({_TYPE})\s*,\s*(mutable|immutable)"
+    rf"(?:\s*,\s*(value|slice))?)?$"
 )
 _MEMORY_DECLARATION_PATTERN = re.compile(
     rf"^\.memory\s+(m[0-9]+)\s*,\s*({_TYPE})\s*,\s*"
@@ -565,6 +596,8 @@ def _parse_instruction(
         valid_counts = {expected}
         if opcode in {AssemblyOpcode.TADDR, AssemblyOpcode.TAGGADDR}:
             valid_counts.add(3)
+        if opcode is AssemblyOpcode.TADDR:
+            valid_counts.update({5, 6})
         if opcode is AssemblyOpcode.TAGGADDR:
             if len(operands) < 2:
                 raise AssemblyParseError(
@@ -628,7 +661,7 @@ def _parse_instruction(
         )
     if opcode is AssemblyOpcode.TCALL:
         destinations = _parse_register_group(operands[0], line, allow_empty=True)
-        if version == ASSEMBLY_LEGACY_FORMAT_VERSION and (
+        if version == ASSEMBLY_PREVIOUS_LEGACY_FORMAT_VERSION and (
             len(destinations) != 1 or operands[0].strip().startswith("[")
         ):
             raise AssemblyParseError(
@@ -669,20 +702,46 @@ def _parse_instruction(
             source=source,
             line=line,
         )
-    if opcode is AssemblyOpcode.TADDR and operands[1].startswith("m"):
+    if opcode is AssemblyOpcode.TADDR:
+        memory_form = operands[1].startswith("m")
+        if memory_form and len(operands) in {2, 3, 5, 6}:
+            metadata_start = 3 if len(operands) == 6 else 2 if len(operands) == 5 else -1
+        elif not memory_form and len(operands) not in {2, 5}:
+            raise AssemblyParseError("TADDR direct form expects source register and optional typed metadata", line)
+        else:
+            metadata_start = 2 if len(operands) == 5 else -1
+        if metadata_start >= 0 and version != ASSEMBLY_FORMAT_VERSION:
+            raise AssemblyParseError(
+                "typed TADDR metadata requires Assembly 0.7.0",
+                line,
+            )
+        target_text = operands[metadata_start] if metadata_start >= 0 else None
+        mutability = operands[metadata_start + 1] if metadata_start >= 0 else None
+        ref_kind = operands[metadata_start + 2] if metadata_start >= 0 else None
+        if target_text is not None and (
+            target_text not in AssemblyType._value2member_map_
+            or target_text == AssemblyType.REFERENCE.value
+            or mutability not in {"mutable", "immutable"}
+            or ref_kind not in {"value", "slice"}
+        ):
+            raise AssemblyParseError("invalid TADDR reference metadata", line)
+        registers = (
+            _parse_register(operands[0], line),
+            *(
+                (_parse_register(operands[2], line),)
+                if memory_form and len(operands) in {3, 6}
+                else () if memory_form else (_parse_register(operands[1], line),)
+            ),
+        )
         return AssemblyInstruction(
             opcode,
-            (
-                _parse_register(operands[0], line),
-                *(
-                    (_parse_register(operands[2], line),)
-                    if len(operands) == 3
-                    else ()
-                ),
-            ),
-            memory=_parse_memory(operands[1], line),
+            registers,
+            memory=_parse_memory(operands[1], line) if memory_form else None,
             source=source,
             line=line,
+            reference_target=(AssemblyType(target_text) if target_text is not None else None),
+            reference_mutable=mutability == "mutable",
+            reference_is_slice=ref_kind == "slice",
         )
     if opcode is AssemblyOpcode.TJMP:
         return AssemblyInstruction(
@@ -703,7 +762,7 @@ def _parse_instruction(
         )
     if opcode is AssemblyOpcode.TRET:
         registers = _parse_register_group(operands[0], line)
-        if version == ASSEMBLY_LEGACY_FORMAT_VERSION and (
+        if version == ASSEMBLY_PREVIOUS_LEGACY_FORMAT_VERSION and (
             len(registers) != 1 or operands[0].strip().startswith("[")
         ):
             raise AssemblyParseError(
@@ -786,7 +845,7 @@ def parse_assembly(source: str) -> AssemblyProgram:
                     ),
                 )
             version = version_match.group(1)
-            if version not in {ASSEMBLY_FORMAT_VERSION, ASSEMBLY_LEGACY_FORMAT_VERSION}:
+            if version not in SUPPORTED_ASSEMBLY_FORMAT_VERSIONS:
                 current_major = ASSEMBLY_FORMAT_VERSION.split(".", 1)[0]
                 supplied_major = version.split(".", 1)[0]
                 if supplied_major != current_major:
@@ -845,7 +904,7 @@ def parse_assembly(source: str) -> AssemblyProgram:
             function_names.add(current_name)
             current_result_types = _parse_type_group(type_text, line_number)
             if (
-                version == ASSEMBLY_LEGACY_FORMAT_VERSION
+                version == ASSEMBLY_PREVIOUS_LEGACY_FORMAT_VERSION
                 and (
                     len(current_result_types) != 1
                     or type_text.strip().startswith("[")
@@ -896,7 +955,9 @@ def parse_assembly(source: str) -> AssemblyProgram:
                     "and instructions",
                     line_number,
                 )
-            kind, register_text, type_text = declaration.groups()
+            kind, register_text, type_text, target_text, mutability, ref_kind = (
+                declaration.groups()
+            )
             register = _parse_register(register_text, line_number)
             declared = {
                 **registers,
@@ -909,8 +970,42 @@ def parse_assembly(source: str) -> AssemblyProgram:
                 )
             type_name = AssemblyType(type_text)
             if kind == "param":
-                parameters.append(AssemblyParameter(register, type_name))
+                metadata_present = target_text is not None
+                if metadata_present and version != ASSEMBLY_FORMAT_VERSION:
+                    raise AssemblyParseError(
+                        "typed reference parameter metadata requires Assembly 0.7.0",
+                        line_number,
+                    )
+                if metadata_present and type_name is not AssemblyType.REFERENCE:
+                    raise AssemblyParseError(
+                        "reference metadata is valid only for reference parameters",
+                        line_number,
+                    )
+                if metadata_present and target_text == AssemblyType.REFERENCE.value:
+                    raise AssemblyParseError(
+                        "reference parameters cannot target another reference",
+                        line_number,
+                    )
+                if not metadata_present and (mutability is not None or ref_kind is not None):
+                    raise AssemblyParseError(
+                        "incomplete reference parameter metadata",
+                        line_number,
+                    )
+                parameters.append(
+                    AssemblyParameter(
+                        register,
+                        type_name,
+                        AssemblyType(target_text) if target_text is not None else None,
+                        mutability == "mutable",
+                        ref_kind == "slice",
+                    )
+                )
             else:
+                if target_text is not None:
+                    raise AssemblyParseError(
+                        "register declarations cannot include reference metadata",
+                        line_number,
+                    )
                 registers[register] = type_name
             continue
 

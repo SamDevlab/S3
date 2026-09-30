@@ -57,7 +57,7 @@ goldens:
 
 | Directive | Observed form | Notes |
 | --- | --- | --- |
-| `.s3asm` | `.s3asm 0.6.0` | Must be the first non-empty line and preserve the current version text. |
+| `.s3asm` | `.s3asm 0.7.0` | Must be the first non-empty line and preserve the current version text. |
 | `.function` | `.function <name> -> <return_type-group>` | Function order is preserved from input. |
 | `.param` | `    .param rN, <type>` | Present in `simple_call` and `sign`; parameter order is preserved. |
 | `.register` | `    .register rN, <type>` | Register order is preserved from input. |
@@ -109,7 +109,7 @@ subset:
 - operands use `, ` as the separator;
 - source comments use ` ; source=<line>:<column>:<offset>`;
 - functions are separated by one blank line;
-- `.s3asm 0.6.0` is followed by one blank line before the first function;
+- `.s3asm 0.7.0` is followed by one blank line before the first function;
 - final newline is mandatory;
 - output contains no absolute path;
 - output contains no host information;

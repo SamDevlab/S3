@@ -56,7 +56,7 @@ The primary intended user of the S3 toolchain is an AI agent generating, inspect
 - `s3 inspect <file.s3> --emit <summary|ir|assembly>`: Inspect compiler intermediate stages.
 - `s3 ir <file.s3>`: Output SSA IR text.
 - `s3 ir-json <file.s3> -o <out.json>`: Output canonical JSON IR 0.6.0.
-- `s3 asm <file.s3> [-O1]`: Output S3 Assembly 0.6.0.
+- `s3 asm <file.s3> [-O1]`: Output S3 Assembly 0.7.0.
 - `s3 run <file.s3> [--max-instructions N]`: Execute program via hosted emulator.
 - `s3 native-asm <file.s3> [-o <out.s>]`: Emit Linux x86-64 GNU assembly.
 - `s3 build <file.s3> [-o <bin>]`: Compile standalone Linux x86-64 ELF binary.
@@ -141,7 +141,7 @@ When compilation produces an error, parse the diagnostic code and span:
 ## IR and Assembly versions
 
 - **S3 IR JSON**: Version `0.6.0` (Canonical SSA representation).
-- **S3 Assembly**: `.s3asm 0.6.0` (Versioned textual assembly).
+- **S3 Assembly**: `.s3asm 0.7.0` (Versioned textual assembly).
 - Readers maintain backward compatibility for `0.5.0` width-1 artifacts.
 
 ## Determinism expectations

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -181,7 +180,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "first": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
         golden_path="tests/golden/inspect/first.assembly.txt",
-        expected_sha256="31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316",
+        expected_sha256="d50d859255b8b5cffff19b1806346cb3172ef160715e1aa6797382c8ff230804",
         expected_bytes=377,
         expected_lines=16,
         buffer_count=2,
@@ -196,7 +195,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "first_generic": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
         golden_path="tests/golden/inspect/first.assembly.txt",
-        expected_sha256="31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316",
+        expected_sha256="d50d859255b8b5cffff19b1806346cb3172ef160715e1aa6797382c8ff230804",
         expected_bytes=377,
         expected_lines=16,
         buffer_count=2,
@@ -211,7 +210,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "simple_call_generic": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
         golden_path="tests/golden/inspect/simple_call.assembly.txt",
-        expected_sha256="a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b",
+        expected_sha256="63760cea3c47f413a17fe2b4834cd929ac3909e8f34fd80685b003d272ce55e7",
         expected_bytes=448,
         expected_lines=21,
         buffer_count=2,
@@ -226,7 +225,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "simple_call": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_simple_call_text.s3",
         golden_path="tests/golden/inspect/simple_call.assembly.txt",
-        expected_sha256="a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b",
+        expected_sha256="63760cea3c47f413a17fe2b4834cd929ac3909e8f34fd80685b003d272ce55e7",
         expected_bytes=448,
         expected_lines=21,
         buffer_count=2,
@@ -240,7 +239,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "sign": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
         golden_path="tests/golden/inspect/sign.assembly.txt",
-        expected_sha256="3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b",
+        expected_sha256="5f3e9329782012bccfcbf9e1d005b7b7c5c3739ccee9e35f558d9422e1b49caf",
         expected_bytes=829,
         expected_lines=32,
         buffer_count=4,
@@ -255,7 +254,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "sign_generic": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
         golden_path="tests/golden/inspect/sign.assembly.txt",
-        expected_sha256="3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b",
+        expected_sha256="5f3e9329782012bccfcbf9e1d005b7b7c5c3739ccee9e35f558d9422e1b49caf",
         expected_bytes=829,
         expected_lines=32,
         buffer_count=4,
@@ -270,15 +269,12 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
 }
 
 
-def _git_blob_bytes(relative_path: str) -> bytes:
-    result = subprocess.run(
-        ["git", "show", f"HEAD:{relative_path}"],
-        capture_output=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        raise FileNotFoundError(f"git blob not found: {relative_path}")
-    return result.stdout
+def _golden_file_bytes(relative_path: str) -> bytes:
+    path = REPO_ROOT / relative_path
+    try:
+        return path.read_bytes()
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(f"golden file not found: {relative_path}") from exc
 
 
 def flatten_capture(memory: dict[int, list[int | None]], buffer_count: int, buffer_offset: int = 0, expected_bytes: int | None = None) -> bytes:
@@ -335,7 +331,7 @@ def verify_fixture_metadata(name: str) -> tuple[bool, str]:
     lines = output.count(10)
     if lines != meta.expected_lines:
         return False, f"line count mismatch: expected {meta.expected_lines}, got {lines}"
-    golden = _git_blob_bytes(meta.golden_path)
+    golden = _golden_file_bytes(meta.golden_path)
     if output != golden:
         return False, "output differs from golden blob"
     return True, "ok"

@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import IntEnum
 
-from .assembly import ASSEMBLY_FORMAT_VERSION, ASSEMBLY_LEGACY_FORMAT_VERSION
+from .assembly import SUPPORTED_ASSEMBLY_FORMAT_VERSIONS
 from .assembly_tokenizer import (
     AssemblyToken,
     AssemblyTokenError,
@@ -139,7 +139,8 @@ def _parse_version(
         return _failure(state, second.error, AssemblyParserErrorCode.EXPECTED_VERSION_NUMBER)
     assert first.token is not None
     assert second.token is not None
-    if second.token.scalar_value not in (_version_value(ASSEMBLY_FORMAT_VERSION), _version_value(ASSEMBLY_LEGACY_FORMAT_VERSION)):
+    supported_versions = tuple(_version_value(version) for version in SUPPORTED_ASSEMBLY_FORMAT_VERSIONS)
+    if second.token.scalar_value not in supported_versions:
         return _failure_token(state, second.token, AssemblyParserErrorCode.UNSUPPORTED_VERSION)
     end_cursor = _line_end(text, second.token.next_cursor)
     if end_cursor is None:

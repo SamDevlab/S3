@@ -44,7 +44,7 @@ EXPECTED_CANDIDATE_PATH = "examples/self_hosting/assembly_renderer_generic_text.
 from tools.s3_renderer_contract import (
     FIXTURE_METADATA,
     _capture_fixture_output,
-    _git_blob_bytes,
+    _golden_file_bytes,
 )
 
 FIRST_S3_RENDERER = FIXTURE_METADATA["first"].s3_path

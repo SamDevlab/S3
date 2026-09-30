@@ -1,4 +1,4 @@
-.s3asm 0.6.0
+.s3asm 0.7.0
 
 .function sign -> trit
     .param r0, tryte

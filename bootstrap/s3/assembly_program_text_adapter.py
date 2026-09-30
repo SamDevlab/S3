@@ -531,7 +531,17 @@ def _emit_function(
 ) -> None:
     renderer.emit_function(function.name, _type_group(function.result_types))
     for parameter in function.parameters:
-        renderer.emit_param(parameter.register, parameter.type.value)
+        renderer.emit_param(
+            parameter.register,
+            parameter.type.value,
+            reference_target=(
+                parameter.reference_target.value
+                if parameter.reference_target is not None
+                else None
+            ),
+            reference_mutable=parameter.reference_mutable,
+            reference_is_slice=parameter.reference_is_slice,
+        )
     for register, type_name in function.register_types:
         renderer.emit_register(register, type_name.value)
     for memory in function.memory_objects:
@@ -750,6 +760,12 @@ def _emit_supported_instruction(
             )
         else:
             operands = tuple(_register(register) for register in instruction.registers)
+        if opcode is AssemblyOpcode.TADDR and instruction.reference_target is not None:
+            operands += (
+                instruction.reference_target.value,
+                "mutable" if instruction.reference_mutable else "immutable",
+                "slice" if instruction.reference_is_slice else "value",
+            )
         renderer.emit_instruction(
             opcode.value,
             *operands,

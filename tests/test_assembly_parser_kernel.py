@@ -108,7 +108,7 @@ def test_python_parser_kernel_emits_incremental_events() -> None:
 
 
 def test_python_parser_kernel_rejects_unsupported_version() -> None:
-    text = _encoded(".s3asm 0.7.0\n")
+    text = _encoded(".s3asm 0.8.0\n")
     result = next_assembly_event(text, initial_parser_state())
 
     assert result.variant == "error"

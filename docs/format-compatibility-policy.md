@@ -5,7 +5,7 @@ This document defines versioning rules, compatibility constraints, and reader/wr
 ## Current Format Versions
 
 - **S3 IR JSON Format Version**: `0.6.0`
-- **S3 Assembly Format Version**: `.s3asm 0.6.0`
+- **S3 Assembly Format Version**: `.s3asm 0.7.0`
 - **Diagnostic Schema Version**: `1.0.0`
 
 ## Versioning Rules (SemVer)
@@ -37,8 +37,9 @@ This document defines versioning rules, compatibility constraints, and reader/wr
 
 ### Backward Compatibility Promises
 
-- Current readers for S3 Assembly `0.6.0` retain backward compatibility for legacy `0.5.0` width-1 assembly files.
-- Version `0.6.0` artifacts remain the canonical target for all modern toolchain components.
+- Current readers for S3 Assembly `0.7.0` retain backward compatibility for `0.6.0` and legacy `0.5.0` files.
+- Version `0.7.0` adds typed reference-parameter metadata and vector register declarations; older files retain their prior interpretation.
+- Version `0.7.0` artifacts are the canonical target for new writers.
 
 ## Open Governance Decisions
 

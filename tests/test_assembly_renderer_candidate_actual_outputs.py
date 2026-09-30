@@ -39,7 +39,7 @@ def test_actual_output_contract_marks_sign_available_passed() -> None:
     assert rows["simple_call"]["actual_line_count"] == 21
     assert (
         rows["simple_call"]["actual_sha256"]
-        == "a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b"
+        == "63760cea3c47f413a17fe2b4834cd929ac3909e8f34fd80685b003d272ce55e7"
     )
     assert rows["sign"]["actual_output_status"] == "available"
     assert rows["sign"]["actual_output_exists"] is True
@@ -48,5 +48,5 @@ def test_actual_output_contract_marks_sign_available_passed() -> None:
     assert rows["sign"]["actual_line_count"] == 32
     assert (
         rows["sign"]["actual_sha256"]
-        == "3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b"
+        == "5f3e9329782012bccfcbf9e1d005b7b7c5c3739ccee9e35f558d9422e1b49caf"
     )

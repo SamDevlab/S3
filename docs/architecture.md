@@ -102,7 +102,7 @@ are surfaced explicitly in the legality report.
 
 ## Artefatos
 
-S3 Assembly usa `.s3asm 0.6.0`; texto legado 0.5 width-1 é normalizado. IR
+S3 Assembly usa `.s3asm 0.7.0`; texto legado 0.6.0 e 0.5.0 é normalizado. IR
 persistente usa JSON `s3-ir` 0.6.0 canônica, estrita e terminada por newline.
 Desserialização reconstrói modelos explícitos, normaliza artefatos 0.5 width-1
 para `result_types`/`results` explícitos e chama `verify_ir`.
