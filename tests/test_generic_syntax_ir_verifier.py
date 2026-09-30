@@ -677,6 +677,17 @@ def test_selfhost_shapes_have_linux_native_qualification(tmp_path: Path) -> None
         assert completed.stderr == ""
 
 
+def test_native_verifier_branch_fixture_returns_a_typed_value_in_each_arm() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(encoding="utf-8")
+    source = verifier + "\nfn main() -> i64:\n    return verifier_case(1)\n"
+
+    hosted = run_source(source)
+
+    assert hosted // 1_000_000_000 == 1
+    assert (hosted % 1_000_000_000) // 100_000_000 == 1
+
+
 @pytest.mark.s3_native
 def test_native_verifier_differential_matrix_is_immutable_and_repeatable(tmp_path: Path) -> None:
     if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
