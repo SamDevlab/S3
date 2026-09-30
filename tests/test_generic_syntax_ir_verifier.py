@@ -446,6 +446,209 @@ def test_selfhost_shapes_compile_without_composite_aggregate_fields() -> None:
         assert compilation.assembly.functions
 
 
+def test_native_ir_type_registry_and_call_signatures_are_checked() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(encoding="utf-8")
+    probe = """
+fn type_foundation_probe() -> i64:
+    mut program: NativeIR = native_ir_empty()
+    mut vector_type: NativeIRAppendResult = native_ir_intern_composite_type(
+        program, 2, native_ir_type_i64(), 0, -1
+    )
+    mut vector_accepted: i64 = vector_type.accepted
+    mut vector_id: i64 = vector_type.value_id
+    program = vector_type.program
+    mut repeated_vector: NativeIRAppendResult = native_ir_intern_composite_type(
+        program, 2, native_ir_type_i64(), 0, -1
+    )
+    mut repeated_accepted: i64 = repeated_vector.accepted
+    mut repeated_id: i64 = repeated_vector.value_id
+    program = repeated_vector.program
+    mut reference_type: NativeIRAppendResult = native_ir_intern_composite_type(
+        program, 3, vector_id, 1, -1
+    )
+    mut reference_accepted: i64 = reference_type.accepted
+    mut reference_id: i64 = reference_type.value_id
+    program = reference_type.program
+    mut invalid_type: NativeIRAppendResult = native_ir_intern_composite_type(
+        program, 2, 99, 0, -1
+    )
+    mut invalid_type_accepted: i64 = invalid_type.accepted
+    program = invalid_type.program
+    mut function: NativeIRAppendResult = native_ir_append_function(program, 7, 1)
+    program = function.program
+    mut parameter: NativeIRAppendResult = native_ir_append_typed_parameter(
+        program, 7, 0, reference_id
+    )
+    mut parameter_accepted: i64 = parameter.accepted
+    mut parameter_id: i64 = parameter.value_id
+    program = parameter.program
+    mut parameter_type: i64 = native_ir_value_type_id(
+        &program.value_ids, &program.value_type_ids, parameter_id
+    )
+    mut score: i64 = native_ir_trit_to_i64(vector_accepted == 1)
+    score = score + native_ir_trit_to_i64(repeated_accepted == 1) * 2
+    score = score + native_ir_trit_to_i64(repeated_id == vector_id) * 4
+    score = score + native_ir_trit_to_i64(reference_accepted == 1) * 8
+    score = score + native_ir_trit_to_i64(parameter_accepted == 1) * 16
+    score = score + native_ir_trit_to_i64(parameter_type == reference_id) * 32
+    score = score + native_ir_trit_to_i64(i64_vector_len(&program.type_kinds) == 4) * 64
+    score = score + native_ir_trit_to_i64(invalid_type_accepted == 0) * 128
+    return score
+
+fn typed_argument_program(source_type: i64, expected_type: i64) -> NativeIR:
+    mut program: NativeIR = call_program(1)
+    mut vector_type: NativeIRAppendResult = native_ir_intern_composite_type(
+        program, 2, native_ir_type_i64(), 0, -1
+    )
+    mut vector_type_id: i64 = vector_type.value_id
+    program = vector_type.program
+    mut reference_type: NativeIRAppendResult = native_ir_intern_composite_type(
+        program, 3, vector_type_id, 1, -1
+    )
+    mut reference_type_id: i64 = reference_type.value_id
+    program = reference_type.program
+    discard i64_vector_push(&mut program.function_parameter_first, 1)
+    discard i64_vector_push(&mut program.function_parameter_count, 1)
+    discard i64_vector_set(&mut program.function_parameter_count, 0, 1)
+    discard i64_vector_set(&mut program.instruction_callee_function_ids, 0, 1)
+    discard i64_vector_set(&mut program.instruction_operand_count, 0, 1)
+    discard i64_vector_set(&mut program.instruction_operand_first, 0, 1)
+    discard i64_vector_push(&mut program.operand_value_ids, 1)
+    discard i64_vector_push(&mut program.parameter_function_ids, 0)
+    discard i64_vector_push(&mut program.parameter_function_ids, 1)
+    discard i64_vector_push(&mut program.parameter_value_ids, 1)
+    discard i64_vector_push(&mut program.parameter_value_ids, 2)
+    discard i64_vector_push(&mut program.parameter_type_ids, source_type)
+    discard i64_vector_push(&mut program.parameter_type_ids, expected_type)
+    discard i64_vector_push(&mut program.value_ids, 1)
+    discard i64_vector_push(&mut program.value_ids, 2)
+    discard i64_vector_push(&mut program.value_type_ids, source_type)
+    discard i64_vector_push(&mut program.value_type_ids, expected_type)
+    discard i64_vector_push(&mut program.definition_function_ids, 0)
+    discard i64_vector_push(&mut program.definition_function_ids, 1)
+    discard i64_vector_push(&mut program.definition_blocks, -1)
+    discard i64_vector_push(&mut program.definition_blocks, -1)
+    discard i64_vector_push(&mut program.definition_positions, -1)
+    discard i64_vector_push(&mut program.definition_positions, -1)
+    discard i64_vector_set(&mut program.type_lengths, reference_type_id, -1)
+    return program
+
+fn typed_call_valid_probe() -> i64:
+    mut program: NativeIR = call_program(1)
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    mut verification: NativeVerification = verified.verification
+    mut score: i64 = verification.accepted * 100
+    score = score + native_ir_trit_to_i64(
+        verification.digest_before == verification.digest_after
+    ) * 10
+    score = score + verification.diagnostic_code
+    return score
+
+fn typed_call_result_mismatch_probe() -> i64:
+    mut program: NativeIR = call_program(1)
+    discard i64_vector_set(
+        &mut program.function_result_type_ids, 0, native_ir_type_bool()
+    )
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    mut verification: NativeVerification = verified.verification
+    mut score: i64 = verification.accepted * 100
+    score = score + native_ir_trit_to_i64(
+        verification.digest_before == verification.digest_after
+    ) * 10
+    score = score + verification.diagnostic_code
+    return score
+
+fn typed_argument_probe(source_type: i64, expected_type: i64) -> i64:
+    mut verification: NativeIRVerifiedResult = verify_program(
+        typed_argument_program(source_type, expected_type)
+    )
+    mut score: i64 = verification.verification.accepted * 100
+    score = score + native_ir_trit_to_i64(
+        verification.verification.digest_before == verification.verification.digest_after
+    ) * 10
+    score = score + verification.verification.diagnostic_code
+    return score
+
+fn builder_call_arity_probe() -> i64:
+    mut program: NativeIR = call_program(1)
+    mut arguments: i64_vector = i64_vector_new<i64>(1)
+    discard i64_vector_push(&mut arguments, 0)
+    mut appended: NativeIRAppendResult = native_ir_append_call_arguments(
+        program, 0, 0, 0, &arguments
+    )
+    return appended.accepted
+
+fn verifier_invalid_primitive_probe() -> i64:
+    mut program: NativeIR = native_ir_empty()
+    discard i64_vector_set(&mut program.type_element_ids, 0, 0)
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    mut verification: NativeVerification = verified.verification
+    mut score: i64 = verification.accepted * 100
+    score = score + native_ir_trit_to_i64(
+        verification.digest_before == verification.digest_after
+    ) * 10
+    score = score + verification.diagnostic_code
+    return score
+
+fn verifier_duplicate_type_probe() -> i64:
+    mut program: NativeIR = native_ir_empty()
+    discard i64_vector_push(&mut program.type_kinds, 2)
+    discard i64_vector_push(&mut program.type_element_ids, 0)
+    discard i64_vector_push(&mut program.type_mutability_flags, 0)
+    discard i64_vector_push(&mut program.type_lengths, -1)
+    discard i64_vector_push(&mut program.type_kinds, 2)
+    discard i64_vector_push(&mut program.type_element_ids, 0)
+    discard i64_vector_push(&mut program.type_mutability_flags, 0)
+    discard i64_vector_push(&mut program.type_lengths, -1)
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    mut verification: NativeVerification = verified.verification
+    mut score: i64 = verification.accepted * 100
+    score = score + native_ir_trit_to_i64(
+        verification.digest_before == verification.digest_after
+    ) * 10
+    score = score + verification.diagnostic_code
+    return score
+
+fn verifier_return_type_mismatch_probe() -> i64:
+    mut program: NativeIR = scalar_program()
+    discard i64_vector_set(
+        &mut program.function_result_type_ids, 0, native_ir_type_bool()
+    )
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    mut verification: NativeVerification = verified.verification
+    mut score: i64 = verification.accepted * 100
+    score = score + native_ir_trit_to_i64(
+        verification.digest_before == verification.digest_after
+    ) * 10
+    score = score + verification.diagnostic_code
+    return score
+
+fn main() -> i64:
+    mut result: i64 = native_ir_trit_to_i64(type_foundation_probe() == 255)
+    result = result * 2 + native_ir_trit_to_i64(typed_call_valid_probe() == 110)
+    result = result * 2 + native_ir_trit_to_i64(typed_call_result_mismatch_probe() == 25)
+    result = result * 2 + native_ir_trit_to_i64(
+        typed_argument_probe(native_ir_type_i64(), native_ir_type_i64()) == 110
+    )
+    result = result * 2 + native_ir_trit_to_i64(
+        typed_argument_probe(native_ir_type_i64(), native_ir_type_bool()) == 25
+    )
+    result = result * 2 + native_ir_trit_to_i64(
+        typed_argument_probe(3, 3) == 110
+    )
+    result = result * 2 + native_ir_trit_to_i64(
+        typed_argument_probe(3, 2) == 25
+    )
+    result = result * 2 + native_ir_trit_to_i64(builder_call_arity_probe() == 0)
+    result = result * 2 + native_ir_trit_to_i64(verifier_invalid_primitive_probe() == 25)
+    result = result * 2 + native_ir_trit_to_i64(verifier_duplicate_type_probe() == 25)
+    result = result * 2 + native_ir_trit_to_i64(verifier_return_type_mismatch_probe() == 25)
+    return result
+"""
+    assert run_source(verifier + probe) == 2047
+
+
 @pytest.mark.s3_native
 def test_selfhost_shapes_have_linux_native_qualification(tmp_path: Path) -> None:
     if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
