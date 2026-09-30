@@ -711,9 +711,44 @@ export fn generic_native_parser_expression(
                         identifier_value
                     )
                     mut identifier_cursor: i64 = expression_cursor + 1
-                    match generic_native_parser_kind(kinds, identifier_cursor) == 7:
+                    mut call_open_cursor: i64 = identifier_cursor
+                    mut call_type_code: i64 = 0
+                    match generic_native_parser_kind(kinds, identifier_cursor) == 160:
                         -1:
-                            mut call_cursor: i64 = identifier_cursor + 1
+                            mut parsed_type_code: i64 = generic_native_parser_program_word_code(
+                                source, starts, ends, identifier_cursor + 1
+                            )
+                            match parsed_type_code > 0:
+                                -1:
+                                    match generic_native_parser_kind(
+                                        kinds, identifier_cursor + 2
+                                    ) == 162:
+                                        -1:
+                                            match generic_native_parser_kind(
+                                                kinds, identifier_cursor + 3
+                                            ) == 7:
+                                                -1:
+                                                    call_type_code = parsed_type_code
+                                                    call_open_cursor = identifier_cursor + 3
+                                                0:
+                                                    discard 0
+                                                1:
+                                                    discard 0
+                                        0:
+                                            discard 0
+                                        1:
+                                            discard 0
+                                0:
+                                    discard 0
+                                1:
+                                    discard 0
+                        0:
+                            discard 0
+                        1:
+                            discard 0
+                    match generic_native_parser_kind(kinds, call_open_cursor) == 7:
+                        -1:
+                            mut call_cursor: i64 = call_open_cursor + 1
                             mut argument_head: i64 = -1
                             mut argument_tail: i64 = -1
                             mut argument_count: i64 = 0
@@ -807,7 +842,7 @@ export fn generic_native_parser_expression(
                                 argument_head,
                                 identifier_start,
                                 call_end,
-                                0
+                                call_type_code
                             )
                             left_result = generic_native_parser_pack(call_cursor, call_node)
                         0:
@@ -1356,6 +1391,49 @@ fn generic_native_parser_program_word_code(
                                             match generic_native_parser_program_byte_is(source, start + 4, 101):
                                                 -1:
                                                     return 4
+                                                0:
+                                                    length = length
+                                                1:
+                                                    length = length
+                                        0:
+                                            length = length
+                                        1:
+                                            length = length
+                                0:
+                                    length = length
+                                1:
+                                    length = length
+                        0:
+                            length = length
+                        1:
+                            length = length
+                0:
+                    length = length
+                1:
+                    length = length
+        0:
+            length = length
+        1:
+            length = length
+    match length == 6:
+        -1:
+            match generic_native_parser_program_byte_is(source, start, 118):
+                -1:
+                    match generic_native_parser_program_byte_is(source, start + 1, 101):
+                        -1:
+                            match generic_native_parser_program_byte_is(source, start + 2, 99):
+                                -1:
+                                    match generic_native_parser_program_byte_is(source, start + 3, 116):
+                                        -1:
+                                            match generic_native_parser_program_byte_is(source, start + 4, 111):
+                                                -1:
+                                                    match generic_native_parser_program_byte_is(source, start + 5, 114):
+                                                        -1:
+                                                            return 5
+                                                        0:
+                                                            length = length
+                                                        1:
+                                                            length = length
                                                 0:
                                                     length = length
                                                 1:

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from dataclasses import replace
+import platform
 from pathlib import Path
 
 import pytest
 
 from bootstrap.s3 import run_source
 from bootstrap.s3.assembly import parse_assembly
+from bootstrap.s3.backends.x86_64 import NativeToolchain, generate_native_assembly
 from bootstrap.s3.diagnostics import S3Error
 from bootstrap.s3.emulator import Emulator
 from bootstrap.s3.ir_emulator import execute_ir
@@ -20,17 +23,22 @@ _STAGE1_MODULES = (
 )
 
 
-def _stage1_artifact(source: str) -> bytes:
+def _stage1_artifact(source: str, *, compiler_version: str = "v1") -> bytes:
     repository = Path(__file__).parents[1]
+    compiler_module = f"stage1_compiler_{compiler_version}"
+    module_paths = (
+        *_STAGE1_MODULES[:-1],
+        f"selfhost/compiler/{compiler_module}.s3",
+    )
     modules = {
         path: (repository / path).read_text(encoding="utf-8")
-        for path in _STAGE1_MODULES
+        for path in module_paths
     }
     source_bytes = source.encode("ascii")
     main_lines = [
         "module main",
-        "from selfhost.compiler.stage1_compiler_v1 import Stage1CompileResult",
-        "from selfhost.compiler.stage1_compiler_v1 import stage1_compile",
+        f"from selfhost.compiler.{compiler_module} import Stage1CompileResult",
+        f"from selfhost.compiler.{compiler_module} import stage1_compile",
         "fn main() -> vector<i64>:",
         f"    mut source: vector<i64> = vector_new<i64>({len(source_bytes)})",
     ]
@@ -215,6 +223,141 @@ def test_stage1_candidate_output_is_deterministic() -> None:
 def test_stage1_candidate_rejects_unlowered_identifier_without_artifact() -> None:
     source = "fn main() -> i64:\n    return value + 1\n"
     assert _stage1_artifact(source) == b""
+
+
+@pytest.mark.parametrize(
+    ("function_name", "signature"),
+    (
+        ("stage1_emission_value_count", "view: &vector<i64>"),
+        ("stage1_emission_instruction_count", "view: &vector<i64>"),
+        ("stage1_emission_value_id", "view: &vector<i64>, index: i64"),
+    ),
+)
+def test_stage1_v2_compiles_real_reference_vector_helpers(
+    function_name: str,
+    signature: str,
+) -> None:
+    repository = Path(__file__).parents[1]
+    raw = (repository / "selfhost/compiler/stage1_compiler_v1.s3").read_text(
+        encoding="utf-8"
+    )
+    start = raw.index(f"fn {function_name}(")
+    end = raw.index("\n\n", start)
+    original_function = raw[start:end]
+    assert f"fn {function_name}({signature}) -> i64:" in original_function
+    source = f"{original_function}\n\nfn main() -> i64:\n    return 0\n"
+
+    artifact_bytes = _stage1_artifact(source, compiler_version="v2")
+    assert artifact_bytes
+    assert artifact_bytes.startswith(b".s3asm 0.7.0\n")
+    assert b".param r0, reference, vector, immutable, value\n" in artifact_bytes
+    assert b"TCALL r" in artifact_bytes
+    if function_name == "stage1_emission_value_id":
+        assert b"TADD r" in artifact_bytes
+
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert Emulator().execute(artifact) == 0
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "fn main() -> i64:\n    return vector_get<f64>(1, 0)\n",
+        "fn main() -> i64:\n    return vector_get<i64>(1, 0)\n",
+        "fn main() -> i64:\n    return vector_get<i64>(1)\n",
+        "fn main() -> i64:\n    return vector_get<i64>(1, 0, 2)\n",
+        "fn read(view: &vector<i64>) -> i64:\n    return vector_get<i64>(view, 0)\n"
+        "fn main() -> i64:\n    return read(1)\n",
+    ),
+)
+def test_stage1_v2_rejects_invalid_typed_vector_calls(source: str) -> None:
+    assert _stage1_artifact(source, compiler_version="v2") == b""
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux"
+    or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_stage1_v2_real_reference_vector_helpers_execute_natively(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).parents[1]
+    raw = (repository / "selfhost/compiler/stage1_compiler_v1.s3").read_text(
+        encoding="utf-8"
+    )
+    function_names = (
+        "stage1_emission_value_count",
+        "stage1_emission_instruction_count",
+        "stage1_emission_value_id",
+    )
+    source_functions = []
+    for name in function_names:
+        start = raw.index(f"fn {name}(")
+        end = raw.index("\n\n", start)
+        source_functions.append(raw[start:end])
+
+    candidate_source = (
+        "\n\n".join(source_functions)
+        + "\n\nfn main() -> i64:\n    return 0\n"
+    )
+    candidate = parse_assembly(
+        _stage1_artifact(candidate_source, compiler_version="v2").decode("ascii")
+    )
+
+    reference_source = """\
+fn stage1_emission_value_count(view: &vector<i64>) -> i64:
+    return 0
+fn stage1_emission_instruction_count(view: &vector<i64>) -> i64:
+    return 0
+fn stage1_emission_value_id(view: &vector<i64>, index: i64) -> i64:
+    return 0
+fn main() -> i64:
+    mut count_view: vector<i64> = vector_new<i64>(2)
+    discard vector_push<i64>(&mut count_view, 41)
+    discard vector_push<i64>(&mut count_view, 3)
+    mut instruction_view: vector<i64> = vector_new<i64>(2)
+    discard vector_push<i64>(&mut instruction_view, 41)
+    discard vector_push<i64>(&mut instruction_view, 7)
+    mut value_view: vector<i64> = vector_new<i64>(5)
+    discard vector_push<i64>(&mut value_view, 41)
+    discard vector_push<i64>(&mut value_view, 7)
+    discard vector_push<i64>(&mut value_view, 13)
+    discard vector_push<i64>(&mut value_view, 17)
+    discard vector_push<i64>(&mut value_view, 99)
+    return stage1_emission_value_count(&count_view) + stage1_emission_instruction_count(&instruction_view) * 100 + stage1_emission_value_id(&value_view, 1) * 10000
+"""
+    reference = compile_sources(
+        {"main.s3": reference_source}, entry_module="main"
+    )
+    candidate_by_name = {
+        f"__s3mod_main__{function.name}": replace(
+            function, name=f"__s3mod_main__{function.name}"
+        )
+        for function in candidate.functions
+        if function.name in function_names
+    }
+    assert set(candidate_by_name) == {
+        f"__s3mod_main__{name}" for name in function_names
+    }
+    composed_functions = tuple(
+        candidate_by_name.get(function.name, function)
+        for function in reference.assembly.functions
+    )
+    composed = replace(reference.assembly, functions=composed_functions)
+
+    native_source = generate_native_assembly(composed)
+    toolchain = NativeToolchain.detect()
+    executable = toolchain.build(
+        native_source, tmp_path / "stage1-v2-real-helpers"
+    )
+    completed = toolchain.run(executable)
+
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == "program returned: 990741"
+    assert execute_ir(reference.ir) == 990741
 
 
 def test_s3_output_sink_append_bytes_overflow_is_transactional() -> None:

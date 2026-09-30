@@ -208,6 +208,38 @@ def _candidate_comparison_program_parser_source() -> str:
     )
 
 
+def _candidate_generic_call_parser_source(expression: str) -> str:
+    repository = Path(__file__).parents[1]
+    substrate = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    encoded = expression.encode("ascii")
+    lines = [
+        "fn main() -> i64:",
+        f"    mut source: vector<i64> = vector_new<i64>({len(encoded)})",
+    ]
+    lines.extend(
+        f"    discard vector_push<i64>(&mut source, {byte})"
+        for byte in encoded
+    )
+    lines.extend(
+        (
+            "    mut tokens: vector<i64> = generic_lexer_scan(&source)",
+            "    mut tree: vector<i64> = generic_native_parser_parse_expression(&source, &tokens, 0, 0)",
+            "    mut packed: i64 = generic_expression_packed_result(&tree)",
+            "    match packed >= 0:",
+            "        -1:",
+            "            mut node: i64 = generic_native_parser_packed_node(packed)",
+            "            return generic_expression_node_kind(&tree, node) * 100 + generic_expression_node_value(&tree, node)",
+            "        0:",
+            "            return -1",
+            "        1:",
+            "            return -1",
+        )
+    )
+    return substrate + "\n" + "\n".join(lines) + "\n"
+
+
 def _independent_digest(source: str) -> int:
     arena = TokenArena.from_source_independent(
         source,
@@ -760,6 +792,22 @@ def test_native_parser_minimal_function_matches_independent_syntax_oracle(
 @pytest.mark.parametrize("case_id", (2, 3))
 def test_native_parser_minimal_function_rejects_malformed_input(case_id: int) -> None:
     assert run_source(_candidate_parser_source(case_id)) == -1
+
+
+@pytest.mark.parametrize(
+    ("expression", "expected"),
+    (
+        ("vector_get<i64>(view, 0)", 402),
+        ("vector_get<f64>(view, 0)", 403),
+        ("vector_get(view, 0)", 400),
+        ("left < right", 200),
+    ),
+)
+def test_native_expression_parser_preserves_generic_call_type_argument(
+    expression: str,
+    expected: int,
+) -> None:
+    assert run_source(_candidate_generic_call_parser_source(expression)) == expected
 
 
 @pytest.mark.parametrize(

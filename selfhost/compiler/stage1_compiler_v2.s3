@@ -1,0 +1,3358 @@
+module selfhost.compiler.stage1_compiler_v2
+
+from selfhost.substrate.generic_lexer_state import generic_lexer_scan
+from selfhost.substrate.generic_lexer_state import generic_token_count
+from selfhost.substrate.generic_lexer_state import generic_token_kind
+from selfhost.substrate.generic_lexer_state import generic_token_start
+from selfhost.substrate.generic_lexer_state import generic_token_end
+from selfhost.substrate.generic_lexer_state import generic_native_parser_parse_expression
+from selfhost.substrate.generic_lexer_state import generic_expression_packed_result
+from selfhost.substrate.generic_lexer_state import generic_expression_node_count
+from selfhost.substrate.generic_lexer_state import generic_expression_node_kind
+from selfhost.substrate.generic_lexer_state import generic_expression_node_operator
+from selfhost.substrate.generic_lexer_state import generic_expression_node_left
+from selfhost.substrate.generic_lexer_state import generic_expression_node_right
+from selfhost.substrate.generic_lexer_state import generic_expression_node_value
+from selfhost.substrate.generic_lexer_state import generic_expression_node_start
+from selfhost.substrate.generic_lexer_state import generic_expression_node_end
+from selfhost.substrate.generic_lexer_state import generic_native_parser_packed_cursor
+from selfhost.substrate.generic_lexer_state import generic_native_parser_packed_node
+from selfhost.substrate.generic_lexer_state import generic_native_parser_program_indent
+from selfhost.substrate.generic_lexer_state import generic_native_parser_program_type_code_for_token
+from selfhost.substrate.verifier_kernel import NativeIR
+from selfhost.substrate.verifier_kernel import NativeIRAppendResult
+from selfhost.substrate.verifier_kernel import NativeVerification
+from selfhost.substrate.verifier_kernel import NativeIRVerifiedResult
+from selfhost.substrate.verifier_kernel import native_ir_empty
+from selfhost.substrate.verifier_kernel import native_ir_append_function
+from selfhost.substrate.verifier_kernel import native_ir_append_function_source
+from selfhost.substrate.verifier_kernel import native_ir_append_block
+from selfhost.substrate.verifier_kernel import native_ir_append_block_for_function
+from selfhost.substrate.verifier_kernel import native_ir_append_instruction
+from selfhost.substrate.verifier_kernel import native_ir_append_instruction_for_function
+from selfhost.substrate.verifier_kernel import native_ir_append_call_arguments
+from selfhost.substrate.verifier_kernel import native_ir_append_typed_parameter
+from selfhost.substrate.verifier_kernel import native_ir_append_external_function_source
+from selfhost.substrate.verifier_kernel import native_ir_intern_composite_type
+from selfhost.substrate.verifier_kernel import native_ir_emission_view
+from selfhost.substrate.verifier_kernel import native_ir_instruction_count
+from selfhost.substrate.verifier_kernel import native_ir_value_count
+from selfhost.substrate.verifier_kernel import verify_program
+from selfhost.substrate.output_sink import OutputSinkState
+from selfhost.substrate.output_sink import output_sink_append
+from selfhost.substrate.output_sink import output_sink_append_bytes
+from selfhost.substrate.output_sink import output_sink_commit
+from selfhost.substrate.output_sink import output_sink_new
+
+export record Stage1CompileResult:
+    status: i64
+    phase: i64
+    error_code: i64
+    output: vector<i64>
+    output_length: i64
+    ir_instruction_count: i64
+    ir_value_count: i64
+    verifier_accepted: i64
+    verifier_digest: i64
+
+record Stage1LowerResult:
+    program: NativeIR
+    value_id: i64
+    accepted: i64
+
+record Stage1ExpressionLowerResult:
+    program: NativeIR
+    value_id: i64
+    next_cursor: i64
+    accepted: i64
+
+record Stage1FunctionHeader:
+    next_cursor: i64
+    name_start: i64
+    name_end: i64
+    expression_cursor: i64
+    parameter_name_starts: vector<i64>
+    parameter_name_ends: vector<i64>
+    parameter_type_codes: vector<i64>
+    accepted: i64
+
+record Stage1ParameterParse:
+    next_cursor: i64
+    name_starts: vector<i64>
+    name_ends: vector<i64>
+    type_codes: vector<i64>
+    accepted: i64
+
+record Stage1ParameterTypeParse:
+    next_cursor: i64
+    type_code: i64
+    accepted: i64
+
+record Stage1InternedTypeResult:
+    program: NativeIR
+    type_id: i64
+    accepted: i64
+
+record Stage1CallArgumentResult:
+    program: NativeIR
+    arguments: vector<i64>
+    accepted: i64
+
+record Stage1ParameterRegistrationResult:
+    program: NativeIR
+    name_starts: vector<i64>
+    name_ends: vector<i64>
+    accepted: i64
+
+record Stage1BodyCompileResult:
+    program: NativeIR
+    symbol_name_starts: vector<i64>
+    symbol_name_ends: vector<i64>
+    symbol_value_ids: vector<i64>
+    return_value_id: i64
+    accepted: i64
+
+record Stage1FunctionScanState:
+    program: NativeIR
+    name_starts: vector<i64>
+    name_ends: vector<i64>
+    parameter_name_starts: vector<i64>
+    parameter_name_ends: vector<i64>
+    expression_cursors: vector<i64>
+    cursor: i64
+    function_count: i64
+    main_count: i64
+    accepted: i64
+    error_code: i64
+
+fn stage1_empty_ir() -> NativeIR:
+    return native_ir_empty()
+
+fn stage1_empty_result(phase: i64, error_code: i64) -> Stage1CompileResult:
+    return Stage1CompileResult(
+        status=0,
+        phase=phase,
+        error_code=error_code,
+        output=vector_new<i64>(0),
+        output_length=0,
+        ir_instruction_count=0,
+        ir_value_count=0,
+        verifier_accepted=0,
+        verifier_digest=0
+    )
+
+fn stage1_result(
+    status: i64,
+    phase: i64,
+    error_code: i64,
+    output: vector<i64>,
+    instruction_count: i64,
+    value_count: i64,
+    verification: NativeVerification
+) -> Stage1CompileResult:
+    mut output_length: i64 = 0
+    match status == 1:
+        -1:
+            output_length = vector_len<i64>(&output)
+        0:
+            output_length = 0
+        1:
+            output_length = 0
+    return Stage1CompileResult(
+        status=status,
+        phase=phase,
+        error_code=error_code,
+        output=output,
+        output_length=output_length,
+        ir_instruction_count=instruction_count,
+        ir_value_count=value_count,
+        verifier_accepted=verification.accepted,
+        verifier_digest=verification.digest_after
+    )
+
+fn stage1_lower_from_append(append: NativeIRAppendResult) -> Stage1LowerResult:
+    return Stage1LowerResult(
+        program=append.program,
+        value_id=append.value_id,
+        accepted=append.accepted
+    )
+
+fn stage1_lower_preserved_failure(program: NativeIR) -> Stage1LowerResult:
+    return Stage1LowerResult(program=program, value_id=-1, accepted=0)
+
+fn stage1_lower_call_argument_sequence(
+    argument_link: i64,
+    source: &vector<i64>,
+    tree: &vector<i64>,
+    program: NativeIR,
+    function_id: i64,
+    block_id: i64,
+    arguments: vector<i64>,
+    symbol_name_starts: &vector<i64>,
+    symbol_name_ends: &vector<i64>,
+    symbol_value_ids: &vector<i64>
+) -> Stage1CallArgumentResult:
+    match argument_link < 0:
+        -1:
+            return Stage1CallArgumentResult(
+                program=program, arguments=arguments, accepted=1
+            )
+        0:
+            match generic_expression_node_kind(tree, argument_link) == 5:
+                -1:
+                    mut argument_node: i64 = generic_expression_node_left(tree, argument_link)
+                    mut argument_lowered: Stage1LowerResult = stage1_lower_expression(
+                        argument_node,
+                        source,
+                        tree,
+                        program,
+                        function_id,
+                        block_id,
+                        symbol_name_starts,
+                        symbol_name_ends,
+                        symbol_value_ids
+                    )
+                    mut argument_accepted: i64 = argument_lowered.accepted
+                    mut argument_value_id: i64 = argument_lowered.value_id
+                    match argument_accepted == 1:
+                        -1:
+                            mut next_program: NativeIR = argument_lowered.program
+                            discard vector_push<i64>(&mut arguments, argument_value_id)
+                            return stage1_lower_call_argument_sequence(
+                                generic_expression_node_right(tree, argument_link),
+                                source,
+                                tree,
+                                next_program,
+                                function_id,
+                                block_id,
+                                arguments,
+                                symbol_name_starts,
+                                symbol_name_ends,
+                                symbol_value_ids
+                            )
+                        0:
+                            return Stage1CallArgumentResult(
+                                program=argument_lowered.program,
+                                arguments=arguments,
+                                accepted=0
+                            )
+                        1:
+                            return Stage1CallArgumentResult(
+                                program=argument_lowered.program,
+                                arguments=arguments,
+                                accepted=0
+                            )
+                0:
+                    return Stage1CallArgumentResult(
+                        program=program, arguments=arguments, accepted=0
+                    )
+                1:
+                    return Stage1CallArgumentResult(
+                        program=program, arguments=arguments, accepted=0
+                    )
+        1:
+            return Stage1CallArgumentResult(
+                program=program, arguments=arguments, accepted=0
+            )
+
+fn stage1_source_name_is_vector_get(
+    source: &vector<i64>,
+    start: i64,
+    end: i64
+) -> i64:
+    match end - start == 10:
+        -1:
+            mut expected: vector<i64> = vector_new<i64>(10)
+            discard vector_push<i64>(&mut expected, 118)
+            discard vector_push<i64>(&mut expected, 101)
+            discard vector_push<i64>(&mut expected, 99)
+            discard vector_push<i64>(&mut expected, 116)
+            discard vector_push<i64>(&mut expected, 111)
+            discard vector_push<i64>(&mut expected, 114)
+            discard vector_push<i64>(&mut expected, 95)
+            discard vector_push<i64>(&mut expected, 103)
+            discard vector_push<i64>(&mut expected, 101)
+            discard vector_push<i64>(&mut expected, 116)
+            mut index: i64 = 0
+            while index < 10:
+                match vector_get<i64>(source, start + index) == vector_get<i64>(&expected, index):
+                    -1:
+                        discard 0
+                    0:
+                        return 0
+                    1:
+                        return 0
+                index = index + 1
+            return 1
+        0:
+            return 0
+        1:
+            return 0
+
+fn stage1_lower_call_arguments_to_id(
+    node: i64,
+    source: &vector<i64>,
+    tree: &vector<i64>,
+    program: NativeIR,
+    function_id: i64,
+    block_id: i64,
+    callee_id: i64,
+    symbol_name_starts: &vector<i64>,
+    symbol_name_ends: &vector<i64>,
+    symbol_value_ids: &vector<i64>
+) -> Stage1LowerResult:
+    mut argument_result: Stage1CallArgumentResult = stage1_lower_call_argument_sequence(
+        generic_expression_node_right(tree, node),
+        source,
+        tree,
+        program,
+        function_id,
+        block_id,
+        vector_new<i64>(64),
+        symbol_name_starts,
+        symbol_name_ends,
+        symbol_value_ids
+    )
+    match argument_result.accepted == 1:
+        -1:
+            mut arguments: vector<i64> = i64_vector_clone(&argument_result.arguments)
+            return stage1_lower_from_append(
+                native_ir_append_call_arguments(
+                    argument_result.program, function_id, block_id, callee_id, &arguments
+                )
+            )
+        0:
+            return stage1_lower_preserved_failure(argument_result.program)
+        1:
+            return stage1_lower_preserved_failure(argument_result.program)
+
+fn stage1_lower_call_with_arguments(
+    node: i64,
+    source: &vector<i64>,
+    tree: &vector<i64>,
+    program: NativeIR,
+    function_id: i64,
+    block_id: i64,
+    symbol_name_starts: &vector<i64>,
+    symbol_name_ends: &vector<i64>,
+    symbol_value_ids: &vector<i64>
+) -> Stage1LowerResult:
+    mut callee_node: i64 = generic_expression_node_left(tree, node)
+    mut call_type_code: i64 = generic_expression_node_value(tree, node)
+    match generic_expression_node_kind(tree, callee_node) == 3:
+        -1:
+            mut callee_id: i64 = stage1_find_function_id_by_source_name(
+                &program.function_ids,
+                &program.function_name_first,
+                &program.function_name_count,
+                &program.function_name_bytes,
+                source,
+                generic_expression_node_start(tree, callee_node),
+                generic_expression_node_end(tree, callee_node)
+            )
+            match callee_id >= 0:
+                -1:
+                    match call_type_code == 0:
+                        -1:
+                            return stage1_lower_call_arguments_to_id(
+                                node, source, tree, program, function_id, block_id, callee_id,
+                                symbol_name_starts, symbol_name_ends, symbol_value_ids
+                            )
+                        0:
+                            return stage1_lower_preserved_failure(program)
+                        1:
+                            return stage1_lower_preserved_failure(program)
+                0:
+                    match call_type_code == 2:
+                        -1:
+                            match stage1_source_name_is_vector_get(
+                                source,
+                                generic_expression_node_start(tree, callee_node),
+                                generic_expression_node_end(tree, callee_node)
+                            ) == 1:
+                                -1:
+                                    return stage1_lower_call_arguments_to_id(
+                                        node, source, tree, program, function_id, block_id, 1000,
+                                        symbol_name_starts, symbol_name_ends, symbol_value_ids
+                                    )
+                                0:
+                                    return stage1_lower_preserved_failure(program)
+                                1:
+                                    return stage1_lower_preserved_failure(program)
+                        0:
+                            return stage1_lower_preserved_failure(program)
+                        1:
+                            return stage1_lower_preserved_failure(program)
+                1:
+                    return stage1_lower_preserved_failure(program)
+        0:
+            return stage1_lower_preserved_failure(program)
+        1:
+            return stage1_lower_preserved_failure(program)
+
+fn stage1_find_symbol_value(
+    source: &vector<i64>,
+    name_starts: &vector<i64>,
+    name_ends: &vector<i64>,
+    value_ids: &vector<i64>,
+    wanted_start: i64,
+    wanted_end: i64
+) -> i64:
+    mut index: i64 = 0
+    while index < vector_len<i64>(name_starts):
+        match stage1_source_spans_equal(
+            source,
+            wanted_start,
+            wanted_end,
+            vector_get<i64>(name_starts, index),
+            vector_get<i64>(name_ends, index)
+        ):
+            -1:
+                return vector_get<i64>(value_ids, index)
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    return -1
+
+fn stage1_lower_expression(
+    node: i64,
+    source: &vector<i64>,
+    tree: &vector<i64>,
+    program: NativeIR,
+    function_id: i64,
+    block_id: i64,
+    symbol_name_starts: &vector<i64>,
+    symbol_name_ends: &vector<i64>,
+    symbol_value_ids: &vector<i64>
+) -> Stage1LowerResult:
+    mut node_count: i64 = generic_expression_node_count(tree)
+    match node >= 0:
+        -1:
+            match node < node_count:
+                -1:
+                    mut kind: i64 = generic_expression_node_kind(tree, node)
+                    match kind == 1:
+                        -1:
+                            mut value: i64 = generic_expression_node_value(tree, node)
+                            return stage1_lower_from_append(
+                                native_ir_append_instruction_for_function(
+                                    program, function_id, block_id, 0, value, -1, -1, -1
+                                )
+                            )
+                        0:
+                            match kind == 2:
+                                -1:
+                                    mut left_node: i64 = generic_expression_node_left(tree, node)
+                                    mut right_node: i64 = generic_expression_node_right(tree, node)
+                                    mut left_lowered: Stage1LowerResult = stage1_lower_expression(
+                                        left_node, source, tree, program, function_id, block_id,
+                                        symbol_name_starts, symbol_name_ends, symbol_value_ids
+                                    )
+                                    mut left_value: i64 = left_lowered.value_id
+                                    mut left_accepted: i64 = left_lowered.accepted
+                                    mut right_lowered: Stage1LowerResult = stage1_lower_expression(
+                                        right_node, source, tree, left_lowered.program, function_id, block_id,
+                                        symbol_name_starts, symbol_name_ends, symbol_value_ids
+                                    )
+                                    mut right_value: i64 = right_lowered.value_id
+                                    mut operator: i64 = generic_expression_node_operator(tree, node)
+                                    mut opcode: i64 = -1
+                                    match left_accepted == 1:
+                                        -1:
+                                            match right_lowered.accepted == 1:
+                                                -1:
+                                                    match operator == 1:
+                                                        -1:
+                                                            opcode = 9
+                                                        0:
+                                                            match operator == 3:
+                                                                -1:
+                                                                    opcode = 10
+                                                                0:
+                                                                    discard 0
+                                                                1:
+                                                                    discard 0
+                                                        1:
+                                                            discard 0
+                                                0:
+                                                    discard 0
+                                                1:
+                                                    discard 0
+                                        0:
+                                            discard 0
+                                        1:
+                                            discard 0
+                                    return stage1_lower_from_append(
+                                        native_ir_append_instruction_for_function(
+                                            right_lowered.program,
+                                            function_id,
+                                            block_id,
+                                            opcode,
+                                            0,
+                                            left_value,
+                                            right_value,
+                                            -1
+                                        )
+                                    )
+                                0:
+                                    match kind == 3:
+                                        -1:
+                                            mut value_id: i64 = stage1_find_symbol_value(
+                                                source,
+                                                symbol_name_starts,
+                                                symbol_name_ends,
+                                                symbol_value_ids,
+                                                generic_expression_node_start(tree, node),
+                                                generic_expression_node_end(tree, node)
+                                            )
+                                            match value_id >= 0:
+                                                -1:
+                                                    return Stage1LowerResult(
+                                                        program=program, value_id=value_id, accepted=1
+                                                    )
+                                                0:
+                                                    return stage1_lower_preserved_failure(program)
+                                                1:
+                                                    return stage1_lower_preserved_failure(program)
+                                        0:
+                                            match kind == 4:
+                                                -1:
+                                                    return stage1_lower_call_with_arguments(
+                                                        node, source, tree, program, function_id, block_id,
+                                                        symbol_name_starts, symbol_name_ends, symbol_value_ids
+                                                    )
+                                                0:
+                                                    return stage1_lower_preserved_failure(program)
+                                                1:
+                                                    return stage1_lower_preserved_failure(program)
+                                        1:
+                                            match kind == 4:
+                                                -1:
+                                                    return stage1_lower_call_with_arguments(
+                                                        node, source, tree, program, function_id, block_id,
+                                                        symbol_name_starts, symbol_name_ends, symbol_value_ids
+                                                    )
+                                                0:
+                                                    return stage1_lower_preserved_failure(program)
+                                                1:
+                                                    return stage1_lower_preserved_failure(program)
+                                1:
+                                    return stage1_lower_preserved_failure(program)
+                        1:
+                            return stage1_lower_preserved_failure(program)
+                0:
+                    return stage1_lower_preserved_failure(program)
+                1:
+                    return stage1_lower_preserved_failure(program)
+        0:
+            return stage1_lower_preserved_failure(program)
+        1:
+            return stage1_lower_preserved_failure(program)
+
+fn stage1_emit_decimal(output: &mut vector<i64>, value: i64) -> i64:
+    mut places: vector<i64> = vector_new<i64>(20)
+    discard vector_push<i64>(&mut places, 1000000000000000000)
+    discard vector_push<i64>(&mut places, 100000000000000000)
+    discard vector_push<i64>(&mut places, 10000000000000000)
+    discard vector_push<i64>(&mut places, 1000000000000000)
+    discard vector_push<i64>(&mut places, 100000000000000)
+    discard vector_push<i64>(&mut places, 10000000000000)
+    discard vector_push<i64>(&mut places, 1000000000000)
+    discard vector_push<i64>(&mut places, 100000000000)
+    discard vector_push<i64>(&mut places, 10000000000)
+    discard vector_push<i64>(&mut places, 1000000000)
+    discard vector_push<i64>(&mut places, 100000000)
+    discard vector_push<i64>(&mut places, 10000000)
+    discard vector_push<i64>(&mut places, 1000000)
+    discard vector_push<i64>(&mut places, 100000)
+    discard vector_push<i64>(&mut places, 10000)
+    discard vector_push<i64>(&mut places, 1000)
+    discard vector_push<i64>(&mut places, 100)
+    discard vector_push<i64>(&mut places, 10)
+    discard vector_push<i64>(&mut places, 1)
+    mut digits: vector<i64> = vector_new<i64>(19)
+    mut remaining: i64 = value
+    mut index: i64 = 0
+    while index < vector_len<i64>(&places):
+        mut place: i64 = vector_get<i64>(&places, index)
+        mut digit: i64 = 0
+        while remaining >= place:
+            remaining = remaining - place
+            digit = digit + 1
+        discard vector_push<i64>(&mut digits, digit)
+        index = index + 1
+    mut first_digit: i64 = 18
+    mut found_nonzero: i64 = 0
+    index = 0
+    while index < 19:
+        mut digit: i64 = vector_get<i64>(&digits, index)
+        match digit > 0:
+            -1:
+                match found_nonzero == 0:
+                    -1:
+                        first_digit = index
+                        found_nonzero = 1
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+            0:
+                discard 0
+            1:
+                discard 0
+        index = index + 1
+    index = first_digit
+    while index < 19:
+        discard vector_push<i64>(output, vector_get<i64>(&digits, index) + 48)
+        index = index + 1
+    return 1
+
+fn stage1_emit_register(output: &mut vector<i64>, register_id: i64) -> i64:
+    discard vector_push<i64>(output, 114)
+    discard stage1_emit_decimal(output, register_id)
+    return 1
+
+fn stage1_emission_value_count(view: &vector<i64>) -> i64:
+    return vector_get<i64>(view, 0)
+
+fn stage1_emission_instruction_count(view: &vector<i64>) -> i64:
+    return vector_get<i64>(view, 1)
+
+fn stage1_emission_value_id(view: &vector<i64>, index: i64) -> i64:
+    return vector_get<i64>(view, 3 + index)
+
+fn stage1_emission_operand_id(view: &vector<i64>, index: i64) -> i64:
+    mut value_count: i64 = stage1_emission_value_count(view)
+    return vector_get<i64>(view, 3 + value_count + index)
+
+fn stage1_emission_instruction_field(view: &vector<i64>, index: i64, field: i64) -> i64:
+    mut value_count: i64 = stage1_emission_value_count(view)
+    mut operand_count: i64 = vector_get<i64>(view, 2)
+    mut start: i64 = 3 + value_count + operand_count + index * 5
+    return vector_get<i64>(view, start + field)
+
+fn stage1_emit_single_main_program(view: &vector<i64>, output: &mut vector<i64>) -> i64:
+    discard vector_push<i64>(output, 46)
+    discard vector_push<i64>(output, 115)
+    discard vector_push<i64>(output, 51)
+    discard vector_push<i64>(output, 97)
+    discard vector_push<i64>(output, 115)
+    discard vector_push<i64>(output, 109)
+    discard vector_push<i64>(output, 32)
+    discard vector_push<i64>(output, 48)
+    discard vector_push<i64>(output, 46)
+    discard vector_push<i64>(output, 54)
+    discard vector_push<i64>(output, 46)
+    discard vector_push<i64>(output, 48)
+    discard vector_push<i64>(output, 10)
+    discard vector_push<i64>(output, 10)
+    discard vector_push<i64>(output, 46)
+    discard vector_push<i64>(output, 102)
+    discard vector_push<i64>(output, 117)
+    discard vector_push<i64>(output, 110)
+    discard vector_push<i64>(output, 99)
+    discard vector_push<i64>(output, 116)
+    discard vector_push<i64>(output, 105)
+    discard vector_push<i64>(output, 111)
+    discard vector_push<i64>(output, 110)
+    discard vector_push<i64>(output, 32)
+    discard vector_push<i64>(output, 109)
+    discard vector_push<i64>(output, 97)
+    discard vector_push<i64>(output, 105)
+    discard vector_push<i64>(output, 110)
+    discard vector_push<i64>(output, 32)
+    discard vector_push<i64>(output, 45)
+    discard vector_push<i64>(output, 62)
+    discard vector_push<i64>(output, 32)
+    discard vector_push<i64>(output, 105)
+    discard vector_push<i64>(output, 54)
+    discard vector_push<i64>(output, 52)
+    discard vector_push<i64>(output, 10)
+    mut value_index: i64 = 0
+    while value_index < stage1_emission_value_count(view):
+        discard vector_push<i64>(output, 32)
+        discard vector_push<i64>(output, 32)
+        discard vector_push<i64>(output, 32)
+        discard vector_push<i64>(output, 32)
+        discard vector_push<i64>(output, 46)
+        discard vector_push<i64>(output, 114)
+        discard vector_push<i64>(output, 101)
+        discard vector_push<i64>(output, 103)
+        discard vector_push<i64>(output, 105)
+        discard vector_push<i64>(output, 115)
+        discard vector_push<i64>(output, 116)
+        discard vector_push<i64>(output, 101)
+        discard vector_push<i64>(output, 114)
+        discard vector_push<i64>(output, 32)
+        discard stage1_emit_register(output, stage1_emission_value_id(view, value_index))
+        discard vector_push<i64>(output, 44)
+        discard vector_push<i64>(output, 32)
+        discard vector_push<i64>(output, 105)
+        discard vector_push<i64>(output, 54)
+        discard vector_push<i64>(output, 52)
+        discard vector_push<i64>(output, 10)
+        value_index = value_index + 1
+    discard vector_push<i64>(output, 46)
+    discard vector_push<i64>(output, 108)
+    discard vector_push<i64>(output, 97)
+    discard vector_push<i64>(output, 98)
+    discard vector_push<i64>(output, 101)
+    discard vector_push<i64>(output, 108)
+    discard vector_push<i64>(output, 32)
+    discard vector_push<i64>(output, 101)
+    discard vector_push<i64>(output, 110)
+    discard vector_push<i64>(output, 116)
+    discard vector_push<i64>(output, 114)
+    discard vector_push<i64>(output, 121)
+    discard vector_push<i64>(output, 10)
+    mut instruction_index: i64 = 0
+    while instruction_index < stage1_emission_instruction_count(view):
+        mut opcode: i64 = stage1_emission_instruction_field(view, instruction_index, 0)
+        match opcode == 0:
+            -1:
+                discard vector_push<i64>(output, 32)
+                discard vector_push<i64>(output, 32)
+                discard vector_push<i64>(output, 32)
+                discard vector_push<i64>(output, 32)
+                discard vector_push<i64>(output, 84)
+                discard vector_push<i64>(output, 67)
+                discard vector_push<i64>(output, 79)
+                discard vector_push<i64>(output, 78)
+                discard vector_push<i64>(output, 83)
+                discard vector_push<i64>(output, 84)
+                discard vector_push<i64>(output, 32)
+                discard stage1_emit_register(output, stage1_emission_value_id(view, stage1_emission_instruction_field(view, instruction_index, 2)))
+                discard vector_push<i64>(output, 44)
+                discard vector_push<i64>(output, 32)
+                discard stage1_emit_decimal(output, stage1_emission_instruction_field(view, instruction_index, 1))
+            0:
+                match opcode == 9:
+                    -1:
+                        discard vector_push<i64>(output, 32)
+                        discard vector_push<i64>(output, 32)
+                        discard vector_push<i64>(output, 32)
+                        discard vector_push<i64>(output, 32)
+                        discard vector_push<i64>(output, 84)
+                        discard vector_push<i64>(output, 65)
+                        discard vector_push<i64>(output, 68)
+                        discard vector_push<i64>(output, 68)
+                        discard vector_push<i64>(output, 32)
+                        discard stage1_emit_register(output, stage1_emission_value_id(view, stage1_emission_instruction_field(view, instruction_index, 2)))
+                        discard vector_push<i64>(output, 44)
+                        discard vector_push<i64>(output, 32)
+                        discard stage1_emit_register(output, stage1_emission_operand_id(view, stage1_emission_instruction_field(view, instruction_index, 3)))
+                        discard vector_push<i64>(output, 44)
+                        discard vector_push<i64>(output, 32)
+                        discard stage1_emit_register(output, stage1_emission_operand_id(view, stage1_emission_instruction_field(view, instruction_index, 3) + 1))
+                    0:
+                        match opcode == 10:
+                            -1:
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 84)
+                                discard vector_push<i64>(output, 77)
+                                discard vector_push<i64>(output, 85)
+                                discard vector_push<i64>(output, 76)
+                                discard vector_push<i64>(output, 32)
+                                discard stage1_emit_register(output, stage1_emission_value_id(view, stage1_emission_instruction_field(view, instruction_index, 2)))
+                                discard vector_push<i64>(output, 44)
+                                discard vector_push<i64>(output, 32)
+                                discard stage1_emit_register(output, stage1_emission_operand_id(view, stage1_emission_instruction_field(view, instruction_index, 3)))
+                                discard vector_push<i64>(output, 44)
+                                discard vector_push<i64>(output, 32)
+                                discard stage1_emit_register(output, stage1_emission_operand_id(view, stage1_emission_instruction_field(view, instruction_index, 3) + 1))
+                            0:
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 84)
+                                discard vector_push<i64>(output, 82)
+                                discard vector_push<i64>(output, 69)
+                                discard vector_push<i64>(output, 84)
+                                discard vector_push<i64>(output, 32)
+                                discard stage1_emit_register(output, stage1_emission_operand_id(view, stage1_emission_instruction_field(view, instruction_index, 3)))
+                            1:
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 32)
+                                discard vector_push<i64>(output, 84)
+                                discard vector_push<i64>(output, 82)
+                                discard vector_push<i64>(output, 69)
+                                discard vector_push<i64>(output, 84)
+                                discard vector_push<i64>(output, 32)
+                                discard stage1_emit_register(output, stage1_emission_operand_id(view, stage1_emission_instruction_field(view, instruction_index, 3)))
+                    1:
+                        discard vector_push<i64>(output, 32)
+                        discard vector_push<i64>(output, 32)
+                        discard vector_push<i64>(output, 32)
+                        discard vector_push<i64>(output, 32)
+                        discard vector_push<i64>(output, 84)
+                        discard vector_push<i64>(output, 82)
+                        discard vector_push<i64>(output, 69)
+                        discard vector_push<i64>(output, 84)
+                        discard vector_push<i64>(output, 32)
+                        discard stage1_emit_register(output, stage1_emission_operand_id(view, stage1_emission_instruction_field(view, instruction_index, 3)))
+            1:
+                discard vector_push<i64>(output, 32)
+                discard vector_push<i64>(output, 32)
+                discard vector_push<i64>(output, 32)
+                discard vector_push<i64>(output, 32)
+                discard vector_push<i64>(output, 84)
+                discard vector_push<i64>(output, 82)
+                discard vector_push<i64>(output, 69)
+                discard vector_push<i64>(output, 84)
+                discard vector_push<i64>(output, 32)
+                discard stage1_emit_register(output, stage1_emission_operand_id(view, stage1_emission_instruction_field(view, instruction_index, 3)))
+        discard vector_push<i64>(output, 10)
+        instruction_index = instruction_index + 1
+    discard vector_push<i64>(output, 46)
+    discard vector_push<i64>(output, 101)
+    discard vector_push<i64>(output, 110)
+    discard vector_push<i64>(output, 100)
+    discard vector_push<i64>(output, 10)
+    return 1
+
+fn stage1_function_header_failure() -> Stage1FunctionHeader:
+    return Stage1FunctionHeader(
+        next_cursor=-1,
+        name_start=-1,
+        name_end=-1,
+        expression_cursor=-1,
+        parameter_name_starts=vector_new<i64>(0),
+        parameter_name_ends=vector_new<i64>(0),
+        parameter_type_codes=vector_new<i64>(0),
+        accepted=0
+    )
+
+fn stage1_parameter_parse_failure() -> Stage1ParameterParse:
+    return Stage1ParameterParse(
+        next_cursor=-1,
+        name_starts=vector_new<i64>(0),
+        name_ends=vector_new<i64>(0),
+        type_codes=vector_new<i64>(0),
+        accepted=0
+    )
+
+fn stage1_parameter_type_parse_failure() -> Stage1ParameterTypeParse:
+    return Stage1ParameterTypeParse(next_cursor=-1, type_code=-1, accepted=0)
+
+fn stage1_parse_parameter_type(
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    cursor: i64
+) -> Stage1ParameterTypeParse:
+    match generic_native_parser_program_type_code_for_token(source, tokens, cursor) == 2:
+        -1:
+            return Stage1ParameterTypeParse(
+                next_cursor=cursor + 1, type_code=0, accepted=1
+            )
+        0:
+            match generic_token_kind(tokens, cursor) == 138:
+                -1:
+                    match generic_native_parser_program_type_code_for_token(
+                        source, tokens, cursor + 1
+                    ) == 5:
+                        -1:
+                            match generic_token_kind(tokens, cursor + 2) == 160:
+                                -1:
+                                    match generic_native_parser_program_type_code_for_token(
+                                        source, tokens, cursor + 3
+                                    ) == 2:
+                                        -1:
+                                            match generic_token_kind(tokens, cursor + 4) == 162:
+                                                -1:
+                                                    return Stage1ParameterTypeParse(
+                                                        next_cursor=cursor + 5,
+                                                        type_code=1,
+                                                        accepted=1
+                                                    )
+                                                0:
+                                                    return stage1_parameter_type_parse_failure()
+                                                1:
+                                                    return stage1_parameter_type_parse_failure()
+                                        0:
+                                            return stage1_parameter_type_parse_failure()
+                                        1:
+                                            return stage1_parameter_type_parse_failure()
+                                0:
+                                    return stage1_parameter_type_parse_failure()
+                                1:
+                                    return stage1_parameter_type_parse_failure()
+                        0:
+                            return stage1_parameter_type_parse_failure()
+                        1:
+                            return stage1_parameter_type_parse_failure()
+                0:
+                    return stage1_parameter_type_parse_failure()
+                1:
+                    return stage1_parameter_type_parse_failure()
+        1:
+            return stage1_parameter_type_parse_failure()
+
+fn stage1_parameter_name_seen(
+    source: &vector<i64>,
+    name_starts: &vector<i64>,
+    name_ends: &vector<i64>,
+    wanted_start: i64,
+    wanted_end: i64,
+    index: i64
+) -> i64:
+    match index < vector_len<i64>(name_starts):
+        -1:
+            match stage1_source_spans_equal(
+                source,
+                wanted_start,
+                wanted_end,
+                vector_get<i64>(name_starts, index),
+                vector_get<i64>(name_ends, index)
+            ):
+                -1:
+                    return 1
+                0:
+                    return stage1_parameter_name_seen(
+                        source, name_starts, name_ends,
+                        wanted_start, wanted_end, index + 1
+                    )
+                1:
+                    return stage1_parameter_name_seen(
+                        source, name_starts, name_ends,
+                        wanted_start, wanted_end, index + 1
+                    )
+        0:
+            return 0
+        1:
+            return 0
+
+fn stage1_parameter_names_unique(
+    source: &vector<i64>,
+    name_starts: &vector<i64>,
+    name_ends: &vector<i64>,
+    index: i64
+) -> i64:
+    match index < vector_len<i64>(name_starts):
+        -1:
+            match stage1_parameter_name_seen(
+                source,
+                name_starts,
+                name_ends,
+                vector_get<i64>(name_starts, index),
+                vector_get<i64>(name_ends, index),
+                index + 1
+            ) == 0:
+                -1:
+                    return stage1_parameter_names_unique(
+                        source, name_starts, name_ends, index + 1
+                    )
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 1
+        1:
+            return 1
+
+fn stage1_parse_parameters(
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    start_cursor: i64
+) -> Stage1ParameterParse:
+    mut token_count: i64 = generic_token_count(tokens)
+    mut cursor: i64 = start_cursor
+    mut name_starts: vector<i64> = vector_new<i64>(64)
+    mut name_ends: vector<i64> = vector_new<i64>(64)
+    mut type_codes: vector<i64> = vector_new<i64>(64)
+    match cursor < token_count:
+        -1:
+            discard 0
+        0:
+            return stage1_parameter_parse_failure()
+        1:
+            return stage1_parameter_parse_failure()
+    match generic_token_kind(tokens, cursor) == 8:
+        -1:
+            return Stage1ParameterParse(
+                next_cursor=cursor + 1,
+                name_starts=name_starts,
+                name_ends=name_ends,
+                type_codes=type_codes,
+                accepted=1
+            )
+        0:
+            discard 0
+        1:
+            discard 0
+    mut parsing: i64 = 1
+    mut accepted: i64 = 1
+    while parsing == 1:
+        match cursor < token_count:
+            -1:
+                discard 0
+            0:
+                accepted = 0
+                parsing = 0
+            1:
+                accepted = 0
+                parsing = 0
+        match accepted == 1:
+            -1:
+                match generic_token_kind(tokens, cursor) == 1:
+                    -1:
+                        discard vector_push<i64>(
+                            &mut name_starts, generic_token_start(tokens, cursor)
+                        )
+                        discard vector_push<i64>(
+                            &mut name_ends, generic_token_end(tokens, cursor)
+                        )
+                        cursor = cursor + 1
+                        match generic_token_kind(tokens, cursor) == 158:
+                            -1:
+                                cursor = cursor + 1
+                                mut parsed_type: Stage1ParameterTypeParse = stage1_parse_parameter_type(
+                                    source, tokens, cursor
+                                )
+                                match parsed_type.accepted == 1:
+                                    -1:
+                                        cursor = parsed_type.next_cursor
+                                        discard vector_push<i64>(
+                                            &mut type_codes, parsed_type.type_code
+                                        )
+                                    0:
+                                        accepted = 0
+                                    1:
+                                        accepted = 0
+                            0:
+                                accepted = 0
+                            1:
+                                accepted = 0
+                        match accepted == 1:
+                            -1:
+                                match generic_token_kind(tokens, cursor) == 144:
+                                    -1:
+                                        cursor = cursor + 1
+                                    0:
+                                        match generic_token_kind(tokens, cursor) == 8:
+                                            -1:
+                                                return Stage1ParameterParse(
+                                                    next_cursor=cursor + 1,
+                                                    name_starts=name_starts,
+                                                    name_ends=name_ends,
+                                                    type_codes=type_codes,
+                                                    accepted=1
+                                                )
+                                            0:
+                                                accepted = 0
+                                                parsing = 0
+                                            1:
+                                                accepted = 0
+                                                parsing = 0
+                                    1:
+                                        accepted = 0
+                                        parsing = 0
+                            0:
+                                parsing = 0
+                            1:
+                                parsing = 0
+                    0:
+                        accepted = 0
+                        parsing = 0
+                    1:
+                        accepted = 0
+                        parsing = 0
+            0:
+                parsing = 0
+            1:
+                parsing = 0
+    return stage1_parameter_parse_failure()
+
+fn stage1_function_body_end(
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    body_cursor: i64
+) -> i64:
+    mut token_count: i64 = generic_token_count(tokens)
+    mut cursor: i64 = body_cursor
+    mut line_count: i64 = 0
+    mut finished: i64 = 0
+    while cursor < token_count:
+        match finished == 0:
+            -1:
+                match generic_token_kind(tokens, cursor) == 6:
+                    -1:
+                        cursor = cursor + 1
+                    0:
+                        mut indent: i64 = generic_native_parser_program_indent(
+                            source, generic_token_start(tokens, cursor)
+                        )
+                        match indent == 4:
+                            -1:
+                                mut line_end: i64 = cursor
+                                mut next_line_cursor: i64 = -1
+                                while line_end < token_count:
+                                    match generic_token_kind(tokens, line_end) == 6:
+                                        -1:
+                                            next_line_cursor = line_end + 1
+                                            line_end = token_count
+                                        0:
+                                            line_end = line_end + 1
+                                        1:
+                                            line_end = line_end + 1
+                                match next_line_cursor >= 0:
+                                    -1:
+                                        cursor = next_line_cursor
+                                        line_count = line_count + 1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+                            0:
+                                match indent < 4:
+                                    -1:
+                                        finished = 1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+                            1:
+                                match indent < 4:
+                                    -1:
+                                        finished = 1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+                    1:
+                        mut indent: i64 = generic_native_parser_program_indent(
+                            source, generic_token_start(tokens, cursor)
+                        )
+                        match indent == 4:
+                            -1:
+                                mut line_end: i64 = cursor
+                                mut next_line_cursor: i64 = -1
+                                while line_end < token_count:
+                                    match generic_token_kind(tokens, line_end) == 6:
+                                        -1:
+                                            next_line_cursor = line_end + 1
+                                            line_end = token_count
+                                        0:
+                                            line_end = line_end + 1
+                                        1:
+                                            line_end = line_end + 1
+                                match next_line_cursor >= 0:
+                                    -1:
+                                        cursor = next_line_cursor
+                                        line_count = line_count + 1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+                            0:
+                                match indent < 4:
+                                    -1:
+                                        finished = 1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+                            1:
+                                match indent < 4:
+                                    -1:
+                                        finished = 1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+            0:
+                return cursor
+            1:
+                return cursor
+    match line_count > 0:
+        -1:
+            return cursor
+        0:
+            return -1
+        1:
+            return -1
+
+fn stage1_parse_function_header_core(
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    cursor: i64
+) -> Stage1FunctionHeader:
+    mut token_count: i64 = generic_token_count(tokens)
+    mut valid: i64 = 1
+    match cursor >= 0:
+        -1:
+            discard 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    match generic_token_kind(tokens, cursor) == 2:
+        -1:
+            discard 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    match generic_token_kind(tokens, cursor + 1) == 1:
+        -1:
+            discard 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    match generic_token_kind(tokens, cursor + 2) == 7:
+        -1:
+            discard 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    mut parameters: Stage1ParameterParse = stage1_parse_parameters(
+        source, tokens, cursor + 3
+    )
+    match parameters.accepted == 1:
+        -1:
+            match stage1_parameter_names_unique(
+                source,
+                &parameters.name_starts,
+                &parameters.name_ends,
+                0
+            ) == 1:
+                -1:
+                    discard 0
+                0:
+                    valid = 0
+                1:
+                    valid = 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    mut suffix: i64 = parameters.next_cursor
+    match generic_token_kind(tokens, suffix) == 145:
+        -1:
+            discard 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    match generic_token_kind(tokens, suffix + 1) == 162:
+        -1:
+            discard 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    match generic_native_parser_program_type_code_for_token(source, tokens, suffix + 2) == 2:
+        -1:
+            discard 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    match generic_token_kind(tokens, suffix + 3) == 158:
+        -1:
+            discard 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    match generic_token_kind(tokens, suffix + 4) == 6:
+        -1:
+            discard 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    mut body_cursor: i64 = suffix + 5
+    match valid == 1:
+        -1:
+            mut next_cursor: i64 = stage1_function_body_end(source, tokens, body_cursor)
+            match next_cursor >= 0:
+                -1:
+                    return Stage1FunctionHeader(
+                        next_cursor=next_cursor,
+                        name_start=generic_token_start(tokens, cursor + 1),
+                        name_end=generic_token_end(tokens, cursor + 1),
+                        expression_cursor=body_cursor,
+                        parameter_name_starts=parameters.name_starts,
+                        parameter_name_ends=parameters.name_ends,
+                        parameter_type_codes=parameters.type_codes,
+                        accepted=1
+                    )
+                0:
+                    return stage1_function_header_failure()
+                1:
+                    return stage1_function_header_failure()
+        0:
+            return stage1_function_header_failure()
+        1:
+            return stage1_function_header_failure()
+
+fn stage1_parse_function_header(
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    cursor: i64
+) -> Stage1FunctionHeader:
+    return stage1_parse_function_header_core(source, tokens, cursor)
+
+fn stage1_source_spans_equal(
+    source: &vector<i64>,
+    first_start: i64,
+    first_end: i64,
+    second_start: i64,
+    second_end: i64
+) -> trit:
+    match first_end - first_start == second_end - second_start:
+        -1:
+            mut offset: i64 = 0
+            while offset < first_end - first_start:
+                match vector_get<i64>(source, first_start + offset) == vector_get<i64>(source, second_start + offset):
+                    -1:
+                        offset = offset + 1
+                    0:
+                        return 0
+                    1:
+                        return 0
+            return -1
+        0:
+            return 0
+        1:
+            return 0
+
+fn stage1_find_function_id_by_source_name(
+    function_ids: &vector<i64>,
+    function_name_first: &vector<i64>,
+    function_name_count: &vector<i64>,
+    function_name_bytes: &vector<i64>,
+    source: &vector<i64>,
+    name_start: i64,
+    name_end: i64
+) -> i64:
+    mut function_index: i64 = 0
+    mut source_name_length: i64 = name_end - name_start
+    while function_index < i64_vector_len(function_ids):
+        match i64_vector_get(function_name_count, function_index) == source_name_length:
+            -1:
+                mut offset: i64 = 0
+                mut equal: i64 = 1
+                mut first: i64 = i64_vector_get(function_name_first, function_index)
+                while offset < source_name_length:
+                    match vector_get<i64>(source, name_start + offset) == i64_vector_get(function_name_bytes, first + offset):
+                        -1:
+                            discard 0
+                        0:
+                            equal = 0
+                        1:
+                            equal = 0
+                    offset = offset + 1
+                match equal == 1:
+                    -1:
+                        return i64_vector_get(function_ids, function_index)
+                    0:
+                        function_index = function_index + 1
+                    1:
+                        function_index = function_index + 1
+            0:
+                function_index = function_index + 1
+            1:
+                function_index = function_index + 1
+    return -1
+
+export fn stage1_output_chunk(output: &vector<i64>, start: i64) -> i64:
+    mut index: i64 = 0
+    mut packed: i64 = 0
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match index < 8:
+            -1:
+                match start + index < vector_len<i64>(output):
+                    -1:
+                        packed = packed * 128 + vector_get<i64>(output, start + index)
+                        index = index + 1
+                    0:
+                        scanning = 0
+                    1:
+                        scanning = 0
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    return packed
+
+fn stage1_compile_single_main(source: vector<i64>) -> Stage1CompileResult:
+    mut source_length: i64 = vector_len<i64>(&source)
+    match source_length <= 4096:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(1, 1)
+        1:
+            return stage1_empty_result(1, 1)
+    mut tokens: vector<i64> = generic_lexer_scan(&source)
+    mut token_count: i64 = generic_token_count(&tokens)
+    match token_count <= 1025:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(2, 2)
+        1:
+            return stage1_empty_result(2, 2)
+    match generic_token_kind(&tokens, 0) == 2:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 3)
+        1:
+            return stage1_empty_result(3, 3)
+    match generic_token_kind(&tokens, 1) == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 4)
+        1:
+            return stage1_empty_result(3, 4)
+    match generic_token_end(&tokens, 1) - generic_token_start(&tokens, 1) == 4:
+        -1:
+            match vector_get<i64>(&source, generic_token_start(&tokens, 1)) == 109:
+                -1:
+                    match vector_get<i64>(&source, generic_token_start(&tokens, 1) + 1) == 97:
+                        -1:
+                            match vector_get<i64>(&source, generic_token_start(&tokens, 1) + 2) == 105:
+                                -1:
+                                    match vector_get<i64>(&source, generic_token_start(&tokens, 1) + 3) == 110:
+                                        -1:
+                                            discard 0
+                                        0:
+                                            return stage1_empty_result(3, 4)
+                                        1:
+                                            return stage1_empty_result(3, 4)
+                                0:
+                                    return stage1_empty_result(3, 4)
+                                1:
+                                    return stage1_empty_result(3, 4)
+                        0:
+                            return stage1_empty_result(3, 4)
+                        1:
+                            return stage1_empty_result(3, 4)
+                0:
+                    return stage1_empty_result(3, 4)
+                1:
+                    return stage1_empty_result(3, 4)
+        0:
+            return stage1_empty_result(3, 4)
+        1:
+            return stage1_empty_result(3, 4)
+    match generic_token_kind(&tokens, 2) == 7:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 5)
+        1:
+            return stage1_empty_result(3, 5)
+    match generic_token_kind(&tokens, 3) == 8:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 6)
+        1:
+            return stage1_empty_result(3, 6)
+    match generic_token_kind(&tokens, 4) == 145:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 7)
+        1:
+            return stage1_empty_result(3, 7)
+    match generic_token_kind(&tokens, 5) == 162:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 8)
+        1:
+            return stage1_empty_result(3, 8)
+    match generic_native_parser_program_type_code_for_token(&source, &tokens, 6) == 2:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 9)
+        1:
+            return stage1_empty_result(3, 9)
+    match generic_token_kind(&tokens, 7) == 158:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 10)
+        1:
+            return stage1_empty_result(3, 10)
+    match generic_token_kind(&tokens, 8) == 6:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 11)
+        1:
+            return stage1_empty_result(3, 11)
+    match generic_native_parser_program_indent(&source, generic_token_start(&tokens, 9)) == 4:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 12)
+        1:
+            return stage1_empty_result(3, 12)
+    match generic_token_kind(&tokens, 9) == 3:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 13)
+        1:
+            return stage1_empty_result(3, 13)
+    mut expression_tree: vector<i64> = generic_native_parser_parse_expression(
+        &source, &tokens, 10, 0
+    )
+    mut expression_result: i64 = generic_expression_packed_result(&expression_tree)
+    match expression_result <=> 0:
+        -1:
+            return stage1_empty_result(3, 14)
+        0:
+            return stage1_empty_result(3, 14)
+        1:
+            discard 0
+    mut root_node: i64 = generic_native_parser_packed_node(expression_result)
+    mut cursor: i64 = generic_native_parser_packed_cursor(expression_result)
+    match generic_token_kind(&tokens, cursor) == 6:
+        -1:
+            cursor = cursor + 1
+        0:
+            return stage1_empty_result(3, 15)
+        1:
+            return stage1_empty_result(3, 15)
+    match generic_token_kind(&tokens, cursor) == 0:
+        -1:
+            cursor = cursor + 1
+        0:
+            return stage1_empty_result(3, 16)
+        1:
+            return stage1_empty_result(3, 16)
+    match cursor == token_count:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 17)
+        1:
+            return stage1_empty_result(3, 17)
+    match generic_expression_node_count(&expression_tree) <= 63:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 18)
+        1:
+            return stage1_empty_result(3, 18)
+    mut program: NativeIR = native_ir_empty()
+    mut function_append: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    match function_append.accepted == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(4, 18)
+        1:
+            return stage1_empty_result(4, 18)
+    program = function_append.program
+    mut block_append: NativeIRAppendResult = native_ir_append_block(program, 0, 1)
+    match block_append.accepted == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(4, 18)
+        1:
+            return stage1_empty_result(4, 18)
+    program = block_append.program
+    mut empty_symbol_name_starts: vector<i64> = vector_new<i64>(0)
+    mut empty_symbol_name_ends: vector<i64> = vector_new<i64>(0)
+    mut empty_symbol_value_ids: vector<i64> = vector_new<i64>(0)
+    mut lowered: Stage1LowerResult = stage1_lower_expression(
+        root_node, &source, &expression_tree, program, 0, 0,
+        &empty_symbol_name_starts, &empty_symbol_name_ends, &empty_symbol_value_ids
+    )
+    match lowered.accepted == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(4, 19)
+        1:
+            return stage1_empty_result(4, 19)
+    mut return_value: i64 = lowered.value_id
+    program = lowered.program
+    mut return_append: NativeIRAppendResult = native_ir_append_instruction(
+        program, 1, 0, return_value, -1
+    )
+    match return_append.accepted == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(4, 20)
+        1:
+            return stage1_empty_result(4, 20)
+    program = return_append.program
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    mut verification: NativeVerification = verified.verification
+    program = verified.program
+    mut emission_view: vector<i64> = native_ir_emission_view(program)
+    mut instruction_count: i64 = stage1_emission_instruction_count(&emission_view)
+    mut value_count: i64 = stage1_emission_value_count(&emission_view)
+    match verification.accepted == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(5, verification.diagnostic_code)
+        1:
+            return stage1_empty_result(5, verification.diagnostic_code)
+    mut output: vector<i64> = vector_new<i64>(16384)
+    discard stage1_emit_single_main_program(&emission_view, &mut output)
+    mut sink: OutputSinkState = output_sink_new(16384)
+    sink = output_sink_append_bytes(sink, output)
+    match sink.failed == 0:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(6, 20)
+        1:
+            return stage1_empty_result(6, 20)
+    sink = output_sink_commit(sink)
+    match sink.failed == 0:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(6, 21)
+        1:
+            return stage1_empty_result(6, 21)
+    return stage1_result(
+        1, 0, 0, sink.buffer,
+        instruction_count,
+        value_count,
+        verification
+    )
+
+fn stage1_literal_bytes(literal_id: i64) -> vector<i64>:
+    mut bytes: vector<i64> = vector_new<i64>(24)
+    match literal_id == 0:
+        -1:
+            discard vector_push<i64>(&mut bytes, 46)
+            discard vector_push<i64>(&mut bytes, 115)
+            discard vector_push<i64>(&mut bytes, 51)
+            discard vector_push<i64>(&mut bytes, 97)
+            discard vector_push<i64>(&mut bytes, 115)
+            discard vector_push<i64>(&mut bytes, 109)
+            discard vector_push<i64>(&mut bytes, 32)
+            discard vector_push<i64>(&mut bytes, 48)
+            discard vector_push<i64>(&mut bytes, 46)
+            discard vector_push<i64>(&mut bytes, 55)
+            discard vector_push<i64>(&mut bytes, 46)
+            discard vector_push<i64>(&mut bytes, 48)
+            discard vector_push<i64>(&mut bytes, 10)
+            discard vector_push<i64>(&mut bytes, 10)
+        0:
+            match literal_id == 1:
+                -1:
+                    discard vector_push<i64>(&mut bytes, 46)
+                    discard vector_push<i64>(&mut bytes, 102)
+                    discard vector_push<i64>(&mut bytes, 117)
+                    discard vector_push<i64>(&mut bytes, 110)
+                    discard vector_push<i64>(&mut bytes, 99)
+                    discard vector_push<i64>(&mut bytes, 116)
+                    discard vector_push<i64>(&mut bytes, 105)
+                    discard vector_push<i64>(&mut bytes, 111)
+                    discard vector_push<i64>(&mut bytes, 110)
+                    discard vector_push<i64>(&mut bytes, 32)
+                0:
+                    match literal_id == 2:
+                        -1:
+                            discard vector_push<i64>(&mut bytes, 32)
+                            discard vector_push<i64>(&mut bytes, 45)
+                            discard vector_push<i64>(&mut bytes, 62)
+                            discard vector_push<i64>(&mut bytes, 32)
+                            discard vector_push<i64>(&mut bytes, 105)
+                            discard vector_push<i64>(&mut bytes, 54)
+                            discard vector_push<i64>(&mut bytes, 52)
+                            discard vector_push<i64>(&mut bytes, 10)
+                        0:
+                            match literal_id == 3:
+                                -1:
+                                    discard vector_push<i64>(&mut bytes, 32)
+                                    discard vector_push<i64>(&mut bytes, 32)
+                                    discard vector_push<i64>(&mut bytes, 32)
+                                    discard vector_push<i64>(&mut bytes, 32)
+                                    discard vector_push<i64>(&mut bytes, 46)
+                                    discard vector_push<i64>(&mut bytes, 112)
+                                    discard vector_push<i64>(&mut bytes, 97)
+                                    discard vector_push<i64>(&mut bytes, 114)
+                                    discard vector_push<i64>(&mut bytes, 97)
+                                    discard vector_push<i64>(&mut bytes, 109)
+                                    discard vector_push<i64>(&mut bytes, 32)
+                                0:
+                                    match literal_id == 4:
+                                        -1:
+                                            discard vector_push<i64>(&mut bytes, 44)
+                                            discard vector_push<i64>(&mut bytes, 32)
+                                            discard vector_push<i64>(&mut bytes, 105)
+                                            discard vector_push<i64>(&mut bytes, 54)
+                                            discard vector_push<i64>(&mut bytes, 52)
+                                            discard vector_push<i64>(&mut bytes, 10)
+                                        0:
+                                            match literal_id == 5:
+                                                -1:
+                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                    discard vector_push<i64>(&mut bytes, 46)
+                                                    discard vector_push<i64>(&mut bytes, 114)
+                                                    discard vector_push<i64>(&mut bytes, 101)
+                                                    discard vector_push<i64>(&mut bytes, 103)
+                                                    discard vector_push<i64>(&mut bytes, 105)
+                                                    discard vector_push<i64>(&mut bytes, 115)
+                                                    discard vector_push<i64>(&mut bytes, 116)
+                                                    discard vector_push<i64>(&mut bytes, 101)
+                                                    discard vector_push<i64>(&mut bytes, 114)
+                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                0:
+                                                    match literal_id == 6:
+                                                        -1:
+                                                            discard vector_push<i64>(&mut bytes, 46)
+                                                            discard vector_push<i64>(&mut bytes, 108)
+                                                            discard vector_push<i64>(&mut bytes, 97)
+                                                            discard vector_push<i64>(&mut bytes, 98)
+                                                            discard vector_push<i64>(&mut bytes, 101)
+                                                            discard vector_push<i64>(&mut bytes, 108)
+                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                            discard vector_push<i64>(&mut bytes, 101)
+                                                            discard vector_push<i64>(&mut bytes, 110)
+                                                            discard vector_push<i64>(&mut bytes, 116)
+                                                            discard vector_push<i64>(&mut bytes, 114)
+                                                            discard vector_push<i64>(&mut bytes, 121)
+                                                            discard vector_push<i64>(&mut bytes, 10)
+                                                        0:
+                                                            match literal_id == 7:
+                                                                -1:
+                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                    discard vector_push<i64>(&mut bytes, 84)
+                                                                    discard vector_push<i64>(&mut bytes, 67)
+                                                                    discard vector_push<i64>(&mut bytes, 79)
+                                                                    discard vector_push<i64>(&mut bytes, 78)
+                                                                    discard vector_push<i64>(&mut bytes, 83)
+                                                                    discard vector_push<i64>(&mut bytes, 84)
+                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                0:
+                                                                    match literal_id == 8:
+                                                                        -1:
+                                                                            discard vector_push<i64>(&mut bytes, 44)
+                                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                                        0:
+                                                                            match literal_id == 9:
+                                                                                -1:
+                                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                                    discard vector_push<i64>(&mut bytes, 84)
+                                                                                    discard vector_push<i64>(&mut bytes, 65)
+                                                                                    discard vector_push<i64>(&mut bytes, 68)
+                                                                                    discard vector_push<i64>(&mut bytes, 68)
+                                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                                0:
+                                                                                    match literal_id == 10:
+                                                                                        -1:
+                                                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                                                            discard vector_push<i64>(&mut bytes, 84)
+                                                                                            discard vector_push<i64>(&mut bytes, 77)
+                                                                                            discard vector_push<i64>(&mut bytes, 85)
+                                                                                            discard vector_push<i64>(&mut bytes, 76)
+                                                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                                                        0:
+                                                                                            match literal_id == 11:
+                                                                                                -1:
+                                                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                                                    discard vector_push<i64>(&mut bytes, 84)
+                                                                                                    discard vector_push<i64>(&mut bytes, 82)
+                                                                                                    discard vector_push<i64>(&mut bytes, 69)
+                                                                                                    discard vector_push<i64>(&mut bytes, 84)
+                                                                                                    discard vector_push<i64>(&mut bytes, 32)
+                                                                                                0:
+                                                                                                    match literal_id == 12:
+                                                                                                        -1:
+                                                                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                                                                            discard vector_push<i64>(&mut bytes, 84)
+                                                                                                            discard vector_push<i64>(&mut bytes, 67)
+                                                                                                            discard vector_push<i64>(&mut bytes, 65)
+                                                                                                            discard vector_push<i64>(&mut bytes, 76)
+                                                                                                            discard vector_push<i64>(&mut bytes, 76)
+                                                                                                            discard vector_push<i64>(&mut bytes, 32)
+                                                                                                        0:
+                                                                                                            match literal_id == 13:
+                                                                                                                -1:
+                                                                                                                    discard vector_push<i64>(&mut bytes, 46)
+                                                                                                                    discard vector_push<i64>(&mut bytes, 101)
+                                                                                                                    discard vector_push<i64>(&mut bytes, 110)
+                                                                                                                    discard vector_push<i64>(&mut bytes, 100)
+                                                                                                                    discard vector_push<i64>(&mut bytes, 10)
+                                                                                                                0:
+                                                                                                                    match literal_id == 14:
+                                                                                                                        -1:
+                                                                                                                            discard vector_push<i64>(&mut bytes, 10)
+                                                                                                                        0:
+                                                                                                                            discard 0
+                                                                                                                        1:
+                                                                                                                            discard 0
+                                                                                                                1:
+                                                                                                                    discard 0
+                                                                                                        1:
+                                                                                                            discard 0
+                                                                                                1:
+                                                                                                    discard 0
+                                                                                        1:
+                                                                                            discard 0
+                                                                                1:
+                                                                                    discard 0
+                                                                        1:
+                                                                            discard 0
+                                                                1:
+                                                                    discard 0
+                                                        1:
+                                                            discard 0
+                                                1:
+                                                    discard 0
+                                        1:
+                                            discard 0
+                                1:
+                                    discard 0
+                        1:
+                            discard 0
+                1:
+                    discard 0
+        1:
+            discard 0
+    return bytes
+
+fn stage1_emit_literal(output: &mut vector<i64>, literal_id: i64) -> i64:
+    mut bytes: vector<i64> = stage1_literal_bytes(literal_id)
+    mut index: i64 = 0
+    while index < vector_len<i64>(&bytes):
+        discard vector_push<i64>(output, vector_get<i64>(&bytes, index))
+        index = index + 1
+    return 1
+
+fn stage1_emit_ir_function_name(
+    function_name_first: &vector<i64>,
+    function_name_count: &vector<i64>,
+    function_name_bytes: &vector<i64>,
+    function_index: i64,
+    output: &mut vector<i64>
+) -> i64:
+    mut first: i64 = i64_vector_get(function_name_first, function_index)
+    mut count: i64 = i64_vector_get(function_name_count, function_index)
+    mut index: i64 = 0
+    while index < count:
+        discard vector_push<i64>(output, i64_vector_get(function_name_bytes, first + index))
+        index = index + 1
+    return 1
+
+fn stage1_emit_ir_register_declarations(
+    value_ids: &vector<i64>,
+    definition_function_ids: &vector<i64>,
+    parameter_value_ids: &vector<i64>,
+    function_id: i64,
+    output: &mut vector<i64>
+) -> i64:
+    mut value_index: i64 = 0
+    while value_index < i64_vector_len(value_ids):
+        match i64_vector_get(definition_function_ids, value_index) == function_id:
+            -1:
+                mut value_id: i64 = i64_vector_get(value_ids, value_index)
+                mut parameter: i64 = 0
+                mut is_parameter: i64 = 0
+                while parameter < i64_vector_len(parameter_value_ids):
+                    match i64_vector_get(parameter_value_ids, parameter) == value_id:
+                        -1:
+                            is_parameter = 1
+                            parameter = i64_vector_len(parameter_value_ids)
+                        0:
+                            parameter = parameter + 1
+                        1:
+                            parameter = parameter + 1
+                match is_parameter == 0:
+                    -1:
+                        discard stage1_emit_literal(output, 5)
+                        discard stage1_emit_register(output, value_id)
+                        discard stage1_emit_literal(output, 4)
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+            0:
+                discard 0
+            1:
+                discard 0
+        value_index = value_index + 1
+    return 1
+
+fn stage1_type_is_i64_vector_reference(
+    type_id: i64,
+    type_kinds: &vector<i64>,
+    type_element_ids: &vector<i64>,
+    type_mutability_flags: &vector<i64>,
+    type_lengths: &vector<i64>
+) -> i64:
+    match type_id >= 0:
+        -1:
+            match type_id < i64_vector_len(type_kinds):
+                -1:
+                    match i64_vector_get(type_kinds, type_id) == 3:
+                        -1:
+                            mut vector_type_id: i64 = i64_vector_get(type_element_ids, type_id)
+                            match vector_type_id >= 0:
+                                -1:
+                                    match vector_type_id < i64_vector_len(type_kinds):
+                                        -1:
+                                            match i64_vector_get(type_kinds, vector_type_id) == 2:
+                                                -1:
+                                                    match i64_vector_get(type_element_ids, vector_type_id) == 0:
+                                                        -1:
+                                                            match i64_vector_get(type_mutability_flags, type_id) == 0:
+                                                                -1:
+                                                                    match i64_vector_get(type_lengths, type_id) == -1:
+                                                                        -1:
+                                                                            return 1
+                                                                        0:
+                                                                            return 0
+                                                                        1:
+                                                                            return 0
+                                                                0:
+                                                                    return 0
+                                                                1:
+                                                                    return 0
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                0:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        0:
+                                            return 0
+                                        1:
+                                            return 0
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn stage1_emit_ir_parameter_type_suffix(
+    type_id: i64,
+    type_kinds: &vector<i64>,
+    type_element_ids: &vector<i64>,
+    type_mutability_flags: &vector<i64>,
+    type_lengths: &vector<i64>,
+    output: &mut vector<i64>
+) -> i64:
+    match type_id == 0:
+        -1:
+            discard stage1_emit_literal(output, 4)
+            return 1
+        0:
+            match stage1_type_is_i64_vector_reference(
+                type_id, type_kinds, type_element_ids, type_mutability_flags, type_lengths
+            ) == 1:
+                -1:
+                    discard vector_push<i64>(output, 44)
+                    discard vector_push<i64>(output, 32)
+                    discard vector_push<i64>(output, 114)
+                    discard vector_push<i64>(output, 101)
+                    discard vector_push<i64>(output, 102)
+                    discard vector_push<i64>(output, 101)
+                    discard vector_push<i64>(output, 114)
+                    discard vector_push<i64>(output, 101)
+                    discard vector_push<i64>(output, 110)
+                    discard vector_push<i64>(output, 99)
+                    discard vector_push<i64>(output, 101)
+                    discard vector_push<i64>(output, 44)
+                    discard vector_push<i64>(output, 32)
+                    discard vector_push<i64>(output, 118)
+                    discard vector_push<i64>(output, 101)
+                    discard vector_push<i64>(output, 99)
+                    discard vector_push<i64>(output, 116)
+                    discard vector_push<i64>(output, 111)
+                    discard vector_push<i64>(output, 114)
+                    discard vector_push<i64>(output, 44)
+                    discard vector_push<i64>(output, 32)
+                    discard vector_push<i64>(output, 105)
+                    discard vector_push<i64>(output, 109)
+                    discard vector_push<i64>(output, 109)
+                    discard vector_push<i64>(output, 117)
+                    discard vector_push<i64>(output, 116)
+                    discard vector_push<i64>(output, 97)
+                    discard vector_push<i64>(output, 98)
+                    discard vector_push<i64>(output, 108)
+                    discard vector_push<i64>(output, 101)
+                    discard vector_push<i64>(output, 44)
+                    discard vector_push<i64>(output, 32)
+                    discard vector_push<i64>(output, 118)
+                    discard vector_push<i64>(output, 97)
+                    discard vector_push<i64>(output, 108)
+                    discard vector_push<i64>(output, 117)
+                    discard vector_push<i64>(output, 101)
+                    discard vector_push<i64>(output, 10)
+                    return 1
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn stage1_emit_ir_parameters(
+    function_parameter_first: &vector<i64>,
+    function_parameter_count: &vector<i64>,
+    parameter_value_ids: &vector<i64>,
+    parameter_type_ids: &vector<i64>,
+    type_kinds: &vector<i64>,
+    type_element_ids: &vector<i64>,
+    type_mutability_flags: &vector<i64>,
+    type_lengths: &vector<i64>,
+    function_index: i64,
+    output: &mut vector<i64>
+) -> i64:
+    mut first: i64 = i64_vector_get(function_parameter_first, function_index)
+    mut count: i64 = i64_vector_get(function_parameter_count, function_index)
+    mut index: i64 = 0
+    while index < count:
+        discard stage1_emit_literal(output, 3)
+        discard stage1_emit_register(output, i64_vector_get(parameter_value_ids, first + index))
+        match stage1_emit_ir_parameter_type_suffix(
+            i64_vector_get(parameter_type_ids, first + index),
+            type_kinds,
+            type_element_ids,
+            type_mutability_flags,
+            type_lengths,
+            output
+        ) == 1:
+            -1:
+                discard 0
+            0:
+                return 0
+            1:
+                return 0
+        index = index + 1
+    return 1
+
+fn stage1_emit_ir_callee_name(
+    function_ids: &vector<i64>,
+    function_name_first: &vector<i64>,
+    function_name_count: &vector<i64>,
+    function_name_bytes: &vector<i64>,
+    callee_id: i64,
+    output: &mut vector<i64>
+) -> i64:
+    mut index: i64 = 0
+    while index < i64_vector_len(function_ids):
+        match i64_vector_get(function_ids, index) == callee_id:
+            -1:
+                discard stage1_emit_ir_function_name(
+                    function_name_first, function_name_count, function_name_bytes, index, output
+                )
+                index = i64_vector_len(function_ids)
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    return 1
+
+fn stage1_emit_ir_instruction(
+    instruction_opcodes: &vector<i64>,
+    instruction_operand_first: &vector<i64>,
+    instruction_operand_count: &vector<i64>,
+    instruction_result_first: &vector<i64>,
+    instruction_immediates: &vector<i64>,
+    instruction_callee_function_ids: &vector<i64>,
+    result_value_ids: &vector<i64>,
+    operand_value_ids: &vector<i64>,
+    function_ids: &vector<i64>,
+    function_name_first: &vector<i64>,
+    function_name_count: &vector<i64>,
+    function_name_bytes: &vector<i64>,
+    instruction_index: i64,
+    output: &mut vector<i64>
+) -> i64:
+    mut opcode: i64 = i64_vector_get(instruction_opcodes, instruction_index)
+    mut operand_first: i64 = i64_vector_get(instruction_operand_first, instruction_index)
+    mut operand_count: i64 = i64_vector_get(instruction_operand_count, instruction_index)
+    match opcode == 0:
+        -1:
+            discard stage1_emit_literal(output, 7)
+            discard stage1_emit_register(output, i64_vector_get(result_value_ids, i64_vector_get(instruction_result_first, instruction_index)))
+            discard stage1_emit_literal(output, 8)
+            discard stage1_emit_decimal(output, i64_vector_get(instruction_immediates, instruction_index))
+        0:
+            match opcode == 9:
+                -1:
+                    discard stage1_emit_literal(output, 9)
+                    discard stage1_emit_register(output, i64_vector_get(result_value_ids, i64_vector_get(instruction_result_first, instruction_index)))
+                    discard stage1_emit_literal(output, 8)
+                    discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first))
+                    discard stage1_emit_literal(output, 8)
+                    discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first + 1))
+                0:
+                    match opcode == 10:
+                        -1:
+                            discard stage1_emit_literal(output, 10)
+                            discard stage1_emit_register(output, i64_vector_get(result_value_ids, i64_vector_get(instruction_result_first, instruction_index)))
+                            discard stage1_emit_literal(output, 8)
+                            discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first))
+                            discard stage1_emit_literal(output, 8)
+                            discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first + 1))
+                        0:
+                            match opcode == 3:
+                                -1:
+                                    discard stage1_emit_literal(output, 12)
+                                    discard stage1_emit_register(output, i64_vector_get(result_value_ids, i64_vector_get(instruction_result_first, instruction_index)))
+                                    discard stage1_emit_literal(output, 8)
+                                    discard stage1_emit_ir_callee_name(
+                                        function_ids,
+                                        function_name_first,
+                                        function_name_count,
+                                        function_name_bytes,
+                                        i64_vector_get(instruction_callee_function_ids, instruction_index),
+                                        output
+                                    )
+                                    mut argument: i64 = 0
+                                    while argument < operand_count:
+                                        discard stage1_emit_literal(output, 8)
+                                        discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first + argument))
+                                        argument = argument + 1
+                                0:
+                                    discard stage1_emit_literal(output, 11)
+                                    discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first))
+                                1:
+                                    discard stage1_emit_literal(output, 11)
+                                    discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first))
+                        1:
+                            discard stage1_emit_literal(output, 11)
+                            discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first))
+                1:
+                    discard stage1_emit_literal(output, 11)
+                    discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first))
+        1:
+            discard stage1_emit_literal(output, 11)
+            discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first))
+    discard stage1_emit_literal(output, 14)
+    return 1
+
+fn stage1_emit_native_function(
+    function_ids: &vector<i64>,
+    function_name_first: &vector<i64>,
+    function_name_count: &vector<i64>,
+    function_name_bytes: &vector<i64>,
+    function_parameter_first: &vector<i64>,
+    function_parameter_count: &vector<i64>,
+    parameter_value_ids: &vector<i64>,
+    parameter_type_ids: &vector<i64>,
+    type_kinds: &vector<i64>,
+    type_element_ids: &vector<i64>,
+    type_mutability_flags: &vector<i64>,
+    type_lengths: &vector<i64>,
+    value_ids: &vector<i64>,
+    definition_function_ids: &vector<i64>,
+    instruction_ids: &vector<i64>,
+    instruction_function_ids: &vector<i64>,
+    instruction_opcodes: &vector<i64>,
+    instruction_operand_first: &vector<i64>,
+    instruction_operand_count: &vector<i64>,
+    instruction_result_first: &vector<i64>,
+    instruction_immediates: &vector<i64>,
+    instruction_callee_function_ids: &vector<i64>,
+    result_value_ids: &vector<i64>,
+    operand_value_ids: &vector<i64>,
+    function_index: i64,
+    output: &mut vector<i64>
+) -> i64:
+    mut function_id: i64 = i64_vector_get(function_ids, function_index)
+    discard stage1_emit_literal(output, 1)
+    discard stage1_emit_ir_function_name(
+        function_name_first,
+        function_name_count,
+        function_name_bytes,
+        function_index,
+        output
+    )
+    discard stage1_emit_literal(output, 2)
+    match stage1_emit_ir_parameters(
+        function_parameter_first,
+        function_parameter_count,
+        parameter_value_ids,
+        parameter_type_ids,
+        type_kinds,
+        type_element_ids,
+        type_mutability_flags,
+        type_lengths,
+        function_index,
+        output
+    ) == 1:
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    discard stage1_emit_ir_register_declarations(
+        value_ids,
+        definition_function_ids,
+        parameter_value_ids,
+        function_id,
+        output
+    )
+    discard stage1_emit_literal(output, 6)
+    mut instruction_index: i64 = 0
+    while instruction_index < i64_vector_len(instruction_ids):
+        match i64_vector_get(instruction_function_ids, instruction_index) == function_id:
+            -1:
+                discard stage1_emit_ir_instruction(
+                    instruction_opcodes,
+                    instruction_operand_first,
+                    instruction_operand_count,
+                    instruction_result_first,
+                    instruction_immediates,
+                    instruction_callee_function_ids,
+                    result_value_ids,
+                    operand_value_ids,
+                    function_ids,
+                    function_name_first,
+                    function_name_count,
+                    function_name_bytes,
+                    instruction_index,
+                    output
+                )
+            0:
+                discard 0
+            1:
+                discard 0
+        instruction_index = instruction_index + 1
+    discard stage1_emit_literal(output, 13)
+    return 1
+
+fn stage1_emit_native_program(program: NativeIR, output: &mut vector<i64>) -> i64:
+    discard stage1_emit_literal(output, 0)
+    mut function_index: i64 = 0
+    while function_index < i64_vector_len(&program.function_ids):
+        match i64_vector_get(&program.function_external_flags, function_index) == 0:
+            -1:
+                match stage1_emit_native_function(
+                    &program.function_ids,
+                    &program.function_name_first,
+                    &program.function_name_count,
+                    &program.function_name_bytes,
+                    &program.function_parameter_first,
+                    &program.function_parameter_count,
+                    &program.parameter_value_ids,
+                    &program.parameter_type_ids,
+                    &program.type_kinds,
+                    &program.type_element_ids,
+                    &program.type_mutability_flags,
+                    &program.type_lengths,
+                    &program.value_ids,
+                    &program.definition_function_ids,
+                    &program.instruction_ids,
+                    &program.instruction_function_ids,
+                    &program.instruction_opcodes,
+                    &program.instruction_operand_first,
+                    &program.instruction_operand_count,
+                    &program.instruction_result_first,
+                    &program.instruction_immediates,
+                    &program.instruction_callee_function_ids,
+                    &program.result_value_ids,
+                    &program.operand_value_ids,
+                    function_index,
+                    output
+                ) == 1:
+                    -1:
+                        discard 0
+                    0:
+                        return 0
+                    1:
+                        return 0
+            0:
+                discard 0
+            1:
+                discard 0
+        function_index = function_index + 1
+    return 1
+
+fn stage1_skip_body_newlines(tokens: &vector<i64>, start_cursor: i64) -> i64:
+    mut cursor: i64 = start_cursor
+    mut token_count: i64 = generic_token_count(tokens)
+    while cursor < token_count:
+        match generic_token_kind(tokens, cursor) == 6:
+            -1:
+                cursor = cursor + 1
+            0:
+                return cursor
+            1:
+                return cursor
+    return cursor
+
+fn stage1_body_compile_failure(
+    program: NativeIR,
+    symbol_name_starts: vector<i64>,
+    symbol_name_ends: vector<i64>,
+    symbol_value_ids: vector<i64>
+) -> Stage1BodyCompileResult:
+    return Stage1BodyCompileResult(
+        program=program,
+        symbol_name_starts=symbol_name_starts,
+        symbol_name_ends=symbol_name_ends,
+        symbol_value_ids=symbol_value_ids,
+        return_value_id=-1,
+        accepted=0
+    )
+
+fn stage1_lower_source_expression(
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    expression_cursor: i64,
+    program: NativeIR,
+    function_id: i64,
+    block_id: i64,
+    symbol_name_starts: &vector<i64>,
+    symbol_name_ends: &vector<i64>,
+    symbol_value_ids: &vector<i64>
+) -> Stage1ExpressionLowerResult:
+    mut tree: vector<i64> = generic_native_parser_parse_expression(
+        source, tokens, expression_cursor, 0
+    )
+    mut packed: i64 = generic_expression_packed_result(&tree)
+    match packed >= 0:
+        -1:
+            match generic_expression_node_count(&tree) <= 63:
+                -1:
+                    mut lowered: Stage1LowerResult = stage1_lower_expression(
+                        generic_native_parser_packed_node(packed),
+                        source,
+                        &tree,
+                        program,
+                        function_id,
+                        block_id,
+                        symbol_name_starts,
+                        symbol_name_ends,
+                        symbol_value_ids
+                    )
+                    mut accepted: i64 = lowered.accepted
+                    mut value_id: i64 = lowered.value_id
+                    mut next_cursor: i64 = generic_native_parser_packed_cursor(packed)
+                    mut lowered_program: NativeIR = lowered.program
+                    return Stage1ExpressionLowerResult(
+                        program=lowered_program,
+                        value_id=value_id,
+                        next_cursor=next_cursor,
+                        accepted=accepted
+                    )
+                0:
+                    return Stage1ExpressionLowerResult(
+                        program=program, value_id=-1, next_cursor=-1, accepted=0
+                    )
+                1:
+                    return Stage1ExpressionLowerResult(
+                        program=program, value_id=-1, next_cursor=-1, accepted=0
+                    )
+        0:
+            return Stage1ExpressionLowerResult(
+                program=program, value_id=-1, next_cursor=-1, accepted=0
+            )
+        1:
+            return Stage1ExpressionLowerResult(
+                program=program, value_id=-1, next_cursor=-1, accepted=0
+            )
+
+fn stage1_compile_body_sequence(
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    cursor: i64,
+    body_end_cursor: i64,
+    program: NativeIR,
+    function_id: i64,
+    block_id: i64,
+    symbol_name_starts: vector<i64>,
+    symbol_name_ends: vector<i64>,
+    symbol_value_ids: vector<i64>,
+    statement_count: i64
+) -> Stage1BodyCompileResult:
+    mut current_cursor: i64 = stage1_skip_body_newlines(tokens, cursor)
+    match current_cursor == body_end_cursor:
+        -1:
+            return stage1_body_compile_failure(
+                program, symbol_name_starts, symbol_name_ends, symbol_value_ids
+            )
+        0:
+            match statement_count < 64:
+                -1:
+                    match generic_native_parser_program_indent(
+                        source, generic_token_start(tokens, current_cursor)
+                    ) == 4:
+                        -1:
+                            match generic_token_kind(tokens, current_cursor) == 3:
+                                -1:
+                                    mut expression_cursor: i64 = current_cursor + 1
+                                    mut lowered: Stage1ExpressionLowerResult = stage1_lower_source_expression(
+                                        source,
+                                        tokens,
+                                        expression_cursor,
+                                        program,
+                                        function_id,
+                                        block_id,
+                                        &symbol_name_starts,
+                                        &symbol_name_ends,
+                                        &symbol_value_ids
+                                    )
+                                    mut accepted: i64 = lowered.accepted
+                                    mut return_value_id: i64 = lowered.value_id
+                                    mut after_return: i64 = lowered.next_cursor
+                                    mut lowered_program: NativeIR = lowered.program
+                                    match accepted == 1:
+                                        -1:
+                                            match generic_token_kind(tokens, after_return) == 6:
+                                                -1:
+                                                    mut after_blank_lines: i64 = stage1_skip_body_newlines(
+                                                        tokens, after_return + 1
+                                                    )
+                                                    match after_blank_lines == body_end_cursor:
+                                                        -1:
+                                                            return Stage1BodyCompileResult(
+                                                                program=lowered_program,
+                                                                symbol_name_starts=symbol_name_starts,
+                                                                symbol_name_ends=symbol_name_ends,
+                                                                symbol_value_ids=symbol_value_ids,
+                                                                return_value_id=return_value_id,
+                                                                accepted=1
+                                                            )
+                                                        0:
+                                                            return stage1_body_compile_failure(
+                                                                lowered_program,
+                                                                symbol_name_starts,
+                                                                symbol_name_ends,
+                                                                symbol_value_ids
+                                                            )
+                                                        1:
+                                                            return stage1_body_compile_failure(
+                                                                lowered_program,
+                                                                symbol_name_starts,
+                                                                symbol_name_ends,
+                                                                symbol_value_ids
+                                                            )
+                                                0:
+                                                    return stage1_body_compile_failure(
+                                                        lowered_program,
+                                                        symbol_name_starts,
+                                                        symbol_name_ends,
+                                                        symbol_value_ids
+                                                    )
+                                                1:
+                                                    return stage1_body_compile_failure(
+                                                        lowered_program,
+                                                        symbol_name_starts,
+                                                        symbol_name_ends,
+                                                        symbol_value_ids
+                                                    )
+                                        0:
+                                            return stage1_body_compile_failure(
+                                                lowered_program,
+                                                symbol_name_starts,
+                                                symbol_name_ends,
+                                                symbol_value_ids
+                                            )
+                                        1:
+                                            return stage1_body_compile_failure(
+                                                lowered_program,
+                                                symbol_name_starts,
+                                                symbol_name_ends,
+                                                symbol_value_ids
+                                            )
+                                0:
+                                    match generic_token_kind(tokens, current_cursor) == 1:
+                                        -1:
+                                            match generic_token_kind(tokens, current_cursor + 1) == 158:
+                                                -1:
+                                                    match generic_native_parser_program_type_code_for_token(
+                                                        source, tokens, current_cursor + 2
+                                                    ) == 2:
+                                                        -1:
+                                                            match generic_token_kind(tokens, current_cursor + 3) == 161:
+                                                                -1:
+                                                                    mut name_start: i64 = generic_token_start(tokens, current_cursor)
+                                                                    mut name_end: i64 = generic_token_end(tokens, current_cursor)
+                                                                    mut existing_value: i64 = stage1_find_symbol_value(
+                                                                        source,
+                                                                        &symbol_name_starts,
+                                                                        &symbol_name_ends,
+                                                                        &symbol_value_ids,
+                                                                        name_start,
+                                                                        name_end
+                                                                    )
+                                                                    match existing_value < 0:
+                                                                        -1:
+                                                                            mut expression_cursor: i64 = current_cursor + 4
+                                                                            mut lowered: Stage1ExpressionLowerResult = stage1_lower_source_expression(
+                                                                                source,
+                                                                                tokens,
+                                                                                expression_cursor,
+                                                                                program,
+                                                                                function_id,
+                                                                                block_id,
+                                                                                &symbol_name_starts,
+                                                                                &symbol_name_ends,
+                                                                                &symbol_value_ids
+                                                                            )
+                                                                            mut accepted: i64 = lowered.accepted
+                                                                            mut local_value_id: i64 = lowered.value_id
+                                                                            mut after_expression: i64 = lowered.next_cursor
+                                                                            mut lowered_program: NativeIR = lowered.program
+                                                                            match accepted == 1:
+                                                                                -1:
+                                                                                    match generic_token_kind(tokens, after_expression) == 6:
+                                                                                        -1:
+                                                                                            mut next_names: vector<i64> = symbol_name_starts
+                                                                                            mut next_ends: vector<i64> = symbol_name_ends
+                                                                                            mut next_values: vector<i64> = symbol_value_ids
+                                                                                            discard vector_push<i64>(&mut next_names, name_start)
+                                                                                            discard vector_push<i64>(&mut next_ends, name_end)
+                                                                                            discard vector_push<i64>(&mut next_values, local_value_id)
+                                                                                            return stage1_compile_body_sequence(
+                                                                                                source,
+                                                                                                tokens,
+                                                                                                after_expression + 1,
+                                                                                                body_end_cursor,
+                                                                                                lowered_program,
+                                                                                                function_id,
+                                                                                                block_id,
+                                                                                                next_names,
+                                                                                                next_ends,
+                                                                                                next_values,
+                                                                                                statement_count + 1
+                                                                                            )
+                                                                                        0:
+                                                                                            return stage1_body_compile_failure(
+                                                                                                lowered_program,
+                                                                                                symbol_name_starts,
+                                                                                                symbol_name_ends,
+                                                                                                symbol_value_ids
+                                                                                            )
+                                                                                        1:
+                                                                                            return stage1_body_compile_failure(
+                                                                                                lowered_program,
+                                                                                                symbol_name_starts,
+                                                                                                symbol_name_ends,
+                                                                                                symbol_value_ids
+                                                                                            )
+                                                                                0:
+                                                                                    return stage1_body_compile_failure(
+                                                                                        lowered_program,
+                                                                                        symbol_name_starts,
+                                                                                        symbol_name_ends,
+                                                                                        symbol_value_ids
+                                                                                    )
+                                                                                1:
+                                                                                    return stage1_body_compile_failure(
+                                                                                        lowered_program,
+                                                                                        symbol_name_starts,
+                                                                                        symbol_name_ends,
+                                                                                        symbol_value_ids
+                                                                                    )
+                                                                        0:
+                                                                            return stage1_body_compile_failure(
+                                                                                program,
+                                                                                symbol_name_starts,
+                                                                                symbol_name_ends,
+                                                                                symbol_value_ids
+                                                                            )
+                                                                        1:
+                                                                            return stage1_body_compile_failure(
+                                                                                program,
+                                                                                symbol_name_starts,
+                                                                                symbol_name_ends,
+                                                                                symbol_value_ids
+                                                                            )
+                                                                0:
+                                                                    return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                                                                1:
+                                                                    return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                                                        0:
+                                                            return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                                                        1:
+                                                            return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                                                0:
+                                                    return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                                                1:
+                                                    return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                                        0:
+                                            return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                                        1:
+                                            return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                                1:
+                                    return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                        0:
+                            return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                        1:
+                            return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                0:
+                    return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+                1:
+                    return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+        1:
+            return stage1_body_compile_failure(program, symbol_name_starts, symbol_name_ends, symbol_value_ids)
+
+fn stage1_compile_registered_function(
+    initial_program: NativeIR,
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    expression_cursors: &vector<i64>,
+    parameter_name_starts: &vector<i64>,
+    parameter_name_ends: &vector<i64>,
+    function_index: i64
+) -> Stage1LowerResult:
+    mut program: NativeIR = initial_program
+    mut function_id: i64 = function_index
+    mut block_append: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, function_id, function_id, 1
+    )
+    mut block_accepted: i64 = block_append.accepted
+    match block_accepted == 1:
+        -1:
+            program = block_append.program
+        0:
+            return stage1_lower_preserved_failure(block_append.program)
+        1:
+            return stage1_lower_preserved_failure(block_append.program)
+    mut expression_cursor: i64 = vector_get<i64>(expression_cursors, function_index)
+    mut symbol_name_starts: vector<i64> = vector_new<i64>(64)
+    mut symbol_name_ends: vector<i64> = vector_new<i64>(64)
+    mut symbol_value_ids: vector<i64> = vector_new<i64>(64)
+    mut parameter_first: i64 = i64_vector_get(&program.function_parameter_first, function_index)
+    mut parameter_count: i64 = i64_vector_get(&program.function_parameter_count, function_index)
+    mut parameter_index: i64 = 0
+    while parameter_index < parameter_count:
+        discard vector_push<i64>(
+            &mut symbol_name_starts,
+            vector_get<i64>(parameter_name_starts, parameter_first + parameter_index)
+        )
+        discard vector_push<i64>(
+            &mut symbol_name_ends,
+            vector_get<i64>(parameter_name_ends, parameter_first + parameter_index)
+        )
+        discard vector_push<i64>(
+            &mut symbol_value_ids,
+            i64_vector_get(&program.parameter_value_ids, parameter_first + parameter_index)
+        )
+        parameter_index = parameter_index + 1
+    mut body_end_cursor: i64 = stage1_function_body_end(source, tokens, expression_cursor)
+    match body_end_cursor >= 0:
+        -1:
+            discard 0
+        0:
+            return stage1_lower_preserved_failure(program)
+        1:
+            return stage1_lower_preserved_failure(program)
+    mut body: Stage1BodyCompileResult = stage1_compile_body_sequence(
+        source,
+        tokens,
+        expression_cursor,
+        body_end_cursor,
+        program,
+        function_id,
+        function_id,
+        symbol_name_starts,
+        symbol_name_ends,
+        symbol_value_ids,
+        0
+    )
+    mut body_accepted: i64 = body.accepted
+    mut lowered_value_id: i64 = body.return_value_id
+    match body_accepted == 1:
+        -1:
+            program = body.program
+        0:
+            return stage1_lower_preserved_failure(body.program)
+        1:
+            return stage1_lower_preserved_failure(body.program)
+    mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        program, function_id, function_id, 1, 0, lowered_value_id, -1, -1
+    )
+    mut returned_accepted: i64 = returned.accepted
+    match returned_accepted == 1:
+        -1:
+            return stage1_lower_from_append(returned)
+        0:
+            return stage1_lower_preserved_failure(returned.program)
+        1:
+            return stage1_lower_preserved_failure(returned.program)
+
+fn stage1_compile_function_sequence(
+    initial_program: NativeIR,
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    expression_cursors: &vector<i64>,
+    parameter_name_starts: &vector<i64>,
+    parameter_name_ends: &vector<i64>,
+    function_index: i64,
+    function_count: i64
+) -> Stage1LowerResult:
+    mut program: NativeIR = initial_program
+    match function_index < function_count:
+        -1:
+            mut lowered_function: Stage1LowerResult = stage1_compile_registered_function(
+                program, source, tokens, expression_cursors,
+                parameter_name_starts, parameter_name_ends, function_index
+            )
+            mut lowered_function_accepted: i64 = lowered_function.accepted
+            match lowered_function_accepted == 1:
+                -1:
+                    return stage1_compile_function_sequence(
+                        lowered_function.program,
+                        source,
+                        tokens,
+                        expression_cursors,
+                        parameter_name_starts,
+                        parameter_name_ends,
+                        function_index + 1,
+                        function_count
+                    )
+                0:
+                    return stage1_lower_preserved_failure(lowered_function.program)
+                1:
+                    return stage1_lower_preserved_failure(lowered_function.program)
+        0:
+            return Stage1LowerResult(program=program, value_id=-1, accepted=1)
+        1:
+            return Stage1LowerResult(program=program, value_id=-1, accepted=1)
+
+fn stage1_function_scan_state(
+    program: NativeIR,
+    name_starts: vector<i64>,
+    name_ends: vector<i64>,
+    parameter_name_starts: vector<i64>,
+    parameter_name_ends: vector<i64>,
+    expression_cursors: vector<i64>,
+    cursor: i64,
+    function_count: i64,
+    main_count: i64,
+    accepted: i64,
+    error_code: i64
+) -> Stage1FunctionScanState:
+    return Stage1FunctionScanState(
+        program=program,
+        name_starts=name_starts,
+        name_ends=name_ends,
+        parameter_name_starts=parameter_name_starts,
+        parameter_name_ends=parameter_name_ends,
+        expression_cursors=expression_cursors,
+        cursor=cursor,
+        function_count=function_count,
+        main_count=main_count,
+        accepted=accepted,
+        error_code=error_code
+    )
+
+fn stage1_source_name_is_main(source: &vector<i64>, name_start: i64, name_end: i64) -> i64:
+    match name_end - name_start == 4:
+        -1:
+            mut expected: vector<i64> = vector_new<i64>(4)
+            discard vector_push<i64>(&mut expected, 109)
+            discard vector_push<i64>(&mut expected, 97)
+            discard vector_push<i64>(&mut expected, 105)
+            discard vector_push<i64>(&mut expected, 110)
+            mut matched: i64 = 1
+            mut offset: i64 = 0
+            while offset < 4:
+                match vector_get<i64>(source, name_start + offset) == vector_get<i64>(&expected, offset):
+                    -1:
+                        discard 0
+                    0:
+                        matched = 0
+                    1:
+                        matched = 0
+                offset = offset + 1
+            return matched
+        0:
+            return 0
+        1:
+            return 0
+
+fn stage1_intern_parameter_type(
+    program: NativeIR,
+    type_code: i64
+) -> Stage1InternedTypeResult:
+    match type_code == 0:
+        -1:
+            return Stage1InternedTypeResult(program=program, type_id=0, accepted=1)
+        0:
+            match type_code == 1:
+                -1:
+                    mut vector_type: NativeIRAppendResult = native_ir_intern_composite_type(
+                        program, 2, 0, 0, -1
+                    )
+                    match vector_type.accepted == 1:
+                        -1:
+                            mut vector_type_id: i64 = vector_type.value_id
+                            mut vector_program: NativeIR = vector_type.program
+                            mut reference_type: NativeIRAppendResult = native_ir_intern_composite_type(
+                                vector_program, 3, vector_type_id, 0, -1
+                            )
+                            match reference_type.accepted == 1:
+                                -1:
+                                    mut reference_type_id: i64 = reference_type.value_id
+                                    mut reference_program: NativeIR = reference_type.program
+                                    return Stage1InternedTypeResult(
+                                        program=reference_program,
+                                        type_id=reference_type_id,
+                                        accepted=1
+                                    )
+                                0:
+                                    return Stage1InternedTypeResult(
+                                        program=reference_type.program, type_id=-1, accepted=0
+                                    )
+                                1:
+                                    return Stage1InternedTypeResult(
+                                        program=reference_type.program, type_id=-1, accepted=0
+                                    )
+                        0:
+                            return Stage1InternedTypeResult(
+                                program=vector_type.program, type_id=-1, accepted=0
+                            )
+                        1:
+                            return Stage1InternedTypeResult(
+                                program=vector_type.program, type_id=-1, accepted=0
+                            )
+                0:
+                    return Stage1InternedTypeResult(program=program, type_id=-1, accepted=0)
+                1:
+                    return Stage1InternedTypeResult(program=program, type_id=-1, accepted=0)
+        1:
+            return Stage1InternedTypeResult(program=program, type_id=-1, accepted=0)
+
+fn stage1_register_i64_vector_get(program: NativeIR) -> NativeIRAppendResult:
+    mut reference_type: Stage1InternedTypeResult = stage1_intern_parameter_type(
+        program, 1
+    )
+    match reference_type.accepted == 1:
+        -1:
+            mut reference_type_id: i64 = reference_type.type_id
+            mut typed_program: NativeIR = reference_type.program
+            mut name: vector<i64> = vector_new<i64>(14)
+            discard vector_push<i64>(&mut name, 105)
+            discard vector_push<i64>(&mut name, 54)
+            discard vector_push<i64>(&mut name, 52)
+            discard vector_push<i64>(&mut name, 95)
+            discard vector_push<i64>(&mut name, 118)
+            discard vector_push<i64>(&mut name, 101)
+            discard vector_push<i64>(&mut name, 99)
+            discard vector_push<i64>(&mut name, 116)
+            discard vector_push<i64>(&mut name, 111)
+            discard vector_push<i64>(&mut name, 114)
+            discard vector_push<i64>(&mut name, 95)
+            discard vector_push<i64>(&mut name, 103)
+            discard vector_push<i64>(&mut name, 101)
+            discard vector_push<i64>(&mut name, 116)
+            mut external: NativeIRAppendResult = native_ir_append_external_function_source(
+                typed_program, 1000, 1, 0, &name, 0, 14
+            )
+            match external.accepted == 1:
+                -1:
+                    mut first_parameter: NativeIRAppendResult = native_ir_append_typed_parameter(
+                        external.program, 1000, 0, reference_type_id
+                    )
+                    match first_parameter.accepted == 1:
+                        -1:
+                            return native_ir_append_typed_parameter(
+                                first_parameter.program, 1000, 1, 0
+                            )
+                        0:
+                            return first_parameter
+                        1:
+                            return first_parameter
+                0:
+                    return external
+                1:
+                    return external
+        0:
+            return NativeIRAppendResult(
+                program=reference_type.program, accepted=0, value_id=-1
+            )
+        1:
+            return NativeIRAppendResult(
+                program=reference_type.program, accepted=0, value_id=-1
+            )
+
+fn stage1_register_parameters(
+    program: NativeIR,
+    function_id: i64,
+    parameter_index: i64,
+    parameter_name_starts: &vector<i64>,
+    parameter_name_ends: &vector<i64>,
+    parameter_type_codes: &vector<i64>,
+    registered_name_starts: vector<i64>,
+    registered_name_ends: vector<i64>
+) -> Stage1ParameterRegistrationResult:
+    match parameter_index < vector_len<i64>(parameter_name_starts):
+        -1:
+            mut interned_type: Stage1InternedTypeResult = stage1_intern_parameter_type(
+                program, vector_get<i64>(parameter_type_codes, parameter_index)
+            )
+            match interned_type.accepted == 1:
+                -1:
+                    mut interned_type_id: i64 = interned_type.type_id
+                    mut interned_program: NativeIR = interned_type.program
+                    mut appended: NativeIRAppendResult = native_ir_append_typed_parameter(
+                        interned_program,
+                        function_id,
+                        parameter_index,
+                        interned_type_id
+                    )
+                    match appended.accepted == 1:
+                        -1:
+                            discard vector_push<i64>(
+                                &mut registered_name_starts,
+                                vector_get<i64>(parameter_name_starts, parameter_index)
+                            )
+                            discard vector_push<i64>(
+                                &mut registered_name_ends,
+                                vector_get<i64>(parameter_name_ends, parameter_index)
+                            )
+                            return stage1_register_parameters(
+                                appended.program,
+                                function_id,
+                                parameter_index + 1,
+                                parameter_name_starts,
+                                parameter_name_ends,
+                                parameter_type_codes,
+                                registered_name_starts,
+                                registered_name_ends
+                            )
+                        0:
+                            return Stage1ParameterRegistrationResult(
+                                program=appended.program,
+                                name_starts=registered_name_starts,
+                                name_ends=registered_name_ends,
+                                accepted=0
+                            )
+                        1:
+                            return Stage1ParameterRegistrationResult(
+                                program=appended.program,
+                                name_starts=registered_name_starts,
+                                name_ends=registered_name_ends,
+                                accepted=0
+                            )
+                0:
+                    return Stage1ParameterRegistrationResult(
+                        program=interned_type.program,
+                        name_starts=registered_name_starts,
+                        name_ends=registered_name_ends,
+                        accepted=0
+                    )
+                1:
+                    return Stage1ParameterRegistrationResult(
+                        program=interned_type.program,
+                        name_starts=registered_name_starts,
+                        name_ends=registered_name_ends,
+                        accepted=0
+                    )
+        0:
+            return Stage1ParameterRegistrationResult(
+                program=program,
+                name_starts=registered_name_starts,
+                name_ends=registered_name_ends,
+                accepted=1
+            )
+        1:
+            return Stage1ParameterRegistrationResult(
+                program=program,
+                name_starts=registered_name_starts,
+                name_ends=registered_name_ends,
+                accepted=1
+            )
+
+fn stage1_register_function_at(
+    initial_state: Stage1FunctionScanState,
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    cursor: i64
+) -> Stage1FunctionScanState:
+    mut name_starts: vector<i64> = i64_vector_clone(&initial_state.name_starts)
+    mut name_ends: vector<i64> = i64_vector_clone(&initial_state.name_ends)
+    mut parameter_name_starts: vector<i64> = i64_vector_clone(&initial_state.parameter_name_starts)
+    mut parameter_name_ends: vector<i64> = i64_vector_clone(&initial_state.parameter_name_ends)
+    mut expression_cursors: vector<i64> = i64_vector_clone(&initial_state.expression_cursors)
+    mut function_count: i64 = initial_state.function_count
+    mut main_count: i64 = initial_state.main_count
+    mut program: NativeIR = initial_state.program
+    mut header: Stage1FunctionHeader = stage1_parse_function_header(source, tokens, cursor)
+    mut header_accepted: i64 = header.accepted
+    match header_accepted == 1:
+        -1:
+            match function_count < 16:
+                -1:
+                    mut duplicate_index: i64 = 0
+                    while duplicate_index < function_count:
+                        match stage1_source_spans_equal(
+                            source,
+                            header.name_start,
+                            header.name_end,
+                            vector_get<i64>(&name_starts, duplicate_index),
+                            vector_get<i64>(&name_ends, duplicate_index)
+                        ):
+                            -1:
+                                return stage1_function_scan_state(
+                                    native_ir_empty(), name_starts, name_ends,
+                                    parameter_name_starts, parameter_name_ends, expression_cursors,
+                                    cursor, function_count, main_count, 0, 22
+                                )
+                            0:
+                                discard 0
+                            1:
+                                discard 0
+                        duplicate_index = duplicate_index + 1
+                    match stage1_source_name_is_main(source, header.name_start, header.name_end) == 1:
+                        -1:
+                            main_count = main_count + 1
+                        0:
+                            discard 0
+                        1:
+                            discard 0
+                    mut function_append: NativeIRAppendResult = native_ir_append_function_source(
+                        program, function_count, 1, source, header.name_start, header.name_end
+                    )
+                    mut append_accepted: i64 = function_append.accepted
+                    match append_accepted == 1:
+                        -1:
+                            mut registered_parameters: Stage1ParameterRegistrationResult = stage1_register_parameters(
+                                function_append.program,
+                                function_count,
+                                0,
+                                &header.parameter_name_starts,
+                                &header.parameter_name_ends,
+                                &header.parameter_type_codes,
+                                parameter_name_starts,
+                                parameter_name_ends
+                            )
+                            mut parameters_accepted: i64 = registered_parameters.accepted
+                            mut registered_parameter_name_starts: vector<i64> = i64_vector_clone(
+                                &registered_parameters.name_starts
+                            )
+                            mut registered_parameter_name_ends: vector<i64> = i64_vector_clone(
+                                &registered_parameters.name_ends
+                            )
+                            match parameters_accepted == 1:
+                                -1:
+                                    program = registered_parameters.program
+                                    parameter_name_starts = registered_parameter_name_starts
+                                    parameter_name_ends = registered_parameter_name_ends
+                                0:
+                                    return stage1_function_scan_state(
+                                        native_ir_empty(), name_starts, name_ends,
+                                        registered_parameter_name_starts,
+                                        registered_parameter_name_ends, expression_cursors,
+                                        cursor, function_count, main_count, 0, 23
+                                    )
+                                1:
+                                    return stage1_function_scan_state(
+                                        native_ir_empty(), name_starts, name_ends,
+                                        registered_parameter_name_starts,
+                                        registered_parameter_name_ends, expression_cursors,
+                                        cursor, function_count, main_count, 0, 23
+                                    )
+                            discard vector_push<i64>(&mut name_starts, header.name_start)
+                            discard vector_push<i64>(&mut name_ends, header.name_end)
+                            discard vector_push<i64>(&mut expression_cursors, header.expression_cursor)
+                            function_count = function_count + 1
+                            return stage1_function_scan_state(
+                                program, name_starts, name_ends,
+                                parameter_name_starts, parameter_name_ends, expression_cursors,
+                                header.next_cursor, function_count, main_count, 1, 0
+                            )
+                        0:
+                            return stage1_function_scan_state(
+                                native_ir_empty(), name_starts, name_ends,
+                                parameter_name_starts, parameter_name_ends, expression_cursors,
+                                cursor, function_count, main_count, 0, 23
+                            )
+                        1:
+                            return stage1_function_scan_state(
+                                native_ir_empty(), name_starts, name_ends,
+                                parameter_name_starts, parameter_name_ends, expression_cursors,
+                                cursor, function_count, main_count, 0, 23
+                            )
+                0:
+                    return stage1_function_scan_state(
+                        native_ir_empty(), name_starts, name_ends,
+                        parameter_name_starts, parameter_name_ends, expression_cursors,
+                        cursor, function_count, main_count, 0, 24
+                    )
+                1:
+                    return stage1_function_scan_state(
+                        native_ir_empty(), name_starts, name_ends,
+                        parameter_name_starts, parameter_name_ends, expression_cursors,
+                        cursor, function_count, main_count, 0, 24
+                    )
+        0:
+            return stage1_function_scan_state(
+                native_ir_empty(), name_starts, name_ends,
+                parameter_name_starts, parameter_name_ends, expression_cursors,
+                cursor, function_count, main_count, 0, 25
+            )
+        1:
+            return stage1_function_scan_state(
+                native_ir_empty(), name_starts, name_ends,
+                parameter_name_starts, parameter_name_ends, expression_cursors,
+                cursor, function_count, main_count, 0, 25
+            )
+
+fn stage1_scan_non_newline(
+    initial_state: Stage1FunctionScanState,
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    token_count: i64,
+    cursor: i64
+) -> Stage1FunctionScanState:
+    mut name_starts: vector<i64> = i64_vector_clone(&initial_state.name_starts)
+    mut name_ends: vector<i64> = i64_vector_clone(&initial_state.name_ends)
+    mut parameter_name_starts: vector<i64> = i64_vector_clone(&initial_state.parameter_name_starts)
+    mut parameter_name_ends: vector<i64> = i64_vector_clone(&initial_state.parameter_name_ends)
+    mut expression_cursors: vector<i64> = i64_vector_clone(&initial_state.expression_cursors)
+    mut function_count: i64 = initial_state.function_count
+    mut main_count: i64 = initial_state.main_count
+    mut program: NativeIR = initial_state.program
+    match generic_token_kind(tokens, cursor) == 0:
+        -1:
+            return stage1_function_scan_state(
+                program, name_starts, name_ends,
+                parameter_name_starts, parameter_name_ends, expression_cursors,
+                token_count, function_count, main_count, 1, 0
+            )
+        0:
+            mut state: Stage1FunctionScanState = stage1_function_scan_state(
+                program, name_starts, name_ends,
+                parameter_name_starts, parameter_name_ends, expression_cursors,
+                cursor, function_count, main_count, 1, 0
+            )
+            mut registered: Stage1FunctionScanState = stage1_register_function_at(
+                state, source, tokens, cursor
+            )
+            mut registered_accepted: i64 = registered.accepted
+            mut next_cursor: i64 = registered.cursor
+            match registered_accepted == 1:
+                -1:
+                    return stage1_scan_functions(registered, source, tokens, token_count, next_cursor)
+                0:
+                    return registered
+                1:
+                    return registered
+        1:
+            mut state: Stage1FunctionScanState = stage1_function_scan_state(
+                program, name_starts, name_ends,
+                parameter_name_starts, parameter_name_ends, expression_cursors,
+                cursor, function_count, main_count, 1, 0
+            )
+            mut registered: Stage1FunctionScanState = stage1_register_function_at(
+                state, source, tokens, cursor
+            )
+            mut registered_accepted: i64 = registered.accepted
+            mut next_cursor: i64 = registered.cursor
+            match registered_accepted == 1:
+                -1:
+                    return stage1_scan_functions(registered, source, tokens, token_count, next_cursor)
+                0:
+                    return registered
+                1:
+                    return registered
+
+fn stage1_scan_functions(
+    initial_state: Stage1FunctionScanState,
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    token_count: i64,
+    start_cursor: i64
+) -> Stage1FunctionScanState:
+    mut name_starts: vector<i64> = i64_vector_clone(&initial_state.name_starts)
+    mut name_ends: vector<i64> = i64_vector_clone(&initial_state.name_ends)
+    mut parameter_name_starts: vector<i64> = i64_vector_clone(&initial_state.parameter_name_starts)
+    mut parameter_name_ends: vector<i64> = i64_vector_clone(&initial_state.parameter_name_ends)
+    mut expression_cursors: vector<i64> = i64_vector_clone(&initial_state.expression_cursors)
+    mut function_count: i64 = initial_state.function_count
+    mut main_count: i64 = initial_state.main_count
+    mut cursor: i64 = start_cursor
+    mut program: NativeIR = initial_state.program
+    while cursor < token_count:
+        match generic_token_kind(tokens, cursor) == 6:
+            -1:
+                cursor = cursor + 1
+            0:
+                mut state: Stage1FunctionScanState = stage1_function_scan_state(
+                    program, name_starts, name_ends,
+                    parameter_name_starts, parameter_name_ends, expression_cursors,
+                    cursor, function_count, main_count, 1, 0
+                )
+                return stage1_scan_non_newline(state, source, tokens, token_count, cursor)
+            1:
+                mut state: Stage1FunctionScanState = stage1_function_scan_state(
+                    program, name_starts, name_ends,
+                    parameter_name_starts, parameter_name_ends, expression_cursors,
+                    cursor, function_count, main_count, 1, 0
+                )
+                return stage1_scan_non_newline(state, source, tokens, token_count, cursor)
+    return stage1_function_scan_state(
+        program, name_starts, name_ends,
+        parameter_name_starts, parameter_name_ends, expression_cursors,
+        token_count, function_count, main_count, 1, 0
+    )
+
+export fn stage1_compile(source: vector<i64>) -> Stage1CompileResult:
+    mut source_length: i64 = vector_len<i64>(&source)
+    match source_length <= 4096:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(1, 1)
+        1:
+            return stage1_empty_result(1, 1)
+    mut tokens: vector<i64> = generic_lexer_scan(&source)
+    mut token_count: i64 = generic_token_count(&tokens)
+    match token_count <= 1024:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(2, 2)
+        1:
+            return stage1_empty_result(2, 2)
+    mut initial_scan_state: Stage1FunctionScanState = stage1_function_scan_state(
+        native_ir_empty(),
+        vector_new<i64>(16),
+        vector_new<i64>(16),
+        vector_new<i64>(64),
+        vector_new<i64>(64),
+        vector_new<i64>(16),
+        0,
+        0,
+        0,
+        1,
+        0
+    )
+    mut registered: Stage1FunctionScanState = stage1_scan_functions(
+        initial_scan_state, &source, &tokens, token_count, 0
+    )
+    mut scan_accepted: i64 = registered.accepted
+    mut scan_error_code: i64 = registered.error_code
+    mut function_count: i64 = registered.function_count
+    mut main_count: i64 = registered.main_count
+    mut function_expression_cursors: vector<i64> = i64_vector_clone(&registered.expression_cursors)
+    mut function_parameter_name_starts: vector<i64> = i64_vector_clone(&registered.parameter_name_starts)
+    mut function_parameter_name_ends: vector<i64> = i64_vector_clone(&registered.parameter_name_ends)
+    match scan_accepted == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, scan_error_code)
+        1:
+            return stage1_empty_result(3, scan_error_code)
+    mut program: NativeIR = registered.program
+    mut builtin_registration: NativeIRAppendResult = stage1_register_i64_vector_get(program)
+    match builtin_registration.accepted == 1:
+        -1:
+            program = builtin_registration.program
+        0:
+            return stage1_empty_result(3, 29)
+        1:
+            return stage1_empty_result(3, 29)
+    match function_count > 0:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 27)
+        1:
+            return stage1_empty_result(3, 27)
+    match main_count == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 28)
+        1:
+            return stage1_empty_result(3, 28)
+    mut lowered_sequence: Stage1LowerResult = stage1_compile_function_sequence(
+        program, &source, &tokens, &function_expression_cursors,
+        &function_parameter_name_starts, &function_parameter_name_ends,
+        0, function_count
+    )
+    mut sequence_accepted: i64 = lowered_sequence.accepted
+    match sequence_accepted == 1:
+        -1:
+            program = lowered_sequence.program
+        0:
+            return stage1_empty_result(4, 29)
+        1:
+            return stage1_empty_result(4, 29)
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    mut verification: NativeVerification = verified.verification
+    program = verified.program
+    match verification.accepted == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(5, verification.diagnostic_code)
+        1:
+            return stage1_empty_result(5, verification.diagnostic_code)
+    mut instruction_count: i64 = i64_vector_len(&program.instruction_ids)
+    mut value_count: i64 = i64_vector_len(&program.value_ids)
+    mut output: vector<i64> = vector_new<i64>(16384)
+    discard stage1_emit_native_program(program, &mut output)
+    mut sink: OutputSinkState = output_sink_new(16384)
+    sink = output_sink_append_bytes(sink, output)
+    match sink.failed == 0:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(6, 20)
+        1:
+            return stage1_empty_result(6, 20)
+    sink = output_sink_commit(sink)
+    match sink.failed == 0:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(6, 21)
+        1:
+            return stage1_empty_result(6, 21)
+    return stage1_result(1, 0, 0, sink.buffer, instruction_count, value_count, verification)
