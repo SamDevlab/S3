@@ -380,13 +380,31 @@ fn main() -> i64:
     reference = compile_sources(
         {"main.s3": reference_source}, entry_module="main"
     )
-    candidate_by_name = {
-        f"__s3mod_main__{function.name}": replace(
-            function, name=f"__s3mod_main__{function.name}"
+    candidate_by_name = {}
+    for function in candidate.functions:
+        if function.name not in function_names:
+            continue
+        renamed_name = f"__s3mod_main__{function.name}"
+        renamed_blocks = tuple(
+            replace(
+                block,
+                instructions=tuple(
+                    replace(
+                        instruction,
+                        callee=f"__s3mod_main__{instruction.callee}"
+                        if instruction.callee in function_names
+                        else instruction.callee,
+                    )
+                    if instruction.callee is not None
+                    else instruction
+                    for instruction in block.instructions
+                ),
+            )
+            for block in function.blocks
         )
-        for function in candidate.functions
-        if function.name in function_names
-    }
+        candidate_by_name[renamed_name] = replace(
+            function, name=renamed_name, blocks=renamed_blocks
+        )
     assert set(candidate_by_name) == {
         f"__s3mod_main__{name}" for name in function_names
     }
