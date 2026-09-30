@@ -2961,13 +2961,12 @@ fn branch_program() -> NativeIR:
 
 fn call_program(result_width: i64) -> NativeIR:
     mut program: NativeIR = scalar_program()
-    discard i64_vector_set(&mut program.function_result_widths, 0, result_width)
-    discard i64_vector_push(&mut program.function_ids, 1)
-    discard i64_vector_push(&mut program.function_result_widths, 1)
-    discard i64_vector_push(&mut program.function_result_type_ids, 0)
-    discard i64_vector_push(&mut program.function_external_flags, 0)
+    mut callee: NativeIRAppendResult = native_ir_append_external_function(
+        program, 1, result_width, native_ir_type_i64()
+    )
+    program = callee.program
     discard i64_vector_set(&mut program.instruction_opcodes, 0, 3)
-    discard i64_vector_set(&mut program.instruction_callee_function_ids, 0, 0)
+    discard i64_vector_set(&mut program.instruction_callee_function_ids, 0, 1)
     discard i64_vector_set(&mut program.instruction_result_count, 0, result_width)
     while i64_vector_len(&program.result_value_ids) < result_width:
         next_value: i64 = i64_vector_len(&program.value_ids)
@@ -2980,7 +2979,7 @@ fn call_program(result_width: i64) -> NativeIR:
 
 fn wrong_call_program() -> NativeIR:
     mut program: NativeIR = call_program(2)
-    discard i64_vector_set(&mut program.function_result_widths, 0, 1)
+    discard i64_vector_set(&mut program.function_result_widths, 1, 1)
     return program
 
 fn bad_multi_result_program() -> NativeIR:

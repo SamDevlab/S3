@@ -508,29 +508,24 @@ fn typed_argument_program(source_type: i64, expected_type: i64) -> NativeIR:
     )
     mut reference_type_id: i64 = reference_type.value_id
     program = reference_type.program
-    discard i64_vector_push(&mut program.function_parameter_first, 1)
-    discard i64_vector_push(&mut program.function_parameter_count, 1)
-    discard i64_vector_set(&mut program.function_parameter_count, 0, 1)
     discard i64_vector_set(&mut program.instruction_callee_function_ids, 0, 1)
     discard i64_vector_set(&mut program.instruction_operand_count, 0, 1)
     discard i64_vector_set(&mut program.instruction_operand_first, 0, 1)
     discard i64_vector_push(&mut program.operand_value_ids, 1)
-    discard i64_vector_push(&mut program.parameter_function_ids, 0)
-    discard i64_vector_push(&mut program.parameter_function_ids, 1)
-    discard i64_vector_push(&mut program.parameter_value_ids, 1)
-    discard i64_vector_push(&mut program.parameter_value_ids, 2)
-    discard i64_vector_push(&mut program.parameter_type_ids, source_type)
-    discard i64_vector_push(&mut program.parameter_type_ids, expected_type)
-    discard i64_vector_push(&mut program.value_ids, 1)
-    discard i64_vector_push(&mut program.value_ids, 2)
-    discard i64_vector_push(&mut program.value_type_ids, source_type)
-    discard i64_vector_push(&mut program.value_type_ids, expected_type)
-    discard i64_vector_push(&mut program.definition_function_ids, 0)
-    discard i64_vector_push(&mut program.definition_function_ids, 1)
-    discard i64_vector_push(&mut program.definition_blocks, -1)
-    discard i64_vector_push(&mut program.definition_blocks, -1)
-    discard i64_vector_push(&mut program.definition_positions, -1)
-    discard i64_vector_push(&mut program.definition_positions, -1)
+    mut caller_parameter: NativeIRAppendResult = native_ir_append_typed_parameter(
+        program, 0, 0, source_type
+    )
+    program = caller_parameter.program
+    mut callee_parameter_first: i64 = i64_vector_len(&program.parameter_value_ids)
+    discard i64_vector_set(
+        &mut program.function_parameter_first,
+        1,
+        callee_parameter_first
+    )
+    mut callee_parameter: NativeIRAppendResult = native_ir_append_typed_parameter(
+        program, 1, 0, expected_type
+    )
+    program = callee_parameter.program
     discard i64_vector_set(&mut program.type_lengths, reference_type_id, -1)
     return program
 
@@ -856,6 +851,23 @@ def test_native_verifier_branch_fixture_returns_a_typed_value_in_each_arm() -> N
 
     assert hosted // 1_000_000_000 == 1
     assert (hosted % 1_000_000_000) // 100_000_000 == 1
+
+
+def test_native_verifier_multi_result_call_fixture_returns_each_declared_result() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(encoding="utf-8")
+    source = verifier + "\nfn main() -> i64:\n    return verifier_case(3)\n"
+
+    hosted = run_source(source)
+
+    assert hosted // 1_000_000_000 == 1
+    assert (hosted % 1_000_000_000) // 100_000_000 == 1
+
+    wrong_signature = run_source(
+        verifier + "\nfn main() -> i64:\n    return verifier_case(17)\n"
+    )
+    assert wrong_signature // 1_000_000_000 == 0
+    assert (wrong_signature % 1_000_000_000) // 100_000_000 == 1
 
 
 @pytest.mark.s3_native
