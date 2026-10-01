@@ -277,6 +277,36 @@ fn native_ir_primitive_descriptor_valid(
         1:
             return 0
 
+fn native_ir_type_descriptor_valid(
+    type_kinds: &i64_vector,
+    type_element_ids: &i64_vector,
+    type_mutability_flags: &i64_vector,
+    type_lengths: &i64_vector,
+    type_index: i64
+) -> i64:
+    match i64_vector_get(type_kinds, type_index) == 4:
+        -1:
+            return native_ir_primitive_descriptor_valid(
+                type_kinds, type_element_ids, type_mutability_flags,
+                type_lengths, type_index, 4
+            )
+        0:
+            return native_ir_composite_descriptor_valid(
+                i64_vector_get(type_kinds, type_index),
+                i64_vector_get(type_element_ids, type_index),
+                i64_vector_get(type_mutability_flags, type_index),
+                i64_vector_get(type_lengths, type_index),
+                type_index
+            )
+        1:
+            return native_ir_composite_descriptor_valid(
+                i64_vector_get(type_kinds, type_index),
+                i64_vector_get(type_element_ids, type_index),
+                i64_vector_get(type_mutability_flags, type_index),
+                i64_vector_get(type_lengths, type_index),
+                type_index
+            )
+
 fn native_ir_type_descriptors_equal(
     type_kinds: &i64_vector,
     type_element_ids: &i64_vector,
@@ -384,6 +414,73 @@ export fn native_ir_intern_composite_type(
         1:
             return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
 
+export fn native_ir_intern_tryte_type(program: NativeIR) -> NativeIRAppendResult:
+    mut found: i64 = -1
+    mut valid: i64 = 1
+    mut index: i64 = 0
+    while index < i64_vector_len(&program.type_kinds):
+        match i64_vector_get(&program.type_kinds, index) == 4:
+            -1:
+                match i64_vector_get(&program.type_element_ids, index) == -1:
+                    -1:
+                        match i64_vector_get(&program.type_mutability_flags, index) == 0:
+                            -1:
+                                match i64_vector_get(&program.type_lengths, index) == -1:
+                                    -1:
+                                        found = index
+                                    0:
+                                        valid = 0
+                                    1:
+                                        valid = 0
+                            0:
+                                valid = 0
+                            1:
+                                valid = 0
+                    0:
+                        valid = 0
+                    1:
+                        valid = 0
+            0:
+                discard 0
+            1:
+                discard 0
+        index = index + 1
+    match valid == 1:
+        -1:
+            match found >= 0:
+                -1:
+                    return NativeIRAppendResult(
+                        program=program, accepted=1, value_id=found
+                    )
+                0:
+                    match i64_vector_len(&program.type_kinds) < 64:
+                        -1:
+                            mut updated: NativeIR = program
+                            mut type_id: i64 = i64_vector_len(&updated.type_kinds)
+                            discard i64_vector_push(&mut updated.type_kinds, 4)
+                            discard i64_vector_push(&mut updated.type_element_ids, -1)
+                            discard i64_vector_push(&mut updated.type_mutability_flags, 0)
+                            discard i64_vector_push(&mut updated.type_lengths, -1)
+                            return NativeIRAppendResult(
+                                program=updated, accepted=1, value_id=type_id
+                            )
+                        0:
+                            return NativeIRAppendResult(
+                                program=program, accepted=0, value_id=-1
+                            )
+                        1:
+                            return NativeIRAppendResult(
+                                program=program, accepted=0, value_id=-1
+                            )
+                1:
+                    return NativeIRAppendResult(
+                        program=program, accepted=0, value_id=-1
+                    )
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+
 export fn native_ir_value_type_id(
     value_ids: &i64_vector, value_type_ids: &i64_vector, value_id: i64
 ) -> i64:
@@ -474,8 +571,9 @@ fn native_ir_typed_metadata_valid(
         mut element: i64 = i64_vector_get(type_element_ids, type_index)
         mut mutable: i64 = i64_vector_get(type_mutability_flags, type_index)
         mut length: i64 = i64_vector_get(type_lengths, type_index)
-        match native_ir_composite_descriptor_valid(
-            kind, element, mutable, length, type_index
+        match native_ir_type_descriptor_valid(
+            type_kinds, type_element_ids, type_mutability_flags,
+            type_lengths, type_index
         ) == 1:
             -1:
                 discard 0

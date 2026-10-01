@@ -475,6 +475,17 @@ fn type_foundation_probe() -> i64:
     )
     mut invalid_type_accepted: i64 = invalid_type.accepted
     program = invalid_type.program
+    mut tryte_type: NativeIRAppendResult = native_ir_intern_tryte_type(program)
+    mut tryte_accepted: i64 = tryte_type.accepted
+    mut tryte_id: i64 = tryte_type.value_id
+    program = tryte_type.program
+    mut repeated_tryte: NativeIRAppendResult = native_ir_intern_tryte_type(program)
+    mut repeated_tryte_accepted: i64 = repeated_tryte.accepted
+    mut repeated_tryte_id: i64 = repeated_tryte.value_id
+    program = repeated_tryte.program
+    mut type_verification_result: NativeIRVerifiedResult = verify_program(program)
+    mut type_verification: NativeVerification = type_verification_result.verification
+    program = type_verification_result.program
     mut function: NativeIRAppendResult = native_ir_append_function(program, 7, 1)
     program = function.program
     mut parameter: NativeIRAppendResult = native_ir_append_typed_parameter(
@@ -492,8 +503,28 @@ fn type_foundation_probe() -> i64:
     score = score + native_ir_trit_to_i64(reference_accepted == 1) * 8
     score = score + native_ir_trit_to_i64(parameter_accepted == 1) * 16
     score = score + native_ir_trit_to_i64(parameter_type == reference_id) * 32
-    score = score + native_ir_trit_to_i64(i64_vector_len(&program.type_kinds) == 4) * 64
+    score = score + native_ir_trit_to_i64(i64_vector_len(&program.type_kinds) == 5) * 64
     score = score + native_ir_trit_to_i64(invalid_type_accepted == 0) * 128
+    score = score + native_ir_trit_to_i64(tryte_accepted == 1) * 256
+    score = score + native_ir_trit_to_i64(repeated_tryte_accepted == 1) * 512
+    score = score + native_ir_trit_to_i64(repeated_tryte_id == tryte_id) * 1024
+    score = score + native_ir_trit_to_i64(i64_vector_len(&program.type_kinds) == 5) * 2048
+    score = score + native_ir_trit_to_i64(
+        i64_vector_get(&program.type_kinds, tryte_id) == 4
+    ) * 4096
+    score = score + native_ir_trit_to_i64(
+        i64_vector_get(&program.type_element_ids, tryte_id) == -1
+    ) * 8192
+    score = score + native_ir_trit_to_i64(
+        i64_vector_get(&program.type_mutability_flags, tryte_id) == 0
+    ) * 16384
+    score = score + native_ir_trit_to_i64(
+        i64_vector_get(&program.type_lengths, tryte_id) == -1
+    ) * 32768
+    score = score + native_ir_trit_to_i64(type_verification.accepted == 1) * 65536
+    score = score + native_ir_trit_to_i64(
+        type_verification.digest_before == type_verification.digest_after
+    ) * 131072
     return score
 
 fn typed_argument_program(source_type: i64, expected_type: i64) -> NativeIR:
@@ -586,6 +617,21 @@ fn verifier_invalid_primitive_probe() -> i64:
     score = score + verification.diagnostic_code
     return score
 
+fn verifier_invalid_tryte_primitive_probe() -> i64:
+    mut program: NativeIR = native_ir_empty()
+    discard i64_vector_push(&mut program.type_kinds, 4)
+    discard i64_vector_push(&mut program.type_element_ids, 0)
+    discard i64_vector_push(&mut program.type_mutability_flags, 0)
+    discard i64_vector_push(&mut program.type_lengths, -1)
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    mut verification: NativeVerification = verified.verification
+    mut score: i64 = verification.accepted * 100
+    score = score + native_ir_trit_to_i64(
+        verification.digest_before == verification.digest_after
+    ) * 10
+    score = score + verification.diagnostic_code
+    return score
+
 fn verifier_duplicate_type_probe() -> i64:
     mut program: NativeIR = native_ir_empty()
     discard i64_vector_push(&mut program.type_kinds, 2)
@@ -620,7 +666,7 @@ fn verifier_return_type_mismatch_probe() -> i64:
     return score
 
 fn main() -> i64:
-    mut result: i64 = native_ir_trit_to_i64(type_foundation_probe() == 255)
+    mut result: i64 = native_ir_trit_to_i64(type_foundation_probe() == 262143)
     result = result * 2 + native_ir_trit_to_i64(typed_call_valid_probe() == 110)
     result = result * 2 + native_ir_trit_to_i64(typed_call_result_mismatch_probe() == 25)
     result = result * 2 + native_ir_trit_to_i64(
@@ -637,11 +683,14 @@ fn main() -> i64:
     )
     result = result * 2 + native_ir_trit_to_i64(builder_call_arity_probe() == 0)
     result = result * 2 + native_ir_trit_to_i64(verifier_invalid_primitive_probe() == 25)
+    result = result * 2 + native_ir_trit_to_i64(
+        verifier_invalid_tryte_primitive_probe() == 25
+    )
     result = result * 2 + native_ir_trit_to_i64(verifier_duplicate_type_probe() == 25)
     result = result * 2 + native_ir_trit_to_i64(verifier_return_type_mismatch_probe() == 25)
     return result
 """
-    assert run_source(verifier + probe) == 2047
+    assert run_source(verifier + probe) == 4095
 
 
 def test_native_ir_external_vector_builtin_has_a_verified_typed_signature() -> None:

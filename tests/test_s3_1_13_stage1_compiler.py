@@ -10,7 +10,7 @@ import sys
 import pytest
 
 from bootstrap.s3 import run_source
-from bootstrap.s3.assembly import parse_assembly
+from bootstrap.s3.assembly import AssemblyType, parse_assembly
 from bootstrap.s3.backends.x86_64 import (
     NativeBackendError,
     NativeToolchain,
@@ -651,6 +651,59 @@ def test_stage1_v2_lowers_mutable_local_reassignment() -> None:
     assert Emulator().execute(artifact) == 2
 
 
+def test_stage1_v2_discard_keeps_local_call_and_continues_to_return() -> None:
+    source = (
+        "fn effect() -> i64:\n"
+        "    return 7\n"
+        "fn main() -> i64:\n"
+        "    discard effect()\n"
+        "    return 42\n"
+    )
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    main = next(function for function in artifact.functions if function.name == "main")
+
+    assert any(
+        instruction.opcode.value == "TCALL"
+        and instruction.callee == "effect"
+        for instruction in main.instructions
+    )
+    assert Emulator().execute(artifact) == 42
+    assert Emulator().execute(artifact) == run_source(source)
+
+
+def test_stage1_v2_discard_preserves_local_call_inside_loop() -> None:
+    source = (
+        "fn effect(value: i64) -> i64:\n"
+        "    return value\n"
+        "fn main() -> i64:\n"
+        "    mut count: i64 = 0\n"
+        "    while count < 3:\n"
+        "        discard effect(count)\n"
+        "        count = count + 1\n"
+        "    return count\n"
+    )
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    main = next(function for function in artifact.functions if function.name == "main")
+
+    assert any(
+        instruction.opcode.value == "TCALL"
+        and instruction.callee == "effect"
+        for instruction in main.instructions
+    )
+    assert Emulator().execute(artifact) == 3
+    assert Emulator().execute(artifact) == run_source(source)
+
+
 def _stage1_v2_while_source() -> str:
     return (
         "fn sum_steps(limit: i64) -> i64:\n"
@@ -1061,6 +1114,127 @@ def test_stage1_v2_lowers_typed_vector_len_builtin() -> None:
         for instruction in count_function.instructions
     )
     assert Emulator().execute(artifact) == 0
+
+
+def test_stage1_v2_mutable_vector_push_is_typed() -> None:
+    append_function = (
+        "fn append_value(output: &mut vector<i64>, value: i64) -> i64:\n"
+        "    discard vector_push<i64>(output, value)\n"
+        "    return 1"
+    )
+    diagnostics: list[int] = []
+    candidate_bytes = _stage1_artifact(
+        append_function + "\n\nfn main() -> i64:\n    return 0\n",
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert candidate_bytes, f"Stage1 compile diagnostics: {diagnostics}"
+    candidate = parse_assembly(candidate_bytes.decode("ascii"))
+    lowered_append = next(
+        function for function in candidate.functions
+        if function.name.endswith("append_value") and not function.external
+    )
+    assert lowered_append.parameters[0].reference_target is not None
+    assert lowered_append.parameters[0].reference_target.value == "vector"
+    assert lowered_append.parameters[0].reference_mutable is True
+    push_call = next(
+        instruction for instruction in lowered_append.instructions
+        if instruction.callee == "i64_vector_push"
+    )
+    assert push_call.result_registers
+    assert lowered_append.type_of(push_call.result_registers[0]) is AssemblyType.TRYTE
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux"
+    or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_stage1_v2_mutable_vector_push_is_visible_to_the_caller(
+    tmp_path: Path,
+) -> None:
+    append_function = (
+        "fn append_value(output: &mut vector<i64>, value: i64) -> i64:\n"
+        "    discard vector_push<i64>(output, value)\n"
+        "    return 1"
+    )
+    program_source = (
+        append_function
+        + "\n\nfn main() -> i64:\n"
+        "    mut output: vector<i64> = vector_new<i64>(2)\n"
+        "    discard vector_push<i64>(&mut output, 10)\n"
+        "    discard append_value(&mut output, 20)\n"
+        "    return vector_len<i64>(&output) * 100 + vector_get<i64>(&output, 1)\n"
+    )
+    candidate = parse_assembly(
+        _stage1_artifact(
+            append_function + "\n\nfn main() -> i64:\n    return 0\n",
+            compiler_version="v2",
+        ).decode("ascii")
+    )
+    lowered_append = next(
+        function for function in candidate.functions
+        if function.name.endswith("append_value") and not function.external
+    )
+
+    reference = compile_sources(
+        {"main.s3": program_source},
+        entry_module="main",
+    )
+    target = next(
+        function for function in reference.assembly.functions
+        if function.name.endswith("append_value") and not function.external
+    )
+    composed_append = replace(lowered_append, name=target.name)
+    replaced = False
+    functions = []
+    for function in reference.assembly.functions:
+        if function.name == target.name:
+            functions.append(composed_append)
+            replaced = True
+        else:
+            functions.append(function)
+    assert replaced
+    existing_names = {function.name for function in functions}
+    functions.extend(
+        function for function in candidate.functions
+        if function.external and function.name not in existing_names
+    )
+    composed = replace(reference.assembly, functions=tuple(functions))
+
+    toolchain = NativeToolchain.detect()
+    executable = toolchain.build(
+        generate_native_assembly(composed),
+        tmp_path / "stage1-v2-mutable-vector-push",
+    )
+    completed = toolchain.run(executable)
+    expected = run_source(program_source)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == f"program returned: {expected}"
+    assert expected == 220
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "fn append_value(output: &vector<i64>, value: i64) -> i64:\n"
+        "    discard vector_push<i64>(output, value)\n"
+        "    return 1\n"
+        "fn main() -> i64:\n    return 0\n",
+        "fn append_value(output: &mut vector<i64>, value: i64) -> i64:\n"
+        "    discard vector_push<f64>(output, value)\n"
+        "    return 1\n"
+        "fn main() -> i64:\n    return 0\n",
+        "fn append_value(output: &mut vector<i64>, value: i64) -> i64:\n"
+        "    discard vector_push<i64>(output)\n"
+        "    return 1\n"
+        "fn main() -> i64:\n    return 0\n",
+    ),
+)
+def test_stage1_v2_rejects_invalid_mutable_vector_push(source: str) -> None:
+    assert _stage1_artifact(source, compiler_version="v2") == b""
 
 
 @pytest.mark.s3_native

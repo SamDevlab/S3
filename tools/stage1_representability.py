@@ -48,7 +48,7 @@ V2_COMPARISON_OPERATORS = {
     ast.BinaryOperator.LESS,
     ast.BinaryOperator.COMPARE,
 }
-V2_SUPPORTED_EXTERNALS = {"vector_get", "vector_len"}
+V2_SUPPORTED_EXTERNALS = {"vector_get", "vector_len", "vector_push"}
 V2_PROVEN_SELF_COMPILED_FUNCTIONS = {
     "stage1_emission_value_count",
     "stage1_emission_instruction_count",
@@ -298,7 +298,6 @@ def _v2_type_supported(value: object, *, signature: bool) -> bool:
     return bool(
         signature
         and isinstance(value, ast.ReferenceType)
-        and not value.mutable
         and isinstance(value.target, ast.NominalType)
         and value.target.name == "vector"
         and value.target.type_arguments == (ast.TypeName.I64,)
@@ -384,12 +383,22 @@ def _v2_expression_type(
             valid = (
                 len(argument_types) == 1
                 and isinstance(argument_types[0], ast.ReferenceType)
+                and not argument_types[0].mutable
                 and _v2_type_supported(argument_types[0], signature=True)
+            )
+        elif callee == "vector_get":
+            valid = (
+                len(argument_types) == 2
+                and isinstance(argument_types[0], ast.ReferenceType)
+                and not argument_types[0].mutable
+                and _v2_type_supported(argument_types[0], signature=True)
+                and argument_types[1] is ast.TypeName.I64
             )
         else:
             valid = (
                 len(argument_types) == 2
                 and isinstance(argument_types[0], ast.ReferenceType)
+                and argument_types[0].mutable
                 and _v2_type_supported(argument_types[0], signature=True)
                 and argument_types[1] is ast.TypeName.I64
             )
@@ -413,7 +422,7 @@ def _v2_control_block_capabilities(
     unsupported_callees: set[str],
     supported_statement_ids: set[int],
     context: str,
-) -> None:
+) -> bool:
     if len(block.statements) > 64:
         operations.add(f"{context}_statement_capacity")
     local_environment = dict(environment)
@@ -502,8 +511,11 @@ def _v2_control_block_capabilities(
                 operations.add("match_condition_type_mismatch")
             if tuple(case.label for case in statement.cases) != (-1, 0, 1):
                 operations.add("match_requires_ordered_ternary_cases")
+            all_cases_return = tuple(
+                case.label for case in statement.cases
+            ) == (-1, 0, 1)
             for case in statement.cases:
-                _v2_control_block_capabilities(
+                case_returns = _v2_control_block_capabilities(
                     case.body,
                     function,
                     functions,
@@ -516,6 +528,9 @@ def _v2_control_block_capabilities(
                     supported_statement_ids=supported_statement_ids,
                     context="match_arm",
                 )
+                all_cases_return = all_cases_return and case_returns
+            if all_cases_return:
+                returned = True
         elif isinstance(statement, ast.WhileStatement):
             syntax.add("nested_while_control")
             condition_type = _v2_expression_type(
@@ -530,6 +545,7 @@ def _v2_control_block_capabilities(
                 operations.add("while_condition_type_mismatch")
         else:
             syntax.add(f"{context}_{type(statement).__name__}")
+    return returned
 
 
 def _v2_body_capabilities(
@@ -579,6 +595,13 @@ def _v2_body_capabilities(
             if inferred is not function.return_type:
                 operations.add("return_type_mismatch")
             returned = True
+        elif isinstance(statement, ast.DiscardStatement):
+            _v2_expression_type(
+                statement.expression, environment, functions,
+                unsupported_operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
         elif isinstance(statement, ast.AssignmentStatement):
             if not isinstance(statement.target, ast.VariableTarget):
                 operations.add(f"unsupported_assignment_target_{type(statement.target).__name__}")
@@ -604,7 +627,7 @@ def _v2_body_capabilities(
         elif isinstance(statement, ast.CompoundAssignmentStatement):
             operations.add("compound_assignment")
         elif isinstance(statement, ast.SwitchStatement):
-            _v2_control_block_capabilities(
+            switch_returns = _v2_control_block_capabilities(
                 ast.Block((statement,), statement.location),
                 function,
                 functions,
@@ -617,6 +640,8 @@ def _v2_body_capabilities(
                 supported_statement_ids=supported_loop_statement_ids,
                 context="function_control",
             )
+            if switch_returns:
+                returned = True
         elif isinstance(statement, ast.WhileStatement):
             condition_type = _v2_expression_type(
                 statement.condition, environment, functions,
@@ -686,6 +711,14 @@ def _v2_body_capabilities(
                     if inferred is not function.return_type:
                         operations.add("return_type_mismatch")
                     loop_returned = True
+                elif isinstance(body_statement, ast.DiscardStatement):
+                    supported_loop_statement_ids.add(id(body_statement))
+                    _v2_expression_type(
+                        body_statement.expression, loop_environment, functions,
+                        unsupported_operations=operations,
+                        unsupported_types=unsupported_types,
+                        unsupported_callees=unsupported_callees,
+                    )
                 elif isinstance(body_statement, ast.SwitchStatement):
                     _v2_control_block_capabilities(
                         ast.Block((body_statement,), body_statement.location),
@@ -1006,11 +1039,13 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
         "functions_self_compile_proven": count("self_compile_pass"),
         "function_attributed_source_bytes": sum(int(entry["source_bytes"]) for entry in entries),
         "capabilities": {
-            "signature_parameter_types": ["i64", "&vector<i64>"],
+            "signature_parameter_types": ["i64", "&vector<i64>", "&mut vector<i64>"],
             "signature_return_types": ["i64"],
             "local_types": ["i64"],
             "expressions": ["integer_literal", "bound_identifier", "i64_add", "i64_multiply", "local_call"],
-            "external_calls": ["vector_get<i64>", "vector_len<i64>"],
+            "external_calls": [
+                "vector_get<i64>", "vector_len<i64>", "vector_push<i64>"
+            ],
             "statements": [
                 "i64_local_declaration",
                 "straight_line_i64_local_reassignment",

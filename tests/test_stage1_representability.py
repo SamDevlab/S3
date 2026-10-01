@@ -115,9 +115,11 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         repeated.encode("ascii")
     ).hexdigest()
     assert matrix["functions_total"] == 50
-    assert matrix["functions_signature_supported"] == 14
-    assert matrix["functions_body_representable"] == 6
-    assert matrix["functions_representable"] == 6
+    # These counts include mutable-vector signatures and the local match-flow
+    # analysis; dependency closure still gates self-compilation.
+    assert matrix["functions_signature_supported"] == 23
+    assert matrix["functions_body_representable"] == 10
+    assert matrix["functions_representable"] == 10
     assert matrix["functions_dependency_closed"] == 6
     assert matrix["functions_self_compile_proven"] == 6
     proven = {item["name"] for item in matrix["functions"] if item["self_compile_pass"]}
@@ -183,6 +185,128 @@ fn invalid(left: trit, right: i64) -> trit:
     assert function["signature_supported"] is True
     assert function["body_representable"] is False
     assert "binary_operand_type_mismatch" in function["unsupported_operations"]
+
+
+def test_stage1_v2_analyzer_models_discard_expression_and_local_call_edge() -> None:
+    source = """\
+fn effect() -> i64:
+    return 7
+
+fn main() -> i64:
+    discard effect()
+    return 42
+"""
+    effect, main = analyze_stage1(source, compiler_version="v2")["functions"]
+
+    assert effect["representable"] is True
+    assert main["representable"] is True
+    assert main["dependency_closed"] is True
+    assert main["calls"] == ["effect"]
+    assert "DiscardStatement" not in main["unsupported_syntax"]
+
+
+def test_stage1_v2_analyzer_models_discard_inside_supported_while_body() -> None:
+    source = """\
+fn effect() -> i64:
+    return 7
+
+fn main() -> i64:
+    mut count: i64 = 0
+    while count < 1:
+        discard effect()
+        count = count + 1
+    return count
+"""
+    effect, main = analyze_stage1(source, compiler_version="v2")["functions"]
+
+    assert effect["representable"] is True
+    assert main["representable"] is True
+    assert main["dependency_closed"] is True
+    assert main["calls"] == ["effect"]
+    assert "DiscardStatement" not in main["unsupported_syntax"]
+
+
+def test_stage1_v2_analyzer_accepts_exhaustive_match_with_terminal_arms() -> None:
+    source = """\
+fn classify(flag: i64) -> i64:
+    match flag < 0:
+        -1:
+            return 1
+        0:
+            return 2
+        1:
+            return 3
+"""
+
+    classify, = analyze_stage1(source, compiler_version="v2")["functions"]
+
+    assert classify["representable"] is True
+    assert classify["dependency_closed"] is True
+    assert "missing_terminal_return" not in classify["unsupported_syntax"]
+
+
+def test_stage1_v2_analyzer_keeps_fallthrough_match_arm_nonterminal() -> None:
+    source = """\
+fn classify(flag: i64) -> i64:
+    match flag < 0:
+        -1:
+            return 1
+        0:
+            discard 2
+        1:
+            return 3
+"""
+
+    classify, = analyze_stage1(source, compiler_version="v2")["functions"]
+
+    assert classify["representable"] is False
+    assert "missing_terminal_return" in classify["unsupported_syntax"]
+
+
+def test_stage1_v2_analyzer_models_mutable_vector_push_signature_and_effect() -> None:
+    source = """\
+fn append_value(output: &mut vector<i64>, value: i64) -> i64:
+    discard vector_push<i64>(output, value)
+    return 1
+
+fn main() -> i64:
+    return 0
+"""
+    append_value, main = analyze_stage1(source, compiler_version="v2")["functions"]
+
+    assert append_value["signature_supported"] is True
+    assert append_value["representable"] is True
+    assert append_value["dependency_closed"] is True
+    assert append_value["parameter_types"] == ["&mut vector<i64>", "i64"]
+    assert append_value["calls"] == ["vector_push"]
+    assert append_value["unsupported_callees"] == []
+    assert append_value["unsupported_operations"] == []
+    assert main["representable"] is True
+
+
+def test_stage1_v2_analyzer_requires_mutable_i64_vector_for_push() -> None:
+    immutable_reference = """\
+fn invalid(output: &vector<i64>, value: i64) -> i64:
+    discard vector_push<i64>(output, value)
+    return 1
+"""
+    wrong_element_type = """\
+fn invalid(output: &mut vector<i64>, value: i64) -> i64:
+    discard vector_push<f64>(output, value)
+    return 1
+"""
+
+    immutable, = analyze_stage1(
+        immutable_reference, compiler_version="v2"
+    )["functions"]
+    wrong_type, = analyze_stage1(
+        wrong_element_type, compiler_version="v2"
+    )["functions"]
+
+    assert "vector_push:argument-shape" in immutable["unsupported_operations"]
+    assert immutable["representable"] is False
+    assert "vector_push:requires-i64-type-argument" in wrong_type["unsupported_types"]
+    assert wrong_type["representable"] is False
 
 
 def test_stage1_v2_analyzer_separates_signature_from_body_representability() -> None:
