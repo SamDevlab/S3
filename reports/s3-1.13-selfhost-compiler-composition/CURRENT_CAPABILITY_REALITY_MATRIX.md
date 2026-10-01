@@ -273,3 +273,28 @@ The canonical V1 analyzer remains at 14 signatures, 5 representable bodies,
 and `mutable_assignment_in_control_flow`. No full suite or benchmark was run.
 The four pre-existing golden JSON changes were not touched or staged, and the
 Stage1 V1 hash remains unchanged.
+
+## Verifier differential fixture correction (2026-10-01)
+
+Natural CI run `36817767530` on `e222d42e7468df6a41fadc47fd0f02edf0706bae`
+failed the Python 3.11, 3.12, and 3.13 unit shards at the same pre-existing
+differential-matrix assertion: `verifier_case(9)` returned `100081036` where
+the test expected an accepted program. The packed result reports rejection,
+unchanged input digest, and diagnostic 8. Inspection showed that diagnostic 8
+is the verifier's opcode-shape rejection.
+
+The cause was a stale mutation in `dominance_program()`: it set
+`instruction_operand_count[2]` to 1. In the original `branch_program()` layout,
+instruction 2 was a one-operand return, so this assignment was neutral. The
+typed-builder CFG now places a two-operand relation at instruction 2, making
+the inherited assignment malformed. Cases 9 and 29 intentionally belong to
+the accepted branch-CFG set; the verifier behavior was correct. The fixture
+now returns the valid `branch_program()` unchanged, and a hosted regression
+checks acceptance plus before/after digest equality for both case IDs.
+
+On the corrected local tree, the new regression and adjacent typed branch/jump
+and memory builder/verifier tests passed (3 tests); `python -m compileall bootstrap/s3`
+and `git diff --check` passed. The failing full CI was not rerun locally. The
+four pre-existing dirty golden JSON files remain excluded. A new natural CI
+run is required for the corrected commit; until it completes, the fix has
+focused local evidence only and PR #327 remains Draft.

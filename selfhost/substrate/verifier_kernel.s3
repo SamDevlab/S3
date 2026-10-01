@@ -4535,9 +4535,7 @@ fn invalid_ownership_program() -> NativeIR:
     return program
 
 fn dominance_program() -> NativeIR:
-    mut program: NativeIR = branch_program()
-    discard i64_vector_set(&mut program.instruction_operand_count, 2, 1)
-    return program
+    return branch_program()
 
 fn case_0_to_6(case_id: i64) -> NativeIR:
     match case_id <=> 3:

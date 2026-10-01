@@ -1340,6 +1340,29 @@ def test_native_verifier_multi_result_call_fixture_returns_each_declared_result(
     assert (wrong_signature % 1_000_000_000) // 100_000_000 == 1
 
 
+def test_native_verifier_preserves_valid_dominance_case_fixtures() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(
+        encoding="utf-8"
+    )
+    probe = """
+fn main() -> i64:
+    mut result: NativeIRVerifiedResult = verify_program(case_program(9))
+    mut score: i64 = native_ir_trit_to_i64(result.verification.accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(
+        result.verification.digest_before == result.verification.digest_after
+    )
+    result = verify_program(case_program(29))
+    score = score * 2 + native_ir_trit_to_i64(result.verification.accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(
+        result.verification.digest_before == result.verification.digest_after
+    )
+    return score
+"""
+
+    assert run_source(verifier + "\n" + probe) == 15
+
+
 @pytest.mark.s3_native
 def test_native_verifier_differential_matrix_is_immutable_and_repeatable(tmp_path: Path) -> None:
     if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
