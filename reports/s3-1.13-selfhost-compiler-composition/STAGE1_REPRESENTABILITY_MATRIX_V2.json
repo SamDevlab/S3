@@ -1,34 +1,34 @@
 {
   "blocker_distribution": {
     "&mut vector<i64>": 10,
-    "DiscardStatement": 23,
+    "DiscardStatement": 14,
     "NativeIR": 18,
-    "NativeIRAppendResult": 3,
+    "NativeIRAppendResult": 5,
     "NativeIRVerifiedResult": 2,
     "NativeVerification": 3,
     "OutputSinkState": 2,
-    "ReturnStatement": 23,
+    "ReturnStatement": 2,
     "Stage1BodyCompileResult": 3,
-    "Stage1CallArgumentResult": 1,
+    "Stage1CallArgumentResult": 2,
     "Stage1CompileResult": 4,
-    "Stage1ExpressionLowerResult": 1,
+    "Stage1ExpressionLowerResult": 2,
     "Stage1FunctionHeader": 4,
     "Stage1FunctionScanState": 5,
-    "Stage1LowerResult": 8,
+    "Stage1LowerResult": 10,
     "Stage1ParameterParse": 3,
-    "Stage1ParameterRegistrationResult": 1,
-    "SwitchStatement": 32,
-    "WhileStatement": 20,
-    "assignment_value_type_mismatch": 2,
-    "binary_-": 5,
+    "Stage1ParameterRegistrationResult": 2,
+    "SwitchStatement": 7,
+    "WhileStatement": 2,
+    "assignment_value_type_mismatch": 5,
+    "binary_-": 4,
     "binary_<=": 3,
-    "binary_<=>": 1,
     "binary_>": 3,
-    "binary_>=": 7,
+    "binary_>=": 6,
+    "binary_operand_type_mismatch": 17,
     "expression_AddressOfExpression": 19,
-    "expression_FieldAccessExpression": 15,
+    "expression_FieldAccessExpression": 14,
     "expression_RecordExpression": 16,
-    "expression_UnaryExpression": 9,
+    "expression_UnaryExpression": 7,
     "generic_expression_node_count": 3,
     "generic_expression_node_end": 2,
     "generic_expression_node_kind": 3,
@@ -45,15 +45,17 @@
     "generic_native_parser_program_indent": 3,
     "generic_native_parser_program_type_code_for_token": 4,
     "generic_token_count": 6,
-    "generic_token_end": 4,
+    "generic_token_end": 3,
     "generic_token_kind": 8,
-    "generic_token_start": 5,
+    "generic_token_start": 4,
     "i64_vector_clone": 5,
     "i64_vector_get": 8,
     "i64_vector_len": 5,
-    "local_initializer_type_mismatch": 20,
+    "local_initializer_type_mismatch": 26,
+    "local_initializer_type_mismatch_in_while": 1,
+    "match_condition_type_mismatch": 18,
     "missing_terminal_return": 16,
-    "mutable_assignment_in_control_flow": 25,
+    "mutable_assignment_in_control_flow": 9,
     "native_ir_append_block": 1,
     "native_ir_append_block_for_function": 1,
     "native_ir_append_call_arguments": 1,
@@ -64,39 +66,70 @@
     "native_ir_append_parameter": 1,
     "native_ir_emission_view": 1,
     "native_ir_empty": 4,
-    "nested_local_declaration": 20,
+    "nested_while_control": 7,
     "output_sink_append_bytes": 2,
     "output_sink_commit": 2,
     "output_sink_new": 2,
-    "return_type_mismatch": 17,
-    "stage1_compile_body_sequence:unsupported-return": 1,
-    "stage1_compile_function_sequence:signature-mismatch": 1,
-    "stage1_compile_function_sequence:unsupported-return": 1,
+    "return_type_mismatch": 30,
+    "stage1_body_compile_failure:unsupported-return": 1,
+    "stage1_compile_body_sequence:unsupported-return": 2,
+    "stage1_compile_function_sequence:signature-mismatch": 2,
+    "stage1_compile_function_sequence:unsupported-return": 2,
+    "stage1_compile_registered_function:unsupported-return": 1,
     "stage1_emission_instruction_count:signature-mismatch": 1,
     "stage1_emission_value_count:signature-mismatch": 1,
-    "stage1_function_scan_state:signature-mismatch": 1,
-    "stage1_function_scan_state:unsupported-return": 2,
+    "stage1_emit_decimal:signature-mismatch": 1,
+    "stage1_emit_ir_callee_name:signature-mismatch": 1,
+    "stage1_emit_register:signature-mismatch": 1,
+    "stage1_empty_result:signature-mismatch": 2,
+    "stage1_empty_result:unsupported-return": 2,
+    "stage1_find_function_id_by_source_name:signature-mismatch": 1,
+    "stage1_find_symbol_value:signature-mismatch": 2,
+    "stage1_function_header_failure:unsupported-return": 1,
+    "stage1_function_scan_state:signature-mismatch": 2,
+    "stage1_function_scan_state:unsupported-return": 4,
     "stage1_literal_bytes:unsupported-return": 1,
-    "stage1_lower_expression:signature-mismatch": 1,
-    "stage1_lower_expression:unsupported-return": 1,
+    "stage1_lower_call_argument_sequence:signature-mismatch": 2,
+    "stage1_lower_call_argument_sequence:unsupported-return": 2,
+    "stage1_lower_call_with_arguments:unsupported-return": 1,
+    "stage1_lower_expression:signature-mismatch": 3,
+    "stage1_lower_expression:unsupported-return": 4,
+    "stage1_lower_from_append:signature-mismatch": 2,
+    "stage1_lower_from_append:unsupported-return": 3,
+    "stage1_lower_preserved_failure:signature-mismatch": 3,
+    "stage1_lower_preserved_failure:unsupported-return": 4,
+    "stage1_lower_source_expression:signature-mismatch": 1,
+    "stage1_lower_source_expression:unsupported-return": 1,
+    "stage1_parameter_names_unique:signature-mismatch": 1,
     "stage1_parameter_parse_failure:unsupported-return": 1,
     "stage1_parse_function_header:unsupported-return": 1,
     "stage1_parse_function_header_core:unsupported-return": 1,
     "stage1_parse_parameters:unsupported-return": 1,
+    "stage1_register_function_at:unsupported-return": 1,
+    "stage1_register_parameters:signature-mismatch": 1,
+    "stage1_register_parameters:unsupported-return": 2,
     "stage1_result:signature-mismatch": 2,
     "stage1_result:unsupported-return": 2,
     "stage1_scan_functions:signature-mismatch": 1,
-    "stage1_scan_functions:unsupported-return": 1,
+    "stage1_scan_functions:unsupported-return": 2,
+    "stage1_scan_non_newline:unsupported-return": 1,
+    "stage1_source_name_is_main:signature-mismatch": 1,
     "unsupported_assignment_value_FieldAccessExpression": 2,
-    "vector<i64>": 17,
-    "vector_len:argument-shape": 2,
+    "vector<i64>": 19,
+    "vector_get:argument-shape": 2,
+    "vector_len:argument-shape": 5,
     "vector_new": 8,
-    "vector_push": 13,
-    "verify_program": 2
+    "vector_push": 10,
+    "verify_program": 2,
+    "while_body_DiscardStatement": 7,
+    "while_body_WhileStatement": 2,
+    "while_condition_type_mismatch": 4
   },
   "capabilities": {
     "body_statement_capacity": 64,
-    "control_flow": [],
+    "control_flow": [
+      "single-level while lowered to three-way CFG"
+    ],
     "expressions": [
       "integer_literal",
       "bound_identifier",
@@ -112,7 +145,8 @@
       "i64"
     ],
     "mutation": [
-      "straight_line_i64_local_reassignment"
+      "straight-line i64 reassignment",
+      "mutable i64 slots with loop-carried TLOAD/TSTORE"
     ],
     "program_function_capacity": 16,
     "signature_parameter_types": [
@@ -125,6 +159,7 @@
     "statements": [
       "i64_local_declaration",
       "straight_line_i64_local_reassignment",
+      "top_level_while_with_linear_i64_body",
       "terminal_return"
     ]
   },
@@ -140,18 +175,22 @@
         "signature_type:NativeIR"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "native_ir_empty"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "native_ir_empty"
       ],
+      "function_name": "stage1_empty_ir",
       "local_bindings": [],
       "local_calls": [],
       "name": "stage1_empty_ir",
+      "operations_supported": false,
       "parameter_types": [],
       "parameters": [],
       "primary_blocker": "callee:native_ir_empty",
@@ -204,18 +243,22 @@
         "signature_type:Stage1CompileResult"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "vector_new"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_new"
       ],
+      "function_name": "stage1_empty_result",
       "local_bindings": [],
       "local_calls": [],
       "name": "stage1_empty_result",
+      "operations_supported": false,
       "parameter_types": [
         "i64",
         "i64"
@@ -278,23 +321,25 @@
       "blockers": [
         "operation:expression_AddressOfExpression",
         "operation:expression_RecordExpression",
-        "operation:mutable_assignment_in_control_flow",
         "operation:return_type_mismatch",
+        "operation:vector_len:argument-shape",
         "signature_type:NativeVerification",
         "signature_type:Stage1CompileResult",
-        "signature_type:vector<i64>",
-        "syntax:SwitchStatement"
+        "signature_type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "vector_len"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_len"
       ],
+      "function_name": "stage1_result",
       "local_bindings": [
         {
           "mutable": true,
@@ -304,6 +349,7 @@
       ],
       "local_calls": [],
       "name": "stage1_result",
+      "operations_supported": false,
       "parameter_types": [
         "i64",
         "i64",
@@ -350,12 +396,11 @@
       "return_type": "Stage1CompileResult",
       "secondary_blockers": [
         "operation:expression_RecordExpression",
-        "operation:mutable_assignment_in_control_flow",
         "operation:return_type_mismatch",
+        "operation:vector_len:argument-shape",
         "signature_type:NativeVerification",
         "signature_type:Stage1CompileResult",
-        "signature_type:vector<i64>",
-        "syntax:SwitchStatement"
+        "signature_type:vector<i64>"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -379,17 +424,15 @@
       "unsupported_operations": [
         "expression_AddressOfExpression",
         "expression_RecordExpression",
-        "mutable_assignment_in_control_flow",
-        "return_type_mismatch"
+        "return_type_mismatch",
+        "vector_len:argument-shape"
       ],
       "unsupported_signature_types": [
         "NativeVerification",
         "Stage1CompileResult",
         "vector<i64>"
       ],
-      "unsupported_syntax": [
-        "SwitchStatement"
-      ],
+      "unsupported_syntax": [],
       "unsupported_types": [
         "NativeVerification",
         "Stage1CompileResult",
@@ -412,14 +455,18 @@
         "signature_type:Stage1LowerResult"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [],
+      "function_name": "stage1_lower_from_append",
       "local_bindings": [],
       "local_calls": [],
       "name": "stage1_lower_from_append",
+      "operations_supported": false,
       "parameter_types": [
         "NativeIRAppendResult"
       ],
@@ -484,14 +531,18 @@
         "signature_type:Stage1LowerResult"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [],
+      "function_name": "stage1_lower_preserved_failure",
       "local_bindings": [],
       "local_calls": [],
       "name": "stage1_lower_preserved_failure",
+      "operations_supported": false,
       "parameter_types": [
         "NativeIR"
       ],
@@ -556,20 +607,26 @@
         "callee:generic_expression_node_kind",
         "callee:generic_expression_node_left",
         "callee:generic_expression_node_right",
+        "callee:stage1_lower_call_argument_sequence:signature-mismatch",
+        "callee:stage1_lower_call_argument_sequence:unsupported-return",
+        "callee:stage1_lower_expression:unsupported-return",
         "callee:vector_push",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
+        "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1CallArgumentResult",
         "signature_type:vector<i64>",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "type:NativeIR",
+        "type:Stage1LowerResult"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "generic_expression_node_kind",
         "generic_expression_node_left",
@@ -579,6 +636,7 @@
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -587,6 +645,7 @@
         "generic_expression_node_right",
         "vector_push"
       ],
+      "function_name": "stage1_lower_call_argument_sequence",
       "local_bindings": [
         {
           "mutable": true,
@@ -619,6 +678,7 @@
         "stage1_lower_expression"
       ],
       "name": "stage1_lower_call_argument_sequence",
+      "operations_supported": false,
       "parameter_types": [
         "i64",
         "&vector<i64>",
@@ -687,18 +747,23 @@
       "secondary_blockers": [
         "callee:generic_expression_node_left",
         "callee:generic_expression_node_right",
+        "callee:stage1_lower_call_argument_sequence:signature-mismatch",
+        "callee:stage1_lower_call_argument_sequence:unsupported-return",
+        "callee:stage1_lower_expression:unsupported-return",
         "callee:vector_push",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
+        "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1CallArgumentResult",
         "signature_type:vector<i64>",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "type:NativeIR",
+        "type:Stage1LowerResult"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -720,12 +785,19 @@
         "generic_expression_node_kind",
         "generic_expression_node_left",
         "generic_expression_node_right",
+        "stage1_lower_call_argument_sequence:signature-mismatch",
+        "stage1_lower_call_argument_sequence:unsupported-return",
+        "stage1_lower_expression:unsupported-return",
         "vector_push"
       ],
       "unsupported_operations": [
+        "binary_operand_type_mismatch",
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
-        "expression_RecordExpression"
+        "expression_RecordExpression",
+        "local_initializer_type_mismatch",
+        "match_condition_type_mismatch",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "NativeIR",
@@ -733,15 +805,12 @@
         "vector<i64>"
       ],
       "unsupported_syntax": [
-        "DiscardStatement",
-        "ReturnStatement",
-        "SwitchStatement",
-        "missing_terminal_return",
-        "nested_local_declaration"
+        "missing_terminal_return"
       ],
       "unsupported_types": [
         "NativeIR",
         "Stage1CallArgumentResult",
+        "Stage1LowerResult",
         "vector<i64>"
       ],
       "vector_locals": [],
@@ -770,19 +839,30 @@
         "callee:generic_expression_node_start",
         "callee:i64_vector_clone",
         "callee:native_ir_append_call_arguments",
+        "callee:stage1_find_function_id_by_source_name:signature-mismatch",
+        "callee:stage1_lower_call_argument_sequence:signature-mismatch",
+        "callee:stage1_lower_call_argument_sequence:unsupported-return",
+        "callee:stage1_lower_from_append:signature-mismatch",
+        "callee:stage1_lower_from_append:unsupported-return",
+        "callee:stage1_lower_preserved_failure:signature-mismatch",
+        "callee:stage1_lower_preserved_failure:unsupported-return",
         "callee:vector_new",
         "operation:binary_>=",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1LowerResult",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "type:NativeIR",
+        "type:Stage1CallArgumentResult",
+        "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "generic_expression_node_end",
         "generic_expression_node_kind",
@@ -798,6 +878,7 @@
         "vector_new"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -810,6 +891,7 @@
         "native_ir_append_call_arguments",
         "vector_new"
       ],
+      "function_name": "stage1_lower_call_with_arguments",
       "local_bindings": [
         {
           "mutable": true,
@@ -849,6 +931,7 @@
         "stage1_lower_preserved_failure"
       ],
       "name": "stage1_lower_call_with_arguments",
+      "operations_supported": false,
       "parameter_types": [
         "i64",
         "&vector<i64>",
@@ -916,17 +999,27 @@
         "callee:generic_expression_node_start",
         "callee:i64_vector_clone",
         "callee:native_ir_append_call_arguments",
+        "callee:stage1_find_function_id_by_source_name:signature-mismatch",
+        "callee:stage1_lower_call_argument_sequence:signature-mismatch",
+        "callee:stage1_lower_call_argument_sequence:unsupported-return",
+        "callee:stage1_lower_from_append:signature-mismatch",
+        "callee:stage1_lower_from_append:unsupported-return",
+        "callee:stage1_lower_preserved_failure:signature-mismatch",
+        "callee:stage1_lower_preserved_failure:unsupported-return",
         "callee:vector_new",
         "operation:binary_>=",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1LowerResult",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "type:NativeIR",
+        "type:Stage1CallArgumentResult",
+        "type:vector<i64>"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -953,27 +1046,36 @@
         "generic_expression_node_start",
         "i64_vector_clone",
         "native_ir_append_call_arguments",
+        "stage1_find_function_id_by_source_name:signature-mismatch",
+        "stage1_lower_call_argument_sequence:signature-mismatch",
+        "stage1_lower_call_argument_sequence:unsupported-return",
+        "stage1_lower_from_append:signature-mismatch",
+        "stage1_lower_from_append:unsupported-return",
+        "stage1_lower_preserved_failure:signature-mismatch",
+        "stage1_lower_preserved_failure:unsupported-return",
         "vector_new"
       ],
       "unsupported_operations": [
         "binary_>=",
+        "binary_operand_type_mismatch",
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
-        "local_initializer_type_mismatch"
+        "local_initializer_type_mismatch",
+        "match_condition_type_mismatch",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "NativeIR",
         "Stage1LowerResult"
       ],
       "unsupported_syntax": [
-        "ReturnStatement",
-        "SwitchStatement",
-        "missing_terminal_return",
-        "nested_local_declaration"
+        "missing_terminal_return"
       ],
       "unsupported_types": [
         "NativeIR",
-        "Stage1LowerResult"
+        "Stage1CallArgumentResult",
+        "Stage1LowerResult",
+        "vector<i64>"
       ],
       "vector_locals": [
         "arguments"
@@ -991,25 +1093,24 @@
       "aggregate_parameters": [],
       "blockers": [
         "operation:expression_UnaryExpression",
-        "operation:mutable_assignment_in_control_flow",
-        "operation:return_type_mismatch",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement"
+        "operation:return_type_mismatch"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "stage1_source_spans_equal",
         "vector_get",
         "vector_len"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_get",
         "vector_len"
       ],
+      "function_name": "stage1_find_symbol_value",
       "local_bindings": [
         {
           "mutable": true,
@@ -1021,6 +1122,7 @@
         "stage1_source_spans_equal"
       ],
       "name": "stage1_find_symbol_value",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -1066,11 +1168,7 @@
       "representable": false,
       "return_type": "i64",
       "secondary_blockers": [
-        "operation:mutable_assignment_in_control_flow",
-        "operation:return_type_mismatch",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement"
+        "operation:return_type_mismatch"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -1093,15 +1191,10 @@
       "unsupported_callees": [],
       "unsupported_operations": [
         "expression_UnaryExpression",
-        "mutable_assignment_in_control_flow",
         "return_type_mismatch"
       ],
       "unsupported_signature_types": [],
-      "unsupported_syntax": [
-        "ReturnStatement",
-        "SwitchStatement",
-        "WhileStatement"
-      ],
+      "unsupported_syntax": [],
       "unsupported_types": [],
       "vector_locals": [],
       "vector_parameters": [
@@ -1129,21 +1222,28 @@
         "callee:generic_expression_node_start",
         "callee:generic_expression_node_value",
         "callee:native_ir_append_instruction_for_function",
+        "callee:stage1_find_symbol_value:signature-mismatch",
+        "callee:stage1_lower_call_with_arguments:unsupported-return",
+        "callee:stage1_lower_expression:signature-mismatch",
+        "callee:stage1_lower_expression:unsupported-return",
+        "callee:stage1_lower_from_append:signature-mismatch",
+        "callee:stage1_lower_from_append:unsupported-return",
+        "callee:stage1_lower_preserved_failure:unsupported-return",
         "operation:binary_>=",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
         "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1LowerResult",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "type:Stage1LowerResult"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "generic_expression_node_count",
         "generic_expression_node_end",
@@ -1161,6 +1261,7 @@
         "stage1_lower_preserved_failure"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -1174,6 +1275,7 @@
         "generic_expression_node_value",
         "native_ir_append_instruction_for_function"
       ],
+      "function_name": "stage1_lower_expression",
       "local_bindings": [
         {
           "mutable": true,
@@ -1249,6 +1351,7 @@
         "stage1_lower_preserved_failure"
       ],
       "name": "stage1_lower_expression",
+      "operations_supported": false,
       "parameter_types": [
         "i64",
         "&vector<i64>",
@@ -1318,19 +1421,25 @@
         "callee:generic_expression_node_start",
         "callee:generic_expression_node_value",
         "callee:native_ir_append_instruction_for_function",
+        "callee:stage1_find_symbol_value:signature-mismatch",
+        "callee:stage1_lower_call_with_arguments:unsupported-return",
+        "callee:stage1_lower_expression:signature-mismatch",
+        "callee:stage1_lower_expression:unsupported-return",
+        "callee:stage1_lower_from_append:signature-mismatch",
+        "callee:stage1_lower_from_append:unsupported-return",
+        "callee:stage1_lower_preserved_failure:unsupported-return",
         "operation:binary_>=",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
         "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1LowerResult",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "type:Stage1LowerResult"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -1358,26 +1467,31 @@
         "generic_expression_node_right",
         "generic_expression_node_start",
         "generic_expression_node_value",
-        "native_ir_append_instruction_for_function"
+        "native_ir_append_instruction_for_function",
+        "stage1_find_symbol_value:signature-mismatch",
+        "stage1_lower_call_with_arguments:unsupported-return",
+        "stage1_lower_expression:signature-mismatch",
+        "stage1_lower_expression:unsupported-return",
+        "stage1_lower_from_append:signature-mismatch",
+        "stage1_lower_from_append:unsupported-return",
+        "stage1_lower_preserved_failure:unsupported-return"
       ],
       "unsupported_operations": [
         "binary_>=",
+        "binary_operand_type_mismatch",
         "expression_FieldAccessExpression",
         "expression_RecordExpression",
         "expression_UnaryExpression",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow"
+        "match_condition_type_mismatch",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "NativeIR",
         "Stage1LowerResult"
       ],
       "unsupported_syntax": [
-        "DiscardStatement",
-        "ReturnStatement",
-        "SwitchStatement",
-        "missing_terminal_return",
-        "nested_local_declaration"
+        "missing_terminal_return"
       ],
       "unsupported_types": [
         "NativeIR",
@@ -1398,20 +1512,22 @@
       "blockers": [
         "callee:vector_new",
         "callee:vector_push",
-        "operation:binary_-",
         "operation:binary_>",
-        "operation:binary_>=",
         "operation:expression_AddressOfExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
+        "operation:vector_get:argument-shape",
+        "operation:vector_len:argument-shape",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:SwitchStatement",
         "syntax:WhileStatement",
-        "syntax:nested_local_declaration",
+        "syntax:while_body_DiscardStatement",
+        "syntax:while_body_WhileStatement",
         "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "vector_get",
         "vector_len",
@@ -1419,6 +1535,7 @@
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -1427,6 +1544,7 @@
         "vector_new",
         "vector_push"
       ],
+      "function_name": "stage1_emit_decimal",
       "local_bindings": [
         {
           "mutable": true,
@@ -1476,6 +1594,7 @@
       ],
       "local_calls": [],
       "name": "stage1_emit_decimal",
+      "operations_supported": false,
       "parameter_types": [
         "&mut vector<i64>",
         "i64"
@@ -1499,17 +1618,18 @@
       "return_type": "i64",
       "secondary_blockers": [
         "callee:vector_push",
-        "operation:binary_-",
         "operation:binary_>",
-        "operation:binary_>=",
         "operation:expression_AddressOfExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
+        "operation:vector_get:argument-shape",
+        "operation:vector_len:argument-shape",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:SwitchStatement",
         "syntax:WhileStatement",
-        "syntax:nested_local_declaration",
+        "syntax:while_body_DiscardStatement",
+        "syntax:while_body_WhileStatement",
         "type:vector<i64>"
       ],
       "self_compile_evidence": null,
@@ -1563,21 +1683,22 @@
         "vector_push"
       ],
       "unsupported_operations": [
-        "binary_-",
         "binary_>",
-        "binary_>=",
         "expression_AddressOfExpression",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow"
+        "match_condition_type_mismatch",
+        "mutable_assignment_in_control_flow",
+        "vector_get:argument-shape",
+        "vector_len:argument-shape"
       ],
       "unsupported_signature_types": [
         "&mut vector<i64>"
       ],
       "unsupported_syntax": [
         "DiscardStatement",
-        "SwitchStatement",
         "WhileStatement",
-        "nested_local_declaration"
+        "while_body_DiscardStatement",
+        "while_body_WhileStatement"
       ],
       "unsupported_types": [
         "&mut vector<i64>",
@@ -1600,21 +1721,25 @@
         "syntax:DiscardStatement"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "stage1_emit_decimal",
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_push"
       ],
+      "function_name": "stage1_emit_register",
       "local_bindings": [],
       "local_calls": [
         "stage1_emit_decimal"
       ],
       "name": "stage1_emit_register",
+      "operations_supported": true,
       "parameter_types": [
         "&mut vector<i64>",
         "i64"
@@ -1681,18 +1806,22 @@
       "aggregate_parameters": [],
       "blockers": [],
       "body_representable": true,
+      "body_syntax_supported": true,
       "calls": [
         "vector_get"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": true,
       "dependency_closed": true,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_get"
       ],
+      "function_name": "stage1_emission_value_count",
       "local_bindings": [],
       "local_calls": [],
       "name": "stage1_emission_value_count",
+      "operations_supported": true,
       "parameter_types": [
         "&vector<i64>"
       ],
@@ -1741,18 +1870,22 @@
       "aggregate_parameters": [],
       "blockers": [],
       "body_representable": true,
+      "body_syntax_supported": true,
       "calls": [
         "vector_get"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": true,
       "dependency_closed": true,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_get"
       ],
+      "function_name": "stage1_emission_instruction_count",
       "local_bindings": [],
       "local_calls": [],
       "name": "stage1_emission_instruction_count",
+      "operations_supported": true,
       "parameter_types": [
         "&vector<i64>"
       ],
@@ -1801,18 +1934,22 @@
       "aggregate_parameters": [],
       "blockers": [],
       "body_representable": true,
+      "body_syntax_supported": true,
       "calls": [
         "vector_get"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": true,
       "dependency_closed": true,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_get"
       ],
+      "function_name": "stage1_emission_value_id",
       "local_bindings": [],
       "local_calls": [],
       "name": "stage1_emission_value_id",
+      "operations_supported": true,
       "parameter_types": [
         "&vector<i64>",
         "i64"
@@ -1866,16 +2003,19 @@
       "aggregate_parameters": [],
       "blockers": [],
       "body_representable": true,
+      "body_syntax_supported": true,
       "calls": [
         "stage1_emission_value_count",
         "vector_get"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": true,
       "dependency_closed": true,
       "dependency_function_count": 2,
       "external_dependencies": [
         "vector_get"
       ],
+      "function_name": "stage1_emission_operand_id",
       "local_bindings": [
         {
           "mutable": true,
@@ -1887,6 +2027,7 @@
         "stage1_emission_value_count"
       ],
       "name": "stage1_emission_operand_id",
+      "operations_supported": true,
       "parameter_types": [
         "&vector<i64>",
         "i64"
@@ -1941,16 +2082,19 @@
       "aggregate_parameters": [],
       "blockers": [],
       "body_representable": true,
+      "body_syntax_supported": true,
       "calls": [
         "stage1_emission_value_count",
         "vector_get"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": true,
       "dependency_closed": true,
       "dependency_function_count": 2,
       "external_dependencies": [
         "vector_get"
       ],
+      "function_name": "stage1_emission_instruction_field",
       "local_bindings": [
         {
           "mutable": true,
@@ -1972,6 +2116,7 @@
         "stage1_emission_value_count"
       ],
       "name": "stage1_emission_instruction_field",
+      "operations_supported": true,
       "parameter_types": [
         "&vector<i64>",
         "i64",
@@ -2033,14 +2178,12 @@
       "aggregate_parameters": [],
       "blockers": [
         "callee:vector_push",
-        "operation:mutable_assignment_in_control_flow",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement",
-        "syntax:nested_local_declaration"
+        "syntax:while_body_DiscardStatement"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "stage1_emission_instruction_count",
         "stage1_emission_instruction_field",
@@ -2052,11 +2195,13 @@
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_push"
       ],
+      "function_name": "stage1_emit_single_main_program",
       "local_bindings": [
         {
           "mutable": true,
@@ -2084,6 +2229,7 @@
         "stage1_emit_register"
       ],
       "name": "stage1_emit_single_main_program",
+      "operations_supported": true,
       "parameter_types": [
         "&vector<i64>",
         "&mut vector<i64>"
@@ -2107,12 +2253,9 @@
       "representable": false,
       "return_type": "i64",
       "secondary_blockers": [
-        "operation:mutable_assignment_in_control_flow",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement",
-        "syntax:nested_local_declaration"
+        "syntax:while_body_DiscardStatement"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -2191,17 +2334,13 @@
       "unsupported_callees": [
         "vector_push"
       ],
-      "unsupported_operations": [
-        "mutable_assignment_in_control_flow"
-      ],
+      "unsupported_operations": [],
       "unsupported_signature_types": [
         "&mut vector<i64>"
       ],
       "unsupported_syntax": [
         "DiscardStatement",
-        "SwitchStatement",
-        "WhileStatement",
-        "nested_local_declaration"
+        "while_body_DiscardStatement"
       ],
       "unsupported_types": [
         "&mut vector<i64>"
@@ -2221,18 +2360,22 @@
         "signature_type:Stage1FunctionHeader"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "vector_new"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_new"
       ],
+      "function_name": "stage1_function_header_failure",
       "local_bindings": [],
       "local_calls": [],
       "name": "stage1_function_header_failure",
+      "operations_supported": false,
       "parameter_types": [],
       "parameters": [],
       "primary_blocker": "operation:expression_RecordExpression",
@@ -2284,18 +2427,22 @@
         "signature_type:Stage1ParameterParse"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "vector_new"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_new"
       ],
+      "function_name": "stage1_parameter_parse_failure",
       "local_bindings": [],
       "local_calls": [],
       "name": "stage1_parameter_parse_failure",
+      "operations_supported": false,
       "parameter_types": [],
       "parameters": [],
       "primary_blocker": "operation:expression_RecordExpression",
@@ -2342,11 +2489,10 @@
       "aggregate_locals": [],
       "aggregate_parameters": [],
       "blockers": [
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "stage1_parameter_name_seen",
         "stage1_source_spans_equal",
@@ -2354,18 +2500,21 @@
         "vector_len"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_get",
         "vector_len"
       ],
+      "function_name": "stage1_parameter_name_seen",
       "local_bindings": [],
       "local_calls": [
         "stage1_parameter_name_seen",
         "stage1_source_spans_equal"
       ],
       "name": "stage1_parameter_name_seen",
+      "operations_supported": true,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -2400,7 +2549,7 @@
           "type": "i64"
         }
       ],
-      "primary_blocker": "syntax:ReturnStatement",
+      "primary_blocker": "syntax:missing_terminal_return",
       "reference_locals": [],
       "reference_parameters": [
         "source",
@@ -2409,10 +2558,7 @@
       ],
       "representable": false,
       "return_type": "i64",
-      "secondary_blockers": [
-        "syntax:SwitchStatement",
-        "syntax:missing_terminal_return"
-      ],
+      "secondary_blockers": [],
       "self_compile_evidence": null,
       "self_compile_pass": false,
       "self_compile_tested": false,
@@ -2433,8 +2579,6 @@
       "unsupported_operations": [],
       "unsupported_signature_types": [],
       "unsupported_syntax": [
-        "ReturnStatement",
-        "SwitchStatement",
         "missing_terminal_return"
       ],
       "unsupported_types": [],
@@ -2449,11 +2593,10 @@
       "aggregate_locals": [],
       "aggregate_parameters": [],
       "blockers": [
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "stage1_parameter_name_seen",
         "stage1_parameter_names_unique",
@@ -2461,18 +2604,21 @@
         "vector_len"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_get",
         "vector_len"
       ],
+      "function_name": "stage1_parameter_names_unique",
       "local_bindings": [],
       "local_calls": [
         "stage1_parameter_name_seen",
         "stage1_parameter_names_unique"
       ],
       "name": "stage1_parameter_names_unique",
+      "operations_supported": true,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -2497,7 +2643,7 @@
           "type": "i64"
         }
       ],
-      "primary_blocker": "syntax:ReturnStatement",
+      "primary_blocker": "syntax:missing_terminal_return",
       "reference_locals": [],
       "reference_parameters": [
         "source",
@@ -2506,10 +2652,7 @@
       ],
       "representable": false,
       "return_type": "i64",
-      "secondary_blockers": [
-        "syntax:SwitchStatement",
-        "syntax:missing_terminal_return"
-      ],
+      "secondary_blockers": [],
       "self_compile_evidence": null,
       "self_compile_pass": false,
       "self_compile_tested": false,
@@ -2530,8 +2673,6 @@
       "unsupported_operations": [],
       "unsupported_signature_types": [],
       "unsupported_syntax": [
-        "ReturnStatement",
-        "SwitchStatement",
         "missing_terminal_return"
       ],
       "unsupported_types": [],
@@ -2554,19 +2695,17 @@
         "callee:stage1_parameter_parse_failure:unsupported-return",
         "callee:vector_new",
         "callee:vector_push",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_RecordExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
         "operation:return_type_mismatch",
         "signature_type:Stage1ParameterParse",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "generic_native_parser_program_type_code_for_token",
         "generic_token_count",
@@ -2578,6 +2717,7 @@
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -2589,6 +2729,7 @@
         "vector_new",
         "vector_push"
       ],
+      "function_name": "stage1_parse_parameters",
       "local_bindings": [
         {
           "mutable": true,
@@ -2625,6 +2766,7 @@
         "stage1_parameter_parse_failure"
       ],
       "name": "stage1_parse_parameters",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -2660,16 +2802,13 @@
         "callee:stage1_parameter_parse_failure:unsupported-return",
         "callee:vector_new",
         "callee:vector_push",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_RecordExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
         "operation:return_type_mismatch",
         "signature_type:Stage1ParameterParse",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "type:vector<i64>"
       ],
       "self_compile_evidence": null,
@@ -2708,21 +2847,17 @@
         "vector_push"
       ],
       "unsupported_operations": [
+        "binary_operand_type_mismatch",
         "expression_AddressOfExpression",
         "expression_RecordExpression",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow",
+        "match_condition_type_mismatch",
         "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "Stage1ParameterParse"
       ],
-      "unsupported_syntax": [
-        "DiscardStatement",
-        "ReturnStatement",
-        "SwitchStatement",
-        "WhileStatement"
-      ],
+      "unsupported_syntax": [],
       "unsupported_types": [
         "Stage1ParameterParse",
         "vector<i64>"
@@ -2746,16 +2881,18 @@
         "callee:generic_token_start",
         "operation:binary_>",
         "operation:binary_>=",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
-        "syntax:ReturnStatement",
+        "operation:return_type_mismatch",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "generic_native_parser_program_indent",
         "generic_token_count",
@@ -2763,6 +2900,7 @@
         "generic_token_start"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -2771,6 +2909,7 @@
         "generic_token_kind",
         "generic_token_start"
       ],
+      "function_name": "stage1_function_body_end",
       "local_bindings": [
         {
           "mutable": true,
@@ -2825,6 +2964,7 @@
       ],
       "local_calls": [],
       "name": "stage1_function_body_end",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -2858,14 +2998,15 @@
         "callee:generic_token_start",
         "operation:binary_>",
         "operation:binary_>=",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
-        "syntax:ReturnStatement",
+        "operation:return_type_mismatch",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -2897,17 +3038,18 @@
       "unsupported_operations": [
         "binary_>",
         "binary_>=",
+        "binary_operand_type_mismatch",
         "expression_UnaryExpression",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow"
+        "match_condition_type_mismatch",
+        "mutable_assignment_in_control_flow",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [],
       "unsupported_syntax": [
-        "ReturnStatement",
         "SwitchStatement",
-        "WhileStatement",
         "missing_terminal_return",
-        "nested_local_declaration"
+        "nested_while_control"
       ],
       "unsupported_types": [],
       "vector_locals": [],
@@ -2924,25 +3066,24 @@
       "blockers": [
         "callee:generic_native_parser_program_type_code_for_token",
         "callee:generic_token_count",
-        "callee:generic_token_end",
         "callee:generic_token_kind",
-        "callee:generic_token_start",
+        "callee:stage1_function_header_failure:unsupported-return",
+        "callee:stage1_parameter_names_unique:signature-mismatch",
         "callee:stage1_parse_parameters:unsupported-return",
         "operation:binary_>=",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:Stage1FunctionHeader",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration",
         "type:Stage1ParameterParse"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "generic_native_parser_program_type_code_for_token",
         "generic_token_count",
@@ -2955,6 +3096,7 @@
         "stage1_parse_parameters"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -2964,6 +3106,7 @@
         "generic_token_kind",
         "generic_token_start"
       ],
+      "function_name": "stage1_parse_function_header_core",
       "local_bindings": [
         {
           "mutable": true,
@@ -3003,6 +3146,7 @@
         "stage1_parse_parameters"
       ],
       "name": "stage1_parse_function_header_core",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -3032,22 +3176,20 @@
       "return_type": "Stage1FunctionHeader",
       "secondary_blockers": [
         "callee:generic_token_count",
-        "callee:generic_token_end",
         "callee:generic_token_kind",
-        "callee:generic_token_start",
+        "callee:stage1_function_header_failure:unsupported-return",
+        "callee:stage1_parameter_names_unique:signature-mismatch",
         "callee:stage1_parse_parameters:unsupported-return",
         "operation:binary_>=",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:Stage1FunctionHeader",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration",
         "type:Stage1ParameterParse"
       ],
       "self_compile_evidence": null,
@@ -3084,28 +3226,26 @@
       "unsupported_callees": [
         "generic_native_parser_program_type_code_for_token",
         "generic_token_count",
-        "generic_token_end",
         "generic_token_kind",
-        "generic_token_start",
+        "stage1_function_header_failure:unsupported-return",
+        "stage1_parameter_names_unique:signature-mismatch",
         "stage1_parse_parameters:unsupported-return"
       ],
       "unsupported_operations": [
         "binary_>=",
+        "binary_operand_type_mismatch",
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
         "expression_RecordExpression",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow"
+        "match_condition_type_mismatch",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "Stage1FunctionHeader"
       ],
       "unsupported_syntax": [
-        "DiscardStatement",
-        "ReturnStatement",
-        "SwitchStatement",
-        "missing_terminal_return",
-        "nested_local_declaration"
+        "missing_terminal_return"
       ],
       "unsupported_types": [
         "Stage1FunctionHeader",
@@ -3126,18 +3266,22 @@
         "signature_type:Stage1FunctionHeader"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "stage1_parse_function_header_core"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [],
+      "function_name": "stage1_parse_function_header",
       "local_bindings": [],
       "local_calls": [
         "stage1_parse_function_header_core"
       ],
       "name": "stage1_parse_function_header",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -3211,22 +3355,25 @@
         "operation:binary_-",
         "operation:expression_UnaryExpression",
         "operation:mutable_assignment_in_control_flow",
+        "operation:return_type_mismatch",
         "syntax:ReturnStatement",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "vector_get"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_get"
       ],
+      "function_name": "stage1_source_spans_equal",
       "local_bindings": [
         {
           "mutable": true,
@@ -3236,6 +3383,7 @@
       ],
       "local_calls": [],
       "name": "stage1_source_spans_equal",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "i64",
@@ -3275,11 +3423,11 @@
       "secondary_blockers": [
         "operation:expression_UnaryExpression",
         "operation:mutable_assignment_in_control_flow",
+        "operation:return_type_mismatch",
         "syntax:ReturnStatement",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -3301,15 +3449,15 @@
       "unsupported_operations": [
         "binary_-",
         "expression_UnaryExpression",
-        "mutable_assignment_in_control_flow"
+        "mutable_assignment_in_control_flow",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [],
       "unsupported_syntax": [
         "ReturnStatement",
         "SwitchStatement",
-        "WhileStatement",
         "missing_terminal_return",
-        "nested_local_declaration"
+        "nested_while_control"
       ],
       "unsupported_types": [],
       "vector_locals": [],
@@ -3324,22 +3472,26 @@
         "callee:i64_vector_get",
         "callee:i64_vector_len",
         "operation:binary_-",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_UnaryExpression",
+        "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
         "operation:return_type_mismatch",
+        "operation:while_condition_type_mismatch",
         "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "i64_vector_get",
         "i64_vector_len",
         "vector_get"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -3347,6 +3499,7 @@
         "i64_vector_len",
         "vector_get"
       ],
+      "function_name": "stage1_find_function_id_by_source_name",
       "local_bindings": [
         {
           "mutable": true,
@@ -3376,6 +3529,7 @@
       ],
       "local_calls": [],
       "name": "stage1_find_function_id_by_source_name",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -3429,14 +3583,16 @@
       "secondary_blockers": [
         "callee:i64_vector_len",
         "operation:binary_-",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_UnaryExpression",
+        "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
         "operation:return_type_mismatch",
+        "operation:while_condition_type_mismatch",
         "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -3463,17 +3619,19 @@
       ],
       "unsupported_operations": [
         "binary_-",
+        "binary_operand_type_mismatch",
         "expression_UnaryExpression",
+        "local_initializer_type_mismatch",
+        "match_condition_type_mismatch",
         "mutable_assignment_in_control_flow",
-        "return_type_mismatch"
+        "return_type_mismatch",
+        "while_condition_type_mismatch"
       ],
       "unsupported_signature_types": [],
       "unsupported_syntax": [
         "DiscardStatement",
-        "ReturnStatement",
         "SwitchStatement",
-        "WhileStatement",
-        "nested_local_declaration"
+        "nested_while_control"
       ],
       "unsupported_types": [],
       "vector_locals": [],
@@ -3488,23 +3646,22 @@
     {
       "aggregate_locals": [],
       "aggregate_parameters": [],
-      "blockers": [
-        "operation:mutable_assignment_in_control_flow",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement"
-      ],
-      "body_representable": false,
+      "blockers": [],
+      "body_representable": true,
+      "body_syntax_supported": true,
       "calls": [
         "vector_get",
         "vector_len"
       ],
       "compiler_version": "v2",
-      "dependency_closed": false,
+      "dependencies_supported": true,
+      "dependency_closed": true,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_get",
         "vector_len"
       ],
+      "function_name": "stage1_output_chunk",
       "local_bindings": [
         {
           "mutable": true,
@@ -3524,6 +3681,7 @@
       ],
       "local_calls": [],
       "name": "stage1_output_chunk",
+      "operations_supported": true,
       "parameter_types": [
         "&vector<i64>",
         "i64"
@@ -3538,20 +3696,17 @@
           "type": "i64"
         }
       ],
-      "primary_blocker": "operation:mutable_assignment_in_control_flow",
+      "primary_blocker": null,
       "reference_locals": [],
       "reference_parameters": [
         "output"
       ],
-      "representable": false,
+      "representable": true,
       "return_type": "i64",
-      "secondary_blockers": [
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement"
-      ],
-      "self_compile_evidence": null,
-      "self_compile_pass": false,
-      "self_compile_tested": false,
+      "secondary_blockers": [],
+      "self_compile_evidence": "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_compiles_canonical_output_chunk",
+      "self_compile_pass": true,
+      "self_compile_tested": true,
       "signature": "(&vector<i64>, i64) -> i64",
       "signature_supported": true,
       "source_bytes": 647,
@@ -3570,14 +3725,9 @@
         "ReturnStatement"
       ],
       "unsupported_callees": [],
-      "unsupported_operations": [
-        "mutable_assignment_in_control_flow"
-      ],
+      "unsupported_operations": [],
       "unsupported_signature_types": [],
-      "unsupported_syntax": [
-        "SwitchStatement",
-        "WhileStatement"
-      ],
+      "unsupported_syntax": [],
       "unsupported_types": [],
       "vector_locals": [],
       "vector_parameters": [
@@ -3619,6 +3769,8 @@
         "callee:output_sink_new",
         "callee:stage1_emission_instruction_count:signature-mismatch",
         "callee:stage1_emission_value_count:signature-mismatch",
+        "callee:stage1_empty_result:signature-mismatch",
+        "callee:stage1_empty_result:unsupported-return",
         "callee:stage1_lower_expression:signature-mismatch",
         "callee:stage1_lower_expression:unsupported-return",
         "callee:stage1_result:signature-mismatch",
@@ -3628,20 +3780,19 @@
         "operation:assignment_value_type_mismatch",
         "operation:binary_-",
         "operation:binary_<=",
-        "operation:binary_<=>",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
         "operation:return_type_mismatch",
         "operation:unsupported_assignment_value_FieldAccessExpression",
+        "operation:vector_get:argument-shape",
         "operation:vector_len:argument-shape",
         "signature_type:Stage1CompileResult",
         "signature_type:vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "type:NativeIR",
         "type:NativeIRAppendResult",
         "type:NativeIRVerifiedResult",
@@ -3651,6 +3802,7 @@
         "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "generic_expression_node_count",
         "generic_expression_packed_result",
@@ -3684,6 +3836,7 @@
         "verify_program"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -3712,6 +3865,7 @@
         "vector_new",
         "verify_program"
       ],
+      "function_name": "stage1_compile_single_main",
       "local_bindings": [
         {
           "mutable": true,
@@ -3838,6 +3992,7 @@
         "stage1_result"
       ],
       "name": "stage1_compile_single_main",
+      "operations_supported": false,
       "parameter_types": [
         "vector<i64>"
       ],
@@ -3874,6 +4029,8 @@
         "callee:output_sink_new",
         "callee:stage1_emission_instruction_count:signature-mismatch",
         "callee:stage1_emission_value_count:signature-mismatch",
+        "callee:stage1_empty_result:signature-mismatch",
+        "callee:stage1_empty_result:unsupported-return",
         "callee:stage1_lower_expression:signature-mismatch",
         "callee:stage1_lower_expression:unsupported-return",
         "callee:stage1_result:signature-mismatch",
@@ -3883,20 +4040,19 @@
         "operation:assignment_value_type_mismatch",
         "operation:binary_-",
         "operation:binary_<=",
-        "operation:binary_<=>",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
         "operation:return_type_mismatch",
         "operation:unsupported_assignment_value_FieldAccessExpression",
+        "operation:vector_get:argument-shape",
         "operation:vector_len:argument-shape",
         "signature_type:Stage1CompileResult",
         "signature_type:vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "type:NativeIR",
         "type:NativeIRAppendResult",
         "type:NativeIRVerifiedResult",
@@ -4001,6 +4157,8 @@
         "output_sink_new",
         "stage1_emission_instruction_count:signature-mismatch",
         "stage1_emission_value_count:signature-mismatch",
+        "stage1_empty_result:signature-mismatch",
+        "stage1_empty_result:unsupported-return",
         "stage1_lower_expression:signature-mismatch",
         "stage1_lower_expression:unsupported-return",
         "stage1_result:signature-mismatch",
@@ -4012,14 +4170,15 @@
         "assignment_value_type_mismatch",
         "binary_-",
         "binary_<=",
-        "binary_<=>",
+        "binary_operand_type_mismatch",
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
         "expression_UnaryExpression",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow",
+        "match_condition_type_mismatch",
         "return_type_mismatch",
         "unsupported_assignment_value_FieldAccessExpression",
+        "vector_get:argument-shape",
         "vector_len:argument-shape"
       ],
       "unsupported_signature_types": [
@@ -4027,9 +4186,7 @@
         "vector<i64>"
       ],
       "unsupported_syntax": [
-        "DiscardStatement",
-        "ReturnStatement",
-        "SwitchStatement"
+        "DiscardStatement"
       ],
       "unsupported_types": [
         "NativeIR",
@@ -4064,22 +4221,23 @@
         "operation:local_initializer_type_mismatch",
         "operation:return_type_mismatch",
         "signature_type:vector<i64>",
-        "syntax:DiscardStatement",
-        "syntax:SwitchStatement",
         "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "vector_new",
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "vector_new",
         "vector_push"
       ],
+      "function_name": "stage1_literal_bytes",
       "local_bindings": [
         {
           "mutable": true,
@@ -4089,6 +4247,7 @@
       ],
       "local_calls": [],
       "name": "stage1_literal_bytes",
+      "operations_supported": false,
       "parameter_types": [
         "i64"
       ],
@@ -4109,8 +4268,6 @@
         "operation:local_initializer_type_mismatch",
         "operation:return_type_mismatch",
         "signature_type:vector<i64>",
-        "syntax:DiscardStatement",
-        "syntax:SwitchStatement",
         "type:vector<i64>"
       ],
       "self_compile_evidence": null,
@@ -4143,10 +4300,7 @@
       "unsupported_signature_types": [
         "vector<i64>"
       ],
-      "unsupported_syntax": [
-        "DiscardStatement",
-        "SwitchStatement"
-      ],
+      "unsupported_syntax": [],
       "unsupported_types": [
         "vector<i64>"
       ],
@@ -4160,16 +4314,16 @@
       "aggregate_parameters": [],
       "blockers": [
         "callee:stage1_literal_bytes:unsupported-return",
-        "callee:vector_push",
         "operation:expression_AddressOfExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:vector_len:argument-shape",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:WhileStatement",
+        "syntax:while_body_DiscardStatement",
         "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "stage1_literal_bytes",
         "vector_get",
@@ -4177,6 +4331,7 @@
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -4184,6 +4339,7 @@
         "vector_len",
         "vector_push"
       ],
+      "function_name": "stage1_emit_literal",
       "local_bindings": [
         {
           "mutable": true,
@@ -4200,6 +4356,7 @@
         "stage1_literal_bytes"
       ],
       "name": "stage1_emit_literal",
+      "operations_supported": false,
       "parameter_types": [
         "&mut vector<i64>",
         "i64"
@@ -4222,13 +4379,12 @@
       "representable": false,
       "return_type": "i64",
       "secondary_blockers": [
-        "callee:vector_push",
         "operation:expression_AddressOfExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:vector_len:argument-shape",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:WhileStatement",
+        "syntax:while_body_DiscardStatement",
         "type:vector<i64>"
       ],
       "self_compile_evidence": null,
@@ -4251,20 +4407,19 @@
         "ReturnStatement"
       ],
       "unsupported_callees": [
-        "stage1_literal_bytes:unsupported-return",
-        "vector_push"
+        "stage1_literal_bytes:unsupported-return"
       ],
       "unsupported_operations": [
         "expression_AddressOfExpression",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow"
+        "vector_len:argument-shape"
       ],
       "unsupported_signature_types": [
         "&mut vector<i64>"
       ],
       "unsupported_syntax": [
         "DiscardStatement",
-        "WhileStatement"
+        "while_body_DiscardStatement"
       ],
       "unsupported_types": [
         "&mut vector<i64>",
@@ -4282,25 +4437,26 @@
       "aggregate_parameters": [],
       "blockers": [
         "callee:i64_vector_get",
-        "callee:vector_push",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:WhileStatement"
+        "syntax:while_body_DiscardStatement"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "i64_vector_get",
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "i64_vector_get",
         "vector_push"
       ],
+      "function_name": "stage1_emit_ir_function_name",
       "local_bindings": [
         {
           "mutable": true,
@@ -4320,6 +4476,7 @@
       ],
       "local_calls": [],
       "name": "stage1_emit_ir_function_name",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -4360,12 +4517,10 @@
       "representable": false,
       "return_type": "i64",
       "secondary_blockers": [
-        "callee:vector_push",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:WhileStatement"
+        "syntax:while_body_DiscardStatement"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -4388,19 +4543,17 @@
         "ReturnStatement"
       ],
       "unsupported_callees": [
-        "i64_vector_get",
-        "vector_push"
+        "i64_vector_get"
       ],
       "unsupported_operations": [
-        "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow"
+        "local_initializer_type_mismatch"
       ],
       "unsupported_signature_types": [
         "&mut vector<i64>"
       ],
       "unsupported_syntax": [
         "DiscardStatement",
-        "WhileStatement"
+        "while_body_DiscardStatement"
       ],
       "unsupported_types": [
         "&mut vector<i64>"
@@ -4419,14 +4572,17 @@
       "blockers": [
         "callee:i64_vector_get",
         "callee:i64_vector_len",
+        "operation:binary_operand_type_mismatch",
+        "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
+        "operation:while_condition_type_mismatch",
         "signature_type:&mut vector<i64>",
-        "syntax:DiscardStatement",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "i64_vector_get",
         "i64_vector_len",
@@ -4434,12 +4590,14 @@
         "stage1_emit_register"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "i64_vector_get",
         "i64_vector_len"
       ],
+      "function_name": "stage1_emit_ir_register_declarations",
       "local_bindings": [
         {
           "mutable": true,
@@ -4467,6 +4625,7 @@
         "stage1_emit_register"
       ],
       "name": "stage1_emit_ir_register_declarations",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -4508,12 +4667,14 @@
       "return_type": "i64",
       "secondary_blockers": [
         "callee:i64_vector_len",
+        "operation:binary_operand_type_mismatch",
+        "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
+        "operation:while_condition_type_mismatch",
         "signature_type:&mut vector<i64>",
-        "syntax:DiscardStatement",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -4538,16 +4699,18 @@
         "i64_vector_len"
       ],
       "unsupported_operations": [
-        "mutable_assignment_in_control_flow"
+        "binary_operand_type_mismatch",
+        "local_initializer_type_mismatch",
+        "match_condition_type_mismatch",
+        "mutable_assignment_in_control_flow",
+        "while_condition_type_mismatch"
       ],
       "unsupported_signature_types": [
         "&mut vector<i64>"
       ],
       "unsupported_syntax": [
-        "DiscardStatement",
         "SwitchStatement",
-        "WhileStatement",
-        "nested_local_declaration"
+        "nested_while_control"
       ],
       "unsupported_types": [
         "&mut vector<i64>"
@@ -4566,23 +4729,25 @@
       "blockers": [
         "callee:i64_vector_get",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:WhileStatement"
+        "syntax:while_body_DiscardStatement"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "i64_vector_get",
         "stage1_emit_literal",
         "stage1_emit_register"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "i64_vector_get"
       ],
+      "function_name": "stage1_emit_ir_parameters",
       "local_bindings": [
         {
           "mutable": true,
@@ -4605,6 +4770,7 @@
         "stage1_emit_register"
       ],
       "name": "stage1_emit_ir_parameters",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -4646,10 +4812,9 @@
       "return_type": "i64",
       "secondary_blockers": [
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:WhileStatement"
+        "syntax:while_body_DiscardStatement"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -4675,15 +4840,14 @@
         "i64_vector_get"
       ],
       "unsupported_operations": [
-        "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow"
+        "local_initializer_type_mismatch"
       ],
       "unsupported_signature_types": [
         "&mut vector<i64>"
       ],
       "unsupported_syntax": [
         "DiscardStatement",
-        "WhileStatement"
+        "while_body_DiscardStatement"
       ],
       "unsupported_types": [
         "&mut vector<i64>"
@@ -4702,25 +4866,28 @@
       "blockers": [
         "callee:i64_vector_get",
         "callee:i64_vector_len",
-        "operation:mutable_assignment_in_control_flow",
-        "signature_type:&mut vector<i64>",
-        "syntax:DiscardStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement"
+        "operation:assignment_value_type_mismatch",
+        "operation:binary_operand_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:while_condition_type_mismatch",
+        "signature_type:&mut vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "i64_vector_get",
         "i64_vector_len",
         "stage1_emit_ir_function_name"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "i64_vector_get",
         "i64_vector_len"
       ],
+      "function_name": "stage1_emit_ir_callee_name",
       "local_bindings": [
         {
           "mutable": true,
@@ -4732,6 +4899,7 @@
         "stage1_emit_ir_function_name"
       ],
       "name": "stage1_emit_ir_callee_name",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -4779,11 +4947,11 @@
       "return_type": "i64",
       "secondary_blockers": [
         "callee:i64_vector_len",
-        "operation:mutable_assignment_in_control_flow",
-        "signature_type:&mut vector<i64>",
-        "syntax:DiscardStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement"
+        "operation:assignment_value_type_mismatch",
+        "operation:binary_operand_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:while_condition_type_mismatch",
+        "signature_type:&mut vector<i64>"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -4808,16 +4976,15 @@
         "i64_vector_len"
       ],
       "unsupported_operations": [
-        "mutable_assignment_in_control_flow"
+        "assignment_value_type_mismatch",
+        "binary_operand_type_mismatch",
+        "match_condition_type_mismatch",
+        "while_condition_type_mismatch"
       ],
       "unsupported_signature_types": [
         "&mut vector<i64>"
       ],
-      "unsupported_syntax": [
-        "DiscardStatement",
-        "SwitchStatement",
-        "WhileStatement"
-      ],
+      "unsupported_syntax": [],
       "unsupported_types": [
         "&mut vector<i64>"
       ],
@@ -4835,15 +5002,17 @@
       "aggregate_parameters": [],
       "blockers": [
         "callee:i64_vector_get",
+        "callee:stage1_emit_decimal:signature-mismatch",
+        "callee:stage1_emit_ir_callee_name:signature-mismatch",
+        "callee:stage1_emit_register:signature-mismatch",
         "operation:local_initializer_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "i64_vector_get",
         "stage1_emit_decimal",
@@ -4852,11 +5021,13 @@
         "stage1_emit_register"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "i64_vector_get"
       ],
+      "function_name": "stage1_emit_ir_instruction",
       "local_bindings": [
         {
           "mutable": true,
@@ -4886,6 +5057,7 @@
         "stage1_emit_register"
       ],
       "name": "stage1_emit_ir_instruction",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -4980,13 +5152,14 @@
       "representable": false,
       "return_type": "i64",
       "secondary_blockers": [
+        "callee:stage1_emit_decimal:signature-mismatch",
+        "callee:stage1_emit_ir_callee_name:signature-mismatch",
+        "callee:stage1_emit_register:signature-mismatch",
         "operation:local_initializer_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
         "signature_type:&mut vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -5010,7 +5183,10 @@
         "ReturnStatement"
       ],
       "unsupported_callees": [
-        "i64_vector_get"
+        "i64_vector_get",
+        "stage1_emit_decimal:signature-mismatch",
+        "stage1_emit_ir_callee_name:signature-mismatch",
+        "stage1_emit_register:signature-mismatch"
       ],
       "unsupported_operations": [
         "local_initializer_type_mismatch",
@@ -5021,9 +5197,7 @@
       ],
       "unsupported_syntax": [
         "DiscardStatement",
-        "SwitchStatement",
-        "WhileStatement",
-        "nested_local_declaration"
+        "nested_while_control"
       ],
       "unsupported_types": [
         "&mut vector<i64>"
@@ -5053,17 +5227,21 @@
       "blockers": [
         "callee:i64_vector_get",
         "callee:i64_vector_len",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
-        "operation:expression_FieldAccessExpression",
+        "operation:local_initializer_type_mismatch_in_while",
         "operation:mutable_assignment_in_control_flow",
+        "operation:while_condition_type_mismatch",
         "signature_type:&mut vector<i64>",
         "signature_type:NativeIR",
         "syntax:DiscardStatement",
         "syntax:SwitchStatement",
         "syntax:WhileStatement",
-        "syntax:nested_local_declaration"
+        "syntax:while_body_DiscardStatement",
+        "syntax:while_body_WhileStatement"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "i64_vector_get",
         "i64_vector_len",
@@ -5074,12 +5252,14 @@
         "stage1_emit_literal"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "i64_vector_get",
         "i64_vector_len"
       ],
+      "function_name": "stage1_emit_native_program",
       "local_bindings": [
         {
           "mutable": true,
@@ -5105,6 +5285,7 @@
         "stage1_emit_literal"
       ],
       "name": "stage1_emit_native_program",
+      "operations_supported": false,
       "parameter_types": [
         "NativeIR",
         "&mut vector<i64>"
@@ -5128,15 +5309,18 @@
       "return_type": "i64",
       "secondary_blockers": [
         "callee:i64_vector_len",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
-        "operation:expression_FieldAccessExpression",
+        "operation:local_initializer_type_mismatch_in_while",
         "operation:mutable_assignment_in_control_flow",
+        "operation:while_condition_type_mismatch",
         "signature_type:&mut vector<i64>",
         "signature_type:NativeIR",
         "syntax:DiscardStatement",
         "syntax:SwitchStatement",
         "syntax:WhileStatement",
-        "syntax:nested_local_declaration"
+        "syntax:while_body_DiscardStatement",
+        "syntax:while_body_WhileStatement"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -5162,9 +5346,11 @@
         "i64_vector_len"
       ],
       "unsupported_operations": [
+        "binary_operand_type_mismatch",
         "expression_AddressOfExpression",
-        "expression_FieldAccessExpression",
-        "mutable_assignment_in_control_flow"
+        "local_initializer_type_mismatch_in_while",
+        "mutable_assignment_in_control_flow",
+        "while_condition_type_mismatch"
       ],
       "unsupported_signature_types": [
         "&mut vector<i64>",
@@ -5174,7 +5360,8 @@
         "DiscardStatement",
         "SwitchStatement",
         "WhileStatement",
-        "nested_local_declaration"
+        "while_body_DiscardStatement",
+        "while_body_WhileStatement"
       ],
       "unsupported_types": [
         "&mut vector<i64>",
@@ -5191,24 +5378,25 @@
       "blockers": [
         "callee:generic_token_count",
         "callee:generic_token_kind",
+        "operation:binary_operand_type_mismatch",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement"
+        "operation:match_condition_type_mismatch"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "generic_token_count",
         "generic_token_kind"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "generic_token_count",
         "generic_token_kind"
       ],
+      "function_name": "stage1_skip_body_newlines",
       "local_bindings": [
         {
           "mutable": true,
@@ -5223,6 +5411,7 @@
       ],
       "local_calls": [],
       "name": "stage1_skip_body_newlines",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "i64"
@@ -5246,11 +5435,9 @@
       "return_type": "i64",
       "secondary_blockers": [
         "callee:generic_token_kind",
+        "operation:binary_operand_type_mismatch",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement"
+        "operation:match_condition_type_mismatch"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -5276,15 +5463,12 @@
         "generic_token_kind"
       ],
       "unsupported_operations": [
+        "binary_operand_type_mismatch",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow"
+        "match_condition_type_mismatch"
       ],
       "unsupported_signature_types": [],
-      "unsupported_syntax": [
-        "ReturnStatement",
-        "SwitchStatement",
-        "WhileStatement"
-      ],
+      "unsupported_syntax": [],
       "unsupported_types": [],
       "vector_locals": [],
       "vector_parameters": [
@@ -5304,14 +5488,18 @@
         "signature_type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [],
+      "function_name": "stage1_body_compile_failure",
       "local_bindings": [],
       "local_calls": [],
       "name": "stage1_body_compile_failure",
+      "operations_supported": false,
       "parameter_types": [
         "NativeIR",
         "vector<i64>",
@@ -5400,22 +5588,26 @@
         "callee:generic_native_parser_packed_cursor",
         "callee:generic_native_parser_packed_node",
         "callee:generic_native_parser_parse_expression",
+        "callee:stage1_lower_expression:signature-mismatch",
+        "callee:stage1_lower_expression:unsupported-return",
         "operation:binary_<=",
         "operation:binary_>=",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
-        "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1ExpressionLowerResult",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration",
+        "type:NativeIR",
+        "type:Stage1LowerResult",
         "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "generic_expression_node_count",
         "generic_expression_packed_result",
@@ -5425,6 +5617,7 @@
         "stage1_lower_expression"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -5434,6 +5627,7 @@
         "generic_native_parser_packed_node",
         "generic_native_parser_parse_expression"
       ],
+      "function_name": "stage1_lower_source_expression",
       "local_bindings": [
         {
           "mutable": true,
@@ -5475,6 +5669,7 @@
         "stage1_lower_expression"
       ],
       "name": "stage1_lower_source_expression",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -5540,19 +5735,22 @@
         "callee:generic_native_parser_packed_cursor",
         "callee:generic_native_parser_packed_node",
         "callee:generic_native_parser_parse_expression",
+        "callee:stage1_lower_expression:signature-mismatch",
+        "callee:stage1_lower_expression:unsupported-return",
         "operation:binary_<=",
         "operation:binary_>=",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
-        "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1ExpressionLowerResult",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration",
+        "type:NativeIR",
+        "type:Stage1LowerResult",
         "type:vector<i64>"
       ],
       "self_compile_evidence": null,
@@ -5578,30 +5776,32 @@
         "generic_expression_packed_result",
         "generic_native_parser_packed_cursor",
         "generic_native_parser_packed_node",
-        "generic_native_parser_parse_expression"
+        "generic_native_parser_parse_expression",
+        "stage1_lower_expression:signature-mismatch",
+        "stage1_lower_expression:unsupported-return"
       ],
       "unsupported_operations": [
         "binary_<=",
         "binary_>=",
+        "binary_operand_type_mismatch",
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
         "expression_RecordExpression",
-        "expression_UnaryExpression",
-        "local_initializer_type_mismatch"
+        "local_initializer_type_mismatch",
+        "match_condition_type_mismatch",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "NativeIR",
         "Stage1ExpressionLowerResult"
       ],
       "unsupported_syntax": [
-        "ReturnStatement",
-        "SwitchStatement",
-        "missing_terminal_return",
-        "nested_local_declaration"
+        "missing_terminal_return"
       ],
       "unsupported_types": [
         "NativeIR",
         "Stage1ExpressionLowerResult",
+        "Stage1LowerResult",
         "vector<i64>"
       ],
       "vector_locals": [
@@ -5631,20 +5831,29 @@
         "callee:generic_token_end",
         "callee:generic_token_kind",
         "callee:generic_token_start",
+        "callee:stage1_body_compile_failure:unsupported-return",
+        "callee:stage1_compile_body_sequence:unsupported-return",
+        "callee:stage1_find_symbol_value:signature-mismatch",
+        "callee:stage1_lower_source_expression:signature-mismatch",
+        "callee:stage1_lower_source_expression:unsupported-return",
         "callee:vector_push",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
+        "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1BodyCompileResult",
         "signature_type:vector<i64>",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "type:NativeIR",
+        "type:Stage1ExpressionLowerResult",
+        "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "generic_native_parser_program_indent",
         "generic_native_parser_program_type_code_for_token",
@@ -5659,6 +5868,7 @@
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -5669,6 +5879,7 @@
         "generic_token_start",
         "vector_push"
       ],
+      "function_name": "stage1_compile_body_sequence",
       "local_bindings": [
         {
           "mutable": true,
@@ -5779,6 +5990,7 @@
         "stage1_skip_body_newlines"
       ],
       "name": "stage1_compile_body_sequence",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "&vector<i64>",
@@ -5851,18 +6063,26 @@
         "callee:generic_token_end",
         "callee:generic_token_kind",
         "callee:generic_token_start",
+        "callee:stage1_body_compile_failure:unsupported-return",
+        "callee:stage1_compile_body_sequence:unsupported-return",
+        "callee:stage1_find_symbol_value:signature-mismatch",
+        "callee:stage1_lower_source_expression:signature-mismatch",
+        "callee:stage1_lower_source_expression:unsupported-return",
         "callee:vector_push",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
+        "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1BodyCompileResult",
         "signature_type:vector<i64>",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "type:NativeIR",
+        "type:Stage1ExpressionLowerResult",
+        "type:vector<i64>"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -5887,12 +6107,21 @@
         "generic_token_end",
         "generic_token_kind",
         "generic_token_start",
+        "stage1_body_compile_failure:unsupported-return",
+        "stage1_compile_body_sequence:unsupported-return",
+        "stage1_find_symbol_value:signature-mismatch",
+        "stage1_lower_source_expression:signature-mismatch",
+        "stage1_lower_source_expression:unsupported-return",
         "vector_push"
       ],
       "unsupported_operations": [
+        "binary_operand_type_mismatch",
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
-        "expression_RecordExpression"
+        "expression_RecordExpression",
+        "local_initializer_type_mismatch",
+        "match_condition_type_mismatch",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "NativeIR",
@@ -5900,15 +6129,12 @@
         "vector<i64>"
       ],
       "unsupported_syntax": [
-        "DiscardStatement",
-        "ReturnStatement",
-        "SwitchStatement",
-        "missing_terminal_return",
-        "nested_local_declaration"
+        "missing_terminal_return"
       ],
       "unsupported_types": [
         "NativeIR",
         "Stage1BodyCompileResult",
+        "Stage1ExpressionLowerResult",
         "vector<i64>"
       ],
       "vector_locals": [
@@ -5939,27 +6165,30 @@
         "callee:native_ir_append_block_for_function",
         "callee:native_ir_append_instruction_for_function",
         "callee:stage1_compile_body_sequence:unsupported-return",
+        "callee:stage1_lower_from_append:unsupported-return",
+        "callee:stage1_lower_preserved_failure:signature-mismatch",
+        "callee:stage1_lower_preserved_failure:unsupported-return",
         "callee:vector_new",
-        "callee:vector_push",
+        "operation:assignment_value_type_mismatch",
         "operation:binary_>=",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1LowerResult",
         "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "syntax:missing_terminal_return",
+        "syntax:while_body_DiscardStatement",
         "type:NativeIR",
         "type:NativeIRAppendResult",
         "type:Stage1BodyCompileResult",
         "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "i64_vector_get",
         "native_ir_append_block_for_function",
@@ -5973,6 +6202,7 @@
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -5983,6 +6213,7 @@
         "vector_new",
         "vector_push"
       ],
+      "function_name": "stage1_compile_registered_function",
       "local_bindings": [
         {
           "mutable": true,
@@ -6077,6 +6308,7 @@
         "stage1_lower_preserved_failure"
       ],
       "name": "stage1_compile_registered_function",
+      "operations_supported": false,
       "parameter_types": [
         "NativeIR",
         "&vector<i64>",
@@ -6131,21 +6363,23 @@
         "callee:native_ir_append_block_for_function",
         "callee:native_ir_append_instruction_for_function",
         "callee:stage1_compile_body_sequence:unsupported-return",
+        "callee:stage1_lower_from_append:unsupported-return",
+        "callee:stage1_lower_preserved_failure:signature-mismatch",
+        "callee:stage1_lower_preserved_failure:unsupported-return",
         "callee:vector_new",
-        "callee:vector_push",
+        "operation:assignment_value_type_mismatch",
         "operation:binary_>=",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1LowerResult",
         "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "syntax:missing_terminal_return",
+        "syntax:while_body_DiscardStatement",
         "type:NativeIR",
         "type:NativeIRAppendResult",
         "type:Stage1BodyCompileResult",
@@ -6193,16 +6427,20 @@
         "native_ir_append_block_for_function",
         "native_ir_append_instruction_for_function",
         "stage1_compile_body_sequence:unsupported-return",
-        "vector_new",
-        "vector_push"
+        "stage1_lower_from_append:unsupported-return",
+        "stage1_lower_preserved_failure:signature-mismatch",
+        "stage1_lower_preserved_failure:unsupported-return",
+        "vector_new"
       ],
       "unsupported_operations": [
+        "assignment_value_type_mismatch",
         "binary_>=",
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
         "expression_UnaryExpression",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow"
+        "match_condition_type_mismatch",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "NativeIR",
@@ -6210,10 +6448,8 @@
       ],
       "unsupported_syntax": [
         "DiscardStatement",
-        "ReturnStatement",
-        "SwitchStatement",
-        "WhileStatement",
-        "missing_terminal_return"
+        "missing_terminal_return",
+        "while_body_DiscardStatement"
       ],
       "unsupported_types": [
         "NativeIR",
@@ -6244,28 +6480,34 @@
         "initial_program"
       ],
       "blockers": [
+        "callee:stage1_compile_function_sequence:signature-mismatch",
+        "callee:stage1_compile_function_sequence:unsupported-return",
+        "callee:stage1_compile_registered_function:unsupported-return",
+        "callee:stage1_lower_preserved_failure:signature-mismatch",
+        "callee:stage1_lower_preserved_failure:unsupported-return",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
-        "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1LowerResult",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration",
-        "type:NativeIR"
+        "type:NativeIR",
+        "type:Stage1LowerResult"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "stage1_compile_function_sequence",
         "stage1_compile_registered_function",
         "stage1_lower_preserved_failure"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [],
+      "function_name": "stage1_compile_function_sequence",
       "local_bindings": [
         {
           "mutable": true,
@@ -6289,6 +6531,7 @@
         "stage1_lower_preserved_failure"
       ],
       "name": "stage1_compile_function_sequence",
+      "operations_supported": false,
       "parameter_types": [
         "NativeIR",
         "&vector<i64>",
@@ -6333,7 +6576,7 @@
           "type": "i64"
         }
       ],
-      "primary_blocker": "operation:expression_FieldAccessExpression",
+      "primary_blocker": "callee:stage1_compile_function_sequence:signature-mismatch",
       "reference_locals": [],
       "reference_parameters": [
         "source",
@@ -6345,16 +6588,19 @@
       "representable": false,
       "return_type": "Stage1LowerResult",
       "secondary_blockers": [
+        "callee:stage1_compile_function_sequence:unsupported-return",
+        "callee:stage1_compile_registered_function:unsupported-return",
+        "callee:stage1_lower_preserved_failure:signature-mismatch",
+        "callee:stage1_lower_preserved_failure:unsupported-return",
+        "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
-        "operation:expression_UnaryExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1LowerResult",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration",
-        "type:NativeIR"
+        "type:NativeIR",
+        "type:Stage1LowerResult"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -6373,22 +6619,25 @@
         "VariableDeclaration",
         "SwitchStatement"
       ],
-      "unsupported_callees": [],
+      "unsupported_callees": [
+        "stage1_compile_function_sequence:signature-mismatch",
+        "stage1_compile_function_sequence:unsupported-return",
+        "stage1_compile_registered_function:unsupported-return",
+        "stage1_lower_preserved_failure:signature-mismatch",
+        "stage1_lower_preserved_failure:unsupported-return"
+      ],
       "unsupported_operations": [
         "expression_FieldAccessExpression",
         "expression_RecordExpression",
-        "expression_UnaryExpression",
-        "local_initializer_type_mismatch"
+        "local_initializer_type_mismatch",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "NativeIR",
         "Stage1LowerResult"
       ],
       "unsupported_syntax": [
-        "ReturnStatement",
-        "SwitchStatement",
-        "missing_terminal_return",
-        "nested_local_declaration"
+        "missing_terminal_return"
       ],
       "unsupported_types": [
         "NativeIR",
@@ -6416,14 +6665,18 @@
         "signature_type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [],
+      "function_name": "stage1_function_scan_state",
       "local_bindings": [],
       "local_calls": [],
       "name": "stage1_function_scan_state",
+      "operations_supported": false,
       "parameter_types": [
         "NativeIR",
         "vector<i64>",
@@ -6543,21 +6796,23 @@
         "callee:vector_push",
         "operation:binary_-",
         "operation:expression_AddressOfExpression",
+        "operation:local_initializer_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
         "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control",
+        "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "vector_get",
         "vector_new",
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -6565,6 +6820,7 @@
         "vector_new",
         "vector_push"
       ],
+      "function_name": "stage1_source_name_is_main",
       "local_bindings": [
         {
           "mutable": true,
@@ -6584,6 +6840,7 @@
       ],
       "local_calls": [],
       "name": "stage1_source_name_is_main",
+      "operations_supported": false,
       "parameter_types": [
         "&vector<i64>",
         "i64",
@@ -6614,13 +6871,13 @@
         "callee:vector_push",
         "operation:binary_-",
         "operation:expression_AddressOfExpression",
+        "operation:local_initializer_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
         "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "syntax:nested_while_control",
+        "type:vector<i64>"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -6645,18 +6902,19 @@
       "unsupported_operations": [
         "binary_-",
         "expression_AddressOfExpression",
+        "local_initializer_type_mismatch",
         "mutable_assignment_in_control_flow"
       ],
       "unsupported_signature_types": [],
       "unsupported_syntax": [
         "DiscardStatement",
-        "ReturnStatement",
         "SwitchStatement",
-        "WhileStatement",
         "missing_terminal_return",
-        "nested_local_declaration"
+        "nested_while_control"
       ],
-      "unsupported_types": [],
+      "unsupported_types": [
+        "vector<i64>"
+      ],
       "vector_locals": [
         "expected"
       ],
@@ -6674,20 +6932,22 @@
       ],
       "blockers": [
         "callee:native_ir_append_parameter",
+        "callee:stage1_register_parameters:unsupported-return",
         "callee:vector_push",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
+        "operation:local_initializer_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1ParameterRegistrationResult",
         "signature_type:vector<i64>",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "type:NativeIR",
+        "type:NativeIRAppendResult"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "native_ir_append_parameter",
         "stage1_register_parameters",
@@ -6696,6 +6956,7 @@
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -6704,6 +6965,7 @@
         "vector_len",
         "vector_push"
       ],
+      "function_name": "stage1_register_parameters",
       "local_bindings": [
         {
           "mutable": true,
@@ -6725,6 +6987,7 @@
         "stage1_register_parameters"
       ],
       "name": "stage1_register_parameters",
+      "operations_supported": false,
       "parameter_types": [
         "NativeIR",
         "i64",
@@ -6773,18 +7036,19 @@
       "representable": false,
       "return_type": "Stage1ParameterRegistrationResult",
       "secondary_blockers": [
+        "callee:stage1_register_parameters:unsupported-return",
         "callee:vector_push",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:expression_RecordExpression",
+        "operation:local_initializer_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:NativeIR",
         "signature_type:Stage1ParameterRegistrationResult",
         "signature_type:vector<i64>",
-        "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration"
+        "type:NativeIR",
+        "type:NativeIRAppendResult"
       ],
       "self_compile_evidence": null,
       "self_compile_pass": false,
@@ -6804,12 +7068,15 @@
       ],
       "unsupported_callees": [
         "native_ir_append_parameter",
+        "stage1_register_parameters:unsupported-return",
         "vector_push"
       ],
       "unsupported_operations": [
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
-        "expression_RecordExpression"
+        "expression_RecordExpression",
+        "local_initializer_type_mismatch",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "NativeIR",
@@ -6817,14 +7084,11 @@
         "vector<i64>"
       ],
       "unsupported_syntax": [
-        "DiscardStatement",
-        "ReturnStatement",
-        "SwitchStatement",
-        "missing_terminal_return",
-        "nested_local_declaration"
+        "missing_terminal_return"
       ],
       "unsupported_types": [
         "NativeIR",
+        "NativeIRAppendResult",
         "Stage1ParameterRegistrationResult",
         "vector<i64>"
       ],
@@ -6850,24 +7114,33 @@
         "callee:i64_vector_clone",
         "callee:native_ir_append_function_source",
         "callee:native_ir_empty",
+        "callee:stage1_function_scan_state:signature-mismatch",
+        "callee:stage1_function_scan_state:unsupported-return",
         "callee:stage1_parse_function_header:unsupported-return",
+        "callee:stage1_register_parameters:signature-mismatch",
+        "callee:stage1_register_parameters:unsupported-return",
+        "callee:stage1_source_name_is_main:signature-mismatch",
         "callee:vector_push",
+        "operation:assignment_value_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:local_initializer_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
+        "operation:return_type_mismatch",
         "signature_type:Stage1FunctionScanState",
         "syntax:DiscardStatement",
         "syntax:ReturnStatement",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration",
+        "syntax:nested_while_control",
         "type:NativeIR",
+        "type:NativeIRAppendResult",
         "type:Stage1FunctionHeader",
+        "type:Stage1ParameterRegistrationResult",
         "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "i64_vector_clone",
         "native_ir_append_function_source",
@@ -6881,6 +7154,7 @@
         "vector_push"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -6890,6 +7164,7 @@
         "vector_get",
         "vector_push"
       ],
+      "function_name": "stage1_register_function_at",
       "local_bindings": [
         {
           "mutable": true,
@@ -6985,6 +7260,7 @@
         "stage1_source_spans_equal"
       ],
       "name": "stage1_register_function_at",
+      "operations_supported": false,
       "parameter_types": [
         "Stage1FunctionScanState",
         "&vector<i64>",
@@ -7020,21 +7296,29 @@
       "secondary_blockers": [
         "callee:native_ir_append_function_source",
         "callee:native_ir_empty",
+        "callee:stage1_function_scan_state:signature-mismatch",
+        "callee:stage1_function_scan_state:unsupported-return",
         "callee:stage1_parse_function_header:unsupported-return",
+        "callee:stage1_register_parameters:signature-mismatch",
+        "callee:stage1_register_parameters:unsupported-return",
+        "callee:stage1_source_name_is_main:signature-mismatch",
         "callee:vector_push",
+        "operation:assignment_value_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:local_initializer_type_mismatch",
         "operation:mutable_assignment_in_control_flow",
+        "operation:return_type_mismatch",
         "signature_type:Stage1FunctionScanState",
         "syntax:DiscardStatement",
         "syntax:ReturnStatement",
         "syntax:SwitchStatement",
-        "syntax:WhileStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration",
+        "syntax:nested_while_control",
         "type:NativeIR",
+        "type:NativeIRAppendResult",
         "type:Stage1FunctionHeader",
+        "type:Stage1ParameterRegistrationResult",
         "type:vector<i64>"
       ],
       "self_compile_evidence": null,
@@ -7067,14 +7351,21 @@
         "i64_vector_clone",
         "native_ir_append_function_source",
         "native_ir_empty",
+        "stage1_function_scan_state:signature-mismatch",
+        "stage1_function_scan_state:unsupported-return",
         "stage1_parse_function_header:unsupported-return",
+        "stage1_register_parameters:signature-mismatch",
+        "stage1_register_parameters:unsupported-return",
+        "stage1_source_name_is_main:signature-mismatch",
         "vector_push"
       ],
       "unsupported_operations": [
+        "assignment_value_type_mismatch",
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow"
+        "mutable_assignment_in_control_flow",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "Stage1FunctionScanState"
@@ -7083,14 +7374,15 @@
         "DiscardStatement",
         "ReturnStatement",
         "SwitchStatement",
-        "WhileStatement",
         "missing_terminal_return",
-        "nested_local_declaration"
+        "nested_while_control"
       ],
       "unsupported_types": [
         "NativeIR",
+        "NativeIRAppendResult",
         "Stage1FunctionHeader",
         "Stage1FunctionScanState",
+        "Stage1ParameterRegistrationResult",
         "vector<i64>"
       ],
       "vector_locals": [
@@ -7121,18 +7413,23 @@
       "blockers": [
         "callee:generic_token_kind",
         "callee:i64_vector_clone",
+        "callee:stage1_function_scan_state:unsupported-return",
+        "callee:stage1_register_function_at:unsupported-return",
+        "callee:stage1_scan_functions:unsupported-return",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:Stage1FunctionScanState",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration",
         "type:NativeIR",
+        "type:Stage1FunctionScanState",
         "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "generic_token_kind",
         "i64_vector_clone",
@@ -7141,12 +7438,14 @@
         "stage1_scan_functions"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "generic_token_kind",
         "i64_vector_clone"
       ],
+      "function_name": "stage1_scan_non_newline",
       "local_bindings": [
         {
           "mutable": true,
@@ -7235,6 +7534,7 @@
         "stage1_scan_functions"
       ],
       "name": "stage1_scan_non_newline",
+      "operations_supported": false,
       "parameter_types": [
         "Stage1FunctionScanState",
         "&vector<i64>",
@@ -7274,15 +7574,19 @@
       "return_type": "Stage1FunctionScanState",
       "secondary_blockers": [
         "callee:i64_vector_clone",
+        "callee:stage1_function_scan_state:unsupported-return",
+        "callee:stage1_register_function_at:unsupported-return",
+        "callee:stage1_scan_functions:unsupported-return",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:local_initializer_type_mismatch",
+        "operation:match_condition_type_mismatch",
+        "operation:return_type_mismatch",
         "signature_type:Stage1FunctionScanState",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "syntax:missing_terminal_return",
-        "syntax:nested_local_declaration",
         "type:NativeIR",
+        "type:Stage1FunctionScanState",
         "type:vector<i64>"
       ],
       "self_compile_evidence": null,
@@ -7311,21 +7615,24 @@
       ],
       "unsupported_callees": [
         "generic_token_kind",
-        "i64_vector_clone"
+        "i64_vector_clone",
+        "stage1_function_scan_state:unsupported-return",
+        "stage1_register_function_at:unsupported-return",
+        "stage1_scan_functions:unsupported-return"
       ],
       "unsupported_operations": [
+        "binary_operand_type_mismatch",
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
-        "local_initializer_type_mismatch"
+        "local_initializer_type_mismatch",
+        "match_condition_type_mismatch",
+        "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "Stage1FunctionScanState"
       ],
       "unsupported_syntax": [
-        "ReturnStatement",
-        "SwitchStatement",
-        "missing_terminal_return",
-        "nested_local_declaration"
+        "missing_terminal_return"
       ],
       "unsupported_types": [
         "NativeIR",
@@ -7357,20 +7664,20 @@
         "callee:generic_token_kind",
         "callee:i64_vector_clone",
         "callee:stage1_function_scan_state:unsupported-return",
+        "callee:stage1_scan_non_newline:unsupported-return",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
         "operation:return_type_mismatch",
         "signature_type:Stage1FunctionScanState",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement",
-        "syntax:nested_local_declaration",
         "type:NativeIR",
+        "type:Stage1FunctionScanState",
         "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": true,
       "calls": [
         "generic_token_kind",
         "i64_vector_clone",
@@ -7378,12 +7685,14 @@
         "stage1_scan_non_newline"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
         "generic_token_kind",
         "i64_vector_clone"
       ],
+      "function_name": "stage1_scan_functions",
       "local_bindings": [
         {
           "mutable": true,
@@ -7446,6 +7755,7 @@
         "stage1_scan_non_newline"
       ],
       "name": "stage1_scan_functions",
+      "operations_supported": false,
       "parameter_types": [
         "Stage1FunctionScanState",
         "&vector<i64>",
@@ -7486,17 +7796,16 @@
       "secondary_blockers": [
         "callee:i64_vector_clone",
         "callee:stage1_function_scan_state:unsupported-return",
+        "callee:stage1_scan_non_newline:unsupported-return",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
         "operation:return_type_mismatch",
         "signature_type:Stage1FunctionScanState",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
-        "syntax:WhileStatement",
-        "syntax:nested_local_declaration",
         "type:NativeIR",
+        "type:Stage1FunctionScanState",
         "type:vector<i64>"
       ],
       "self_compile_evidence": null,
@@ -7528,24 +7837,21 @@
       "unsupported_callees": [
         "generic_token_kind",
         "i64_vector_clone",
-        "stage1_function_scan_state:unsupported-return"
+        "stage1_function_scan_state:unsupported-return",
+        "stage1_scan_non_newline:unsupported-return"
       ],
       "unsupported_operations": [
+        "binary_operand_type_mismatch",
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow",
+        "match_condition_type_mismatch",
         "return_type_mismatch"
       ],
       "unsupported_signature_types": [
         "Stage1FunctionScanState"
       ],
-      "unsupported_syntax": [
-        "ReturnStatement",
-        "SwitchStatement",
-        "WhileStatement",
-        "nested_local_declaration"
-      ],
+      "unsupported_syntax": [],
       "unsupported_types": [
         "NativeIR",
         "Stage1FunctionScanState",
@@ -7585,6 +7891,8 @@
         "callee:output_sink_new",
         "callee:stage1_compile_function_sequence:signature-mismatch",
         "callee:stage1_compile_function_sequence:unsupported-return",
+        "callee:stage1_empty_result:signature-mismatch",
+        "callee:stage1_empty_result:unsupported-return",
         "callee:stage1_function_scan_state:signature-mismatch",
         "callee:stage1_function_scan_state:unsupported-return",
         "callee:stage1_result:signature-mismatch",
@@ -7596,18 +7904,17 @@
         "operation:assignment_value_type_mismatch",
         "operation:binary_<=",
         "operation:binary_>",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
         "operation:return_type_mismatch",
         "operation:unsupported_assignment_value_FieldAccessExpression",
         "operation:vector_len:argument-shape",
         "signature_type:Stage1CompileResult",
         "signature_type:vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "type:NativeIR",
         "type:NativeIRVerifiedResult",
         "type:NativeVerification",
@@ -7617,6 +7924,7 @@
         "type:vector<i64>"
       ],
       "body_representable": false,
+      "body_syntax_supported": false,
       "calls": [
         "generic_lexer_scan",
         "generic_token_count",
@@ -7637,6 +7945,7 @@
         "verify_program"
       ],
       "compiler_version": "v2",
+      "dependencies_supported": false,
       "dependency_closed": false,
       "dependency_function_count": 1,
       "external_dependencies": [
@@ -7652,6 +7961,7 @@
         "vector_new",
         "verify_program"
       ],
+      "function_name": "stage1_compile",
       "local_bindings": [
         {
           "mutable": true,
@@ -7768,6 +8078,7 @@
         "stage1_scan_functions"
       ],
       "name": "stage1_compile",
+      "operations_supported": false,
       "parameter_types": [
         "vector<i64>"
       ],
@@ -7792,6 +8103,8 @@
         "callee:output_sink_new",
         "callee:stage1_compile_function_sequence:signature-mismatch",
         "callee:stage1_compile_function_sequence:unsupported-return",
+        "callee:stage1_empty_result:signature-mismatch",
+        "callee:stage1_empty_result:unsupported-return",
         "callee:stage1_function_scan_state:signature-mismatch",
         "callee:stage1_function_scan_state:unsupported-return",
         "callee:stage1_result:signature-mismatch",
@@ -7803,18 +8116,17 @@
         "operation:assignment_value_type_mismatch",
         "operation:binary_<=",
         "operation:binary_>",
+        "operation:binary_operand_type_mismatch",
         "operation:expression_AddressOfExpression",
         "operation:expression_FieldAccessExpression",
         "operation:local_initializer_type_mismatch",
-        "operation:mutable_assignment_in_control_flow",
+        "operation:match_condition_type_mismatch",
         "operation:return_type_mismatch",
         "operation:unsupported_assignment_value_FieldAccessExpression",
         "operation:vector_len:argument-shape",
         "signature_type:Stage1CompileResult",
         "signature_type:vector<i64>",
         "syntax:DiscardStatement",
-        "syntax:ReturnStatement",
-        "syntax:SwitchStatement",
         "type:NativeIR",
         "type:NativeIRVerifiedResult",
         "type:NativeVerification",
@@ -7884,6 +8196,8 @@
         "output_sink_new",
         "stage1_compile_function_sequence:signature-mismatch",
         "stage1_compile_function_sequence:unsupported-return",
+        "stage1_empty_result:signature-mismatch",
+        "stage1_empty_result:unsupported-return",
         "stage1_function_scan_state:signature-mismatch",
         "stage1_function_scan_state:unsupported-return",
         "stage1_result:signature-mismatch",
@@ -7897,10 +8211,11 @@
         "assignment_value_type_mismatch",
         "binary_<=",
         "binary_>",
+        "binary_operand_type_mismatch",
         "expression_AddressOfExpression",
         "expression_FieldAccessExpression",
         "local_initializer_type_mismatch",
-        "mutable_assignment_in_control_flow",
+        "match_condition_type_mismatch",
         "return_type_mismatch",
         "unsupported_assignment_value_FieldAccessExpression",
         "vector_len:argument-shape"
@@ -7910,9 +8225,7 @@
         "vector<i64>"
       ],
       "unsupported_syntax": [
-        "DiscardStatement",
-        "ReturnStatement",
-        "SwitchStatement"
+        "DiscardStatement"
       ],
       "unsupported_types": [
         "NativeIR",
@@ -7936,10 +8249,10 @@
       ]
     }
   ],
-  "functions_body_representable": 5,
-  "functions_dependency_closed": 5,
-  "functions_representable": 5,
-  "functions_self_compile_proven": 5,
+  "functions_body_representable": 6,
+  "functions_dependency_closed": 6,
+  "functions_representable": 6,
+  "functions_self_compile_proven": 6,
   "functions_signature_supported": 14,
   "functions_total": 50,
   "schema": "s3-stage1-representability-matrix",

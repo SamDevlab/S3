@@ -41,8 +41,13 @@ V2_BINARY_OPERATORS = {
     ast.BinaryOperator.MULTIPLY,
     ast.BinaryOperator.EQUAL,
     ast.BinaryOperator.LESS,
+    ast.BinaryOperator.COMPARE,
 }
-V2_COMPARISON_OPERATORS = {ast.BinaryOperator.EQUAL, ast.BinaryOperator.LESS}
+V2_COMPARISON_OPERATORS = {
+    ast.BinaryOperator.EQUAL,
+    ast.BinaryOperator.LESS,
+    ast.BinaryOperator.COMPARE,
+}
 V2_SUPPORTED_EXTERNALS = {"vector_get", "vector_len"}
 V2_PROVEN_SELF_COMPILED_FUNCTIONS = {
     "stage1_emission_value_count",
@@ -50,6 +55,7 @@ V2_PROVEN_SELF_COMPILED_FUNCTIONS = {
     "stage1_emission_value_id",
     "stage1_emission_operand_id",
     "stage1_emission_instruction_field",
+    "stage1_output_chunk",
 }
 
 
@@ -330,6 +336,11 @@ def _v2_expression_type(
         )
         if expression.operator not in V2_BINARY_OPERATORS:
             unsupported_operations.add(f"binary_{expression.operator.value}")
+        if expression.operator is ast.BinaryOperator.COMPARE:
+            if left is not right or left not in {ast.TypeName.I64, ast.TypeName.TRIT}:
+                unsupported_operations.add("binary_operand_type_mismatch")
+                return None
+            return ast.TypeName.TRIT
         if left is not ast.TypeName.I64 or right is not ast.TypeName.I64:
             unsupported_operations.add("binary_operand_type_mismatch")
             return None
@@ -389,6 +400,138 @@ def _v2_expression_type(
     return None
 
 
+def _v2_control_block_capabilities(
+    block: ast.Block,
+    function: ast.FunctionDeclaration,
+    functions: dict[str, ast.FunctionDeclaration],
+    environment: dict[str, object],
+    mutable_names: set[str],
+    *,
+    syntax: set[str],
+    operations: set[str],
+    unsupported_types: set[str],
+    unsupported_callees: set[str],
+    supported_statement_ids: set[int],
+    context: str,
+) -> None:
+    if len(block.statements) > 64:
+        operations.add(f"{context}_statement_capacity")
+    local_environment = dict(environment)
+    local_mutable_names = set(mutable_names)
+    returned = False
+    for index, statement in enumerate(block.statements):
+        supported_statement_ids.add(id(statement))
+        if returned:
+            syntax.add(f"statement_after_return_in_{context}")
+        if isinstance(statement, ast.VariableDeclaration):
+            if statement.name in local_environment:
+                operations.add("duplicate_local")
+            if statement.type_name not in {ast.TypeName.I64, ast.TypeName.TRIT}:
+                unsupported_types.add(_type_text(statement.type_name))
+            inferred = _v2_expression_type(
+                statement.initializer,
+                local_environment,
+                functions,
+                unsupported_operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
+            if inferred is not statement.type_name:
+                operations.add("local_initializer_type_mismatch")
+            local_environment[statement.name] = statement.type_name
+            if statement.mutable:
+                local_mutable_names.add(statement.name)
+        elif isinstance(statement, ast.AssignmentStatement):
+            if not isinstance(statement.target, ast.VariableTarget):
+                operations.add(
+                    f"unsupported_assignment_target_{type(statement.target).__name__}"
+                )
+                continue
+            target_name = statement.target.name
+            if target_name not in local_environment:
+                operations.add(f"assignment_to_unknown_binding:{target_name}")
+                continue
+            if target_name not in local_mutable_names:
+                operations.add(f"assignment_to_immutable_binding:{target_name}")
+                continue
+            inferred = _v2_expression_type(
+                statement.value,
+                local_environment,
+                functions,
+                unsupported_operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
+            if inferred is not local_environment[target_name]:
+                operations.add("assignment_value_type_mismatch")
+        elif isinstance(statement, ast.DiscardStatement):
+            _v2_expression_type(
+                statement.expression,
+                local_environment,
+                functions,
+                unsupported_operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
+        elif isinstance(statement, ast.ReturnStatement):
+            if index != len(block.statements) - 1:
+                syntax.add(f"nonterminal_return_in_{context}")
+            if context == "while":
+                operations.add("return_from_while_body")
+            inferred = _v2_expression_type(
+                statement.expression,
+                local_environment,
+                functions,
+                unsupported_operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
+            if inferred is not function.return_type:
+                operations.add("return_type_mismatch")
+            returned = True
+        elif isinstance(statement, ast.SwitchStatement):
+            condition_type = _v2_expression_type(
+                statement.expression,
+                local_environment,
+                functions,
+                unsupported_operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
+            if condition_type is not ast.TypeName.TRIT:
+                operations.add("match_condition_type_mismatch")
+            if tuple(case.label for case in statement.cases) != (-1, 0, 1):
+                operations.add("match_requires_ordered_ternary_cases")
+            for case in statement.cases:
+                _v2_control_block_capabilities(
+                    case.body,
+                    function,
+                    functions,
+                    local_environment,
+                    local_mutable_names,
+                    syntax=syntax,
+                    operations=operations,
+                    unsupported_types=unsupported_types,
+                    unsupported_callees=unsupported_callees,
+                    supported_statement_ids=supported_statement_ids,
+                    context="match_arm",
+                )
+        elif isinstance(statement, ast.WhileStatement):
+            syntax.add("nested_while_control")
+            condition_type = _v2_expression_type(
+                statement.condition,
+                local_environment,
+                functions,
+                unsupported_operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
+            if condition_type is not ast.TypeName.TRIT:
+                operations.add("while_condition_type_mismatch")
+        else:
+            syntax.add(f"{context}_{type(statement).__name__}")
+
+
 def _v2_body_capabilities(
     function: ast.FunctionDeclaration,
     functions: dict[str, ast.FunctionDeclaration],
@@ -404,6 +547,7 @@ def _v2_body_capabilities(
     }
     statements = function.body.statements
     returned = False
+    supported_loop_statement_ids: set[int] = set()
     for index, statement in enumerate(statements):
         if returned:
             syntax.add("statement_after_return")
@@ -459,6 +603,105 @@ def _v2_body_capabilities(
                 operations.add("assignment_value_type_mismatch")
         elif isinstance(statement, ast.CompoundAssignmentStatement):
             operations.add("compound_assignment")
+        elif isinstance(statement, ast.SwitchStatement):
+            _v2_control_block_capabilities(
+                ast.Block((statement,), statement.location),
+                function,
+                functions,
+                environment,
+                mutable_names,
+                syntax=syntax,
+                operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+                supported_statement_ids=supported_loop_statement_ids,
+                context="function_control",
+            )
+        elif isinstance(statement, ast.WhileStatement):
+            condition_type = _v2_expression_type(
+                statement.condition, environment, functions,
+                unsupported_operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
+            if condition_type is not ast.TypeName.TRIT:
+                operations.add("while_condition_type_mismatch")
+            loop_environment = dict(environment)
+            loop_mutable_names = set(mutable_names)
+            loop_returned = False
+            if len(statement.body.statements) > 64:
+                operations.add("while_statement_capacity")
+            for body_index, body_statement in enumerate(statement.body.statements):
+                if loop_returned:
+                    syntax.add("statement_after_return_in_while")
+                if isinstance(body_statement, ast.VariableDeclaration):
+                    supported_loop_statement_ids.add(id(body_statement))
+                    if body_statement.name in loop_environment:
+                        operations.add("duplicate_local_in_while")
+                    if body_statement.type_name is not ast.TypeName.I64:
+                        unsupported_types.add(_type_text(body_statement.type_name))
+                    inferred = _v2_expression_type(
+                        body_statement.initializer, loop_environment, functions,
+                        unsupported_operations=operations,
+                        unsupported_types=unsupported_types,
+                        unsupported_callees=unsupported_callees,
+                    )
+                    if inferred is not body_statement.type_name:
+                        operations.add("local_initializer_type_mismatch_in_while")
+                    loop_environment[body_statement.name] = body_statement.type_name
+                    if body_statement.mutable:
+                        loop_mutable_names.add(body_statement.name)
+                elif isinstance(body_statement, ast.AssignmentStatement):
+                    supported_loop_statement_ids.add(id(body_statement))
+                    if not isinstance(body_statement.target, ast.VariableTarget):
+                        operations.add(
+                            f"unsupported_assignment_target_{type(body_statement.target).__name__}"
+                        )
+                        continue
+                    target_name = body_statement.target.name
+                    if target_name not in loop_environment:
+                        operations.add(f"assignment_to_unknown_binding:{target_name}")
+                        continue
+                    if target_name not in loop_mutable_names:
+                        operations.add(f"assignment_to_immutable_binding:{target_name}")
+                        continue
+                    inferred = _v2_expression_type(
+                        body_statement.value, loop_environment, functions,
+                        unsupported_operations=operations,
+                        unsupported_types=unsupported_types,
+                        unsupported_callees=unsupported_callees,
+                    )
+                    if inferred is not loop_environment[target_name]:
+                        operations.add("assignment_value_type_mismatch")
+                elif isinstance(body_statement, ast.ReturnStatement):
+                    supported_loop_statement_ids.add(id(body_statement))
+                    if body_index != len(statement.body.statements) - 1:
+                        syntax.add("nonterminal_return_in_while")
+                    inferred = _v2_expression_type(
+                        body_statement.expression, loop_environment, functions,
+                        unsupported_operations=operations,
+                        unsupported_types=unsupported_types,
+                        unsupported_callees=unsupported_callees,
+                    )
+                    if inferred is not function.return_type:
+                        operations.add("return_type_mismatch")
+                    loop_returned = True
+                elif isinstance(body_statement, ast.SwitchStatement):
+                    _v2_control_block_capabilities(
+                        ast.Block((body_statement,), body_statement.location),
+                        function,
+                        functions,
+                        loop_environment,
+                        loop_mutable_names,
+                        syntax=syntax,
+                        operations=operations,
+                        unsupported_types=unsupported_types,
+                        unsupported_callees=unsupported_callees,
+                        supported_statement_ids=supported_loop_statement_ids,
+                        context="while",
+                    )
+                else:
+                    syntax.add(f"while_body_{type(body_statement).__name__}")
         else:
             syntax.add(type(statement).__name__)
             for node in _walk(statement):
@@ -511,7 +754,7 @@ def _v2_body_capabilities(
     )
     for node in _walk(function.body):
         if isinstance(node, supported_nested_statement_nodes):
-            if id(node) not in top_level_ids:
+            if id(node) not in top_level_ids and id(node) not in supported_loop_statement_ids:
                 if isinstance(node, ast.AssignmentStatement):
                     operations.add("mutable_assignment_in_control_flow")
                 elif isinstance(node, ast.CompoundAssignmentStatement):
@@ -603,6 +846,7 @@ def _function_entry_v2(
     )
     return {
         "name": function.name,
+        "function_name": function.name,
         "source_start": function.location.offset,
         "source_end": end_offset,
         "source_bytes": end_offset - function.location.offset,
@@ -654,6 +898,8 @@ def _function_entry_v2(
         ),
         "local_calls": local_calls,
         "signature_supported": signature_supported,
+        "body_syntax_supported": not syntax,
+        "operations_supported": not operations,
         "unsupported_signature_types": sorted(set(unsupported_signature_types)),
         "unsupported_syntax": sorted(syntax),
         "unsupported_operations": sorted(operations),
@@ -711,6 +957,7 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
         name = str(entry["name"])
         closed, dependency_names = closure(name, set())
         entry["dependency_closed"] = closed
+        entry["dependencies_supported"] = closed
         entry["dependency_function_count"] = len(dependency_names)
         entry["external_dependencies"] = sorted(
             set(entry["calls"]) - set(entry["local_calls"])
@@ -723,11 +970,13 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
         )
         entry["self_compile_tested"] = proven
         entry["self_compile_pass"] = proven
-        entry["self_compile_evidence"] = (
-            "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_compiles_real_reference_vector_helpers"
-            if proven
-            else None
-        )
+        entry["self_compile_evidence"] = None
+        if proven:
+            entry["self_compile_evidence"] = (
+                "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_compiles_canonical_output_chunk"
+                if name == "stage1_output_chunk"
+                else "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_compiles_real_reference_vector_helpers"
+            )
 
     def count(field: str) -> int:
         return sum(bool(entry[field]) for entry in entries)
@@ -765,12 +1014,16 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
             "statements": [
                 "i64_local_declaration",
                 "straight_line_i64_local_reassignment",
+                "top_level_while_with_linear_i64_body",
                 "terminal_return",
             ],
             "program_function_capacity": 16,
             "body_statement_capacity": 64,
-            "control_flow": [],
-            "mutation": ["straight_line_i64_local_reassignment"],
+            "control_flow": ["single-level while lowered to three-way CFG"],
+            "mutation": [
+                "straight-line i64 reassignment",
+                "mutable i64 slots with loop-carried TLOAD/TSTORE",
+            ],
         },
         "blocker_distribution": dict(sorted(blocker_distribution.items())),
         "functions": entries,

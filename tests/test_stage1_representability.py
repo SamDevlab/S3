@@ -116,10 +116,10 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
     ).hexdigest()
     assert matrix["functions_total"] == 50
     assert matrix["functions_signature_supported"] == 14
-    assert matrix["functions_body_representable"] == 5
-    assert matrix["functions_representable"] == 5
-    assert matrix["functions_dependency_closed"] == 5
-    assert matrix["functions_self_compile_proven"] == 5
+    assert matrix["functions_body_representable"] == 6
+    assert matrix["functions_representable"] == 6
+    assert matrix["functions_dependency_closed"] == 6
+    assert matrix["functions_self_compile_proven"] == 6
     proven = {item["name"] for item in matrix["functions"] if item["self_compile_pass"]}
     assert proven == {
         "stage1_emission_value_count",
@@ -127,6 +127,7 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         "stage1_emission_value_id",
         "stage1_emission_operand_id",
         "stage1_emission_instruction_field",
+        "stage1_output_chunk",
     }
     assert all(
         item["self_compile_tested"] is True
@@ -135,19 +136,22 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
     )
 
 
-def test_stage1_v2_analyzer_identifies_output_chunk_control_and_storage_blockers() -> None:
+def test_stage1_v2_analyzer_recognizes_canonical_output_chunk_capabilities() -> None:
     source_path = Path(__file__).parents[1] / "selfhost/compiler/stage1_compiler_v1.s3"
     source = source_path.read_text(encoding="utf-8")
     matrix = analyze_stage1(source, compiler_version="v2")
     target = next(item for item in matrix["functions"] if item["name"] == "stage1_output_chunk")
 
     assert target["signature_supported"] is True
-    assert target["representable"] is False
-    assert "WhileStatement" in target["unsupported_syntax"]
-    assert "SwitchStatement" in target["unsupported_syntax"]
-    assert "mutable_assignment_in_control_flow" in target["unsupported_operations"]
-    assert "binary_<" not in target["unsupported_operations"]
-    assert "binary_==" not in target["unsupported_operations"]
+    assert target["body_syntax_supported"] is True
+    assert target["operations_supported"] is True
+    assert target["function_name"] == "stage1_output_chunk"
+    assert target["body_representable"] is True
+    assert target["representable"] is True
+    assert target["dependency_closed"] is True
+    assert target["dependencies_supported"] is True
+    assert target["unsupported_syntax"] == []
+    assert target["unsupported_operations"] == []
     assert target["calls"] == ["vector_get", "vector_len"]
     assert target["unsupported_callees"] == []
 
@@ -219,18 +223,44 @@ fn update(value: i64) -> i64:
     current = current + 1
     return current
 """
-    nested = """\
+    loop = """\
 fn update(value: i64) -> i64:
     mut current: i64 = value
     while current < 4:
         current = current + 1
     return current
 """
+    nested_loop = """\
+fn update(value: i64) -> i64:
+    mut current: i64 = value
+    while current < 4:
+        while current < 2:
+            current = current + 1
+        current = current + 1
+    return current
+"""
 
     immutable_function, = analyze_stage1(immutable, compiler_version="v2")["functions"]
-    nested_function, = analyze_stage1(nested, compiler_version="v2")["functions"]
+    loop_function, = analyze_stage1(loop, compiler_version="v2")["functions"]
+    nested_function, = analyze_stage1(nested_loop, compiler_version="v2")["functions"]
 
     assert "assignment_to_immutable_binding:current" in immutable_function["unsupported_operations"]
+    assert loop_function["representable"] is True
     assert "WhileStatement" in nested_function["unsupported_syntax"]
     assert "mutable_assignment_in_control_flow" in nested_function["unsupported_operations"]
     assert not nested_function["representable"]
+
+
+def test_stage1_v2_analyzer_rejects_i64_while_condition() -> None:
+    source = """\
+fn invalid() -> i64:
+    mut ready: i64 = 1
+    while ready:
+        ready = 0
+    return ready
+"""
+    function, = analyze_stage1(source, compiler_version="v2")["functions"]
+
+    assert function["signature_supported"] is True
+    assert "while_condition_type_mismatch" in function["unsupported_operations"]
+    assert function["representable"] is False

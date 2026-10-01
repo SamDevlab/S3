@@ -901,6 +901,48 @@ fn typed_relation_verifier_probe(
     mut verified: NativeIRVerifiedResult = verify_program(program)
     return verified.verification.accepted * 100 + verified.verification.diagnostic_code
 
+fn typed_compare_verifier_probe(
+    immediate: i64, left_type_id: i64, right_type_id: i64, result_type_id: i64
+) -> i64:
+    mut program: NativeIR = native_ir_empty()
+    mut function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    program = function.program
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, 1
+    )
+    program = result_type.program
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 1
+    )
+    program = block.program
+    mut left: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 0, 1, -1, -1, left_type_id
+    )
+    mut left_id: i64 = left.value_id
+    program = left.program
+    mut right: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 0, 0, -1, -1, right_type_id
+    )
+    mut right_id: i64 = right.value_id
+    program = right.program
+    mut compared: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 12, immediate, left_id, right_id, result_type_id
+    )
+    mut compared_id: i64 = compared.value_id
+    match compared.accepted == 1:
+        -1:
+            program = compared.program
+        0:
+            return compared.accepted
+        1:
+            return compared.accepted
+    mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        program, 0, 0, 1, 0, compared_id, -1, -1
+    )
+    program = returned.program
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    return verified.verification.accepted * 100 + verified.verification.diagnostic_code
+
 fn main() -> i64:
     mut score: i64 = native_ir_trit_to_i64(
         typed_relation_verifier_probe(0, 0, 0) == 100
@@ -917,10 +959,22 @@ fn main() -> i64:
     score = score * 2 + native_ir_trit_to_i64(
         typed_relation_verifier_probe(6, 0, 0) == 0
     )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_compare_verifier_probe(0, 0, 0, 1) == 100
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_compare_verifier_probe(0, 0, 0, 0) == 15
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_compare_verifier_probe(0, 0, 1, 1) == 15
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_compare_verifier_probe(1, 0, 0, 1) == 0
+    )
     return score
 """
 
-    assert run_source(verifier + "\n" + probe) == 31
+    assert run_source(verifier + "\n" + probe) == 511
 
 
 def test_native_ir_typed_branch_and_jump_cfg_contracts() -> None:

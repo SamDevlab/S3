@@ -1130,6 +1130,72 @@ export fn native_ir_append_block_for_function(
 export fn native_ir_append_block(program: NativeIR, block_id: i64, terminator_kind: i64) -> NativeIRAppendResult:
     return native_ir_append_block_for_function(program, 0, block_id, terminator_kind)
 
+export fn native_ir_set_block_terminator_for_function(
+    program: NativeIR,
+    function_id: i64,
+    block_id: i64,
+    terminator_kind: i64
+) -> NativeIRAppendResult:
+    mut accepted: i64 = 0
+    mut block_index: i64 = 0
+    match terminator_kind >= 1:
+        -1:
+            match terminator_kind <= 3:
+                -1:
+                    while block_index < i64_vector_len(&program.block_ids):
+                        match i64_vector_get(&program.block_ids, block_index) == block_id:
+                            -1:
+                                match i64_vector_get(&program.block_function_ids, block_index) == function_id:
+                                    -1:
+                                        accepted = 1
+                                        block_index = i64_vector_len(&program.block_ids)
+                                    0:
+                                        block_index = block_index + 1
+                                    1:
+                                        block_index = block_index + 1
+                            0:
+                                block_index = block_index + 1
+                            1:
+                                block_index = block_index + 1
+                0:
+                    discard 0
+                1:
+                    discard 0
+        0:
+            discard 0
+        1:
+            discard 0
+    match accepted == 1:
+        -1:
+            mut updated: NativeIR = program
+            mut index: i64 = 0
+            while index < i64_vector_len(&updated.block_ids):
+                match i64_vector_get(&updated.block_ids, index) == block_id:
+                    -1:
+                        match i64_vector_get(&updated.block_function_ids, index) == function_id:
+                            -1:
+                                discard i64_vector_set(
+                                    &mut updated.block_terminator_kinds,
+                                    index,
+                                    terminator_kind
+                                )
+                                index = i64_vector_len(&updated.block_ids)
+                            0:
+                                index = index + 1
+                            1:
+                                index = index + 1
+                    0:
+                        index = index + 1
+                    1:
+                        index = index + 1
+            return NativeIRAppendResult(
+                program=updated, accepted=1, value_id=block_id
+            )
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+
 export fn native_ir_value_count(program: NativeIR) -> i64:
     return i64_vector_len(&program.value_ids)
 
@@ -1437,15 +1503,33 @@ fn native_ir_append_instruction_core_for_function(
                                                         1:
                                                             accepted = 0
                                         0:
-                                            match opcode == 11:
+                                            match native_ir_comparison_opcode_valid(opcode) == 1:
                                                 -1:
                                                     result_count = 1
                                                     operand_count = 2
-                                                    match native_ir_relation_code_valid(immediate) == 1:
+                                                    match opcode == 11:
                                                         -1:
-                                                            discard 0
+                                                            match native_ir_relation_code_valid(immediate) == 1:
+                                                                -1:
+                                                                    discard 0
+                                                                0:
+                                                                    accepted = 0
+                                                                1:
+                                                                    accepted = 0
                                                         0:
-                                                            accepted = 0
+                                                            match opcode == 12:
+                                                                -1:
+                                                                    match immediate == 0:
+                                                                        -1:
+                                                                            discard 0
+                                                                        0:
+                                                                            accepted = 0
+                                                                        1:
+                                                                            accepted = 0
+                                                                0:
+                                                                    accepted = 0
+                                                                1:
+                                                                    accepted = 0
                                                         1:
                                                             accepted = 0
                                                 0:
@@ -2647,7 +2731,58 @@ fn native_ir_relation_types_valid(
         1:
             return 0
 
+fn native_ir_comparison_opcode_valid(opcode: i64) -> i64:
+    match opcode == 11:
+        -1:
+            return 1
+        0:
+            return native_ir_trit_to_i64(opcode == 12)
+        1:
+            return 0
+
+fn native_ir_three_way_compare_types_valid(
+    result_type_id: i64, left_type_id: i64, right_type_id: i64
+) -> i64:
+    match result_type_id == 1:
+        -1:
+            match left_type_id == right_type_id:
+                -1:
+                    match left_type_id >= 0:
+                        -1:
+                            return native_ir_trit_to_i64(left_type_id < 2)
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
 fn opcode_shape_valid(opcode: i64, result_count: i64, operand_count: i64, immediate: i64) -> trit:
+    match opcode == 12:
+        -1:
+            match result_count == 1:
+                -1:
+                    match operand_count == 2:
+                        -1:
+                            return immediate == 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            discard 0
+        1:
+            discard 0
     match opcode == 4:
         -1:
             match result_count == 1:
@@ -3356,6 +3491,120 @@ fn verification_result(program: NativeIR, accepted: i64, code: i64, before: i64)
     )
     return NativeIRVerifiedResult(program=program, verification=verification)
 
+export fn native_ir_order_blocks_by_instruction_first(program: NativeIR) -> NativeIR:
+    mut ordered: NativeIR = program
+    mut function_index: i64 = 0
+    while function_index < i64_vector_len(&ordered.function_ids):
+        mut block_first: i64 = i64_vector_get(
+            &ordered.function_block_first, function_index
+        )
+        mut block_count: i64 = i64_vector_get(
+            &ordered.function_block_count, function_index
+        )
+        mut block_offset: i64 = 0
+        while block_offset < block_count:
+            mut selected_index: i64 = block_first + block_offset
+            mut candidate_index: i64 = selected_index + 1
+            while candidate_index < block_first + block_count:
+                match i64_vector_get(
+                    &ordered.block_instruction_first, candidate_index
+                ) < i64_vector_get(
+                    &ordered.block_instruction_first, selected_index
+                ):
+                    -1:
+                        selected_index = candidate_index
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+                candidate_index = candidate_index + 1
+            match selected_index == block_first + block_offset:
+                -1:
+                    discard 0
+                0:
+                    mut current_index: i64 = block_first + block_offset
+                    mut current_block_id: i64 = i64_vector_get(
+                        &ordered.block_ids, current_index
+                    )
+                    mut selected_block_id: i64 = i64_vector_get(
+                        &ordered.block_ids, selected_index
+                    )
+                    discard i64_vector_set(
+                        &mut ordered.block_ids, current_index, selected_block_id
+                    )
+                    discard i64_vector_set(
+                        &mut ordered.block_ids, selected_index, current_block_id
+                    )
+                    mut current_function_id: i64 = i64_vector_get(
+                        &ordered.block_function_ids, current_index
+                    )
+                    mut selected_function_id: i64 = i64_vector_get(
+                        &ordered.block_function_ids, selected_index
+                    )
+                    discard i64_vector_set(
+                        &mut ordered.block_function_ids,
+                        current_index,
+                        selected_function_id
+                    )
+                    discard i64_vector_set(
+                        &mut ordered.block_function_ids,
+                        selected_index,
+                        current_function_id
+                    )
+                    mut current_instruction_first: i64 = i64_vector_get(
+                        &ordered.block_instruction_first, current_index
+                    )
+                    mut selected_instruction_first: i64 = i64_vector_get(
+                        &ordered.block_instruction_first, selected_index
+                    )
+                    discard i64_vector_set(
+                        &mut ordered.block_instruction_first,
+                        current_index,
+                        selected_instruction_first
+                    )
+                    discard i64_vector_set(
+                        &mut ordered.block_instruction_first,
+                        selected_index,
+                        current_instruction_first
+                    )
+                    mut current_instruction_count: i64 = i64_vector_get(
+                        &ordered.block_instruction_count, current_index
+                    )
+                    mut selected_instruction_count: i64 = i64_vector_get(
+                        &ordered.block_instruction_count, selected_index
+                    )
+                    discard i64_vector_set(
+                        &mut ordered.block_instruction_count,
+                        current_index,
+                        selected_instruction_count
+                    )
+                    discard i64_vector_set(
+                        &mut ordered.block_instruction_count,
+                        selected_index,
+                        current_instruction_count
+                    )
+                    mut current_terminator: i64 = i64_vector_get(
+                        &ordered.block_terminator_kinds, current_index
+                    )
+                    mut selected_terminator: i64 = i64_vector_get(
+                        &ordered.block_terminator_kinds, selected_index
+                    )
+                    discard i64_vector_set(
+                        &mut ordered.block_terminator_kinds,
+                        current_index,
+                        selected_terminator
+                    )
+                    discard i64_vector_set(
+                        &mut ordered.block_terminator_kinds,
+                        selected_index,
+                        current_terminator
+                    )
+                1:
+                    discard 0
+            block_offset = block_offset + 1
+        function_index = function_index + 1
+    return ordered
+
 export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
     before: i64 = checksum(
         &program.function_ids, &program.function_result_widths,
@@ -3516,9 +3765,19 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
             -1:
                 discard 0
             0:
-                return verification_result(program, 0, 13, before)
+                return verification_result(
+                    program,
+                    0,
+                    13,
+                    before
+                )
             1:
-                return verification_result(program, 0, 13, before)
+                return verification_result(
+                    program,
+                    0,
+                    13,
+                    before
+                )
         match count > 0:
             -1:
                 discard 0
@@ -3658,14 +3917,14 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
             0:
                 discard 0
             1:
-                match opcode <=> 11:
+                match opcode <=> 12:
                     -1:
                         discard 0
                     0:
                         discard 0
                     1:
                         return verification_result(program, 0, 12, before)
-        match opcode <=> 11:
+        match opcode <=> 12:
             -1:
                 discard 0
             0:
@@ -3762,6 +4021,39 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
                     relation_left_type_id,
                     relation_right_type_id,
                     immediate
+                ) == 1:
+                    -1:
+                        discard 0
+                    0:
+                        return verification_result(program, 0, 15, before)
+                    1:
+                        return verification_result(program, 0, 15, before)
+            0:
+                discard 0
+            1:
+                discard 0
+        match opcode == 12:
+            -1:
+                mut compare_result_value_id: i64 = i64_vector_get(
+                    &program.result_value_ids, result_first
+                )
+                mut compare_left_value_id: i64 = i64_vector_get(
+                    &program.operand_value_ids, operand_first
+                )
+                mut compare_right_value_id: i64 = i64_vector_get(
+                    &program.operand_value_ids, operand_first + 1
+                )
+                mut compare_result_type_id: i64 = native_ir_value_type_id(
+                    &program.value_ids, &program.value_type_ids, compare_result_value_id
+                )
+                mut compare_left_type_id: i64 = native_ir_value_type_id(
+                    &program.value_ids, &program.value_type_ids, compare_left_value_id
+                )
+                mut compare_right_type_id: i64 = native_ir_value_type_id(
+                    &program.value_ids, &program.value_type_ids, compare_right_value_id
+                )
+                match native_ir_three_way_compare_types_valid(
+                    compare_result_type_id, compare_left_type_id, compare_right_type_id
                 ) == 1:
                     -1:
                         discard 0

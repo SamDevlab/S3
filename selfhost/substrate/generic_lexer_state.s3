@@ -913,8 +913,31 @@ export fn generic_native_parser_expression(
                     0:
                         match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 160:
                             -1:
-                                operator = 10
-                                precedence = 0
+                                match generic_native_parser_kind(
+                                    kinds,
+                                    generic_native_parser_packed_cursor(left_result) + 1
+                                ) == 161:
+                                    -1:
+                                        match generic_native_parser_kind(
+                                            kinds,
+                                            generic_native_parser_packed_cursor(left_result) + 2
+                                        ) == 162:
+                                            -1:
+                                                operator = 14
+                                                precedence = 0
+                                                operator_width = 3
+                                            0:
+                                                operator = 10
+                                                precedence = 0
+                                            1:
+                                                operator = 10
+                                                precedence = 0
+                                    0:
+                                        operator = 10
+                                        precedence = 0
+                                    1:
+                                        operator = 10
+                                        precedence = 0
                             0:
                                 match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 162:
                                     -1:

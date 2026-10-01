@@ -298,3 +298,135 @@ and `git diff --check` passed. The failing full CI was not rerun locally. The
 four pre-existing dirty golden JSON files remain excluded. A new natural CI
 run is required for the corrected commit; until it completes, the fix has
 focused local evidence only and PR #327 remains Draft.
+
+## V2 source-level while checkpoint (2026-10-01)
+
+The unmerged V2 candidate now lowers a top-level source `while` with a `trit`
+condition and a linear body containing supported scalar declarations,
+assignments, calls, or a terminal return. Mutable `i64` locals receive typed
+NativeIR memory slots; reads lower to `TLOAD`, writes to `TSTORE`, and the loop
+uses a deterministic condition/body/neutral/positive/exit block layout with a
+backedge. This is source-to-verified-IR-to-Assembly lowering, not parser-only
+acceptance.
+
+The regression compiles a source function through Stage1 V2 and covers zero,
+one, and five iterations with a mutable counter and accumulator. The hosted
+Assembly Emulator returns 115, equal to `run_source`. A non-trit loop condition
+fails closed. The candidate also includes a Linux x86-64 native parity test,
+but it is skipped on the current Windows host; native parity is therefore
+`NOT_VERIFIED` and the existing CI for the published PR head is not evidence
+for this uncommitted change. The Stage1 compiler plus representability focused
+group and the NativeIR verifier module completed locally without failures;
+their Linux-only native tests were skipped. `compileall`, matrix JSON parsing,
+and `git diff --check` passed.
+
+The analyzer's supported subset now includes only a single-level `while` with
+the above linear body. Nested loops, `break`, `continue`, and `match` remain
+unsupported. The regenerated canonical V1 matrix remains 50 functions with
+14 supported signatures, 5 body-representable functions, 5 dependency-closed
+functions, and the same 5 self-compile-proven functions. The five proven
+functions still cover 819 source bytes (0.586%).
+
+`stage1_output_chunk` remains not body-representable or self-compiled. Its
+outer `while` and typed comparisons are within the new subset, but its body
+contains nested three-way `SwitchStatement` control flow and mutations inside
+those arms. The real source uses the outer condition `scanning == 1`, then
+matches `index < 8`, and inside the negative arm matches
+`start + index < vector_len<i64>(output)`; arms update `packed`, `index`, and
+`scanning`, while the lexical continuation resumes the outer loop or returns
+after it. The next general frontier is structured nested-match lowering with
+arm terminal/fallthrough state and correct lexical successor propagation, not
+more while syntax recognition. No canonical V1 source was changed. The four
+pre-existing dirty golden JSON files remain untouched and excluded. No full
+suite, benchmark, commit, push, PR Ready transition, merge, Stage2, or Stage3
+is claimed for this local candidate.
+
+## V6 current candidate: nested match, native output chunk, and artifact reload (2026-10-01)
+
+This is the latest local state and supersedes the earlier V6 paragraphs that
+listed nested match and `stage1_output_chunk` as unsupported. The campaign
+worktree is `feat/s3-1.13-selfhost-compiler-composition` at
+`dacd64128fc455d91c0c58da97e14bf076da0c61`. The V6 prompt's expected remote
+SHA (`6be3ed1...`) had advanced; after fetching, the PR branch and local HEAD
+both resolve to `dacd641...`. PR #327 remains OPEN, DRAFT, and MERGEABLE. Its
+13 green checks validate that published commit only, not this working diff.
+
+The V2-aware 50-function matrix is regenerated at
+`STAGE1_REPRESENTABILITY_MATRIX_V2.json` and has SHA-256
+`5aeb4ace48af2224b5f79ee0e5f059008511ba0745c59b90e758a36207c69301` (250,888
+bytes). It reports 14 supported signatures, 6 body-representable functions,
+6 dependency-closed functions, and 6 self-compile-proven functions. The proven
+set is the previous five emission helpers plus the exact frozen V1
+`stage1_output_chunk`; attributed source is 1,466 bytes (about 1.049% of V1).
+The frozen V1 file remains 139,740 bytes with SHA-256
+`894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c`.
+
+`stage1_output_chunk` now has no analyzer blockers. Its real V1 body compiles
+through V2 into typed NativeIR and verified multi-block S3 Assembly. The loop
+and nested ternary matches lower to generic branch/jump blocks; mutable scalar
+state uses typed memory slots and load/store operations. The native x86-64
+test composes that emitted function under the reference compiler's qualified
+module symbol and compares starts 0, 2, and 3 against `run_source`; the Linux
+executable returned the expected packed result `1157210900`. The focused Linux
+set also passed three-way CFG, loop-carried memory CFG, source `while`, fresh
+process multi-block Assembly load/execute, and native verifier qualification:
+6 selected tests passed on the exact source/test bytes copied from this local
+candidate. An initial failure was in the test harness's assumption that the
+reference compiler preserves an unqualified module symbol; the test now
+matches the actual qualified symbol. No compiler semantic workaround was
+introduced for that harness mismatch.
+
+The memory contract is currently explicit fixed storage IDs with registered
+element types and lengths; Stage1 V2 uses typed `i64` scalar slots. Same-ID
+access refers to the same slot. Source-level reference aliasing is not part of
+this V2 subset. Cross-block direct SSA capture remains rejected; mutable
+loop-carried state uses memory rather than phi/block arguments. CFG reachability
+and predecessor queries are tested; a cycle/backedge is accepted. NativeIR is
+an in-memory S3 record, not a separately versioned archive format; the
+deterministic persisted artifact proven here is the emitted textual S3
+Assembly, which a fresh Python process reparses and executes.
+
+The matrix count history available in dated checkpoints is:
+
+| Snapshot | Total | Signatures | Bodies | Dependency closed | Self-compile proven |
+|---|---:|---:|---:|---:|---:|
+| Baseline V2 | 50 | 13 | 5 | 5 | 5 |
+| After compare | 50 | 14 | 5 | 5 | 5 |
+| After CFG / memory / while | 50 | 14 | 5 | 5 | 5 |
+| After nested match / final | 50 | 14 | 6 | 6 | 6 |
+
+Only the final full machine-readable matrix is retained as a report artifact;
+the earlier local matrix at `scratch/stage1-v2-current-matrix.json` was
+already untracked at the start of this continuation and remains preserved.
+No missing intermediate per-function snapshots have been reconstructed.
+
+The additional self-host island did not automatically close a second
+neighbor. Of the remaining signature-supported but body-blocked functions,
+the nearby blockers include terminal/fallthrough analysis, more arithmetic
+and unary expressions, and token/vector operations. Across all 50 functions,
+the largest signature barriers are `NativeIR` (13 parameters/results),
+`&mut vector<i64>` (10), and `vector<i64>` (9), followed by Stage1 result and
+scan-state records. The next high-leverage compiler frontier is therefore
+general structured-result/record and mutable-vector support, not another
+function-specific control-flow case. This is a recommendation from the
+current matrix, not a claim that those features are already implemented.
+
+Final local evidence for this candidate: the analyzer tests passed (12 tests),
+the Stage1 compiler module passed, the NativeIR typed compare/CFG/memory
+verifier selection passed with one Windows platform skip, and the SSA-per-pass,
+SSA validation, memory SSA, and memory dominance selection passed (19 tests).
+The benchmark runner module passed (12 tests), `python -m compileall bootstrap/s3`
+passed, matrix JSON parsing passed, deterministic matrix regeneration produced
+the same SHA-256, and `git diff --check` passed. The exact-candidate Linux
+x86-64 focused selection passed all 6 cases, including native output-chunk
+parity and fresh-process Assembly artifact reload. The complete Windows suite
+terminated with exit 0: 4,366 passed, 354 skipped, 572 subtests passed, and 0
+failed. The skips include Linux-native cases unavailable on this Windows host
+and one optional cryptography dependency. No test processes remain active.
+
+These results qualify the local candidate only. Final-candidate CI has not yet
+run because no candidate commit has been pushed. The four pre-existing golden
+JSON modifications remain excluded and untouched; the pre-existing
+`scratch/stage1-v2-current-matrix.json` also remains untracked and excluded.
+V1, the Python production default, PR draft state, and branch history remain
+unchanged. Stage2 and Stage3 were not started.

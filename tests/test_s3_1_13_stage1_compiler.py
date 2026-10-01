@@ -4,6 +4,8 @@ from dataclasses import replace
 import hashlib
 import platform
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -596,11 +598,8 @@ def test_stage1_v2_compiles_real_reference_vector_helpers(
         (*selected_functions, "fn main() -> i64:\n    return 0")
     ) + "\n"
 
-    diagnostics: list[int] = []
-    artifact_bytes = _stage1_artifact(
-        source, compiler_version="v2", diagnostics=diagnostics
-    )
-    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact_bytes = _stage1_artifact(source, compiler_version="v2")
+    assert artifact_bytes
     assert artifact_bytes.startswith(b".s3asm 0.7.0\n")
     assert b".param r0, reference, vector, immutable, value\n" in artifact_bytes
     assert b"TCALL r" in artifact_bytes
@@ -643,10 +642,219 @@ def test_stage1_v2_lowers_mutable_local_reassignment() -> None:
         "    value = 2\n"
         "    return value\n"
     )
-    artifact_bytes = _stage1_artifact(source, compiler_version="v2")
-    assert artifact_bytes
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
     artifact = parse_assembly(artifact_bytes.decode("ascii"))
     assert Emulator().execute(artifact) == 2
+
+
+def _stage1_v2_while_source() -> str:
+    return (
+        "fn sum_steps(limit: i64) -> i64:\n"
+        "    mut index: i64 = 0\n"
+        "    mut total: i64 = 0\n"
+        "    while index < limit:\n"
+        "        total = total + index + 1\n"
+        "        index = index + 1\n"
+        "    return total\n"
+        "fn main() -> i64:\n"
+        "    return sum_steps(0) * 10000 + sum_steps(1) * 100 + sum_steps(5)\n"
+    )
+
+
+def test_stage1_v2_lowers_source_while_with_mutable_loop_state() -> None:
+    source = _stage1_v2_while_source()
+    artifact_bytes = _stage1_artifact(source, compiler_version="v2")
+    assert artifact_bytes
+    assembly_text = artifact_bytes.decode("ascii")
+    assert "TBR3 " in assembly_text
+    assert "TJMP " in assembly_text
+    assert "TLOAD" in assembly_text
+    assert "TSTORE " in assembly_text
+    artifact = parse_assembly(assembly_text)
+    assert Emulator().execute(artifact) == 115
+    assert Emulator().execute(artifact) == run_source(source)
+
+
+def test_stage1_v2_rejects_i64_source_while_condition() -> None:
+    source = (
+        "fn main() -> i64:\n"
+        "    mut ready: i64 = 1\n"
+        "    while ready:\n"
+        "        ready = 0\n"
+        "    return ready\n"
+    )
+    assert _stage1_artifact(source, compiler_version="v2") == b""
+
+
+def test_stage1_v2_lowers_trit_match_with_mutation_terminal_arm_and_successor() -> None:
+    source = (
+        "fn classify(value: trit) -> i64:\n"
+        "    mut result: i64 = 0\n"
+        "    match value:\n"
+        "        1:\n"
+        "            result = 100\n"
+        "        -1:\n"
+        "            result = 10\n"
+        "        0:\n"
+        "            return result + 2\n"
+        "    result = result + 1\n"
+        "    return result\n"
+        "fn main() -> i64:\n"
+        "    return classify(0 <=> 1) * 10000 + classify(0 <=> 0) * 100 + classify(1 <=> 0)\n"
+    )
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    assembly_text = artifact_bytes.decode("ascii")
+    assert assembly_text.count("TBR3 ") == 1
+    assert "TSTORE m0," in assembly_text
+    artifact = parse_assembly(assembly_text)
+    actual = Emulator().execute(artifact)
+    assert actual == 110301
+    assert actual == run_source(source)
+
+
+def _canonical_output_chunk_source() -> str:
+    repository = Path(__file__).parents[1]
+    v1_source = (repository / "selfhost/compiler/stage1_compiler_v1.s3").read_text(
+        encoding="utf-8"
+    )
+    start = v1_source.index("export fn stage1_output_chunk(")
+    end = v1_source.index("\n\n", start)
+    return v1_source[start:end]
+
+
+def test_stage1_v2_compiles_canonical_output_chunk() -> None:
+    output_chunk = _canonical_output_chunk_source()
+    compile_only_source = output_chunk + "\n\nfn main() -> i64:\n    return 0\n"
+    compile_only_diagnostics: list[int] = []
+    compile_only_artifact = _stage1_artifact(
+        compile_only_source,
+        compiler_version="v2",
+        diagnostics=compile_only_diagnostics,
+    )
+    assert compile_only_artifact, (
+        f"Stage1 compile-only envelope: {compile_only_diagnostics}"
+    )
+    artifact = parse_assembly(compile_only_artifact.decode("ascii"))
+    target = next(
+        function for function in artifact.functions
+        if function.name == "stage1_output_chunk"
+    )
+    instructions = target.instructions
+    assert sum(instruction.opcode.value == "TBR3" for instruction in instructions) >= 2
+    assert any(
+        instruction.opcode.value == "TCALL"
+        and instruction.callee == "i64_vector_len"
+        for instruction in instructions
+    )
+    assert any(
+        instruction.opcode.value == "TCALL"
+        and instruction.callee == "i64_vector_get"
+        for instruction in instructions
+    )
+    assert any(instruction.opcode.value == "TSTORE" for instruction in instructions)
+    assert Emulator().execute(artifact) == 0
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux"
+    or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_stage1_v2_canonical_output_chunk_matches_reference_natively(
+    tmp_path: Path,
+) -> None:
+    output_chunk = _canonical_output_chunk_source()
+    candidate_source = output_chunk + "\n\nfn main() -> i64:\n    return 0\n"
+    candidate = parse_assembly(
+        _stage1_artifact(candidate_source, compiler_version="v2").decode("ascii")
+    )
+    candidate_target = next(
+        function for function in candidate.functions
+        if function.name == "stage1_output_chunk"
+    )
+    source = output_chunk + """
+
+fn main() -> i64:
+    mut output: vector<i64> = vector_new<i64>(3)
+    discard vector_push<i64>(&mut output, 7)
+    discard vector_push<i64>(&mut output, 8)
+    discard vector_push<i64>(&mut output, 9)
+    return stage1_output_chunk(&output, 0) * 10000 + stage1_output_chunk(&output, 2) * 100 + stage1_output_chunk(&output, 3)
+"""
+    reference = compile_sources({"main.s3": source}, entry_module="main")
+    reference_target = next(
+        function for function in reference.assembly.functions
+        if function.name.endswith("__stage1_output_chunk")
+    )
+    composed_target = replace(candidate_target, name=reference_target.name)
+    composed_functions = tuple(
+        composed_target if function.name == reference_target.name else function
+        for function in reference.assembly.functions
+    )
+    assert sum(
+        function.name.endswith("__stage1_output_chunk")
+        for function in reference.assembly.functions
+    ) == 1
+    composed = replace(reference.assembly, functions=composed_functions)
+    native_source = generate_native_assembly(composed)
+    toolchain = NativeToolchain.detect()
+    executable = toolchain.build(native_source, tmp_path / "stage1-v2-output-chunk")
+    completed = toolchain.run(executable)
+
+    expected = run_source(source)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == f"program returned: {expected}"
+    assert expected == 1_157_210_900
+
+
+def test_stage1_v2_lowers_typed_three_way_comparison() -> None:
+    source = (
+        "fn compare(left: i64, right: i64) -> trit:\n"
+        "    return left <=> right\n"
+        "fn main() -> trit:\n"
+        "    return compare(3, 2)\n"
+    )
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source,
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    assembly_text = artifact_bytes.decode("ascii")
+    assert "TCMP " in assembly_text
+    artifact = parse_assembly(assembly_text)
+    assert Emulator().execute(artifact) == 1
+    assert Emulator().execute(artifact) == run_source(source)
+
+
+@pytest.mark.parametrize(
+    "match_statement",
+    (
+        "match value:\n        -1:\n            discard 0\n        0:\n            discard 0\n        1:\n            discard 0\n",
+        "match value < 1:\n        -1:\n            discard 0\n        0:\n            discard 0\n",
+    ),
+)
+def test_stage1_v2_rejects_nontrit_or_incomplete_match(
+    match_statement: str,
+) -> None:
+    source = (
+        "fn main() -> i64:\n"
+        "    mut value: i64 = 0\n"
+        + "    " + match_statement.replace("\n", "\n    ")
+        + "    return value\n"
+    )
+    assert _stage1_artifact(source, compiler_version="v2") == b""
 
 
 @pytest.mark.parametrize(
@@ -733,6 +941,29 @@ def test_stage1_v2_loop_carried_memory_cfg_is_deterministic_and_executes() -> No
     assert Emulator().execute(artifact) == 3
 
 
+def test_stage1_v2_multiblock_artifact_loads_in_fresh_process(tmp_path: Path) -> None:
+    artifact_path = tmp_path / "stage1-v2-loop-carried.s3asm"
+    artifact_path.write_bytes(_stage1_v2_emit_loop_carried_memory_cfg())
+    probe = (
+        "from pathlib import Path; "
+        "import sys; "
+        "from bootstrap.s3.assembly import parse_assembly; "
+        "from bootstrap.s3.emulator import Emulator; "
+        "artifact = parse_assembly(Path(sys.argv[1]).read_text(encoding='ascii')); "
+        "print(Emulator().execute(artifact))"
+    )
+    completed = subprocess.run(
+        [sys.executable, "-c", probe, str(artifact_path)],
+        cwd=Path(__file__).parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout.strip() == "3"
+
+
 @pytest.mark.s3_native
 @pytest.mark.skipif(
     platform.system() != "Linux"
@@ -775,6 +1006,30 @@ def test_stage1_v2_loop_carried_memory_cfg_executes_natively(tmp_path: Path) -> 
     assert completed.returncode == 0
     assert completed.stderr == ""
     assert completed.stdout.strip() == "program returned: 3"
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux"
+    or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_stage1_v2_source_while_executes_natively(tmp_path: Path) -> None:
+    try:
+        toolchain = NativeToolchain.detect()
+    except NativeBackendError as error:
+        pytest.skip(str(error))
+    source = _stage1_v2_while_source()
+    artifact = parse_assembly(
+        _stage1_artifact(source, compiler_version="v2").decode("ascii")
+    )
+    executable = toolchain.build(
+        generate_native_assembly(artifact), tmp_path / "stage1-v2-source-while"
+    )
+    completed = toolchain.run(executable)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == "program returned: 115"
 
 
 def test_stage1_v2_rejects_reassignment_of_immutable_local() -> None:
