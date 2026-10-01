@@ -900,6 +900,7 @@ export fn generic_native_parser_expression(
     while scanning == 1:
         mut operator: i64 = 0
         mut precedence: i64 = 0
+        mut operator_width: i64 = 1
         match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 143:
             -1:
                 operator = 1
@@ -920,7 +921,24 @@ export fn generic_native_parser_expression(
                                         operator = 12
                                         precedence = 0
                                     0:
-                                        scanning = 0
+                                        match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 161:
+                                            -1:
+                                                match generic_native_parser_kind(
+                                                    kinds,
+                                                    generic_native_parser_packed_cursor(left_result) + 1
+                                                ) == 161:
+                                                    -1:
+                                                        operator = 13
+                                                        precedence = 0
+                                                        operator_width = 2
+                                                    0:
+                                                        scanning = 0
+                                                    1:
+                                                        scanning = 0
+                                            0:
+                                                scanning = 0
+                                            1:
+                                                scanning = 0
                                     1:
                                         scanning = 0
                             1:
@@ -941,7 +959,7 @@ export fn generic_native_parser_expression(
                             kinds,
                             starts,
                             ends,
-                            operator_cursor + 1,
+                            operator_cursor + operator_width,
                             precedence + 1,
                             node_kinds,
                             node_operators,
@@ -1363,6 +1381,38 @@ fn generic_native_parser_program_word_code(
                             match generic_native_parser_program_byte_is(source, start + 2, 52):
                                 -1:
                                     return 3
+                                0:
+                                    length = length
+                                1:
+                                    length = length
+                        0:
+                            length = length
+                        1:
+                            length = length
+                0:
+                    length = length
+                1:
+                    length = length
+        0:
+            length = length
+        1:
+            length = length
+
+    match length == 4:
+        -1:
+            match generic_native_parser_program_byte_is(source, start, 116):
+                -1:
+                    match generic_native_parser_program_byte_is(source, start + 1, 114):
+                        -1:
+                            match generic_native_parser_program_byte_is(source, start + 2, 105):
+                                -1:
+                                    match generic_native_parser_program_byte_is(source, start + 3, 116):
+                                        -1:
+                                            return 6
+                                        0:
+                                            length = length
+                                        1:
+                                            length = length
                                 0:
                                     length = length
                                 1:

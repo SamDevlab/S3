@@ -8,7 +8,11 @@ import pytest
 
 from bootstrap.s3 import run_source
 from bootstrap.s3.assembly import parse_assembly
-from bootstrap.s3.backends.x86_64 import NativeToolchain, generate_native_assembly
+from bootstrap.s3.backends.x86_64 import (
+    NativeBackendError,
+    NativeToolchain,
+    generate_native_assembly,
+)
 from bootstrap.s3.diagnostics import S3Error
 from bootstrap.s3.emulator import Emulator
 from bootstrap.s3.ir_emulator import execute_ir
@@ -79,6 +83,161 @@ def _stage1_artifact(
         return b""
     assert status == 1, f"Stage1 compilation failed: phase={phase}, error_code={error_code}"
     return bytes(envelope[4 : 4 + output_length])
+
+
+def _stage1_v2_emit_three_way_cfg() -> bytes:
+    repository = Path(__file__).parents[1]
+    modules = {
+        path: (repository / path).read_text(encoding="utf-8")
+        for path in (
+            "selfhost/substrate/generic_lexer_state.s3",
+            "selfhost/substrate/verifier_kernel.s3",
+            "selfhost/substrate/output_sink.s3",
+            "selfhost/compiler/stage1_compiler_v2.s3",
+        )
+    }
+    modules["main.s3"] = r"""
+module main
+from selfhost.substrate.verifier_kernel import NativeIR
+from selfhost.substrate.verifier_kernel import NativeIRAppendResult
+from selfhost.substrate.verifier_kernel import NativeIRVerifiedResult
+from selfhost.substrate.verifier_kernel import native_ir_empty
+from selfhost.substrate.verifier_kernel import native_ir_append_function_source
+from selfhost.substrate.verifier_kernel import native_ir_set_function_result_type
+from selfhost.substrate.verifier_kernel import native_ir_append_block_for_function
+from selfhost.substrate.verifier_kernel import native_ir_append_typed_instruction_for_function
+from selfhost.substrate.verifier_kernel import native_ir_append_branch_for_function
+from selfhost.substrate.verifier_kernel import native_ir_append_instruction_for_function
+from selfhost.substrate.verifier_kernel import native_ir_append_jump_for_function
+from selfhost.substrate.verifier_kernel import native_ir_append_memory
+from selfhost.substrate.verifier_kernel import native_ir_append_load_for_function
+from selfhost.substrate.verifier_kernel import native_ir_append_store_for_function
+from selfhost.substrate.verifier_kernel import verify_program
+from selfhost.compiler.stage1_compiler_v2 import stage1_emit_verified_native_program
+
+fn append_i64(program: NativeIR, block_id: i64, value: i64) -> NativeIRAppendResult:
+    return native_ir_append_typed_instruction_for_function(
+        program, 0, block_id, 0, value, -1, -1, 0
+    )
+
+fn append_return(program: NativeIR, block_id: i64, value_id: i64) -> NativeIR:
+    mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        program, 0, block_id, 1, 0, value_id, -1, -1
+    )
+    return returned.program
+
+fn append_store_then_jump(
+    program: NativeIR, block_id: i64, value_id: i64
+) -> NativeIR:
+    mut index: NativeIRAppendResult = append_i64(program, block_id, 0)
+    mut index_id: i64 = index.value_id
+    mut stored: NativeIRAppendResult = native_ir_append_store_for_function(
+        index.program, 0, block_id, 0, index_id, value_id
+    )
+    mut jumped: NativeIRAppendResult = native_ir_append_jump_for_function(
+        stored.program, 0, block_id, 4
+    )
+    return jumped.program
+
+fn main() -> vector<i64>:
+    mut name: vector<i64> = vector_new<i64>(4)
+    discard vector_push<i64>(&mut name, 109)
+    discard vector_push<i64>(&mut name, 97)
+    discard vector_push<i64>(&mut name, 105)
+    discard vector_push<i64>(&mut name, 110)
+    mut program: NativeIR = native_ir_empty()
+    mut function: NativeIRAppendResult = native_ir_append_function_source(
+        program, 0, 1, &name, 0, 4
+    )
+    program = function.program
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, 0
+    )
+    program = result_type.program
+    mut memory: NativeIRAppendResult = native_ir_append_memory(
+        program, 0, 0, 1
+    )
+    program = memory.program
+    mut entry: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 2
+    )
+    program = entry.program
+    mut negative: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 1, 3
+    )
+    program = negative.program
+    mut neutral: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 2, 3
+    )
+    program = neutral.program
+    mut positive: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 3, 3
+    )
+    program = positive.program
+    mut join: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 4, 1
+    )
+    program = join.program
+    mut left: NativeIRAppendResult = append_i64(program, 0, 1)
+    mut left_id: i64 = left.value_id
+    program = left.program
+    mut right: NativeIRAppendResult = append_i64(program, 0, 2)
+    mut right_id: i64 = right.value_id
+    program = right.program
+    mut condition: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 11, 2, left_id, right_id, 1
+    )
+    mut condition_id: i64 = condition.value_id
+    program = condition.program
+    mut branch: NativeIRAppendResult = native_ir_append_branch_for_function(
+        program, 0, 0, condition_id, 1, 2, 3
+    )
+    program = branch.program
+    mut negative_value: NativeIRAppendResult = append_i64(program, 1, 11)
+    mut negative_id: i64 = negative_value.value_id
+    program = append_store_then_jump(negative_value.program, 1, negative_id)
+    mut neutral_value: NativeIRAppendResult = append_i64(program, 2, 22)
+    mut neutral_id: i64 = neutral_value.value_id
+    program = append_store_then_jump(neutral_value.program, 2, neutral_id)
+    mut positive_value: NativeIRAppendResult = append_i64(program, 3, 33)
+    mut positive_id: i64 = positive_value.value_id
+    program = append_store_then_jump(positive_value.program, 3, positive_id)
+    mut load_index: NativeIRAppendResult = append_i64(program, 4, 0)
+    mut load_index_id: i64 = load_index.value_id
+    mut loaded: NativeIRAppendResult = native_ir_append_load_for_function(
+        load_index.program, 0, 4, 0, load_index_id
+    )
+    mut loaded_id: i64 = loaded.value_id
+    program = append_return(loaded.program, 4, loaded_id)
+    mut output: vector<i64> = vector_new<i64>(16384)
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    mut diagnostics: vector<i64> = vector_new<i64>(5)
+    discard vector_push<i64>(&mut diagnostics, 0)
+    discard vector_push<i64>(&mut diagnostics, verified.verification.accepted)
+    discard vector_push<i64>(&mut diagnostics, verified.verification.diagnostic_code)
+    discard vector_push<i64>(&mut diagnostics, verified.verification.digest_before)
+    discard vector_push<i64>(&mut diagnostics, verified.verification.digest_after)
+    match verified.verification.accepted == 1:
+        -1:
+            match stage1_emit_verified_native_program(verified.program, &mut output) == 1:
+                -1:
+                    return output
+                0:
+                    return diagnostics
+                1:
+                    return diagnostics
+        0:
+            return diagnostics
+        1:
+            return diagnostics
+"""
+    stage0 = compile_sources(modules, entry_module="main")
+    output = execute_ir(stage0.ir)
+    first = int(output[0]) if output.length else -1
+    if first != 46:
+        diagnostic = tuple(int(output[index]) for index in range(output.length))
+        raise AssertionError(f"Stage1 V2 CFG/memory diagnostic envelope: {diagnostic}")
+    return bytes(int(output[index]) for index in range(output.length))
 
 
 def _reference_accepts(source: str) -> bool:
@@ -310,10 +469,111 @@ def test_stage1_v2_rejects_invalid_typed_vector_calls(source: str) -> None:
     assert _stage1_artifact(source, compiler_version="v2") == b""
 
 
-def test_stage1_v2_rejects_mutable_local_reassignment_without_store_lowering() -> None:
+def test_stage1_v2_lowers_mutable_local_reassignment() -> None:
     source = (
         "fn main() -> i64:\n"
         "    mut value: i64 = 1\n"
+        "    value = 2\n"
+        "    return value\n"
+    )
+    artifact_bytes = _stage1_artifact(source, compiler_version="v2")
+    assert artifact_bytes
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert Emulator().execute(artifact) == 2
+
+
+@pytest.mark.parametrize(
+    ("operator", "relation_code", "left", "right", "expected"),
+    (("<", 2, 1, 2, -1), ("==", 0, 1, 1, -1), ("==", 0, 1, 2, 0)),
+)
+def test_stage1_v2_lowers_typed_scalar_comparisons(
+    operator: str,
+    relation_code: int,
+    left: int,
+    right: int,
+    expected: int,
+) -> None:
+    source = (
+        "fn compare(left: i64, right: i64) -> trit:\n"
+        f"    return left {operator} right\n"
+        "fn main() -> trit:\n"
+        f"    return compare({left}, {right})\n"
+    )
+
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source,
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    compare = next(function for function in artifact.functions if function.name == "compare")
+    relations = [
+        instruction
+        for instruction in compare.instructions
+        if instruction.opcode.value == "TREL"
+    ]
+
+    assert len(relations) == 1
+    assert relations[0].immediate == relation_code
+    assert Emulator().execute(artifact) == expected
+    assert Emulator().execute(artifact) == run_source(source)
+
+
+def test_stage1_v2_rejects_comparison_between_incompatible_scalar_types() -> None:
+    source = (
+        "fn compare(left: trit, right: i64) -> trit:\n"
+        "    return left < right\n"
+        "fn main() -> trit:\n"
+        "    return 0\n"
+    )
+
+    assert _stage1_artifact(source, compiler_version="v2") == b""
+
+
+def test_stage1_v2_emits_and_executes_verified_three_way_cfg() -> None:
+    artifact_bytes = _stage1_v2_emit_three_way_cfg()
+    assert artifact_bytes
+    assembly_text = artifact_bytes.decode("ascii")
+    assert ".label entry\n" in assembly_text
+    assert ".label b1\n" in assembly_text
+    assert ".label b2\n" in assembly_text
+    assert ".label b3\n" in assembly_text
+    assert ".label b4\n" in assembly_text
+    assert ".memory m0, i64, 1, mutable\n" in assembly_text
+    assert "TBR3 " in assembly_text
+    assert "TSTORE m0," in assembly_text
+    assert "TLOAD" in assembly_text
+    artifact = parse_assembly(assembly_text)
+    assert Emulator().execute(artifact) == 11
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux"
+    or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_stage1_v2_three_way_cfg_executes_natively(tmp_path: Path) -> None:
+    try:
+        toolchain = NativeToolchain.detect()
+    except NativeBackendError as error:
+        pytest.skip(str(error))
+    artifact = parse_assembly(_stage1_v2_emit_three_way_cfg().decode("ascii"))
+    executable = toolchain.build(
+        generate_native_assembly(artifact), tmp_path / "stage1-v2-three-way-cfg"
+    )
+    completed = toolchain.run(executable)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == "program returned: 11"
+
+
+def test_stage1_v2_rejects_reassignment_of_immutable_local() -> None:
+    source = (
+        "fn main() -> i64:\n"
+        "    value: i64 = 1\n"
         "    value = 2\n"
         "    return value\n"
     )

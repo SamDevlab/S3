@@ -15,6 +15,7 @@ from bootstrap.s3.parser import parse
 
 
 SOURCE_PATH = Path("selfhost/compiler/stage1_compiler_v1.s3")
+STAGE1_V1_SHA256 = "894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c"
 VECTOR_BUILTINS = {
     "vector_new",
     "vector_len",
@@ -35,6 +36,21 @@ VECTOR_BUILTINS = {
 }
 TEXT_TYPES = {ast.TypeName.STRING, ast.TypeName.BYTES, ast.TypeName.TEXT}
 V1_BINARY_OPERATORS = {ast.BinaryOperator.ADD, ast.BinaryOperator.MULTIPLY}
+V2_BINARY_OPERATORS = {
+    ast.BinaryOperator.ADD,
+    ast.BinaryOperator.MULTIPLY,
+    ast.BinaryOperator.EQUAL,
+    ast.BinaryOperator.LESS,
+}
+V2_COMPARISON_OPERATORS = {ast.BinaryOperator.EQUAL, ast.BinaryOperator.LESS}
+V2_SUPPORTED_EXTERNALS = {"vector_get", "vector_len"}
+V2_PROVEN_SELF_COMPILED_FUNCTIONS = {
+    "stage1_emission_value_count",
+    "stage1_emission_instruction_count",
+    "stage1_emission_value_id",
+    "stage1_emission_operand_id",
+    "stage1_emission_instruction_field",
+}
 
 
 def _type_text(value: object) -> str:
@@ -270,6 +286,497 @@ def _body_blockers(
     return blockers
 
 
+def _v2_type_supported(value: object, *, signature: bool) -> bool:
+    if value in {ast.TypeName.I64, ast.TypeName.TRIT}:
+        return True
+    return bool(
+        signature
+        and isinstance(value, ast.ReferenceType)
+        and not value.mutable
+        and isinstance(value.target, ast.NominalType)
+        and value.target.name == "vector"
+        and value.target.type_arguments == (ast.TypeName.I64,)
+    )
+
+
+def _v2_expression_type(
+    expression: object,
+    environment: dict[str, object],
+    functions: dict[str, ast.FunctionDeclaration],
+    *,
+    unsupported_operations: set[str],
+    unsupported_types: set[str],
+    unsupported_callees: set[str],
+) -> object | None:
+    if isinstance(expression, ast.IntegerLiteral):
+        return ast.TypeName.I64
+    if isinstance(expression, ast.Identifier):
+        if expression.name not in environment:
+            unsupported_operations.add(f"unbound_identifier:{expression.name}")
+            return None
+        return environment[expression.name]
+    if isinstance(expression, ast.BinaryExpression):
+        left = _v2_expression_type(
+            expression.left, environment, functions,
+            unsupported_operations=unsupported_operations,
+            unsupported_types=unsupported_types,
+            unsupported_callees=unsupported_callees,
+        )
+        right = _v2_expression_type(
+            expression.right, environment, functions,
+            unsupported_operations=unsupported_operations,
+            unsupported_types=unsupported_types,
+            unsupported_callees=unsupported_callees,
+        )
+        if expression.operator not in V2_BINARY_OPERATORS:
+            unsupported_operations.add(f"binary_{expression.operator.value}")
+        if left is not ast.TypeName.I64 or right is not ast.TypeName.I64:
+            unsupported_operations.add("binary_operand_type_mismatch")
+            return None
+        if expression.operator in V2_COMPARISON_OPERATORS:
+            return ast.TypeName.TRIT
+        return ast.TypeName.I64
+    if isinstance(expression, ast.CallExpression):
+        if not isinstance(expression.callee, ast.Identifier):
+            unsupported_callees.add("<indirect-call>")
+            return None
+        callee = expression.callee.name
+        argument_types = [
+            _v2_expression_type(
+                argument.expression, environment, functions,
+                unsupported_operations=unsupported_operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
+            for argument in expression.arguments
+        ]
+        if callee in functions:
+            target = functions[callee]
+            if expression.type_arguments or target.signature.type_parameters:
+                unsupported_callees.add(f"{callee}:generic-call")
+                return target.return_type
+            expected = [parameter.type_name for parameter in target.parameters]
+            if len(argument_types) != len(expected) or [
+                _type_text(item) if item is not None else None for item in argument_types
+            ] != [_type_text(item) for item in expected]:
+                unsupported_callees.add(f"{callee}:signature-mismatch")
+            if not _v2_type_supported(target.return_type, signature=True):
+                unsupported_callees.add(f"{callee}:unsupported-return")
+                return None
+            return target.return_type
+        if callee not in V2_SUPPORTED_EXTERNALS:
+            unsupported_callees.add(callee)
+            return None
+        if tuple(expression.type_arguments) != (ast.TypeName.I64,):
+            unsupported_types.add(f"{callee}:requires-i64-type-argument")
+        if callee == "vector_len":
+            valid = (
+                len(argument_types) == 1
+                and isinstance(argument_types[0], ast.ReferenceType)
+                and _v2_type_supported(argument_types[0], signature=True)
+            )
+        else:
+            valid = (
+                len(argument_types) == 2
+                and isinstance(argument_types[0], ast.ReferenceType)
+                and _v2_type_supported(argument_types[0], signature=True)
+                and argument_types[1] is ast.TypeName.I64
+            )
+        if not valid:
+            unsupported_operations.add(f"{callee}:argument-shape")
+        return ast.TypeName.I64
+    unsupported_operations.add(f"expression_{type(expression).__name__}")
+    return None
+
+
+def _v2_body_capabilities(
+    function: ast.FunctionDeclaration,
+    functions: dict[str, ast.FunctionDeclaration],
+) -> tuple[set[str], set[str], set[str], set[str], list[str]]:
+    syntax: set[str] = set()
+    operations: set[str] = set()
+    unsupported_types: set[str] = set()
+    unsupported_callees: set[str] = set()
+    local_calls: set[str] = set()
+    mutable_names: set[str] = set()
+    environment: dict[str, object] = {
+        parameter.name: parameter.type_name for parameter in function.parameters
+    }
+    statements = function.body.statements
+    returned = False
+    for index, statement in enumerate(statements):
+        if returned:
+            syntax.add("statement_after_return")
+        if isinstance(statement, ast.VariableDeclaration):
+            if statement.name in environment:
+                operations.add("duplicate_local")
+            if statement.type_name is not ast.TypeName.I64:
+                unsupported_types.add(_type_text(statement.type_name))
+            inferred = _v2_expression_type(
+                statement.initializer, environment, functions,
+                unsupported_operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
+            if inferred is not statement.type_name:
+                operations.add("local_initializer_type_mismatch")
+            environment[statement.name] = statement.type_name
+            if statement.mutable:
+                mutable_names.add(statement.name)
+        elif isinstance(statement, ast.ReturnStatement):
+            if index != len(statements) - 1:
+                syntax.add("nonterminal_return")
+            inferred = _v2_expression_type(
+                statement.expression, environment, functions,
+                unsupported_operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
+            if inferred is not function.return_type:
+                operations.add("return_type_mismatch")
+            returned = True
+        elif isinstance(statement, ast.AssignmentStatement):
+            if not isinstance(statement.target, ast.VariableTarget):
+                operations.add(f"unsupported_assignment_target_{type(statement.target).__name__}")
+                continue
+            target_name = statement.target.name
+            if target_name not in environment:
+                operations.add(f"assignment_to_unknown_binding:{target_name}")
+                continue
+            if target_name not in mutable_names:
+                operations.add(f"assignment_to_immutable_binding:{target_name}")
+                continue
+            if not isinstance(statement.value, (ast.IntegerLiteral, ast.Identifier, ast.BinaryExpression, ast.CallExpression)):
+                operations.add(f"unsupported_assignment_value_{type(statement.value).__name__}")
+                continue
+            inferred = _v2_expression_type(
+                statement.value, environment, functions,
+                unsupported_operations=operations,
+                unsupported_types=unsupported_types,
+                unsupported_callees=unsupported_callees,
+            )
+            if inferred is not environment[target_name]:
+                operations.add("assignment_value_type_mismatch")
+        elif isinstance(statement, ast.CompoundAssignmentStatement):
+            operations.add("compound_assignment")
+        else:
+            syntax.add(type(statement).__name__)
+            for node in _walk(statement):
+                if isinstance(node, ast.CallExpression) and isinstance(node.callee, ast.Identifier):
+                    if node.callee.name in functions:
+                        local_calls.add(node.callee.name)
+                    elif node.callee.name not in V2_SUPPORTED_EXTERNALS:
+                        unsupported_callees.add(node.callee.name)
+                elif isinstance(node, ast.CallExpression) and not isinstance(node.callee, ast.Identifier):
+                    unsupported_callees.add("<indirect-call>")
+                elif isinstance(node, ast.BinaryExpression):
+                    if node.operator not in V2_BINARY_OPERATORS:
+                        operations.add(f"binary_{node.operator.value}")
+                elif isinstance(
+                    node,
+                    (
+                        ast.RecordExpression,
+                        ast.GenericTypeExpression,
+                        ast.IndexExpression,
+                        ast.SliceExpression,
+                        ast.FieldAccessExpression,
+                        ast.UnaryExpression,
+                        ast.MatchExpression,
+                        ast.LenExpression,
+                        ast.AddressOfExpression,
+                        ast.DereferenceExpression,
+                    ),
+                ):
+                    operations.add(f"expression_{type(node).__name__}")
+    if not returned:
+        syntax.add("missing_terminal_return")
+    if len(function.parameters) > 64:
+        operations.add("parameter_capacity")
+    if len(statements) > 64:
+        operations.add("statement_capacity")
+
+    top_level_ids = {id(statement) for statement in statements}
+    supported_nested_statement_nodes = (
+        ast.VariableDeclaration,
+        ast.ReturnStatement,
+        ast.AssignmentStatement,
+        ast.CompoundAssignmentStatement,
+        ast.DiscardStatement,
+        ast.SwitchStatement,
+        ast.SelectStatement,
+        ast.WhileStatement,
+        ast.BreakStatement,
+        ast.ContinueStatement,
+        ast.ForStatement,
+    )
+    for node in _walk(function.body):
+        if isinstance(node, supported_nested_statement_nodes):
+            if id(node) not in top_level_ids:
+                if isinstance(node, ast.AssignmentStatement):
+                    operations.add("mutable_assignment_in_control_flow")
+                elif isinstance(node, ast.CompoundAssignmentStatement):
+                    operations.add("compound_assignment")
+                elif isinstance(node, ast.WhileStatement):
+                    syntax.add("WhileStatement")
+                elif isinstance(node, ast.SwitchStatement):
+                    syntax.add("SwitchStatement")
+                elif isinstance(node, ast.VariableDeclaration):
+                    syntax.add("nested_local_declaration")
+                else:
+                    syntax.add(type(node).__name__)
+        if isinstance(node, ast.CallExpression) and isinstance(node.callee, ast.Identifier):
+            if node.callee.name in functions:
+                local_calls.add(node.callee.name)
+    for node in _walk(function.body):
+        if isinstance(node, ast.CallExpression) and isinstance(node.callee, ast.Identifier):
+            if node.callee.name in functions:
+                local_calls.add(node.callee.name)
+    return syntax, operations, unsupported_types, unsupported_callees, sorted(local_calls)
+
+
+def _function_entry_v2(
+    function: ast.FunctionDeclaration,
+    end_offset: int,
+    functions: dict[str, ast.FunctionDeclaration],
+    source_sha256: str,
+) -> dict[str, object]:
+    syntax, operations, unsupported_types, unsupported_callees, local_calls = (
+        _v2_body_capabilities(function, functions)
+    )
+    signature_supported = (
+        not function.signature.type_parameters
+        and len(function.parameters) <= 64
+        and all(_v2_type_supported(item.type_name, signature=True) for item in function.parameters)
+        and _v2_type_supported(function.return_type, signature=True)
+    )
+    unsupported_signature_types = sorted(
+        {
+            _type_text(item)
+            for item in [*(parameter.type_name for parameter in function.parameters), function.return_type]
+            if not _v2_type_supported(item, signature=True)
+        }
+    )
+    if function.signature.type_parameters:
+        unsupported_signature_types.append("generic_function_signature")
+    body_unsupported_types = set(unsupported_types)
+    unsupported_types = body_unsupported_types | set(unsupported_signature_types)
+    body_representable = not (
+        syntax or operations or body_unsupported_types or unsupported_callees
+    )
+    representable = (
+        signature_supported
+        and not syntax
+        and not operations
+        and not unsupported_types
+        and not unsupported_callees
+    )
+    parameters = [
+        {"name": parameter.name, "type": _type_text(parameter.type_name)}
+        for parameter in function.parameters
+    ]
+    local_declarations = [
+        node for node in _walk(function.body) if isinstance(node, ast.VariableDeclaration)
+    ]
+    local_bindings = [
+        {
+            "name": local.name,
+            "type": _type_text(local.type_name),
+            "mutable": local.mutable,
+        }
+        for local in local_declarations
+    ]
+
+    def is_vector_type(value: object) -> bool:
+        return (
+            isinstance(value, ast.NominalType) and value.name == "vector"
+        ) or isinstance(value, ast.VectorType)
+
+    def is_aggregate_type(value: object) -> bool:
+        return isinstance(value, ast.NominalType) and value.name != "vector"
+
+    blockers = sorted(
+        [*(f"signature_type:{item}" for item in unsupported_signature_types),
+         *(f"syntax:{item}" for item in syntax),
+         *(f"operation:{item}" for item in operations),
+         *(f"type:{item}" for item in body_unsupported_types),
+         *(f"callee:{item}" for item in unsupported_callees)]
+    )
+    return {
+        "name": function.name,
+        "source_start": function.location.offset,
+        "source_end": end_offset,
+        "source_bytes": end_offset - function.location.offset,
+        "source_span": {
+            "start_offset": function.location.offset,
+            "end_offset": end_offset,
+        },
+        "parameters": parameters,
+        "parameter_types": [item["type"] for item in parameters],
+        "return_type": _type_text(function.return_type),
+        "reference_parameters": [
+            item.name for item in function.parameters
+            if isinstance(item.type_name, ast.ReferenceType)
+        ],
+        "vector_parameters": [
+            item.name for item in function.parameters
+            if is_vector_type(item.type_name)
+            or (
+                isinstance(item.type_name, ast.ReferenceType)
+                and is_vector_type(item.type_name.target)
+            )
+        ],
+        "aggregate_parameters": [
+            item.name for item in function.parameters
+            if is_aggregate_type(item.type_name)
+        ],
+        "local_bindings": local_bindings,
+        "reference_locals": [
+            item.name for item in local_declarations
+            if isinstance(item.type_name, ast.ReferenceType)
+        ],
+        "vector_locals": [
+            item.name for item in local_declarations
+            if is_vector_type(item.type_name)
+        ],
+        "aggregate_locals": [
+            item.name for item in local_declarations
+            if is_aggregate_type(item.type_name)
+        ],
+        "top_level_statement_kinds": [type(item).__name__ for item in function.body.statements],
+        "signature": "(" + ", ".join(_type_text(p.type_name) for p in function.parameters)
+        + ") -> " + _type_text(function.return_type),
+        "calls": sorted(
+            {
+                node.callee.name
+                for node in _walk(function.body)
+                if isinstance(node, ast.CallExpression) and isinstance(node.callee, ast.Identifier)
+            }
+        ),
+        "local_calls": local_calls,
+        "signature_supported": signature_supported,
+        "unsupported_signature_types": sorted(set(unsupported_signature_types)),
+        "unsupported_syntax": sorted(syntax),
+        "unsupported_operations": sorted(operations),
+        "unsupported_types": sorted(unsupported_types),
+        "unsupported_callees": sorted(unsupported_callees),
+        "blockers": blockers,
+        "primary_blocker": blockers[0] if blockers else None,
+        "secondary_blockers": blockers[1:],
+        "body_representable": body_representable,
+        "representable": representable,
+        "dependency_closed": False,
+        "self_compile_tested": False,
+        "self_compile_pass": False,
+        "self_compile_evidence": None,
+        "compiler_version": "v2",
+        "source_sha256": source_sha256,
+    }
+
+
+def _analyze_stage1_v2(source: str) -> dict[str, object]:
+    program = parse(source)
+    declarations = list(program.functions)
+    functions = {function.name: function for function in declarations}
+    encoded = source.encode("utf-8")
+    source_sha256 = hashlib.sha256(encoded).hexdigest()
+    starts = [function.location.offset for function in declarations]
+    entries = [
+        _function_entry_v2(
+            function,
+            starts[index + 1] if index + 1 < len(starts) else len(source),
+            functions,
+            source_sha256,
+        )
+        for index, function in enumerate(declarations)
+    ]
+    by_name = {str(entry["name"]): entry for entry in entries}
+
+    def closure(name: str, active: set[str]) -> tuple[bool, set[str]]:
+        entry = by_name[name]
+        if not bool(entry["representable"]):
+            return False, {name}
+        if name in active:
+            return True, {name}
+        names = {name}
+        for callee in entry["local_calls"]:
+            if callee not in by_name:
+                return False, names
+            closed, dependencies = closure(str(callee), active | {name})
+            names.update(dependencies)
+            if not closed:
+                return False, names
+        return len(names) <= 16, names
+
+    for entry in entries:
+        name = str(entry["name"])
+        closed, dependency_names = closure(name, set())
+        entry["dependency_closed"] = closed
+        entry["dependency_function_count"] = len(dependency_names)
+        entry["external_dependencies"] = sorted(
+            set(entry["calls"]) - set(entry["local_calls"])
+        )
+        proven = (
+            source_sha256 == STAGE1_V1_SHA256
+            and name in V2_PROVEN_SELF_COMPILED_FUNCTIONS
+            and bool(entry["representable"])
+            and closed
+        )
+        entry["self_compile_tested"] = proven
+        entry["self_compile_pass"] = proven
+        entry["self_compile_evidence"] = (
+            "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_compiles_real_reference_vector_helpers"
+            if proven
+            else None
+        )
+
+    def count(field: str) -> int:
+        return sum(bool(entry[field]) for entry in entries)
+
+    blocker_distribution: dict[str, int] = {}
+    for entry in entries:
+        blockers = (
+            list(entry["unsupported_syntax"])
+            + list(entry["unsupported_operations"])
+            + list(entry["unsupported_types"])
+            + list(entry["unsupported_callees"])
+        )
+        for blocker in blockers:
+            blocker_distribution[str(blocker)] = blocker_distribution.get(str(blocker), 0) + 1
+    return {
+        "schema": "s3-stage1-representability-matrix",
+        "schema_version": "2.0.0",
+        "compiler_version": "v2",
+        "source_path": str(SOURCE_PATH).replace("\\", "/"),
+        "source_sha256": source_sha256,
+        "source_bytes": len(encoded),
+        "functions_total": len(entries),
+        "functions_signature_supported": count("signature_supported"),
+        "functions_body_representable": count("body_representable"),
+        "functions_representable": count("representable"),
+        "functions_dependency_closed": count("dependency_closed"),
+        "functions_self_compile_proven": count("self_compile_pass"),
+        "function_attributed_source_bytes": sum(int(entry["source_bytes"]) for entry in entries),
+        "capabilities": {
+            "signature_parameter_types": ["i64", "&vector<i64>"],
+            "signature_return_types": ["i64"],
+            "local_types": ["i64"],
+            "expressions": ["integer_literal", "bound_identifier", "i64_add", "i64_multiply", "local_call"],
+            "external_calls": ["vector_get<i64>", "vector_len<i64>"],
+            "statements": [
+                "i64_local_declaration",
+                "straight_line_i64_local_reassignment",
+                "terminal_return",
+            ],
+            "program_function_capacity": 16,
+            "body_statement_capacity": 64,
+            "control_flow": [],
+            "mutation": ["straight_line_i64_local_reassignment"],
+        },
+        "blocker_distribution": dict(sorted(blocker_distribution.items())),
+        "functions": entries,
+    }
+
+
 def _function_entry(
     function: ast.FunctionDeclaration,
     end_offset: int,
@@ -408,7 +915,11 @@ def _function_entry(
     }
 
 
-def analyze_stage1(source: str) -> dict[str, object]:
+def analyze_stage1(source: str, compiler_version: str = "v1") -> dict[str, object]:
+    if compiler_version == "v2":
+        return _analyze_stage1_v2(source)
+    if compiler_version != "v1":
+        raise ValueError(f"unsupported Stage1 compiler version: {compiler_version}")
     program = parse(source)
     functions = list(program.functions)
     function_names = {function.name for function in functions}
@@ -519,10 +1030,11 @@ def analyze_stage1(source: str) -> dict[str, object]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=SOURCE_PATH)
+    parser.add_argument("--compiler-version", choices=("v1", "v2"), default="v1")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     source = args.source.read_text(encoding="utf-8")
-    matrix = analyze_stage1(source)
+    matrix = analyze_stage1(source, compiler_version=args.compiler_version)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(matrix, ensure_ascii=True, indent=2, sort_keys=True) + "\n",

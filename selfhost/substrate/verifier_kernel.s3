@@ -1037,7 +1037,7 @@ export fn native_ir_append_block_for_function(
 ) -> NativeIRAppendResult:
     mut accepted: i64 = 1
     mut block_count: i64 = i64_vector_len(&program.block_ids)
-    mut first_instruction: i64 = i64_vector_len(&program.instruction_ids)
+    mut first_instruction: i64 = -1
     match block_count < 16:
         -1:
             discard 0
@@ -1046,6 +1046,26 @@ export fn native_ir_append_block_for_function(
         1:
             accepted = 0
     match block_id < 0:
+        -1:
+            accepted = 0
+        0:
+            discard 0
+        1:
+            discard 0
+    match terminator_kind <=> 1:
+        -1:
+            accepted = 0
+        0:
+            discard 0
+        1:
+            match terminator_kind <=> 3:
+                -1:
+                    discard 0
+                0:
+                    discard 0
+                1:
+                    accepted = 0
+    match has_value(&program.block_ids, block_id):
         -1:
             accepted = 0
         0:
@@ -1091,6 +1111,15 @@ export fn native_ir_append_block_for_function(
     match accepted == 1:
         -1:
             mut prior: i64 = i64_vector_get(&updated.function_block_count, function_index)
+            match prior == 0:
+                -1:
+                    discard i64_vector_set(
+                        &mut updated.function_block_first, function_index, block_count
+                    )
+                0:
+                    discard 0
+                1:
+                    discard 0
             discard i64_vector_set(&mut updated.function_block_count, function_index, prior + 1)
         0:
             discard 0
@@ -1151,7 +1180,159 @@ export fn native_ir_emission_view(program: NativeIR) -> vector<i64>:
         index = index + 1
     return view
 
-export fn native_ir_append_instruction_for_function(
+fn native_ir_memory_index(memory_ids: &i64_vector, memory_id: i64) -> i64:
+    mut index: i64 = 0
+    while index < i64_vector_len(memory_ids):
+        match i64_vector_get(memory_ids, index) == memory_id:
+            -1:
+                return index
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    return -1
+
+export fn native_ir_append_memory(
+    program: NativeIR, memory_id: i64, element_type_id: i64, length: i64
+) -> NativeIRAppendResult:
+    match memory_id >= 0:
+        -1:
+            discard 0
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+    match element_type_id >= 0:
+        -1:
+            match element_type_id < 2:
+                -1:
+                    discard 0
+                0:
+                    return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+                1:
+                    return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+    match length > 0:
+        -1:
+            discard 0
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+    match i64_vector_len(&program.memory_ids) < 16:
+        -1:
+            discard 0
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+    match native_ir_memory_index(&program.memory_ids, memory_id) < 0:
+        -1:
+            discard 0
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+    match i64_vector_len(&program.memory_ids) == i64_vector_len(&program.memory_types):
+        -1:
+            match i64_vector_len(&program.memory_ids) == i64_vector_len(&program.memory_lengths):
+                -1:
+                    mut updated: NativeIR = program
+                    discard i64_vector_push(&mut updated.memory_ids, memory_id)
+                    discard i64_vector_push(&mut updated.memory_types, element_type_id)
+                    discard i64_vector_push(&mut updated.memory_lengths, length)
+                    return NativeIRAppendResult(program=updated, accepted=1, value_id=-1)
+                0:
+                    return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+                1:
+                    return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+
+export fn native_ir_append_load_for_function(
+    program: NativeIR, function_id: i64, block_id: i64,
+    memory_id: i64, index_value_id: i64
+) -> NativeIRAppendResult:
+    mut memory_index: i64 = native_ir_memory_index(&program.memory_ids, memory_id)
+    mut index_type_id: i64 = native_ir_value_type_id(
+        &program.value_ids, &program.value_type_ids, index_value_id
+    )
+    match memory_index >= 0:
+        -1:
+            discard 0
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+    match index_type_id < 2:
+        -1:
+            discard 0
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+    mut result_type_id: i64 = i64_vector_get(&program.memory_types, memory_index)
+    mut appended: NativeIRAppendResult = native_ir_append_instruction_core_for_function(
+        program, function_id, block_id, 4, 0, index_value_id, -1, -1, memory_id
+    )
+    match appended.accepted == 1:
+        -1:
+            mut loaded_value_id: i64 = appended.value_id
+            mut updated: NativeIR = appended.program
+            mut type_index: i64 = i64_vector_len(&updated.value_type_ids) - 1
+            discard i64_vector_set(
+                &mut updated.value_type_ids, type_index, result_type_id
+            )
+            return NativeIRAppendResult(
+                program=updated, accepted=1, value_id=loaded_value_id
+            )
+        0:
+            return appended
+        1:
+            return appended
+
+export fn native_ir_append_store_for_function(
+    program: NativeIR, function_id: i64, block_id: i64,
+    memory_id: i64, index_value_id: i64, stored_value_id: i64
+) -> NativeIRAppendResult:
+    mut memory_index: i64 = native_ir_memory_index(&program.memory_ids, memory_id)
+    mut index_type_id: i64 = native_ir_value_type_id(
+        &program.value_ids, &program.value_type_ids, index_value_id
+    )
+    mut stored_type_id: i64 = native_ir_value_type_id(
+        &program.value_ids, &program.value_type_ids, stored_value_id
+    )
+    match memory_index >= 0:
+        -1:
+            discard 0
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+    match index_type_id < 2:
+        -1:
+            discard 0
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+    match stored_type_id == i64_vector_get(&program.memory_types, memory_index):
+        -1:
+            return native_ir_append_instruction_core_for_function(
+                program, function_id, block_id, 5, 0,
+                index_value_id, stored_value_id, -1, memory_id
+            )
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+
+fn native_ir_append_instruction_core_for_function(
     program: NativeIR,
     function_id: i64,
     block_id: i64,
@@ -1159,7 +1340,8 @@ export fn native_ir_append_instruction_for_function(
     immediate: i64,
     operand_a: i64,
     operand_b: i64,
-    callee_function_id: i64
+    callee_function_id: i64,
+    memory_id: i64
 ) -> NativeIRAppendResult:
     mut accepted: i64 = 1
     mut result_count: i64 = 0
@@ -1255,7 +1437,137 @@ export fn native_ir_append_instruction_for_function(
                                                         1:
                                                             accepted = 0
                                         0:
-                                            accepted = 0
+                                            match opcode == 11:
+                                                -1:
+                                                    result_count = 1
+                                                    operand_count = 2
+                                                    match native_ir_relation_code_valid(immediate) == 1:
+                                                        -1:
+                                                            discard 0
+                                                        0:
+                                                            accepted = 0
+                                                        1:
+                                                            accepted = 0
+                                                0:
+                                                    match opcode == 2:
+                                                        -1:
+                                                            result_count = 0
+                                                            operand_count = 1
+                                                            match immediate == 0:
+                                                                -1:
+                                                                    match operand_a >= 0:
+                                                                        -1:
+                                                                            match operand_b < 0:
+                                                                                -1:
+                                                                                    discard 0
+                                                                                0:
+                                                                                    accepted = 0
+                                                                                1:
+                                                                                    accepted = 0
+                                                                        0:
+                                                                            accepted = 0
+                                                                        1:
+                                                                            accepted = 0
+                                                                0:
+                                                                    accepted = 0
+                                                                1:
+                                                                    accepted = 0
+                                                        0:
+                                                            match opcode == 4:
+                                                                -1:
+                                                                    result_count = 1
+                                                                    operand_count = 1
+                                                                    match immediate == 0:
+                                                                        -1:
+                                                                            match operand_a >= 0:
+                                                                                -1:
+                                                                                    match operand_b < 0:
+                                                                                        -1:
+                                                                                            match native_ir_memory_index(&program.memory_ids, memory_id) >= 0:
+                                                                                                -1:
+                                                                                                    discard 0
+                                                                                                0:
+                                                                                                    accepted = 0
+                                                                                                1:
+                                                                                                    accepted = 0
+                                                                                        0:
+                                                                                            accepted = 0
+                                                                                        1:
+                                                                                            accepted = 0
+                                                                                0:
+                                                                                    accepted = 0
+                                                                                1:
+                                                                                    accepted = 0
+                                                                        0:
+                                                                            accepted = 0
+                                                                        1:
+                                                                            accepted = 0
+                                                                0:
+                                                                    match opcode == 5:
+                                                                        -1:
+                                                                            result_count = 0
+                                                                            operand_count = 2
+                                                                            match immediate == 0:
+                                                                                -1:
+                                                                                    match operand_a >= 0:
+                                                                                        -1:
+                                                                                            match operand_b >= 0:
+                                                                                                -1:
+                                                                                                    match native_ir_memory_index(&program.memory_ids, memory_id) >= 0:
+                                                                                                        -1:
+                                                                                                            discard 0
+                                                                                                        0:
+                                                                                                            accepted = 0
+                                                                                                        1:
+                                                                                                            accepted = 0
+                                                                                                0:
+                                                                                                    accepted = 0
+                                                                                                1:
+                                                                                                    accepted = 0
+                                                                                        0:
+                                                                                            accepted = 0
+                                                                                        1:
+                                                                                            accepted = 0
+                                                                                0:
+                                                                                    accepted = 0
+                                                                                1:
+                                                                                    accepted = 0
+                                                                        0:
+                                                                            match opcode == 8:
+                                                                                -1:
+                                                                                    result_count = 0
+                                                                                    operand_count = 0
+                                                                                    match immediate == 0:
+                                                                                        -1:
+                                                                                            match operand_a < 0:
+                                                                                                -1:
+                                                                                                    match operand_b < 0:
+                                                                                                        -1:
+                                                                                                            discard 0
+                                                                                                        0:
+                                                                                                            accepted = 0
+                                                                                                        1:
+                                                                                                            accepted = 0
+                                                                                                0:
+                                                                                                    accepted = 0
+                                                                                                1:
+                                                                                                    accepted = 0
+                                                                                        0:
+                                                                                            accepted = 0
+                                                                                        1:
+                                                                                            accepted = 0
+                                                                                0:
+                                                                                    accepted = 0
+                                                                                1:
+                                                                                    accepted = 0
+                                                                        1:
+                                                                            accepted = 0
+                                                                1:
+                                                                    accepted = 0
+                                                        1:
+                                                            accepted = 0
+                                                1:
+                                                    accepted = 0
                                         1:
                                             accepted = 0
                                 1:
@@ -1349,7 +1661,7 @@ export fn native_ir_append_instruction_for_function(
             discard i64_vector_push(&mut updated.instruction_target_first, target_first)
             discard i64_vector_push(&mut updated.instruction_target_count, 0)
             discard i64_vector_push(&mut updated.instruction_callee_function_ids, callee_function_id)
-            discard i64_vector_push(&mut updated.instruction_memory_ids, -1)
+            discard i64_vector_push(&mut updated.instruction_memory_ids, memory_id)
             discard i64_vector_push(&mut updated.instruction_reference_target_types, -1)
             discard i64_vector_push(&mut updated.instruction_reference_flags, 0)
             discard i64_vector_push(&mut updated.instruction_slice_length_ids, -1)
@@ -1381,12 +1693,36 @@ export fn native_ir_append_instruction_for_function(
                 1:
                     discard 0
             mut prior_count: i64 = i64_vector_get(&updated.block_instruction_count, block_index)
+            match prior_count == 0:
+                -1:
+                    discard i64_vector_set(
+                        &mut updated.block_instruction_first, block_index, instruction_id
+                    )
+                0:
+                    discard 0
+                1:
+                    discard 0
             discard i64_vector_set(&mut updated.block_instruction_count, block_index, prior_count + 1)
         0:
             discard 0
         1:
             discard 0
     return NativeIRAppendResult(program=updated, accepted=accepted, value_id=value_id)
+
+export fn native_ir_append_instruction_for_function(
+    program: NativeIR,
+    function_id: i64,
+    block_id: i64,
+    opcode: i64,
+    immediate: i64,
+    operand_a: i64,
+    operand_b: i64,
+    callee_function_id: i64
+) -> NativeIRAppendResult:
+    return native_ir_append_instruction_core_for_function(
+        program, function_id, block_id, opcode, immediate,
+        operand_a, operand_b, callee_function_id, -1
+    )
 
 export fn native_ir_append_instruction(
     program: NativeIR,
@@ -1443,6 +1779,561 @@ export fn native_ir_append_typed_instruction_for_function(
             return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
         1:
             return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+
+fn native_ir_block_index_for_function(
+    block_ids: &i64_vector,
+    block_function_ids: &i64_vector,
+    block_id: i64,
+    function_id: i64
+) -> i64:
+    mut index: i64 = 0
+    while index < i64_vector_len(block_ids):
+        match i64_vector_get(block_ids, index) == block_id:
+            -1:
+                match i64_vector_get(block_function_ids, index) == function_id:
+                    -1:
+                        return index
+                    0:
+                        return -1
+                    1:
+                        return -1
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    return -1
+
+fn native_ir_control_targets_valid(
+    block_ids: &i64_vector,
+    block_function_ids: &i64_vector,
+    function_id: i64,
+    targets: &i64_vector
+) -> trit:
+    mut target_index: i64 = 0
+    while target_index < i64_vector_len(targets):
+        match native_ir_block_index_for_function(
+            block_ids,
+            block_function_ids,
+            i64_vector_get(targets, target_index),
+            function_id
+        ) < 0:
+            -1:
+                return 0
+            0:
+                discard 0
+            1:
+                discard 0
+        target_index = target_index + 1
+    return -1
+
+fn native_ir_function_entry_block_id(
+    function_ids: &i64_vector,
+    function_block_first: &i64_vector,
+    function_block_count: &i64_vector,
+    block_ids: &i64_vector,
+    block_function_ids: &i64_vector,
+    function_id: i64
+) -> i64:
+    mut function_index: i64 = 0
+    while function_index < i64_vector_len(function_ids):
+        match i64_vector_get(function_ids, function_index) == function_id:
+            -1:
+                mut first: i64 = i64_vector_get(
+                    function_block_first, function_index
+                )
+                mut count: i64 = i64_vector_get(
+                    function_block_count, function_index
+                )
+                match count > 0:
+                    -1:
+                        match first >= 0:
+                            -1:
+                                match first < i64_vector_len(block_ids):
+                                    -1:
+                                        match i64_vector_get(
+                                            block_function_ids, first
+                                        ) == function_id:
+                                            -1:
+                                                return i64_vector_get(block_ids, first)
+                                            0:
+                                                return -1
+                                            1:
+                                                return -1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+                            0:
+                                return -1
+                            1:
+                                return -1
+                    0:
+                        return -1
+                    1:
+                        return -1
+            0:
+                function_index = function_index + 1
+            1:
+                function_index = function_index + 1
+    return -1
+
+fn native_ir_block_successor_count(
+    block_ids: &i64_vector,
+    block_function_ids: &i64_vector,
+    block_instruction_first: &i64_vector,
+    block_instruction_count: &i64_vector,
+    instruction_ids: &i64_vector,
+    instruction_opcodes: &i64_vector,
+    instruction_target_first: &i64_vector,
+    instruction_target_count: &i64_vector,
+    target_block_ids: &i64_vector,
+    function_id: i64,
+    block_id: i64
+) -> i64:
+    mut block_index: i64 = native_ir_block_index_for_function(
+        block_ids, block_function_ids, block_id, function_id
+    )
+    match block_index >= 0:
+        -1:
+            mut first: i64 = i64_vector_get(block_instruction_first, block_index)
+            mut count: i64 = i64_vector_get(block_instruction_count, block_index)
+            match count > 0:
+                -1:
+                    mut last_instruction: i64 = first + count - 1
+                    match range_is_valid(last_instruction, 1, i64_vector_len(instruction_ids)):
+                        -1:
+                            mut opcode: i64 = i64_vector_get(
+                                instruction_opcodes, last_instruction
+                            )
+                            match opcode == 2:
+                                -1:
+                                    mut target_first: i64 = i64_vector_get(
+                                        instruction_target_first, last_instruction
+                                    )
+                                    mut target_count: i64 = i64_vector_get(
+                                        instruction_target_count, last_instruction
+                                    )
+                                    match target_count == 3:
+                                        -1:
+                                            match range_is_valid(
+                                                target_first, target_count,
+                                                i64_vector_len(target_block_ids)
+                                            ):
+                                                -1:
+                                                    return target_count
+                                                0:
+                                                    return -1
+                                                1:
+                                                    return -1
+                                        0:
+                                            return -1
+                                        1:
+                                            return -1
+                                0:
+                                    match opcode == 8:
+                                        -1:
+                                            mut target_first: i64 = i64_vector_get(
+                                                instruction_target_first, last_instruction
+                                            )
+                                            mut target_count: i64 = i64_vector_get(
+                                                instruction_target_count, last_instruction
+                                            )
+                                            match target_count == 1:
+                                                -1:
+                                                    match range_is_valid(
+                                                        target_first, target_count,
+                                                        i64_vector_len(target_block_ids)
+                                                    ):
+                                                        -1:
+                                                            return target_count
+                                                        0:
+                                                            return -1
+                                                        1:
+                                                            return -1
+                                                0:
+                                                    return -1
+                                                1:
+                                                    return -1
+                                        0:
+                                            match opcode == 1:
+                                                -1:
+                                                    return 0
+                                                0:
+                                                    return -1
+                                                1:
+                                                    return -1
+                                        1:
+                                            return -1
+                                1:
+                                    return -1
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+fn native_ir_block_successor_id(
+    block_ids: &i64_vector,
+    block_function_ids: &i64_vector,
+    block_instruction_first: &i64_vector,
+    block_instruction_count: &i64_vector,
+    instruction_ids: &i64_vector,
+    instruction_opcodes: &i64_vector,
+    instruction_target_first: &i64_vector,
+    instruction_target_count: &i64_vector,
+    target_block_ids: &i64_vector,
+    function_id: i64,
+    block_id: i64,
+    successor_index: i64
+) -> i64:
+    mut block_index: i64 = native_ir_block_index_for_function(
+        block_ids, block_function_ids, block_id, function_id
+    )
+    mut successor_count: i64 = native_ir_block_successor_count(
+        block_ids, block_function_ids, block_instruction_first,
+        block_instruction_count, instruction_ids, instruction_opcodes,
+        instruction_target_first, instruction_target_count, target_block_ids,
+        function_id, block_id
+    )
+    match block_index >= 0:
+        -1:
+            match successor_index >= 0:
+                -1:
+                    match successor_index < successor_count:
+                        -1:
+                            mut instruction_index: i64 = i64_vector_get(
+                                block_instruction_first, block_index
+                            ) + i64_vector_get(
+                                block_instruction_count, block_index
+                            ) - 1
+                            mut target_first: i64 = i64_vector_get(
+                                instruction_target_first, instruction_index
+                            )
+                            match range_is_valid(
+                                target_first + successor_index, 1,
+                                i64_vector_len(target_block_ids)
+                            ):
+                                -1:
+                                    discard 0
+                                0:
+                                    return -1
+                                1:
+                                    return -1
+                            return i64_vector_get(
+                                target_block_ids, target_first + successor_index
+                            )
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+export fn native_ir_block_predecessor_count(
+    block_ids: &i64_vector,
+    block_function_ids: &i64_vector,
+    block_instruction_first: &i64_vector,
+    block_instruction_count: &i64_vector,
+    instruction_ids: &i64_vector,
+    instruction_opcodes: &i64_vector,
+    instruction_target_first: &i64_vector,
+    instruction_target_count: &i64_vector,
+    target_block_ids: &i64_vector,
+    function_id: i64,
+    block_id: i64
+) -> i64:
+    match native_ir_block_index_for_function(
+        block_ids, block_function_ids, block_id, function_id
+    ) >= 0:
+        -1:
+            mut predecessor_count: i64 = 0
+            mut source_index: i64 = 0
+            while source_index < i64_vector_len(block_ids):
+                match i64_vector_get(block_function_ids, source_index) == function_id:
+                    -1:
+                        mut source_block: i64 = i64_vector_get(block_ids, source_index)
+                        mut successor_count: i64 = native_ir_block_successor_count(
+                            block_ids, block_function_ids, block_instruction_first,
+                            block_instruction_count, instruction_ids, instruction_opcodes,
+                            instruction_target_first, instruction_target_count,
+                            target_block_ids, function_id, source_block
+                        )
+                        match successor_count >= 0:
+                            -1:
+                                mut successor_index: i64 = 0
+                                mut found_edge: i64 = 0
+                                while successor_index < successor_count:
+                                    match native_ir_block_successor_id(
+                                        block_ids, block_function_ids,
+                                        block_instruction_first, block_instruction_count,
+                                        instruction_ids, instruction_opcodes,
+                                        instruction_target_first, instruction_target_count,
+                                        target_block_ids, function_id, source_block,
+                                        successor_index
+                                    ) == block_id:
+                                        -1:
+                                            found_edge = 1
+                                            successor_index = successor_count
+                                        0:
+                                            successor_index = successor_index + 1
+                                        1:
+                                            successor_index = successor_index + 1
+                                match found_edge == 1:
+                                    -1:
+                                        predecessor_count = predecessor_count + 1
+                                    0:
+                                        discard 0
+                                    1:
+                                        discard 0
+                            0:
+                                return -1
+                            1:
+                                return -1
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+                source_index = source_index + 1
+            return predecessor_count
+        0:
+            return -1
+        1:
+            return -1
+
+export fn native_ir_block_is_reachable(
+    function_ids: &i64_vector,
+    function_block_first: &i64_vector,
+    function_block_count: &i64_vector,
+    block_ids: &i64_vector,
+    block_function_ids: &i64_vector,
+    block_instruction_first: &i64_vector,
+    block_instruction_count: &i64_vector,
+    instruction_ids: &i64_vector,
+    instruction_opcodes: &i64_vector,
+    instruction_target_first: &i64_vector,
+    instruction_target_count: &i64_vector,
+    target_block_ids: &i64_vector,
+    function_id: i64,
+    wanted_block_id: i64
+) -> i64:
+    mut entry_block_id: i64 = native_ir_function_entry_block_id(
+        function_ids, function_block_first, function_block_count,
+        block_ids, block_function_ids, function_id
+    )
+    match entry_block_id >= 0:
+        -1:
+            mut queue: i64_vector = i64_vector_new<i64>(16)
+            discard i64_vector_push(&mut queue, entry_block_id)
+            mut cursor: i64 = 0
+            while cursor < i64_vector_len(&queue):
+                mut current_block_id: i64 = i64_vector_get(&queue, cursor)
+                match current_block_id == wanted_block_id:
+                    -1:
+                        return 1
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+                mut successor_count: i64 = native_ir_block_successor_count(
+                    block_ids, block_function_ids, block_instruction_first,
+                    block_instruction_count, instruction_ids, instruction_opcodes,
+                    instruction_target_first, instruction_target_count,
+                    target_block_ids, function_id, current_block_id
+                )
+                match successor_count >= 0:
+                    -1:
+                        mut successor_index: i64 = 0
+                        while successor_index < successor_count:
+                            mut successor_id: i64 = native_ir_block_successor_id(
+                                block_ids, block_function_ids,
+                                block_instruction_first, block_instruction_count,
+                                instruction_ids, instruction_opcodes,
+                                instruction_target_first, instruction_target_count,
+                                target_block_ids, function_id, current_block_id,
+                                successor_index
+                            )
+                            match has_value(&queue, successor_id):
+                                -1:
+                                    discard 0
+                                0:
+                                    discard i64_vector_push(&mut queue, successor_id)
+                                1:
+                                    discard i64_vector_push(&mut queue, successor_id)
+                            successor_index = successor_index + 1
+                    0:
+                        return -1
+                    1:
+                        return -1
+                cursor = cursor + 1
+            return 0
+        0:
+            return -1
+        1:
+            return -1
+
+export fn native_ir_append_control_instruction_for_function(
+    program: NativeIR,
+    function_id: i64,
+    block_id: i64,
+    opcode: i64,
+    condition_value_id: i64,
+    targets: &i64_vector
+) -> NativeIRAppendResult:
+    mut accepted: i64 = 1
+    mut block_index: i64 = native_ir_block_index_for_function(
+        &program.block_ids, &program.block_function_ids, block_id, function_id
+    )
+    mut expected_target_count: i64 = 0
+    mut expected_terminator_kind: i64 = 0
+    match opcode == 2:
+        -1:
+            expected_target_count = 3
+            expected_terminator_kind = 2
+            match condition_value_id >= 0:
+                -1:
+                    match native_ir_value_type_id(
+                        &program.value_ids, &program.value_type_ids, condition_value_id
+                    ) == 1:
+                        -1:
+                            discard 0
+                        0:
+                            accepted = 0
+                        1:
+                            accepted = 0
+                0:
+                    accepted = 0
+                1:
+                    accepted = 0
+        0:
+            match opcode == 8:
+                -1:
+                    expected_target_count = 1
+                    expected_terminator_kind = 3
+                    match condition_value_id == -1:
+                        -1:
+                            discard 0
+                        0:
+                            accepted = 0
+                        1:
+                            accepted = 0
+                0:
+                    accepted = 0
+                1:
+                    accepted = 0
+        1:
+            accepted = 0
+    match block_index >= 0:
+        -1:
+            match i64_vector_get(&program.block_terminator_kinds, block_index) == expected_terminator_kind:
+                -1:
+                    discard 0
+                0:
+                    accepted = 0
+                1:
+                    accepted = 0
+        0:
+            accepted = 0
+        1:
+            accepted = 0
+    match i64_vector_len(targets) == expected_target_count:
+        -1:
+            discard 0
+        0:
+            accepted = 0
+        1:
+            accepted = 0
+    match native_ir_control_targets_valid(
+        &program.block_ids, &program.block_function_ids, function_id, targets
+    ):
+        -1:
+            discard 0
+        0:
+            accepted = 0
+        1:
+            accepted = 0
+    match i64_vector_len(&program.target_block_ids) + expected_target_count <= 1024:
+        -1:
+            discard 0
+        0:
+            accepted = 0
+        1:
+            accepted = 0
+    match accepted == 1:
+        -1:
+            mut appended: NativeIRAppendResult = native_ir_append_instruction_for_function(
+                program, function_id, block_id, opcode, 0, condition_value_id, -1, -1
+            )
+            mut append_accepted: i64 = appended.accepted
+            mut updated: NativeIR = appended.program
+            match append_accepted == 1:
+                -1:
+                    mut instruction_index: i64 = i64_vector_len(&updated.instruction_ids) - 1
+                    mut target_first: i64 = i64_vector_get(
+                        &updated.instruction_target_first, instruction_index
+                    )
+                    mut target_index: i64 = 0
+                    while target_index < expected_target_count:
+                        discard i64_vector_push(
+                            &mut updated.target_block_ids,
+                            i64_vector_get(targets, target_index)
+                        )
+                        target_index = target_index + 1
+                    discard i64_vector_set(
+                        &mut updated.instruction_target_count,
+                        instruction_index,
+                        expected_target_count
+                    )
+                    return NativeIRAppendResult(program=updated, accepted=1, value_id=-1)
+                0:
+                    return NativeIRAppendResult(program=updated, accepted=0, value_id=-1)
+                1:
+                    return NativeIRAppendResult(program=updated, accepted=0, value_id=-1)
+        0:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+        1:
+            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+
+export fn native_ir_append_branch_for_function(
+    program: NativeIR,
+    function_id: i64,
+    block_id: i64,
+    condition_value_id: i64,
+    negative_target: i64,
+    neutral_target: i64,
+    positive_target: i64
+) -> NativeIRAppendResult:
+    mut targets: i64_vector = i64_vector_new<i64>(3)
+    discard i64_vector_push(&mut targets, negative_target)
+    discard i64_vector_push(&mut targets, neutral_target)
+    discard i64_vector_push(&mut targets, positive_target)
+    return native_ir_append_control_instruction_for_function(
+        program, function_id, block_id, 2, condition_value_id, &targets
+    )
+
+export fn native_ir_append_jump_for_function(
+    program: NativeIR,
+    function_id: i64,
+    block_id: i64,
+    target: i64
+) -> NativeIRAppendResult:
+    mut targets: i64_vector = i64_vector_new<i64>(1)
+    discard i64_vector_push(&mut targets, target)
+    return native_ir_append_control_instruction_for_function(
+        program, function_id, block_id, 8, -1, &targets
+    )
 
 export fn native_ir_append_call_two(
     program: NativeIR,
@@ -1639,6 +2530,15 @@ export fn native_ir_append_call_arguments(
                 )
                 index = index + 1
             mut prior_count: i64 = i64_vector_get(&updated.block_instruction_count, block_index)
+            match prior_count == 0:
+                -1:
+                    discard i64_vector_set(
+                        &mut updated.block_instruction_first, block_index, instruction_id
+                    )
+                0:
+                    discard 0
+                1:
+                    discard 0
             discard i64_vector_set(&mut updated.block_instruction_count, block_index, prior_count + 1)
         0:
             value_id = -1
@@ -1703,14 +2603,37 @@ fn binary_shape_valid(result_count: i64, operand_count: i64) -> trit:
         1:
             return 0
 
-fn opcode_shape_valid(opcode: i64, result_count: i64, operand_count: i64, immediate: i64) -> trit:
-    match opcode == 0:
+fn native_ir_relation_code_valid(code: i64) -> i64:
+    match code <=> 0:
         -1:
-            match result_count == 1:
+            return 0
+        0:
+            return 1
+        1:
+            match code <=> 5:
                 -1:
-                    match operand_count == 0:
+                    return 1
+                0:
+                    return 1
+                1:
+                    return 0
+
+fn native_ir_relation_types_valid(
+    result_type_id: i64, left_type_id: i64, right_type_id: i64, code: i64
+) -> i64:
+    match native_ir_relation_code_valid(code) == 1:
+        -1:
+            match result_type_id == 1:
+                -1:
+                    match left_type_id == right_type_id:
                         -1:
-                            return immediate >= 0
+                            match left_type_id >= 0:
+                                -1:
+                                    return native_ir_trit_to_i64(left_type_id < 2)
+                                0:
+                                    return 0
+                                1:
+                                    return 0
                         0:
                             return 0
                         1:
@@ -1720,25 +2643,143 @@ fn opcode_shape_valid(opcode: i64, result_count: i64, operand_count: i64, immedi
                 1:
                     return 0
         0:
-            match opcode == 1:
+            return 0
+        1:
+            return 0
+
+fn opcode_shape_valid(opcode: i64, result_count: i64, operand_count: i64, immediate: i64) -> trit:
+    match opcode == 4:
+        -1:
+            match result_count == 1:
                 -1:
-                    match result_count == 0:
+                    match operand_count == 1:
                         -1:
-                            return operand_count <= 1
+                            return immediate == 0
                         0:
                             return 0
                         1:
                             return 0
                 0:
-                    match opcode == 9:
+                    return 0
+                1:
+                    return 0
+        0:
+            match opcode == 5:
+                -1:
+                    match result_count == 0:
                         -1:
-                            return binary_shape_valid(result_count, operand_count)
+                            match operand_count == 2:
+                                -1:
+                                    return immediate == 0
+                                0:
+                                    return 0
+                                1:
+                                    return 0
                         0:
-                            match opcode == 10:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    discard 0
+                1:
+                    return 0
+        1:
+            return 0
+    match opcode == 11:
+        -1:
+            match result_count == 1:
+                -1:
+                    match operand_count == 2:
+                        -1:
+                            match native_ir_relation_code_valid(immediate) == 1:
+                                -1:
+                                    return -1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            match opcode == 0:
+                -1:
+                    match result_count == 1:
+                        -1:
+                            match operand_count == 0:
+                                -1:
+                                    return immediate >= 0
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    match opcode == 1:
+                        -1:
+                            match result_count == 0:
+                                -1:
+                                    return operand_count <= 1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            match opcode == 9:
                                 -1:
                                     return binary_shape_valid(result_count, operand_count)
                                 0:
-                                    return -1
+                                    match opcode == 10:
+                                        -1:
+                                            return binary_shape_valid(result_count, operand_count)
+                                        0:
+                                            match opcode == 2:
+                                                -1:
+                                                    match result_count == 0:
+                                                        -1:
+                                                            match operand_count == 1:
+                                                                -1:
+                                                                    return immediate == 0
+                                                                0:
+                                                                    return 0
+                                                                1:
+                                                                    return 0
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                0:
+                                                    match opcode == 8:
+                                                        -1:
+                                                            match result_count == 0:
+                                                                -1:
+                                                                    match operand_count == 0:
+                                                                        -1:
+                                                                            return immediate == 0
+                                                                        0:
+                                                                            return 0
+                                                                        1:
+                                                                            return 0
+                                                                0:
+                                                                    return 0
+                                                                1:
+                                                                    return 0
+                                                        0:
+                                                            return -1
+                                                        1:
+                                                            return -1
+                                                1:
+                                                    return -1
+                                        1:
+                                            return -1
                                 1:
                                     return -1
                         1:
@@ -2095,6 +3136,186 @@ fn native_ir_named_metadata_valid(
         parameter_index = parameter_index + 1
     return -1
 
+fn native_ir_memory_metadata_valid(
+    memory_ids: &i64_vector, memory_types: &i64_vector, memory_lengths: &i64_vector
+) -> trit:
+    mut count: i64 = i64_vector_len(memory_ids)
+    match count <= 16:
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    match count == i64_vector_len(memory_types):
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    match count == i64_vector_len(memory_lengths):
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    mut index: i64 = 0
+    while index < count:
+        mut memory_id: i64 = i64_vector_get(memory_ids, index)
+        mut type_id: i64 = i64_vector_get(memory_types, index)
+        match memory_id >= 0:
+            -1:
+                discard 0
+            0:
+                return 0
+            1:
+                return 0
+        match type_id >= 0:
+            -1:
+                match type_id < 2:
+                    -1:
+                        discard 0
+                    0:
+                        return 0
+                    1:
+                        return 0
+            0:
+                return 0
+            1:
+                return 0
+        match i64_vector_get(memory_lengths, index) > 0:
+            -1:
+                discard 0
+            0:
+                return 0
+            1:
+                return 0
+        mut prior: i64 = 0
+        while prior < index:
+            match i64_vector_get(memory_ids, prior) == memory_id:
+                -1:
+                    return 0
+                0:
+                    discard 0
+                1:
+                    return 0
+            prior = prior + 1
+        index = index + 1
+    return -1
+
+fn native_ir_memory_instruction_valid(
+    instruction_index: i64,
+    opcode: i64,
+    instruction_memory_ids: &i64_vector,
+    instruction_result_first: &i64_vector,
+    instruction_result_count: &i64_vector,
+    instruction_operand_first: &i64_vector,
+    instruction_operand_count: &i64_vector,
+    result_value_ids: &i64_vector,
+    operand_value_ids: &i64_vector,
+    memory_ids: &i64_vector,
+    memory_types: &i64_vector,
+    value_ids: &i64_vector,
+    value_type_ids: &i64_vector
+) -> i64:
+    match range_is_valid(instruction_index, 1, i64_vector_len(instruction_memory_ids)):
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    mut memory_id: i64 = i64_vector_get(instruction_memory_ids, instruction_index)
+    mut memory_index: i64 = native_ir_memory_index(memory_ids, memory_id)
+    match memory_index >= 0:
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    mut result_first: i64 = i64_vector_get(instruction_result_first, instruction_index)
+    mut operand_first: i64 = i64_vector_get(instruction_operand_first, instruction_index)
+    mut result_count: i64 = i64_vector_get(instruction_result_count, instruction_index)
+    mut operand_count: i64 = i64_vector_get(instruction_operand_count, instruction_index)
+    mut index_value_id: i64 = native_ir_safe_get(operand_value_ids, operand_first)
+    mut index_type_id: i64 = native_ir_value_type_id(
+        value_ids, value_type_ids, index_value_id
+    )
+    match index_type_id >= 0:
+        -1:
+            match index_type_id < 2:
+                -1:
+                    discard 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+    match opcode == 4:
+        -1:
+            match result_count == 1:
+                -1:
+                    mut result_value_id: i64 = native_ir_safe_get(
+                        result_value_ids, result_first
+                    )
+                    mut result_type_id: i64 = native_ir_value_type_id(
+                        value_ids, value_type_ids, result_value_id
+                    )
+                    match operand_count == 1:
+                        -1:
+                            return native_ir_trit_to_i64(
+                                result_type_id == i64_vector_get(
+                                    memory_types, memory_index
+                                )
+                            )
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            match opcode == 5:
+                -1:
+                    match result_count == 0:
+                        -1:
+                            match operand_count == 2:
+                                -1:
+                                    mut stored_value_id: i64 = native_ir_safe_get(
+                                        operand_value_ids, operand_first + 1
+                                    )
+                                    mut stored_type_id: i64 = native_ir_value_type_id(
+                                        value_ids, value_type_ids,
+                                        stored_value_id
+                                    )
+                                    return native_ir_trit_to_i64(
+                                        stored_type_id == i64_vector_get(
+                                            memory_types, memory_index
+                                        )
+                                    )
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            return 0
+
 fn verification_result(program: NativeIR, accepted: i64, code: i64, before: i64) -> NativeIRVerifiedResult:
     mut verification: NativeVerification = NativeVerification(
         accepted=accepted,
@@ -2175,6 +3396,15 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
         &program.parameter_value_ids, &program.parameter_type_ids,
         &program.value_ids, &program.value_type_ids
     ) == 1:
+        -1:
+            discard 0
+        0:
+            return verification_result(program, 0, 15, before)
+        1:
+            return verification_result(program, 0, 15, before)
+    match native_ir_memory_metadata_valid(
+        &program.memory_ids, &program.memory_types, &program.memory_lengths
+    ):
         -1:
             discard 0
         0:
@@ -2275,10 +3505,27 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
             return verification_result(program, 0, 14, before)
 
     mut block_index: i64 = 0
+    mut expected_instruction_first: i64 = 0
     while block_index < i64_vector_len(&program.block_ids):
         first: i64 = i64_vector_get(&program.block_instruction_first, block_index)
         count: i64 = i64_vector_get(&program.block_instruction_count, block_index)
         terminator: i64 = i64_vector_get(&program.block_terminator_kinds, block_index)
+        block_id: i64 = i64_vector_get(&program.block_ids, block_index)
+        function_id: i64 = i64_vector_get(&program.block_function_ids, block_index)
+        match first == expected_instruction_first:
+            -1:
+                discard 0
+            0:
+                return verification_result(program, 0, 13, before)
+            1:
+                return verification_result(program, 0, 13, before)
+        match count > 0:
+            -1:
+                discard 0
+            0:
+                return verification_result(program, 0, 13, before)
+            1:
+                return verification_result(program, 0, 13, before)
         match range_is_valid(first, count, i64_vector_len(&program.instruction_ids)):
             -1:
                 discard 0
@@ -2293,7 +3540,68 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
                 return verification_result(program, 0, 4, before)
             1:
                 discard 0
+        mut last_instruction_index: i64 = first + count - 1
+        match i64_vector_get(&program.instruction_block_ids, last_instruction_index) == block_id:
+            -1:
+                discard 0
+            0:
+                return verification_result(program, 0, 14, before)
+            1:
+                return verification_result(program, 0, 14, before)
+        match i64_vector_get(&program.instruction_function_ids, last_instruction_index) == function_id:
+            -1:
+                discard 0
+            0:
+                return verification_result(program, 0, 14, before)
+            1:
+                return verification_result(program, 0, 14, before)
+        mut last_opcode: i64 = i64_vector_get(&program.instruction_opcodes, last_instruction_index)
+        match terminator == 1:
+            -1:
+                match last_opcode == 1:
+                    -1:
+                        discard 0
+                    0:
+                        return verification_result(program, 0, 4, before)
+                    1:
+                        return verification_result(program, 0, 4, before)
+            0:
+                match terminator == 2:
+                    -1:
+                        match last_opcode == 2:
+                            -1:
+                                discard 0
+                            0:
+                                return verification_result(program, 0, 4, before)
+                            1:
+                                return verification_result(program, 0, 4, before)
+                    0:
+                        match terminator == 3:
+                            -1:
+                                match last_opcode == 8:
+                                    -1:
+                                        discard 0
+                                    0:
+                                        return verification_result(program, 0, 4, before)
+                                    1:
+                                        return verification_result(program, 0, 4, before)
+                            0:
+                                return verification_result(program, 0, 4, before)
+                            1:
+                                return verification_result(program, 0, 4, before)
+                    1:
+                        return verification_result(program, 0, 4, before)
+            1:
+                return verification_result(program, 0, 4, before)
+        expected_instruction_first = first + count
         block_index = block_index + 1
+    match expected_instruction_first == i64_vector_len(&program.instruction_ids):
+        -1:
+            discard 0
+        0:
+            return verification_result(program, 0, 13, before)
+        1:
+            return verification_result(program, 0, 13, before)
 
     mut instruction_index: i64 = 0
     while instruction_index < i64_vector_len(&program.instruction_ids):
@@ -2350,14 +3658,14 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
             0:
                 discard 0
             1:
-                match opcode <=> 10:
+                match opcode <=> 11:
                     -1:
                         discard 0
                     0:
                         discard 0
                     1:
                         return verification_result(program, 0, 12, before)
-        match opcode <=> 10:
+        match opcode <=> 11:
             -1:
                 discard 0
             0:
@@ -2429,6 +3737,42 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
                 discard 0
             1:
                 discard 0
+        match opcode == 11:
+            -1:
+                mut relation_result_value_id: i64 = i64_vector_get(
+                    &program.result_value_ids, result_first
+                )
+                mut relation_left_value_id: i64 = i64_vector_get(
+                    &program.operand_value_ids, operand_first
+                )
+                mut relation_right_value_id: i64 = i64_vector_get(
+                    &program.operand_value_ids, operand_first + 1
+                )
+                mut relation_result_type_id: i64 = native_ir_value_type_id(
+                    &program.value_ids, &program.value_type_ids, relation_result_value_id
+                )
+                mut relation_left_type_id: i64 = native_ir_value_type_id(
+                    &program.value_ids, &program.value_type_ids, relation_left_value_id
+                )
+                mut relation_right_type_id: i64 = native_ir_value_type_id(
+                    &program.value_ids, &program.value_type_ids, relation_right_value_id
+                )
+                match native_ir_relation_types_valid(
+                    relation_result_type_id,
+                    relation_left_type_id,
+                    relation_right_type_id,
+                    immediate
+                ) == 1:
+                    -1:
+                        discard 0
+                    0:
+                        return verification_result(program, 0, 15, before)
+                    1:
+                        return verification_result(program, 0, 15, before)
+            0:
+                discard 0
+            1:
+                discard 0
         match opcode == 1:
             -1:
                 match native_ir_return_signature_valid(
@@ -2450,7 +3794,10 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
         mut target_index: i64 = 0
         while target_index < target_count:
             target: i64 = i64_vector_get(&program.target_block_ids, target_first + target_index)
-            match has_value(&program.block_ids, target):
+            match native_ir_block_index_for_function(
+                &program.block_ids, &program.block_function_ids, target,
+                instruction_function_id
+            ) >= 0:
                 -1:
                     discard 0
                 0:
@@ -2458,19 +3805,61 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
                 1:
                     return verification_result(program, 0, 7, before)
             target_index = target_index + 1
-        match opcode <=> 2:
+        match opcode == 2:
             -1:
-                discard 0
+                match target_count == 3:
+                    -1:
+                        mut branch_condition_id: i64 = i64_vector_get(
+                            &program.operand_value_ids, operand_first
+                        )
+                        match native_ir_value_type_id(
+                            &program.value_ids, &program.value_type_ids,
+                            branch_condition_id
+                        ) == 1:
+                            -1:
+                                discard 0
+                            0:
+                                return verification_result(program, 0, 15, before)
+                            1:
+                                return verification_result(program, 0, 15, before)
+                    0:
+                        return verification_result(program, 0, 15, before)
+                    1:
+                        return verification_result(program, 0, 15, before)
             0:
-                match target_count <=> 3:
+                match opcode == 8:
+                    -1:
+                        match target_count == 1:
+                            -1:
+                                discard 0
+                            0:
+                                return verification_result(program, 0, 15, before)
+                            1:
+                                return verification_result(program, 0, 15, before)
+                    0:
+                        match target_count == 0:
+                            -1:
+                                discard 0
+                            0:
+                                return verification_result(program, 0, 15, before)
+                            1:
+                                return verification_result(program, 0, 15, before)
+                    1:
+                        match target_count == 0:
+                            -1:
+                                discard 0
+                            0:
+                                return verification_result(program, 0, 15, before)
+                            1:
+                                return verification_result(program, 0, 15, before)
+            1:
+                match target_count == 0:
                     -1:
                         discard 0
                     0:
-                        discard 0
+                        return verification_result(program, 0, 15, before)
                     1:
                         return verification_result(program, 0, 15, before)
-            1:
-                discard 0
         match opcode <=> 3:
             -1:
                 discard 0
@@ -2581,28 +3970,46 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
             -1:
                 discard 0
             0:
-                memory: i64 = i64_vector_get(&program.instruction_memory_ids, instruction_index)
-                match has_value(&program.memory_ids, memory):
+                match native_ir_memory_instruction_valid(
+                    instruction_index, 4,
+                    &program.instruction_memory_ids,
+                    &program.instruction_result_first,
+                    &program.instruction_result_count,
+                    &program.instruction_operand_first,
+                    &program.instruction_operand_count,
+                    &program.result_value_ids, &program.operand_value_ids,
+                    &program.memory_ids, &program.memory_types,
+                    &program.value_ids, &program.value_type_ids
+                ) == 1:
                     -1:
                         discard 0
                     0:
-                        return verification_result(program, 0, 3, before)
+                        return verification_result(program, 0, 15, before)
                     1:
-                        discard 0
+                        return verification_result(program, 0, 15, before)
             1:
                 discard 0
         match opcode <=> 5:
             -1:
                 discard 0
             0:
-                memory: i64 = i64_vector_get(&program.instruction_memory_ids, instruction_index)
-                match has_value(&program.memory_ids, memory):
+                match native_ir_memory_instruction_valid(
+                    instruction_index, 5,
+                    &program.instruction_memory_ids,
+                    &program.instruction_result_first,
+                    &program.instruction_result_count,
+                    &program.instruction_operand_first,
+                    &program.instruction_operand_count,
+                    &program.result_value_ids, &program.operand_value_ids,
+                    &program.memory_ids, &program.memory_types,
+                    &program.value_ids, &program.value_type_ids
+                ) == 1:
                     -1:
                         discard 0
                     0:
-                        return verification_result(program, 0, 3, before)
+                        return verification_result(program, 0, 15, before)
                     1:
-                        discard 0
+                        return verification_result(program, 0, 15, before)
             1:
                 discard 0
         match opcode <=> 6:
@@ -2740,15 +4147,9 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
                                             1:
                                                 return verification_result(program, 0, 11, before)
                                     0:
-                                        match def_block == 0:
-                                            -1:
-                                                discard 0
-                                            0:
-                                                return verification_result(program, 0, 11, before)
-                                            1:
-                                                discard 0
+                                        return verification_result(program, 0, 11, before)
                                     1:
-                                        discard 0
+                                        return verification_result(program, 0, 11, before)
                             1:
                                 discard 0
                         value_index = i64_vector_len(&program.value_ids)
@@ -2915,48 +4316,62 @@ fn scalar_program() -> NativeIR:
     )
 
 fn branch_program() -> NativeIR:
-    mut program: NativeIR = scalar_program()
-    discard i64_vector_push(&mut program.block_ids, 1)
-    discard i64_vector_push(&mut program.block_ids, 2)
-    discard i64_vector_push(&mut program.block_instruction_first, 1)
-    discard i64_vector_push(&mut program.block_instruction_first, 2)
-    discard i64_vector_set(&mut program.block_instruction_count, 0, 1)
-    discard i64_vector_push(&mut program.block_instruction_count, 1)
-    discard i64_vector_push(&mut program.block_instruction_count, 1)
-    discard i64_vector_set(&mut program.block_terminator_kinds, 0, 2)
-    discard i64_vector_push(&mut program.block_terminator_kinds, 1)
-    discard i64_vector_push(&mut program.block_terminator_kinds, 1)
-    discard i64_vector_set(&mut program.instruction_block_ids, 1, 1)
-    discard i64_vector_push(&mut program.instruction_ids, 2)
-    discard i64_vector_push(&mut program.instruction_block_ids, 2)
-    discard i64_vector_push(&mut program.instruction_immediates, 0)
-    discard i64_vector_set(&mut program.block_instruction_count, 0, 1)
-    discard i64_vector_set(&mut program.instruction_opcodes, 0, 2)
-    discard i64_vector_set(&mut program.instruction_opcodes, 1, 1)
-    discard i64_vector_push(&mut program.instruction_opcodes, 1)
-    discard i64_vector_set(&mut program.instruction_result_first, 0, 0)
-    discard i64_vector_set(&mut program.instruction_result_first, 1, 1)
-    discard i64_vector_push(&mut program.instruction_result_first, 1)
-    discard i64_vector_set(&mut program.instruction_result_count, 0, 0)
-    discard i64_vector_set(&mut program.instruction_result_count, 1, 0)
-    discard i64_vector_push(&mut program.instruction_result_count, 0)
-    discard i64_vector_set(&mut program.instruction_operand_first, 0, 0)
-    discard i64_vector_set(&mut program.instruction_operand_first, 1, 0)
-    discard i64_vector_push(&mut program.instruction_operand_first, 0)
-    discard i64_vector_set(&mut program.instruction_operand_count, 0, 0)
-    discard i64_vector_set(&mut program.instruction_operand_count, 1, 1)
-    discard i64_vector_push(&mut program.instruction_operand_count, 1)
-    discard i64_vector_push(&mut program.instruction_target_first, 0)
-    discard i64_vector_push(&mut program.instruction_target_count, 0)
-    discard i64_vector_push(&mut program.instruction_callee_function_ids, -1)
-    discard i64_vector_push(&mut program.instruction_memory_ids, -1)
-    discard i64_vector_push(&mut program.instruction_reference_target_types, -1)
-    discard i64_vector_push(&mut program.instruction_reference_flags, 0)
-    discard i64_vector_push(&mut program.instruction_slice_length_ids, -1)
-    discard i64_vector_set(&mut program.instruction_target_count, 0, 3)
-    discard i64_vector_push(&mut program.target_block_ids, 0)
-    discard i64_vector_push(&mut program.target_block_ids, 1)
-    discard i64_vector_push(&mut program.target_block_ids, 2)
+    mut program: NativeIR = native_ir_empty()
+    mut function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    program = function.program
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, 0
+    )
+    program = result_type.program
+    mut entry: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 2
+    )
+    program = entry.program
+    mut negative: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 1, 1
+    )
+    program = negative.program
+    mut other: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 2, 1
+    )
+    program = other.program
+    mut left: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 0, 1, -1, -1, 0
+    )
+    mut left_id: i64 = left.value_id
+    program = left.program
+    mut right: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 0, 2, -1, -1, 0
+    )
+    mut right_id: i64 = right.value_id
+    program = right.program
+    mut condition: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 11, 0, left_id, right_id, 1
+    )
+    mut condition_id: i64 = condition.value_id
+    program = condition.program
+    mut branch: NativeIRAppendResult = native_ir_append_branch_for_function(
+        program, 0, 0, condition_id, 1, 2, 2
+    )
+    program = branch.program
+    mut first_value: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 1, 0, 11, -1, -1, 0
+    )
+    mut first_value_id: i64 = first_value.value_id
+    program = first_value.program
+    mut first_return: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        program, 0, 1, 1, 0, first_value_id, -1, -1
+    )
+    program = first_return.program
+    mut second_value: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 2, 0, 22, -1, -1, 0
+    )
+    mut second_value_id: i64 = second_value.value_id
+    program = second_value.program
+    mut second_return: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        program, 0, 2, 1, 0, second_value_id, -1, -1
+    )
+    program = second_return.program
     return program
 
 fn call_program(result_width: i64) -> NativeIR:

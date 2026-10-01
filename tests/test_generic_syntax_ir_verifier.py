@@ -853,6 +853,476 @@ def test_native_verifier_branch_fixture_returns_a_typed_value_in_each_arm() -> N
     assert (hosted % 1_000_000_000) // 100_000_000 == 1
 
 
+def test_native_ir_typed_relations_verify_operand_and_code_contracts() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(
+        encoding="utf-8"
+    )
+    probe = """
+fn typed_relation_verifier_probe(
+    relation_code: i64, left_type_id: i64, right_type_id: i64
+) -> i64:
+    mut program: NativeIR = native_ir_empty()
+    mut function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    program = function.program
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, 1
+    )
+    program = result_type.program
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 1
+    )
+    program = block.program
+    mut left: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 0, 1, -1, -1, left_type_id
+    )
+    mut left_id: i64 = left.value_id
+    program = left.program
+    mut right: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 0, 0, -1, -1, right_type_id
+    )
+    mut right_id: i64 = right.value_id
+    program = right.program
+    mut relation: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 11, relation_code, left_id, right_id, 1
+    )
+    mut relation_id: i64 = relation.value_id
+    match relation.accepted == 1:
+        -1:
+            program = relation.program
+        0:
+            return relation.accepted
+        1:
+            return relation.accepted
+    mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        program, 0, 0, 1, 0, relation_id, -1, -1
+    )
+    program = returned.program
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    return verified.verification.accepted * 100 + verified.verification.diagnostic_code
+
+fn main() -> i64:
+    mut score: i64 = native_ir_trit_to_i64(
+        typed_relation_verifier_probe(0, 0, 0) == 100
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_relation_verifier_probe(2, 0, 0) == 100
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_relation_verifier_probe(5, 0, 0) == 100
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_relation_verifier_probe(0, 0, 1) == 15
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_relation_verifier_probe(6, 0, 0) == 0
+    )
+    return score
+"""
+
+    assert run_source(verifier + "\n" + probe) == 31
+
+
+def test_native_ir_typed_branch_and_jump_cfg_contracts() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(
+        encoding="utf-8"
+    )
+    probe = """
+fn append_i64_constant(
+    program: NativeIR, function_id: i64, block_id: i64, value: i64
+) -> NativeIRAppendResult:
+    return native_ir_append_typed_instruction_for_function(
+        program, function_id, block_id, 0, value, -1, -1, 0
+    )
+
+fn append_return(
+    program: NativeIR, function_id: i64, block_id: i64, value_id: i64
+) -> NativeIR:
+    mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        program, function_id, block_id, 1, 0, value_id, -1, -1
+    )
+    return returned.program
+
+fn valid_branch_program() -> NativeIR:
+    mut program: NativeIR = native_ir_empty()
+    mut main_function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    program = main_function.program
+    mut main_result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, 0
+    )
+    program = main_result_type.program
+    mut entry: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 2
+    )
+    program = entry.program
+    mut negative: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 1, 1
+    )
+    program = negative.program
+    mut neutral: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 2, 1
+    )
+    program = neutral.program
+    mut positive: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 3, 1
+    )
+    program = positive.program
+
+    mut left: NativeIRAppendResult = append_i64_constant(program, 0, 0, 1)
+    mut left_id: i64 = left.value_id
+    program = left.program
+    mut right: NativeIRAppendResult = append_i64_constant(program, 0, 0, 2)
+    mut right_id: i64 = right.value_id
+    program = right.program
+    mut relation: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 11, 0, left_id, right_id, 1
+    )
+    mut condition_id: i64 = relation.value_id
+    program = relation.program
+    mut branch: NativeIRAppendResult = native_ir_append_branch_for_function(
+        program, 0, 0, condition_id, 1, 2, 3
+    )
+    program = branch.program
+
+    mut negative_value: NativeIRAppendResult = append_i64_constant(program, 0, 1, 11)
+    mut negative_value_id: i64 = negative_value.value_id
+    program = append_return(negative_value.program, 0, 1, negative_value_id)
+    mut neutral_value: NativeIRAppendResult = append_i64_constant(program, 0, 2, 22)
+    mut neutral_value_id: i64 = neutral_value.value_id
+    program = append_return(neutral_value.program, 0, 2, neutral_value_id)
+    mut positive_value: NativeIRAppendResult = append_i64_constant(program, 0, 3, 33)
+    mut positive_value_id: i64 = positive_value.value_id
+    program = append_return(positive_value.program, 0, 3, positive_value_id)
+
+    mut other_function: NativeIRAppendResult = native_ir_append_function(program, 1, 1)
+    program = other_function.program
+    mut other_result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 1, 0
+    )
+    program = other_result_type.program
+    mut other_block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 1, 10, 1
+    )
+    program = other_block.program
+    mut other_value: NativeIRAppendResult = append_i64_constant(program, 1, 10, 44)
+    mut other_value_id: i64 = other_value.value_id
+    program = append_return(other_value.program, 1, 10, other_value_id)
+    return program
+
+fn branch_cfg_contract_probe() -> i64:
+    mut verified: NativeIRVerifiedResult = verify_program(valid_branch_program())
+    mut score: i64 = native_ir_trit_to_i64(verified.verification.accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(
+        verified.verification.digest_before == verified.verification.digest_after
+    )
+
+    mut wrong_count: NativeIR = valid_branch_program()
+    discard i64_vector_set(&mut wrong_count.instruction_target_count, 3, 2)
+    mut wrong_count_result: NativeIRVerifiedResult = verify_program(wrong_count)
+    score = score * 2 + native_ir_trit_to_i64(
+        wrong_count_result.verification.accepted == 0
+    )
+
+    mut foreign_target: NativeIR = valid_branch_program()
+    discard i64_vector_set(&mut foreign_target.target_block_ids, 0, 10)
+    mut foreign_result: NativeIRVerifiedResult = verify_program(foreign_target)
+    score = score * 2 + native_ir_trit_to_i64(foreign_result.verification.accepted == 0)
+
+    score = score * 2 + invalid_branch_builder_probe()
+    score = score * 2 + invalid_jump_builder_probe()
+    return score
+
+fn invalid_branch_builder_probe() -> i64:
+    mut program: NativeIR = native_ir_empty()
+    mut function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    program = function.program
+    mut entry: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 2
+    )
+    program = entry.program
+    mut negative: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 1, 1
+    )
+    program = negative.program
+    mut neutral: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 2, 1
+    )
+    program = neutral.program
+    mut positive: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 3, 1
+    )
+    program = positive.program
+    mut condition: NativeIRAppendResult = append_i64_constant(program, 0, 0, 1)
+    mut condition_id: i64 = condition.value_id
+    mut targets: i64_vector = i64_vector_new<i64>(3)
+    discard i64_vector_push(&mut targets, 1)
+    discard i64_vector_push(&mut targets, 2)
+    discard i64_vector_push(&mut targets, 3)
+    mut attempted: NativeIRAppendResult = native_ir_append_control_instruction_for_function(
+        condition.program, 0, 0, 2, condition_id, &targets
+    )
+    return native_ir_trit_to_i64(attempted.accepted == 0)
+
+fn invalid_jump_builder_probe() -> i64:
+    mut program: NativeIR = native_ir_empty()
+    mut function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    program = function.program
+    mut entry: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 3
+    )
+    program = entry.program
+    mut attempted: NativeIRAppendResult = native_ir_append_jump_for_function(
+        program, 0, 0, 99
+    )
+    return native_ir_trit_to_i64(attempted.accepted == 0)
+
+fn jump_cfg_contract_probe() -> i64:
+    mut program: NativeIR = native_ir_empty()
+    mut function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    program = function.program
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, 0
+    )
+    program = result_type.program
+    mut entry: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 3
+    )
+    program = entry.program
+    mut exit_block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 1, 1
+    )
+    program = exit_block.program
+    mut jump: NativeIRAppendResult = native_ir_append_jump_for_function(
+        program, 0, 0, 1
+    )
+    program = jump.program
+    mut value: NativeIRAppendResult = append_i64_constant(program, 0, 1, 55)
+    mut value_id: i64 = value.value_id
+    program = append_return(value.program, 0, 1, value_id)
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    mut score: i64 = native_ir_trit_to_i64(verified.verification.accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(
+        verified.verification.digest_before == verified.verification.digest_after
+    )
+
+    mut bad_count: NativeIR = valid_jump_program()
+    discard i64_vector_set(&mut bad_count.instruction_target_count, 0, 0)
+    mut bad_count_result: NativeIRVerifiedResult = verify_program(bad_count)
+    score = score * 2 + native_ir_trit_to_i64(bad_count_result.verification.accepted == 0)
+    return score
+
+fn valid_jump_program() -> NativeIR:
+    mut program: NativeIR = native_ir_empty()
+    mut function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    program = function.program
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, 0
+    )
+    program = result_type.program
+    mut entry: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 3
+    )
+    program = entry.program
+    mut exit_block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 1, 1
+    )
+    program = exit_block.program
+    mut jump: NativeIRAppendResult = native_ir_append_jump_for_function(
+        program, 0, 0, 1
+    )
+    program = jump.program
+    mut value: NativeIRAppendResult = append_i64_constant(program, 0, 1, 55)
+    mut value_id: i64 = value.value_id
+    program = append_return(value.program, 0, 1, value_id)
+    return program
+
+fn cfg_graph_query_probe() -> i64:
+    mut program: NativeIR = valid_branch_program()
+    mut score: i64 = native_ir_trit_to_i64(
+        native_ir_block_is_reachable(
+            &program.function_ids, &program.function_block_first,
+            &program.function_block_count, &program.block_ids,
+            &program.block_function_ids, &program.block_instruction_first,
+            &program.block_instruction_count, &program.instruction_ids,
+            &program.instruction_opcodes, &program.instruction_target_first,
+            &program.instruction_target_count, &program.target_block_ids, 0, 0
+        ) == 1
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        native_ir_block_is_reachable(
+            &program.function_ids, &program.function_block_first,
+            &program.function_block_count, &program.block_ids,
+            &program.block_function_ids, &program.block_instruction_first,
+            &program.block_instruction_count, &program.instruction_ids,
+            &program.instruction_opcodes, &program.instruction_target_first,
+            &program.instruction_target_count, &program.target_block_ids, 0, 3
+        ) == 1
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        native_ir_block_predecessor_count(
+            &program.block_ids, &program.block_function_ids,
+            &program.block_instruction_first, &program.block_instruction_count,
+            &program.instruction_ids, &program.instruction_opcodes,
+            &program.instruction_target_first, &program.instruction_target_count,
+            &program.target_block_ids, 0, 0
+        ) == 0
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        native_ir_block_predecessor_count(
+            &program.block_ids, &program.block_function_ids,
+            &program.block_instruction_first, &program.block_instruction_count,
+            &program.instruction_ids, &program.instruction_opcodes,
+            &program.instruction_target_first, &program.instruction_target_count,
+            &program.target_block_ids, 0, 2
+        ) == 1
+    )
+    return score
+
+fn cfg_backedge_and_unreachable_probe() -> i64:
+    mut program: NativeIR = native_ir_empty()
+    mut function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    program = function.program
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, 0
+    )
+    program = result_type.program
+    mut entry: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 2
+    )
+    program = entry.program
+    mut loop: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 1, 3
+    )
+    program = loop.program
+    mut exit_block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 2, 1
+    )
+    program = exit_block.program
+    mut orphan: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 3, 1
+    )
+    program = orphan.program
+    mut left: NativeIRAppendResult = append_i64_constant(program, 0, 0, 1)
+    mut left_id: i64 = left.value_id
+    program = left.program
+    mut right: NativeIRAppendResult = append_i64_constant(program, 0, 0, 2)
+    mut right_id: i64 = right.value_id
+    program = right.program
+    mut relation: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 11, 0, left_id, right_id, 1
+    )
+    mut condition_id: i64 = relation.value_id
+    program = relation.program
+    mut branch: NativeIRAppendResult = native_ir_append_branch_for_function(
+        program, 0, 0, condition_id, 1, 2, 2
+    )
+    program = branch.program
+    mut backedge: NativeIRAppendResult = native_ir_append_jump_for_function(
+        program, 0, 1, 0
+    )
+    program = backedge.program
+    mut exit_value: NativeIRAppendResult = append_i64_constant(program, 0, 2, 7)
+    mut exit_value_id: i64 = exit_value.value_id
+    program = append_return(exit_value.program, 0, 2, exit_value_id)
+    mut orphan_value: NativeIRAppendResult = append_i64_constant(program, 0, 3, 9)
+    mut orphan_value_id: i64 = orphan_value.value_id
+    program = append_return(orphan_value.program, 0, 3, orphan_value_id)
+    mut score: i64 = native_ir_trit_to_i64(
+        native_ir_block_is_reachable(
+            &program.function_ids, &program.function_block_first,
+            &program.function_block_count, &program.block_ids,
+            &program.block_function_ids, &program.block_instruction_first,
+            &program.block_instruction_count, &program.instruction_ids,
+            &program.instruction_opcodes, &program.instruction_target_first,
+            &program.instruction_target_count, &program.target_block_ids, 0, 1
+        ) == 1
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        native_ir_block_is_reachable(
+            &program.function_ids, &program.function_block_first,
+            &program.function_block_count, &program.block_ids,
+            &program.block_function_ids, &program.block_instruction_first,
+            &program.block_instruction_count, &program.instruction_ids,
+            &program.instruction_opcodes, &program.instruction_target_first,
+            &program.instruction_target_count, &program.target_block_ids, 0, 3
+        ) == 0
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        native_ir_block_predecessor_count(
+            &program.block_ids, &program.block_function_ids,
+            &program.block_instruction_first, &program.block_instruction_count,
+            &program.instruction_ids, &program.instruction_opcodes,
+            &program.instruction_target_first, &program.instruction_target_count,
+            &program.target_block_ids, 0, 0
+        ) == 1
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        native_ir_block_predecessor_count(
+            &program.block_ids, &program.block_function_ids,
+            &program.block_instruction_first, &program.block_instruction_count,
+            &program.instruction_ids, &program.instruction_opcodes,
+            &program.instruction_target_first, &program.instruction_target_count,
+            &program.target_block_ids, 0, 2
+        ) == 1
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        native_ir_block_predecessor_count(
+            &program.block_ids, &program.block_function_ids,
+            &program.block_instruction_first, &program.block_instruction_count,
+            &program.instruction_ids, &program.instruction_opcodes,
+            &program.instruction_target_first, &program.instruction_target_count,
+            &program.target_block_ids, 0, 3
+        ) == 0
+    )
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    score = score * 2 + native_ir_trit_to_i64(verified.verification.accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(
+        verified.verification.digest_before == verified.verification.digest_after
+    )
+    return score
+
+fn cross_block_value_rejected_probe() -> i64:
+    mut program: NativeIR = native_ir_empty()
+    mut function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    program = function.program
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, 0
+    )
+    program = result_type.program
+    mut entry: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 3
+    )
+    program = entry.program
+    mut exit_block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 1, 1
+    )
+    program = exit_block.program
+    mut value: NativeIRAppendResult = append_i64_constant(program, 0, 0, 55)
+    mut value_id: i64 = value.value_id
+    program = value.program
+    mut jump: NativeIRAppendResult = native_ir_append_jump_for_function(
+        program, 0, 0, 1
+    )
+    program = jump.program
+    program = append_return(program, 0, 1, value_id)
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    return native_ir_trit_to_i64(verified.verification.accepted == 0) * native_ir_trit_to_i64(
+        verified.verification.diagnostic_code == 11
+    )
+
+fn main() -> i64:
+    mut result: i64 = branch_cfg_contract_probe() * 2048
+    result = result + jump_cfg_contract_probe() * 256
+    result = result + cfg_graph_query_probe() * 16
+    result = result + cfg_backedge_and_unreachable_probe() * 2
+    result = result + cross_block_value_rejected_probe()
+    return result
+"""
+
+    assert run_source(verifier + "\n" + probe) == 131311
+
+
 def test_native_verifier_multi_result_call_fixture_returns_each_declared_result() -> None:
     repository = Path(__file__).parents[1]
     verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(encoding="utf-8")
@@ -917,3 +1387,159 @@ def test_native_verifier_differential_matrix_is_immutable_and_repeatable(tmp_pat
             completed = toolchain.run(executable)
             assert completed.returncode == 0
             assert int(completed.stdout.removeprefix("program returned: ").strip()) == observed[case]
+
+
+def test_native_ir_typed_memory_builder_and_verifier_contracts() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(
+        encoding="utf-8"
+    )
+    probe = r"""
+fn append_i64_value(program: NativeIR, block_id: i64, value: i64) -> NativeIRAppendResult:
+    return native_ir_append_typed_instruction_for_function(
+        program, 0, block_id, 0, value, -1, -1, 0
+    )
+
+fn memory_prefix() -> NativeIR:
+    mut function: NativeIRAppendResult = native_ir_append_function(
+        native_ir_empty(), 0, 1
+    )
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        function.program, 0, 0
+    )
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        result_type.program, 0, 0, 1
+    )
+    mut memory: NativeIRAppendResult = native_ir_append_memory(
+        block.program, 0, 0, 2
+    )
+    mut index: NativeIRAppendResult = append_i64_value(memory.program, 0, 0)
+    mut wrong_value: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        index.program, 0, 0, 0, -1, -1, -1, 1
+    )
+    return wrong_value.program
+
+fn valid_memory_program() -> NativeIR:
+    mut function: NativeIRAppendResult = native_ir_append_function(
+        native_ir_empty(), 0, 1
+    )
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        function.program, 0, 0
+    )
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        result_type.program, 0, 0, 1
+    )
+    mut memory: NativeIRAppendResult = native_ir_append_memory(
+        block.program, 0, 0, 2
+    )
+    mut index: NativeIRAppendResult = append_i64_value(memory.program, 0, 1)
+    mut index_id: i64 = index.value_id
+    mut value: NativeIRAppendResult = append_i64_value(index.program, 0, 77)
+    mut value_id: i64 = value.value_id
+    mut stored: NativeIRAppendResult = native_ir_append_store_for_function(
+        value.program, 0, 0, 0, index_id, value_id
+    )
+    mut loaded: NativeIRAppendResult = native_ir_append_load_for_function(
+        stored.program, 0, 0, 0, index_id
+    )
+    mut loaded_id: i64 = loaded.value_id
+    mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        loaded.program, 0, 0, 1, 0, loaded_id, -1, -1
+    )
+    return returned.program
+
+fn memory_builder_status() -> i64:
+    mut function: NativeIRAppendResult = native_ir_append_function(
+        native_ir_empty(), 0, 1
+    )
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        function.program, 0, 0
+    )
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        result_type.program, 0, 0, 1
+    )
+    mut memory: NativeIRAppendResult = native_ir_append_memory(
+        block.program, 0, 0, 2
+    )
+    mut memory_count: i64 = i64_vector_len(&memory.program.memory_ids)
+    mut status: i64 = native_ir_trit_to_i64(memory.accepted == 1)
+    status = status * 2 + native_ir_trit_to_i64(memory_count == 1)
+    mut index: NativeIRAppendResult = append_i64_value(memory.program, 0, 1)
+    mut index_id: i64 = index.value_id
+    mut index_type_id: i64 = native_ir_value_type_id(
+        &index.program.value_ids, &index.program.value_type_ids, index_id
+    )
+    status = status * 2 + native_ir_trit_to_i64(index.accepted == 1)
+    status = status * 2 + native_ir_trit_to_i64(index_id == 0)
+    status = status * 2 + native_ir_trit_to_i64(index_type_id == 0)
+    mut value: NativeIRAppendResult = append_i64_value(index.program, 0, 77)
+    mut value_id: i64 = value.value_id
+    mut value_type_id: i64 = native_ir_value_type_id(
+        &value.program.value_ids, &value.program.value_type_ids, value_id
+    )
+    status = status * 2 + native_ir_trit_to_i64(value.accepted == 1)
+    status = status * 2 + native_ir_trit_to_i64(value_id == 1)
+    status = status * 2 + native_ir_trit_to_i64(value_type_id == 0)
+    mut memory_index: i64 = native_ir_memory_index(&value.program.memory_ids, 0)
+    status = status * 2 + native_ir_trit_to_i64(memory_index == 0)
+    mut core_store: NativeIRAppendResult = native_ir_append_instruction_core_for_function(
+        value.program, 0, 0, 5, 0, index_id, value_id, -1, 0
+    )
+    mut core_value_count: i64 = i64_vector_len(&core_store.program.value_ids)
+    status = status * 2 + native_ir_trit_to_i64(core_store.accepted == 1)
+    status = status * 2 + native_ir_trit_to_i64(core_value_count == 2)
+    return status
+
+fn memory_contract_probe() -> i64:
+    mut valid: NativeIR = valid_memory_program()
+    mut valid_value_count: i64 = i64_vector_len(&valid.value_ids)
+    mut verified: NativeIRVerifiedResult = verify_program(valid)
+    mut score: i64 = native_ir_trit_to_i64(
+        verified.verification.accepted == 1
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        verified.verification.digest_before == verified.verification.digest_after
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        valid_value_count == 3
+    )
+
+    mut invalid_id: NativeIRAppendResult = native_ir_append_load_for_function(
+        memory_prefix(), 0, 0, 99, 0
+    )
+    score = score * 2 + native_ir_trit_to_i64(invalid_id.accepted == 0)
+
+    mut invalid_store: NativeIRAppendResult = native_ir_append_store_for_function(
+        memory_prefix(), 0, 0, 0, 0, 1
+    )
+    score = score * 2 + native_ir_trit_to_i64(invalid_store.accepted == 0)
+
+    mut bad_metadata: NativeIR = valid_memory_program()
+    discard i64_vector_set(&mut bad_metadata.memory_lengths, 0, 0)
+    mut metadata_result: NativeIRVerifiedResult = verify_program(bad_metadata)
+    score = score * 2 + native_ir_trit_to_i64(
+        metadata_result.verification.accepted == 0
+    )
+
+    mut bad_store_type: NativeIR = valid_memory_program()
+    discard i64_vector_set(&mut bad_store_type.value_type_ids, 1, 1)
+    mut store_result: NativeIRVerifiedResult = verify_program(bad_store_type)
+    score = score * 2 + native_ir_trit_to_i64(
+        store_result.verification.accepted == 0
+    )
+
+    mut bad_load_type: NativeIR = valid_memory_program()
+    mut last_value_type_index: i64 = i64_vector_len(&bad_load_type.value_type_ids) - 1
+    discard i64_vector_set(&mut bad_load_type.value_type_ids, last_value_type_index, 1)
+    mut load_result: NativeIRVerifiedResult = verify_program(bad_load_type)
+    score = score * 2 + native_ir_trit_to_i64(
+        load_result.verification.accepted == 0
+    )
+    return score * 10000 + memory_builder_status()
+
+fn main() -> i64:
+    return memory_contract_probe()
+"""
+
+    observed = run_source(verifier + "\n" + probe)
+    assert observed == 2552047, f"memory verifier/builder score={observed}"
