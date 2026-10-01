@@ -244,3 +244,32 @@ suite or benchmark was run. The four unrelated dirty golden JSON files remain
 excluded. The V1 source hash remains unchanged. This local candidate is not
 committed or pushed; remote CI still validates only the published PR #327
 HEAD, not these changes.
+
+## V6 loop-carried memory CFG fixture (2026-10-01)
+
+The focused Stage1 compiler tests now construct a generic five-block CFG with
+an `i64` memory slot: entry initializes the counter, the header loads it and
+branches on typed `i < 3`, the body loads/increments/stores and jumps back to
+the header, and the exit loads and returns the final value. A distinct neutral
+dispatch block keeps all three `TBR3` targets valid and distinct. The V2
+verified emitter produces the Assembly artifact; the Assembly Emulator returns
+`3`. Two independently rebuilt artifacts compare byte-for-byte and by
+SHA-256. This proves loop-carried mutable storage through explicit NativeIR,
+verification, multi-block emission, and hosted execution. It does not prove
+source-level `while` lowering or Stage1 compilation of `stage1_output_chunk`.
+
+The focused local group passed all four tests covering this fixture, the
+existing three-way CFG execution, CFG builder/verifier contracts, and typed
+memory builder/verifier contracts. The corresponding Linux x86-64 native test
+is present but has not yet been validated on this Windows host; native parity
+remains pending current-head Linux CI. The V2 source-body scanner still passes
+one block ID through recursive statement compilation, and mutable locals are
+tracked as replacement SSA-like value IDs. It has no structured loop-body
+boundary/continuation model or storage-backed source binding, so general
+source-level `while` lowering remains a concrete implementation frontier.
+The canonical V1 analyzer remains at 14 signatures, 5 representable bodies,
+5 dependency-closed functions, and 5 proven self-compiled functions;
+`stage1_output_chunk` remains blocked by `WhileStatement`, `SwitchStatement`,
+and `mutable_assignment_in_control_flow`. No full suite or benchmark was run.
+The four pre-existing golden JSON changes were not touched or staged, and the
+Stage1 V1 hash remains unchanged.
