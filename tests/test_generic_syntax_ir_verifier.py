@@ -1026,6 +1026,71 @@ fn main() -> i64:
     assert run_source(verifier + "\n" + probe) == 511
 
 
+def test_native_ir_i64_difference_verifier_contracts() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(
+        encoding="utf-8"
+    )
+    probe = """
+fn typed_difference_verifier_probe(
+    immediate: i64, result_type_id: i64, left_type_id: i64, right_type_id: i64
+) -> i64:
+    mut function: NativeIRAppendResult = native_ir_append_function(
+        native_ir_empty(), 0, 1
+    )
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        function.program, 0, result_type_id
+    )
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        result_type.program, 0, 0, 1
+    )
+    mut left: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        block.program, 0, 0, 0, 1, -1, -1, left_type_id
+    )
+    mut left_id: i64 = left.value_id
+    mut right: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        left.program, 0, 0, 0, 0, -1, -1, right_type_id
+    )
+    mut right_id: i64 = right.value_id
+    mut difference: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        right.program, 0, 0, 13, immediate, left_id, right_id, result_type_id
+    )
+    mut difference_accepted: i64 = difference.accepted
+    mut difference_id: i64 = difference.value_id
+    match difference_accepted == 1:
+        -1:
+            mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+                difference.program, 0, 0, 1, 0, difference_id, -1, -1
+            )
+            mut verified: NativeIRVerifiedResult = verify_program(returned.program)
+            return verified.verification.accepted * 100 + verified.verification.diagnostic_code
+        0:
+            return difference_accepted
+        1:
+            return difference_accepted
+
+fn main() -> i64:
+    mut score: i64 = native_ir_trit_to_i64(
+        typed_difference_verifier_probe(0, 0, 0, 0) == 100
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_difference_verifier_probe(1, 0, 0, 0) == 8
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_difference_verifier_probe(0, 1, 0, 0) == 15
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_difference_verifier_probe(0, 0, 1, 0) == 15
+    )
+    score = score * 2 + native_ir_trit_to_i64(
+        typed_difference_verifier_probe(0, 0, 0, 1) == 15
+    )
+    return score
+"""
+
+    assert run_source(verifier + "\n" + probe) == 31
+
+
 def test_native_ir_typed_branch_and_jump_cfg_contracts() -> None:
     repository = Path(__file__).parents[1]
     verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(

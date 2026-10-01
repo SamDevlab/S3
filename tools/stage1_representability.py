@@ -38,6 +38,7 @@ TEXT_TYPES = {ast.TypeName.STRING, ast.TypeName.BYTES, ast.TypeName.TEXT}
 V1_BINARY_OPERATORS = {ast.BinaryOperator.ADD, ast.BinaryOperator.MULTIPLY}
 V2_BINARY_OPERATORS = {
     ast.BinaryOperator.ADD,
+    ast.BinaryOperator.SUBTRACT,
     ast.BinaryOperator.MULTIPLY,
     ast.BinaryOperator.EQUAL,
     ast.BinaryOperator.LESS,
@@ -1042,22 +1043,37 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
             "signature_parameter_types": ["i64", "&vector<i64>", "&mut vector<i64>"],
             "signature_return_types": ["i64"],
             "local_types": ["i64"],
-            "expressions": ["integer_literal", "bound_identifier", "i64_add", "i64_multiply", "local_call"],
+            "expressions": [
+                "integer_literal",
+                "bound_identifier",
+                "i64_add",
+                "i64_subtract_checked",
+                "i64_multiply",
+                "typed_i64_equal_less_than",
+                "i64_three_way_compare",
+                "local_call",
+            ],
             "external_calls": [
                 "vector_get<i64>", "vector_len<i64>", "vector_push<i64>"
             ],
             "statements": [
                 "i64_local_declaration",
                 "straight_line_i64_local_reassignment",
-                "top_level_while_with_linear_i64_body",
+                "ternary_match_with_mutable_i64_state",
+                "top_level_while_with_loop_carried_i64_state",
                 "terminal_return",
             ],
             "program_function_capacity": 16,
             "body_statement_capacity": 64,
-            "control_flow": ["single-level while lowered to three-way CFG"],
+            "control_flow": [
+                "explicit multi-block NativeIR with typed branch, jump, and return",
+                "ternary match lowered to a three-way CFG",
+                "single-level while lowered to CFG with a verified backedge",
+            ],
             "mutation": [
                 "straight-line i64 reassignment",
-                "mutable i64 slots with loop-carried TLOAD/TSTORE",
+                "i64 mutable slots with typed TLOAD/TSTORE",
+                "loop-carried state through memory operations",
             ],
         },
         "blocker_distribution": dict(sorted(blocker_distribution.items())),

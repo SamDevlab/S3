@@ -1567,7 +1567,7 @@ fn native_ir_append_instruction_core_for_function(
                             result_count = 1
                             operand_count = 2
                         0:
-                            match opcode == 10:
+                            match native_ir_multiply_or_difference_opcode_valid(opcode) == 1:
                                 -1:
                                     result_count = 1
                                     operand_count = 2
@@ -2838,6 +2838,32 @@ fn native_ir_comparison_opcode_valid(opcode: i64) -> i64:
         1:
             return 0
 
+fn native_ir_multiply_or_difference_opcode_valid(opcode: i64) -> i64:
+    match opcode == 10:
+        -1:
+            return 1
+        0:
+            return native_ir_trit_to_i64(opcode == 13)
+        1:
+            return 0
+
+fn native_ir_numeric_difference_types_valid(
+    result_type_id: i64, left_type_id: i64, right_type_id: i64
+) -> i64:
+    match result_type_id == native_ir_type_i64():
+        -1:
+            match left_type_id == native_ir_type_i64():
+                -1:
+                    return native_ir_trit_to_i64(right_type_id == native_ir_type_i64())
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
 fn native_ir_three_way_compare_types_valid(
     result_type_id: i64, left_type_id: i64, right_type_id: i64
 ) -> i64:
@@ -2862,6 +2888,19 @@ fn native_ir_three_way_compare_types_valid(
             return 0
 
 fn opcode_shape_valid(opcode: i64, result_count: i64, operand_count: i64, immediate: i64) -> trit:
+    match opcode == 13:
+        -1:
+            match binary_shape_valid(result_count, operand_count):
+                -1:
+                    return immediate == 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            discard 0
+        1:
+            discard 0
     match opcode == 12:
         -1:
             match result_count == 1:
@@ -2970,7 +3009,7 @@ fn opcode_shape_valid(opcode: i64, result_count: i64, operand_count: i64, immedi
                                 -1:
                                     return binary_shape_valid(result_count, operand_count)
                                 0:
-                                    match opcode == 10:
+                                    match native_ir_multiply_or_difference_opcode_valid(opcode) == 1:
                                         -1:
                                             return binary_shape_valid(result_count, operand_count)
                                         0:
@@ -4015,14 +4054,14 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
             0:
                 discard 0
             1:
-                match opcode <=> 12:
+                match opcode <=> 13:
                     -1:
                         discard 0
                     0:
                         discard 0
                     1:
                         return verification_result(program, 0, 12, before)
-        match opcode <=> 12:
+        match opcode <=> 13:
             -1:
                 discard 0
             0:
@@ -4152,6 +4191,41 @@ export fn verify_program(program: NativeIR) -> NativeIRVerifiedResult:
                 )
                 match native_ir_three_way_compare_types_valid(
                     compare_result_type_id, compare_left_type_id, compare_right_type_id
+                ) == 1:
+                    -1:
+                        discard 0
+                    0:
+                        return verification_result(program, 0, 15, before)
+                    1:
+                        return verification_result(program, 0, 15, before)
+            0:
+                discard 0
+            1:
+                discard 0
+        match opcode == 13:
+            -1:
+                mut difference_result_value_id: i64 = i64_vector_get(
+                    &program.result_value_ids, result_first
+                )
+                mut difference_left_value_id: i64 = i64_vector_get(
+                    &program.operand_value_ids, operand_first
+                )
+                mut difference_right_value_id: i64 = i64_vector_get(
+                    &program.operand_value_ids, operand_first + 1
+                )
+                mut difference_result_type_id: i64 = native_ir_value_type_id(
+                    &program.value_ids, &program.value_type_ids, difference_result_value_id
+                )
+                mut difference_left_type_id: i64 = native_ir_value_type_id(
+                    &program.value_ids, &program.value_type_ids, difference_left_value_id
+                )
+                mut difference_right_type_id: i64 = native_ir_value_type_id(
+                    &program.value_ids, &program.value_type_ids, difference_right_value_id
+                )
+                match native_ir_numeric_difference_types_valid(
+                    difference_result_type_id,
+                    difference_left_type_id,
+                    difference_right_type_id
                 ) == 1:
                     -1:
                         discard 0

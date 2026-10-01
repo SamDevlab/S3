@@ -216,7 +216,9 @@ def _candidate_comparison_program_parser_source() -> str:
     )
 
 
-def _candidate_generic_call_parser_source(expression: str) -> str:
+def _candidate_generic_call_parser_source(
+    expression: str, *, read_operator: bool = False
+) -> str:
     repository = Path(__file__).parents[1]
     substrate = (
         repository / "selfhost/substrate/generic_lexer_state.s3"
@@ -226,6 +228,11 @@ def _candidate_generic_call_parser_source(expression: str) -> str:
         "fn main() -> i64:",
         f"    mut source: vector<i64> = vector_new<i64>({len(encoded)})",
     ]
+    root_result = (
+        "generic_expression_node_operator(&tree, node)"
+        if read_operator
+        else "generic_expression_node_kind(&tree, node) * 100 + generic_expression_node_value(&tree, node)"
+    )
     lines.extend(
         f"    discard vector_push<i64>(&mut source, {byte})"
         for byte in encoded
@@ -238,7 +245,7 @@ def _candidate_generic_call_parser_source(expression: str) -> str:
             "    match packed >= 0:",
             "        -1:",
             "            mut node: i64 = generic_native_parser_packed_node(packed)",
-            "            return generic_expression_node_kind(&tree, node) * 100 + generic_expression_node_value(&tree, node)",
+            f"            return {root_result}",
             "        0:",
             "            return -1",
             "        1:",
@@ -809,6 +816,17 @@ def test_native_expression_parser_preserves_generic_call_type_argument(
     expected: int,
 ) -> None:
     assert run_source(_candidate_generic_call_parser_source(expression)) == expected
+
+
+def test_native_expression_parser_preserves_subtraction_operator() -> None:
+    assert (
+        run_source(
+            _candidate_generic_call_parser_source(
+                "left - right", read_operator=True
+            )
+        )
+        == 2
+    )
 
 
 def test_native_expression_parser_bounds_long_identifier_digest() -> None:

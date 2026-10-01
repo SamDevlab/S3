@@ -175,6 +175,24 @@ fn equal(left: i64, right: i64) -> trit:
         assert function["unsupported_operations"] == []
 
 
+def test_stage1_v2_analyzer_reports_current_typed_cfg_and_difference_support() -> None:
+    source = """\
+fn subtract(left: i64, right: i64) -> i64:
+    return left - right
+"""
+    matrix = analyze_stage1(source, compiler_version="v2")
+    function, = matrix["functions"]
+    capabilities = matrix["capabilities"]
+
+    assert function["signature_supported"] is True
+    assert function["body_representable"] is True
+    assert function["unsupported_operations"] == []
+    assert "i64_subtract_checked" in capabilities["expressions"]
+    assert "typed_i64_equal_less_than" in capabilities["expressions"]
+    assert "ternary match lowered to a three-way CFG" in capabilities["control_flow"]
+    assert "i64 mutable slots with typed TLOAD/TSTORE" in capabilities["mutation"]
+
+
 def test_stage1_v2_analyzer_rejects_comparisons_with_incompatible_types() -> None:
     source = """\
 fn invalid(left: trit, right: i64) -> trit:

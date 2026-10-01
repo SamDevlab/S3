@@ -945,19 +945,25 @@ fn stage1_lower_expression(
                                                         -1:
                                                             opcode = 9
                                                         0:
-                                                            match operator == 3:
+                                                            match operator == 2:
                                                                 -1:
-                                                                    opcode = 10
+                                                                    opcode = 13
                                                                 0:
-                                                                    match operator == 10:
+                                                                    match operator == 3:
                                                                         -1:
-                                                                            opcode = 11
+                                                                            opcode = 10
                                                                         0:
-                                                                            match operator == 13:
+                                                                            match operator == 10:
                                                                                 -1:
                                                                                     opcode = 11
                                                                                 0:
-                                                                                    discard 0
+                                                                                    match operator == 13:
+                                                                                        -1:
+                                                                                            opcode = 11
+                                                                                        0:
+                                                                                            discard 0
+                                                                                        1:
+                                                                                            discard 0
                                                                                 1:
                                                                                     discard 0
                                                                         1:
@@ -3230,6 +3236,26 @@ fn stage1_emit_ir_instruction(
                     discard 0
                 1:
                     discard 0
+        1:
+            discard 0
+    match opcode == 13:
+        -1:
+            discard vector_push<i64>(output, 84)
+            discard vector_push<i64>(output, 78)
+            discard vector_push<i64>(output, 68)
+            discard vector_push<i64>(output, 73)
+            discard vector_push<i64>(output, 70)
+            discard vector_push<i64>(output, 70)
+            discard vector_push<i64>(output, 32)
+            discard stage1_emit_register(output, i64_vector_get(result_value_ids, i64_vector_get(instruction_result_first, instruction_index)))
+            discard stage1_emit_literal(output, 8)
+            discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first))
+            discard stage1_emit_literal(output, 8)
+            discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first + 1))
+            discard stage1_emit_literal(output, 14)
+            return 1
+        0:
+            discard 0
         1:
             discard 0
     match opcode == 12:

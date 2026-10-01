@@ -718,6 +718,24 @@ def _stage1_v2_while_source() -> str:
     )
 
 
+def _stage1_v2_match_source() -> str:
+    return (
+        "fn classify(value: trit) -> i64:\n"
+        "    mut result: i64 = 0\n"
+        "    match value:\n"
+        "        1:\n"
+        "            result = 100\n"
+        "        -1:\n"
+        "            result = 10\n"
+        "        0:\n"
+        "            return result + 2\n"
+        "    result = result + 1\n"
+        "    return result\n"
+        "fn main() -> i64:\n"
+        "    return classify(0 <=> 1) * 10000 + classify(0 <=> 0) * 100 + classify(1 <=> 0)\n"
+    )
+
+
 def test_stage1_v2_lowers_source_while_with_mutable_loop_state() -> None:
     source = _stage1_v2_while_source()
     artifact_bytes = _stage1_artifact(source, compiler_version="v2")
@@ -744,21 +762,7 @@ def test_stage1_v2_rejects_i64_source_while_condition() -> None:
 
 
 def test_stage1_v2_lowers_trit_match_with_mutation_terminal_arm_and_successor() -> None:
-    source = (
-        "fn classify(value: trit) -> i64:\n"
-        "    mut result: i64 = 0\n"
-        "    match value:\n"
-        "        1:\n"
-        "            result = 100\n"
-        "        -1:\n"
-        "            result = 10\n"
-        "        0:\n"
-        "            return result + 2\n"
-        "    result = result + 1\n"
-        "    return result\n"
-        "fn main() -> i64:\n"
-        "    return classify(0 <=> 1) * 10000 + classify(0 <=> 0) * 100 + classify(1 <=> 0)\n"
-    )
+    source = _stage1_v2_match_source()
     diagnostics: list[int] = []
     artifact_bytes = _stage1_artifact(
         source, compiler_version="v2", diagnostics=diagnostics
@@ -960,6 +964,31 @@ def test_stage1_v2_rejects_comparison_between_incompatible_scalar_types() -> Non
     assert _stage1_artifact(source, compiler_version="v2") == b""
 
 
+def test_stage1_v2_lowers_checked_i64_subtraction() -> None:
+    source = (
+        "fn subtract(left: i64, right: i64) -> i64:\n"
+        "    return left - right\n"
+        "fn main() -> i64:\n"
+        "    return subtract(5, 13)\n"
+    )
+
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    subtract = next(function for function in artifact.functions if function.name == "subtract")
+
+    assert sum(
+        instruction.opcode.value == "TNDIFF"
+        for block in subtract.blocks
+        for instruction in block.instructions
+    ) == 1
+    assert Emulator().execute(artifact) == -8
+    assert Emulator().execute(artifact) == run_source(source)
+
+
 def test_stage1_v2_emits_and_executes_verified_three_way_cfg() -> None:
     artifact_bytes = _stage1_v2_emit_three_way_cfg()
     assert artifact_bytes
@@ -1083,6 +1112,97 @@ def test_stage1_v2_source_while_executes_natively(tmp_path: Path) -> None:
     assert completed.returncode == 0
     assert completed.stderr == ""
     assert completed.stdout.strip() == "program returned: 115"
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux"
+    or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_stage1_v2_source_match_executes_natively(tmp_path: Path) -> None:
+    try:
+        toolchain = NativeToolchain.detect()
+    except NativeBackendError as error:
+        pytest.skip(str(error))
+    artifact = parse_assembly(
+        _stage1_artifact(
+            _stage1_v2_match_source(), compiler_version="v2"
+        ).decode("ascii")
+    )
+    executable = toolchain.build(
+        generate_native_assembly(artifact), tmp_path / "stage1-v2-source-match"
+    )
+    completed = toolchain.run(executable)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == "program returned: 110301"
+
+
+@pytest.mark.parametrize(
+    ("operator", "left", "right", "expected"),
+    (("<", 1, 2, -1), ("==", 1, 1, -1), ("==", 1, 2, 0)),
+    ids=("less", "equal", "not-equal"),
+)
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux"
+    or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_stage1_v2_typed_scalar_comparison_executes_natively(
+    operator: str, left: int, right: int, expected: int, tmp_path: Path
+) -> None:
+    try:
+        toolchain = NativeToolchain.detect()
+    except NativeBackendError as error:
+        pytest.skip(str(error))
+    source = (
+        "fn compare(left: i64, right: i64) -> trit:\n"
+        f"    return left {operator} right\n"
+        "fn main() -> trit:\n"
+        f"    return compare({left}, {right})\n"
+    )
+    artifact = parse_assembly(
+        _stage1_artifact(source, compiler_version="v2").decode("ascii")
+    )
+    executable = toolchain.build(
+        generate_native_assembly(artifact),
+        tmp_path / f"stage1-v2-scalar-compare-{left}-{right}",
+    )
+    completed = toolchain.run(executable)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == f"program returned: {expected}"
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux"
+    or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_stage1_v2_checked_i64_subtraction_executes_natively(tmp_path: Path) -> None:
+    source = (
+        "fn subtract(left: i64, right: i64) -> i64:\n"
+        "    return left - right\n"
+        "fn main() -> i64:\n"
+        "    return subtract(5, 13)\n"
+    )
+    try:
+        toolchain = NativeToolchain.detect()
+    except NativeBackendError as error:
+        pytest.skip(str(error))
+    artifact = parse_assembly(
+        _stage1_artifact(source, compiler_version="v2").decode("ascii")
+    )
+    executable = toolchain.build(
+        generate_native_assembly(artifact), tmp_path / "stage1-v2-i64-difference"
+    )
+    completed = toolchain.run(executable)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == "program returned: -8"
 
 
 def test_stage1_v2_rejects_reassignment_of_immutable_local() -> None:

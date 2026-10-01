@@ -970,6 +970,19 @@ export fn generic_native_parser_expression(
                         scanning = 0
             1:
                 scanning = 0
+        match generic_native_parser_kind(
+            kinds,
+            generic_native_parser_packed_cursor(left_result)
+        ) == 145:
+            -1:
+                operator = 2
+                precedence = 1
+                operator_width = 1
+                scanning = 1
+            0:
+                discard 0
+            1:
+                discard 0
         match scanning == 1:
             -1:
                 match precedence < minimum_precedence:
