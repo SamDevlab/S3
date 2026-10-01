@@ -4409,13 +4409,48 @@ fn bad_multi_result_program() -> NativeIR:
     return program
 
 fn memory_program(opcode: i64) -> NativeIR:
-    mut program: NativeIR = scalar_program()
-    discard i64_vector_push(&mut program.memory_ids, 0)
-    discard i64_vector_push(&mut program.memory_types, 1)
-    discard i64_vector_push(&mut program.memory_lengths, 1)
-    discard i64_vector_set(&mut program.instruction_opcodes, 0, opcode)
-    discard i64_vector_set(&mut program.instruction_memory_ids, 0, 0)
-    return program
+    mut function: NativeIRAppendResult = native_ir_append_function(
+        native_ir_empty(), 0, 1
+    )
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        function.program, 0, 0
+    )
+    mut memory: NativeIRAppendResult = native_ir_append_memory(
+        result_type.program, 0, 0, 1
+    )
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        memory.program, 0, 0, 1
+    )
+    mut index: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        block.program, 0, 0, 0, 0, -1, -1, 0
+    )
+    mut index_id: i64 = index.value_id
+    match opcode == 4:
+        -1:
+            mut loaded: NativeIRAppendResult = native_ir_append_load_for_function(
+                index.program, 0, 0, 0, index_id
+            )
+            mut loaded_id: i64 = loaded.value_id
+            mut loaded_program: NativeIR = loaded.program
+            mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+                loaded_program, 0, 0, 1, 0, loaded_id, -1, -1
+            )
+            return returned.program
+        0:
+            mut value: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+                index.program, 0, 0, 0, 55, -1, -1, 0
+            )
+            mut value_id: i64 = value.value_id
+            mut value_program: NativeIR = value.program
+            mut stored: NativeIRAppendResult = native_ir_append_store_for_function(
+                value_program, 0, 0, 0, index_id, value_id
+            )
+            mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+                stored.program, 0, 0, 1, 0, value_id, -1, -1
+            )
+            return returned.program
+        1:
+            return index.program
 
 fn reference_program(opcode: i64, valid: i64) -> NativeIR:
     mut program: NativeIR = scalar_program()

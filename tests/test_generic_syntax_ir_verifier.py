@@ -1543,3 +1543,9 @@ fn main() -> i64:
 
     observed = run_source(verifier + "\n" + probe)
     assert observed == 2552047, f"memory verifier/builder score={observed}"
+
+    for case in (4, 5):
+        source = verifier + f"\nfn main() -> i64:\n    return verifier_case({case})\n"
+        hosted = run_source(source)
+        assert hosted // 1_000_000_000 == 1, (case, hosted)
+        assert (hosted % 1_000_000_000) // 100_000_000 == 1, (case, hosted)
