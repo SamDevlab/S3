@@ -2186,6 +2186,84 @@ def test_stage1_v2_returns_and_calls_i64_vectors_by_value(
     Emulator().validate(artifact)
 
 
+def test_stage1_v2_emitter_rejects_multi_result_external_call() -> None:
+    repository = Path(__file__).parents[1]
+    modules = {
+        path: (repository / path).read_text(encoding="utf-8")
+        for path in (
+            "selfhost/substrate/generic_lexer_state.s3",
+            "selfhost/substrate/verifier_kernel.s3",
+            "selfhost/substrate/output_sink.s3",
+            "selfhost/compiler/stage1_compiler_v2.s3",
+        )
+    }
+    modules["main.s3"] = r"""
+module main
+from selfhost.substrate.verifier_kernel import NativeIR
+from selfhost.substrate.verifier_kernel import NativeIRAppendResult
+from selfhost.substrate.verifier_kernel import NativeIRVerifiedResult
+from selfhost.substrate.verifier_kernel import native_ir_empty
+from selfhost.substrate.verifier_kernel import native_ir_append_function_source
+from selfhost.substrate.verifier_kernel import native_ir_set_function_result_type
+from selfhost.substrate.verifier_kernel import native_ir_append_external_function_source
+from selfhost.substrate.verifier_kernel import native_ir_set_function_result_type_at
+from selfhost.substrate.verifier_kernel import native_ir_append_block_for_function
+from selfhost.substrate.verifier_kernel import native_ir_append_call_arguments
+from selfhost.substrate.verifier_kernel import native_ir_append_return_values_for_function
+from selfhost.substrate.verifier_kernel import verify_program
+from selfhost.compiler.stage1_compiler_v2 import stage1_emit_verified_native_program
+
+fn main() -> i64:
+    mut caller_name: vector<i64> = vector_new<i64>(1)
+    discard vector_push<i64>(&mut caller_name, 102)
+    mut callee_name: vector<i64> = vector_new<i64>(1)
+    discard vector_push<i64>(&mut callee_name, 103)
+    mut program: NativeIR = native_ir_empty()
+    mut caller: NativeIRAppendResult = native_ir_append_function_source(
+        program, 0, 1, &caller_name, 0, 1
+    )
+    program = caller.program
+    mut caller_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, 0
+    )
+    program = caller_type.program
+    mut callee: NativeIRAppendResult = native_ir_append_external_function_source(
+        program, 1, 2, 0, &callee_name, 0, 1
+    )
+    program = callee.program
+    mut callee_second_type: NativeIRAppendResult = native_ir_set_function_result_type_at(
+        program, 1, 1, 1
+    )
+    program = callee_second_type.program
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 1
+    )
+    program = block.program
+    mut arguments: i64_vector = i64_vector_new<i64>(0)
+    mut call: NativeIRAppendResult = native_ir_append_call_arguments(
+        program, 0, 0, 1, &arguments
+    )
+    mut first_result_id: i64 = call.value_id
+    program = call.program
+    mut returned_values: i64_vector = i64_vector_new<i64>(1)
+    discard i64_vector_push(&mut returned_values, first_result_id)
+    mut returned: NativeIRAppendResult = native_ir_append_return_values_for_function(
+        program, 0, 0, &returned_values
+    )
+    mut verified: NativeIRVerifiedResult = verify_program(returned.program)
+    match verified.verification.accepted == 1:
+        -1:
+            mut output: vector<i64> = vector_new<i64>(4096)
+            return stage1_emit_verified_native_program(verified.program, &mut output)
+        0:
+            return -1
+        1:
+            return -1
+"""
+
+    assert execute_ir(compile_sources(modules, entry_module="main").ir) == 0
+
+
 @pytest.mark.parametrize(
     "result_type",
     ("vector<f64>", "&vector<i64>", "&mut vector<i64>"),

@@ -1570,6 +1570,116 @@ def test_native_verifier_multi_result_call_fixture_returns_each_declared_result(
     assert (wrong_signature % 1_000_000_000) // 100_000_000 == 1
 
 
+def test_native_ir_heterogeneous_multi_result_call_and_return_are_typed() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(
+        encoding="utf-8"
+    )
+    probe = """
+fn heterogeneous_result_program(malformed_case: i64) -> NativeIR:
+    mut program: NativeIR = native_ir_empty()
+    mut caller: NativeIRAppendResult = native_ir_append_function(program, 0, 2)
+    program = caller.program
+    mut caller_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, 0
+    )
+    program = caller_type.program
+    mut caller_second_type: NativeIRAppendResult = native_ir_set_function_result_type_at(
+        program, 0, 1, 1
+    )
+    program = caller_second_type.program
+    mut callee: NativeIRAppendResult = native_ir_append_external_function(
+        program, 1, 2, 0
+    )
+    program = callee.program
+    mut callee_second_type: NativeIRAppendResult = native_ir_set_function_result_type_at(
+        program, 1, 1, 1
+    )
+    program = callee_second_type.program
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 1
+    )
+    program = block.program
+    mut empty_arguments: i64_vector = i64_vector_new<i64>(0)
+    mut call: NativeIRAppendResult = native_ir_append_call_arguments(
+        program, 0, 0, 1, &empty_arguments
+    )
+    mut first_call_result_value_id: i64 = call.value_id
+    mut second_call_result_value_id: i64 = call.value_id + 1
+    program = call.program
+    mut return_values: i64_vector = i64_vector_new<i64>(2)
+    discard i64_vector_push(&mut return_values, first_call_result_value_id)
+    discard i64_vector_push(&mut return_values, second_call_result_value_id)
+    mut returned: NativeIRAppendResult = native_ir_append_return_values_for_function(
+        program, 0, 0, &return_values
+    )
+    program = returned.program
+    match malformed_case == 1:
+        -1:
+            mut last_type_index: i64 = i64_vector_len(&program.value_type_ids) - 1
+            discard i64_vector_set(
+                &mut program.value_type_ids, last_type_index, 0
+            )
+        0:
+            discard 0
+        1:
+            discard 0
+    match malformed_case == 2:
+        -1:
+            discard i64_vector_set(
+                &mut program.operand_value_ids, 1, first_call_result_value_id
+            )
+        0:
+            discard 0
+        1:
+            discard 0
+    return program
+
+fn main() -> i64:
+    mut good: NativeIRVerifiedResult = verify_program(
+        heterogeneous_result_program(0)
+    )
+    mut bad_call_result: NativeIRVerifiedResult = verify_program(
+        heterogeneous_result_program(1)
+    )
+    mut bad_return_operand: NativeIRVerifiedResult = verify_program(
+        heterogeneous_result_program(2)
+    )
+    mut second_type: i64 = native_ir_function_result_type_id(
+        &good.program.function_ids,
+        &good.program.function_result_widths,
+        &good.program.function_result_type_first,
+        &good.program.function_result_type_ids,
+        1,
+        1
+    )
+    mut score: i64 = good.verification.accepted * 1000000
+    score = score + native_ir_trit_to_i64(
+        good.verification.diagnostic_code == 0
+    ) * 10000
+    score = score + native_ir_trit_to_i64(
+        good.verification.digest_before == good.verification.digest_after
+    ) * 1000
+    score = score + native_ir_trit_to_i64(second_type == 1) * 100
+    score = score + native_ir_trit_to_i64(
+        bad_call_result.verification.accepted == 0
+    ) * 10
+    score = score + native_ir_trit_to_i64(
+        bad_call_result.verification.diagnostic_code == 15
+    ) * 4
+    score = score + native_ir_trit_to_i64(
+        bad_return_operand.verification.accepted == 0
+    ) * 2
+    score = score + native_ir_trit_to_i64(
+        bad_return_operand.verification.diagnostic_code == 15
+    )
+    return score
+"""
+
+    observed = run_source(verifier + probe)
+    assert observed == 1_011_117, observed
+
+
 def test_native_verifier_reference_matrix_fixtures_are_well_typed() -> None:
     repository = Path(__file__).parents[1]
     verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(

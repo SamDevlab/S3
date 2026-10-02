@@ -43,6 +43,7 @@ from selfhost.substrate.verifier_kernel import native_ir_append_typed_parameter
 from selfhost.substrate.verifier_kernel import native_ir_append_typed_instruction_for_function
 from selfhost.substrate.verifier_kernel import native_ir_order_blocks_by_instruction_first
 from selfhost.substrate.verifier_kernel import native_ir_set_function_result_type
+from selfhost.substrate.verifier_kernel import native_ir_function_result_type_id
 from selfhost.substrate.verifier_kernel import native_ir_value_type_id
 from selfhost.substrate.verifier_kernel import native_ir_append_external_function_source
 from selfhost.substrate.verifier_kernel import native_ir_intern_composite_type
@@ -3796,6 +3797,7 @@ fn stage1_emit_ir_instruction(
     instruction_operand_first: &vector<i64>,
     instruction_operand_count: &vector<i64>,
     instruction_result_first: &vector<i64>,
+    instruction_result_count: &vector<i64>,
     instruction_immediates: &vector<i64>,
     instruction_callee_function_ids: &vector<i64>,
     instruction_memory_ids: &vector<i64>,
@@ -3821,6 +3823,19 @@ fn stage1_emit_ir_instruction(
     mut opcode: i64 = i64_vector_get(instruction_opcodes, instruction_index)
     mut operand_first: i64 = i64_vector_get(instruction_operand_first, instruction_index)
     mut operand_count: i64 = i64_vector_get(instruction_operand_count, instruction_index)
+    match opcode == 3:
+        -1:
+            match i64_vector_get(instruction_result_count, instruction_index) == 1:
+                -1:
+                    discard 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            discard 0
+        1:
+            discard 0
     match opcode == 4:
         -1:
             return stage1_emit_ir_memory_instruction(
@@ -4170,11 +4185,33 @@ fn stage1_emit_ir_function_result_type(
         1:
             return 0
 
+fn stage1_native_function_result_type_supported(
+    function_ids: &vector<i64>,
+    function_result_widths: &vector<i64>,
+    function_result_type_first: &vector<i64>,
+    function_result_type_ids: &vector<i64>,
+    function_index: i64
+) -> i64:
+    mut function_id: i64 = i64_vector_get(function_ids, function_index)
+    mut result_width: i64 = i64_vector_get(function_result_widths, function_index)
+    match result_width == 1:
+        -1:
+            return native_ir_function_result_type_id(
+                function_ids, function_result_widths, function_result_type_first,
+                function_result_type_ids, function_id, 0
+            )
+        0:
+            return -1
+        1:
+            return -1
+
 fn stage1_emit_native_function(
     function_ids: &vector<i64>,
     function_name_first: &vector<i64>,
     function_name_count: &vector<i64>,
     function_name_bytes: &vector<i64>,
+    function_result_widths: &vector<i64>,
+    function_result_type_first: &vector<i64>,
     function_result_type_ids: &vector<i64>,
     function_parameter_first: &vector<i64>,
     function_parameter_count: &vector<i64>,
@@ -4199,6 +4236,7 @@ fn stage1_emit_native_function(
     instruction_operand_first: &vector<i64>,
     instruction_operand_count: &vector<i64>,
     instruction_result_first: &vector<i64>,
+    instruction_result_count: &vector<i64>,
     instruction_immediates: &vector<i64>,
     instruction_callee_function_ids: &vector<i64>,
     instruction_memory_ids: &vector<i64>,
@@ -4225,16 +4263,22 @@ fn stage1_emit_native_function(
         function_index,
         output
     )
-    match stage1_emit_ir_function_result_type(
-        i64_vector_get(function_result_type_ids, function_index),
-        type_kinds,
-        type_element_ids,
-        type_mutability_flags,
-        type_lengths,
-        output
-    ) == 1:
+    mut result_type_id: i64 = stage1_native_function_result_type_supported(
+        function_ids, function_result_widths, function_result_type_first,
+        function_result_type_ids, function_index
+    )
+    match result_type_id >= 0:
         -1:
-            discard 0
+            match stage1_emit_ir_function_result_type(
+                result_type_id, type_kinds, type_element_ids,
+                type_mutability_flags, type_lengths, output
+            ) == 1:
+                -1:
+                    discard 0
+                0:
+                    return 0
+                1:
+                    return 0
         0:
             return 0
         1:
@@ -4353,6 +4397,7 @@ fn stage1_emit_native_function(
                 instruction_operand_first,
                 instruction_operand_count,
                 instruction_result_first,
+                instruction_result_count,
                 instruction_immediates,
                 instruction_callee_function_ids,
                 instruction_memory_ids,
@@ -4397,6 +4442,8 @@ fn stage1_emit_native_program(program: NativeIR, output: &mut vector<i64>) -> i6
                     &program.function_name_first,
                     &program.function_name_count,
                     &program.function_name_bytes,
+                    &program.function_result_widths,
+                    &program.function_result_type_first,
                     &program.function_result_type_ids,
                     &program.function_parameter_first,
                     &program.function_parameter_count,
@@ -4421,6 +4468,7 @@ fn stage1_emit_native_program(program: NativeIR, output: &mut vector<i64>) -> i6
                     &program.instruction_operand_first,
                     &program.instruction_operand_count,
                     &program.instruction_result_first,
+                    &program.instruction_result_count,
                     &program.instruction_immediates,
                     &program.instruction_callee_function_ids,
                     &program.instruction_memory_ids,
@@ -5463,7 +5511,11 @@ fn stage1_typed_trit_return_literal(
     block_id: i64,
     value_id: i64
 ) -> NativeIRAppendResult:
-    match i64_vector_get(&program.function_result_type_ids, function_id) == 1:
+    match native_ir_function_result_type_id(
+        &program.function_ids, &program.function_result_widths,
+        &program.function_result_type_first, &program.function_result_type_ids,
+        function_id, 0
+    ) == 1:
         -1:
             mut expression_cursor: i64 = keyword_cursor + 1
             mut literal_value: i64 = -2
@@ -6229,8 +6281,10 @@ fn stage1_append_unreachable_match_join(
     symbol_value_ids: vector<i64>,
     symbol_memory_ids: vector<i64>
 ) -> Stage1BodyCompileResult:
-    mut function_result_type_id: i64 = i64_vector_get(
-        &program.function_result_type_ids, function_id
+    mut function_result_type_id: i64 = native_ir_function_result_type_id(
+        &program.function_ids, &program.function_result_widths,
+        &program.function_result_type_first, &program.function_result_type_ids,
+        function_id, 0
     )
     mut appended: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
         program,
