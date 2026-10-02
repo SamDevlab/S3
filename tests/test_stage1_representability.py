@@ -115,20 +115,34 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         repeated.encode("ascii")
     ).hexdigest()
     assert matrix["functions_total"] == 50
-    # These counts include mutable-vector signatures and the local match-flow
-    # analysis; dependency closure still gates self-compilation.
+    # This matrix includes bounded local vector values and typed vector refs;
+    # self-compilation remains gated by separate execution evidence.
     assert matrix["functions_signature_supported"] == 23
-    assert matrix["functions_body_representable"] == 10
-    assert matrix["functions_representable"] == 10
-    assert matrix["functions_dependency_closed"] == 6
-    assert matrix["functions_self_compile_proven"] == 6
+    assert matrix["functions_body_representable"] == 15
+    assert matrix["functions_representable"] == 14
+    assert matrix["functions_dependency_closed"] == 14
+    assert matrix["functions_self_compile_proven"] == 13
+    assert matrix["functions_selfhosted_compiler_behavior"] == 6
+    assert "vector<i64>" in matrix["capabilities"]["local_types"]
+    assert "vector_new<i64>" in matrix["capabilities"]["external_calls"]
+    assert matrix["capabilities"]["program_function_capacity"] == 16
+    assert matrix["capabilities"]["program_block_capacity"] == 64
+    assert matrix["capabilities"]["max_source_bytes"] == 4096
+    assert matrix["capabilities"]["max_token_count"] == 1024
     proven = {item["name"] for item in matrix["functions"] if item["self_compile_pass"]}
     assert proven == {
+        "stage1_source_spans_equal",
+        "stage1_find_symbol_value",
+        "stage1_parameter_name_seen",
+        "stage1_parameter_names_unique",
         "stage1_emission_value_count",
         "stage1_emission_instruction_count",
         "stage1_emission_value_id",
         "stage1_emission_operand_id",
         "stage1_emission_instruction_field",
+        "stage1_emit_decimal",
+        "stage1_emit_register",
+        "stage1_source_name_is_main",
         "stage1_output_chunk",
     }
     assert all(
@@ -136,6 +150,70 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         for item in matrix["functions"]
         if item["self_compile_pass"]
     )
+    behavior = {
+        item["name"]: item["compiler_behavior_category"]
+        for item in matrix["functions"]
+        if item["selfhosted_compiler_behavior"]
+    }
+    assert behavior == {
+        "stage1_find_symbol_value": "symbol_resolution",
+        "stage1_parameter_names_unique": "parameter_validation",
+        "stage1_output_chunk": "assembly_emission",
+        "stage1_emit_decimal": "assembly_emission",
+        "stage1_emit_register": "assembly_emission",
+        "stage1_source_name_is_main": "entry_point_classification",
+    }
+    large_selfhost_targets = {
+        item["name"]: item["source_bytes"]
+        for item in matrix["functions"]
+        if item["name"]
+        in {"stage1_literal_bytes", "stage1_emit_single_main_program"}
+    }
+    assert large_selfhost_targets == {
+        "stage1_literal_bytes": 19082,
+        "stage1_emit_single_main_program": 10598,
+    }
+    assert all(
+        item["function_source_within_byte_limit"] is False
+        for item in matrix["functions"]
+        if item["name"] in large_selfhost_targets
+    )
+
+    newly_closed = {
+        item["name"]
+        for item in matrix["functions"]
+        if item["name"]
+        in {
+            "stage1_source_spans_equal",
+            "stage1_parameter_name_seen",
+            "stage1_parameter_names_unique",
+            "stage1_source_name_is_main",
+            "stage1_emit_decimal",
+            "stage1_emit_register",
+            "stage1_emit_single_main_program",
+        }
+        and item["dependency_closed"]
+    }
+    assert newly_closed == {
+        "stage1_source_spans_equal",
+        "stage1_parameter_name_seen",
+        "stage1_parameter_names_unique",
+        "stage1_source_name_is_main",
+        "stage1_emit_decimal",
+        "stage1_emit_register",
+        "stage1_emit_single_main_program",
+    }
+
+    decimal = next(
+        item for item in matrix["functions"]
+        if item["name"] == "stage1_emit_decimal"
+    )
+    assert decimal["signature_supported"] is True
+    assert decimal["body_representable"] is True
+    assert decimal["dependency_closed"] is True
+    assert decimal["unsupported_operations"] == []
+    assert decimal["unsupported_types"] == []
+    assert decimal["unsupported_callees"] == []
 
 
 def test_stage1_v2_analyzer_recognizes_canonical_output_chunk_capabilities() -> None:
@@ -165,14 +243,89 @@ fn less(left: i64, right: i64) -> trit:
 
 fn equal(left: i64, right: i64) -> trit:
     return left == right
+fn less_equal(left: i64, right: i64) -> trit:
+    return left <= right
+fn greater(left: i64, right: i64) -> trit:
+    return left > right
+fn greater_equal(left: i64, right: i64) -> trit:
+    return left >= right
 """
-    less, equal = analyze_stage1(source, compiler_version="v2")["functions"]
+    less, equal, less_equal, greater, greater_equal = analyze_stage1(
+        source, compiler_version="v2"
+    )["functions"]
 
-    for function in (less, equal):
+    for function in (less, equal, less_equal, greater, greater_equal):
         assert function["signature_supported"] is True
         assert function["body_representable"] is True
         assert function["representable"] is True
         assert function["unsupported_operations"] == []
+
+
+def test_stage1_v2_analyzer_models_local_vector_values_and_mutable_refs() -> None:
+    source = """\
+fn append_one(values: &mut vector<i64>) -> i64:
+    return vector_push<i64>(values, 9)
+
+fn build() -> i64:
+    mut values: vector<i64> = vector_new<i64>(2)
+    discard append_one(&mut values)
+    return vector_get<i64>(&values, 0)
+"""
+    append_one, build = analyze_stage1(source, compiler_version="v2")["functions"]
+
+    assert append_one["signature_supported"] is True
+    assert append_one["body_representable"] is True
+    assert append_one["dependency_closed"] is True
+    assert build["signature_supported"] is True
+    assert build["body_representable"] is True
+    assert build["dependency_closed"] is True
+    assert build["local_bindings"] == [
+        {"name": "values", "type": "vector<i64>", "mutable": True}
+    ]
+    assert build["calls"] == ["append_one", "vector_get", "vector_new"]
+
+
+def test_stage1_v2_analyzer_rejects_invalid_local_vector_references() -> None:
+    immutable_binding = """\
+fn invalid() -> i64:
+    values: vector<i64> = vector_new<i64>(2)
+    discard vector_push<i64>(&mut values, 9)
+    return 0
+"""
+    immutable_reference_for_push = """\
+fn invalid() -> i64:
+    mut values: vector<i64> = vector_new<i64>(2)
+    discard vector_push<i64>(&values, 9)
+    return 0
+"""
+    wrong_vector_element = """\
+fn invalid() -> i64:
+    mut values: vector<i64> = vector_new<trit>(2)
+    return 0
+"""
+    invalid_arity = """\
+fn invalid() -> i64:
+    mut values: vector<i64> = vector_new<i64>()
+    return 0
+"""
+
+    immutable, = analyze_stage1(immutable_binding, compiler_version="v2")["functions"]
+    immutable_ref, = analyze_stage1(
+        immutable_reference_for_push, compiler_version="v2"
+    )["functions"]
+    wrong_element, = analyze_stage1(
+        wrong_vector_element, compiler_version="v2"
+    )["functions"]
+    wrong_arity, = analyze_stage1(invalid_arity, compiler_version="v2")["functions"]
+
+    assert "mutable_reference_requires_mutable_binding" in immutable["unsupported_operations"]
+    assert "vector_push:argument-shape" in immutable_ref["unsupported_operations"]
+    assert "vector_new:requires-i64-type-argument" in wrong_element["unsupported_types"]
+    assert "vector_new:argument-shape" in wrong_arity["unsupported_operations"]
+    assert all(
+        not function["body_representable"]
+        for function in (immutable, immutable_ref, wrong_element, wrong_arity)
+    )
 
 
 def test_stage1_v2_analyzer_reports_current_typed_cfg_and_difference_support() -> None:
@@ -188,7 +341,7 @@ fn subtract(left: i64, right: i64) -> i64:
     assert function["body_representable"] is True
     assert function["unsupported_operations"] == []
     assert "i64_subtract_checked" in capabilities["expressions"]
-    assert "typed_i64_equal_less_than" in capabilities["expressions"]
+    assert "typed_i64_relational_comparisons" in capabilities["expressions"]
     assert "ternary match lowered to a three-way CFG" in capabilities["control_flow"]
     assert "i64 mutable slots with typed TLOAD/TSTORE" in capabilities["mutation"]
 
@@ -388,9 +541,9 @@ fn update(value: i64) -> i64:
 
     assert "assignment_to_immutable_binding:current" in immutable_function["unsupported_operations"]
     assert loop_function["representable"] is True
-    assert "WhileStatement" in nested_function["unsupported_syntax"]
-    assert "mutable_assignment_in_control_flow" in nested_function["unsupported_operations"]
-    assert not nested_function["representable"]
+    assert "WhileStatement" not in nested_function["unsupported_syntax"]
+    assert nested_function["unsupported_operations"] == []
+    assert nested_function["representable"] is True
 
 
 def test_stage1_v2_analyzer_rejects_i64_while_condition() -> None:

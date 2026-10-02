@@ -1091,6 +1091,45 @@ fn main() -> i64:
     assert run_source(verifier + "\n" + probe) == 31
 
 
+def test_native_ir_verifier_checksum_handles_large_i64_immediates() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(
+        encoding="utf-8"
+    )
+    probe = """
+fn large_immediate_checksum_probe() -> i64:
+    mut program: NativeIR = native_ir_empty()
+    mut function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
+    program = function.program
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        program, 0, native_ir_type_i64()
+    )
+    program = result_type.program
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 0, 0, 1
+    )
+    program = block.program
+    mut constant: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 0, 0, 0, 1000000000000000000, -1, -1, native_ir_type_i64()
+    )
+    mut value_id: i64 = constant.value_id
+    program = constant.program
+    mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        program, 0, 0, 1, 0, value_id, -1, -1
+    )
+    program = returned.program
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    return verified.verification.accepted * 10 + native_ir_trit_to_i64(
+        verified.verification.digest_before == verified.verification.digest_after
+    )
+
+fn main() -> i64:
+    return large_immediate_checksum_probe()
+"""
+
+    assert run_source(verifier + "\n" + probe) == 11
+
+
 def test_native_ir_typed_branch_and_jump_cfg_contracts() -> None:
     repository = Path(__file__).parents[1]
     verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(
@@ -1450,7 +1489,7 @@ fn cfg_backedge_and_unreachable_probe() -> i64:
     )
     return score
 
-fn cross_block_value_rejected_probe() -> i64:
+fn dominated_cross_block_value_probe() -> i64:
     mut program: NativeIR = native_ir_empty()
     mut function: NativeIRAppendResult = native_ir_append_function(program, 0, 1)
     program = function.program
@@ -1475,20 +1514,43 @@ fn cross_block_value_rejected_probe() -> i64:
     program = jump.program
     program = append_return(program, 0, 1, value_id)
     mut verified: NativeIRVerifiedResult = verify_program(program)
-    return native_ir_trit_to_i64(verified.verification.accepted == 0) * native_ir_trit_to_i64(
-        verified.verification.diagnostic_code == 11
+    mut score: i64 = native_ir_trit_to_i64(verified.verification.accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(
+        verified.verification.digest_before == verified.verification.digest_after
     )
+    return score
 
 fn main() -> i64:
     mut result: i64 = branch_cfg_contract_probe() * 2048
     result = result + jump_cfg_contract_probe() * 256
     result = result + cfg_graph_query_probe() * 16
     result = result + cfg_backedge_and_unreachable_probe() * 2
-    result = result + cross_block_value_rejected_probe()
+    result = result + dominated_cross_block_value_probe()
     return result
 """
 
-    assert run_source(verifier + "\n" + probe) == 131311
+    assert run_source(verifier + "\n" + probe) == 131313
+
+
+def test_native_ir_verifier_rejects_cross_block_value_without_dominance() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(
+        encoding="utf-8"
+    )
+    probe = """
+fn main() -> i64:
+    mut program: NativeIR = branch_program()
+    mut first_result: i64 = i64_vector_get(&program.instruction_result_first, 4)
+    mut first_value_id: i64 = i64_vector_get(&program.result_value_ids, first_result)
+    mut second_return_operands: i64 = i64_vector_get(&program.instruction_operand_first, 7)
+    discard i64_vector_set(&mut program.operand_value_ids, second_return_operands, first_value_id)
+    mut verified: NativeIRVerifiedResult = verify_program(program)
+    return native_ir_trit_to_i64(verified.verification.accepted == 0) * 10 + native_ir_trit_to_i64(
+        verified.verification.diagnostic_code == 11
+    )
+"""
+
+    assert run_source(verifier + "\n" + probe) == 11
 
 
 def test_native_verifier_multi_result_call_fixture_returns_each_declared_result() -> None:
@@ -1740,3 +1802,72 @@ fn main() -> i64:
         hosted = run_source(source)
         assert hosted // 1_000_000_000 == 1, (case, hosted)
         assert (hosted % 1_000_000_000) // 100_000_000 == 1, (case, hosted)
+
+
+def test_native_ir_typed_vector_reference_builder_and_verifier_contracts() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(
+        encoding="utf-8"
+    )
+    probe = r"""
+fn append_i64(program: NativeIR, function_id: i64, block_id: i64, value: i64) -> NativeIRAppendResult:
+    return native_ir_append_typed_instruction_for_function(
+        program, function_id, block_id, 0, value, -1, -1, native_ir_type_i64()
+    )
+
+fn valid_vector_reference_program() -> NativeIR:
+    mut vector_type: NativeIRAppendResult = native_ir_intern_composite_type(
+        native_ir_empty(), 2, native_ir_type_i64(), 0, -1
+    )
+    mut vector_type_id: i64 = vector_type.value_id
+    mut function: NativeIRAppendResult = native_ir_append_function(
+        vector_type.program, 0, 1
+    )
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        function.program, 0, native_ir_type_i64()
+    )
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        result_type.program, 0, 0, 1
+    )
+    mut parameter: NativeIRAppendResult = native_ir_append_typed_parameter(
+        block.program, 0, 0, vector_type_id
+    )
+    mut parameter_value_id: i64 = parameter.value_id
+    mut reference: NativeIRAppendResult = native_ir_append_reference_for_function(
+        parameter.program, 0, 0, parameter_value_id, vector_type_id, 1
+    )
+    mut scalar: NativeIRAppendResult = append_i64(
+        reference.program, 0, 0, 0
+    )
+    mut scalar_value_id: i64 = scalar.value_id
+    mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        scalar.program, 0, 0, 1, 0, scalar_value_id, -1, -1
+    )
+    return returned.program
+
+fn vector_reference_contract_probe() -> i64:
+    mut valid: NativeIR = valid_vector_reference_program()
+    mut reference_result_id: i64 = i64_vector_get(&valid.result_value_ids, 0)
+    mut reference_type_id: i64 = native_ir_value_type_id(
+        &valid.value_ids, &valid.value_type_ids, reference_result_id
+    )
+    mut reference_type_kind: i64 = i64_vector_get(&valid.type_kinds, reference_type_id)
+    mut verified: NativeIRVerifiedResult = verify_program(valid)
+    mut score: i64 = native_ir_trit_to_i64(verified.verification.accepted == 1)
+    score = score * 2 + native_ir_trit_to_i64(
+        verified.verification.digest_before == verified.verification.digest_after
+    )
+    score = score * 2 + native_ir_trit_to_i64(reference_type_kind == 3)
+    mut invalid_flags: NativeIR = valid_vector_reference_program()
+    discard i64_vector_set(&mut invalid_flags.instruction_reference_flags, 0, 2)
+    mut invalid_verified: NativeIRVerifiedResult = verify_program(invalid_flags)
+    score = score * 2 + native_ir_trit_to_i64(
+        invalid_verified.verification.accepted == 0
+    )
+    return score
+
+fn main() -> i64:
+    return vector_reference_contract_probe()
+"""
+
+    assert run_source(verifier + "\n" + probe) == 15

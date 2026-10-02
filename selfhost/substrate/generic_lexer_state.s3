@@ -590,6 +590,12 @@ export fn generic_native_parser_take(kinds: &vector<i64>, cursor: i64, wanted: i
         1:
             return 1
 
+fn generic_native_parser_skip_newlines(kinds: &vector<i64>, cursor: i64) -> i64:
+    mut current: i64 = cursor
+    while generic_native_parser_kind(kinds, current) == 6:
+        current = current + 1
+    return current
+
 fn generic_native_parser_name_digest(source: &vector<i64>, start: i64, end: i64) -> i64:
     mut cursor: i64 = start
     mut digest: i64 = 0
@@ -651,6 +657,37 @@ fn generic_native_parser_add_node(
     discard vector_push<i64>(node_values, value)
     return node_id
 
+fn generic_native_parser_span_is_mut(
+    source: &vector<i64>,
+    start: i64,
+    end: i64
+) -> i64:
+    match end - start == 3:
+        -1:
+            match vector_get<i64>(source, start) == 109:
+                -1:
+                    match vector_get<i64>(source, start + 1) == 117:
+                        -1:
+                            match vector_get<i64>(source, start + 2) == 116:
+                                -1:
+                                    return 1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
 export fn generic_native_parser_expression(
     source: &vector<i64>,
     kinds: &vector<i64>,
@@ -667,12 +704,61 @@ export fn generic_native_parser_expression(
     node_values: &mut vector<i64>
 ) -> i64:
     mut expression_cursor: i64 = cursor
+    mut negative_integer_literal: i64 = 0
+    mut reference_flag: i64 = 0
     mut left_result: i64 = -1
+    match generic_native_parser_kind(kinds, expression_cursor) == 138:
+        -1:
+            expression_cursor = expression_cursor + 1
+            reference_flag = 1
+            match generic_native_parser_kind(kinds, expression_cursor) == 1:
+                -1:
+                    match generic_native_parser_span_is_mut(
+                        source,
+                        vector_get<i64>(starts, expression_cursor),
+                        vector_get<i64>(ends, expression_cursor)
+                    ) == 1:
+                        -1:
+                            expression_cursor = expression_cursor + 1
+                            reference_flag = 2
+                        0:
+                            discard 0
+                        1:
+                            discard 0
+                0:
+                    discard 0
+                1:
+                    discard 0
+        0:
+            discard 0
+        1:
+            discard 0
+    match generic_native_parser_kind(kinds, expression_cursor) == 145:
+        -1:
+            match generic_native_parser_kind(kinds, expression_cursor + 1) == 5:
+                -1:
+                    expression_cursor = expression_cursor + 1
+                    negative_integer_literal = 1
+                0:
+                    discard 0
+                1:
+                    discard 0
+        0:
+            discard 0
+        1:
+            discard 0
     match generic_native_parser_kind(kinds, expression_cursor) == 5:
         -1:
             mut integer_start: i64 = vector_get<i64>(starts, expression_cursor)
             mut integer_end: i64 = vector_get<i64>(ends, expression_cursor)
             mut integer_value: i64 = generic_native_parser_integer_value(source, integer_start, integer_end)
+            match negative_integer_literal == 1:
+                -1:
+                    integer_value = 0 - integer_value
+                0:
+                    discard 0
+                1:
+                    discard 0
             mut integer_node: i64 = generic_native_parser_add_node(
                 node_kinds,
                 node_operators,
@@ -750,7 +836,9 @@ export fn generic_native_parser_expression(
                             discard 0
                     match generic_native_parser_kind(kinds, call_open_cursor) == 7:
                         -1:
-                            mut call_cursor: i64 = call_open_cursor + 1
+                            mut call_cursor: i64 = generic_native_parser_skip_newlines(
+                                kinds, call_open_cursor + 1
+                            )
                             mut argument_head: i64 = -1
                             mut argument_tail: i64 = -1
                             mut argument_count: i64 = 0
@@ -812,10 +900,15 @@ export fn generic_native_parser_expression(
                                             1:
                                                 argument_tail = argument_tail
                                         argument_count = argument_count + 1
-                                        call_cursor = generic_native_parser_packed_cursor(argument_result)
+                                        call_cursor = generic_native_parser_skip_newlines(
+                                            kinds,
+                                            generic_native_parser_packed_cursor(argument_result)
+                                        )
                                         match generic_native_parser_take(kinds, call_cursor, 144):
                                             -1:
-                                                call_cursor = call_cursor + 1
+                                                call_cursor = generic_native_parser_skip_newlines(
+                                                    kinds, call_cursor + 1
+                                                )
                                             0:
                                                 match generic_native_parser_take(kinds, call_cursor, 8):
                                                     -1:
@@ -896,6 +989,40 @@ export fn generic_native_parser_expression(
         1:
             return -1
 
+    match reference_flag > 0:
+        -1:
+            match left_result >= 0:
+                -1:
+                    mut target_node: i64 = generic_native_parser_packed_node(left_result)
+                    mut target_end: i64 = vector_get<i64>(&*node_ends, target_node)
+                    mut reference_node: i64 = generic_native_parser_add_node(
+                        node_kinds,
+                        node_operators,
+                        node_left,
+                        node_right,
+                        node_starts,
+                        node_ends,
+                        node_values,
+                        6,
+                        reference_flag,
+                        target_node,
+                        -1,
+                        vector_get<i64>(starts, cursor),
+                        target_end,
+                        0
+                    )
+                    left_result = generic_native_parser_pack(
+                        generic_native_parser_packed_cursor(left_result), reference_node
+                    )
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            discard 0
+        1:
+            discard 0
+
     mut scanning: i64 = 1
     while scanning == 1:
         mut operator: i64 = 0
@@ -927,11 +1054,13 @@ export fn generic_native_parser_expression(
                                                 precedence = 0
                                                 operator_width = 3
                                             0:
-                                                operator = 10
+                                                operator = 15
                                                 precedence = 0
+                                                operator_width = 2
                                             1:
-                                                operator = 10
+                                                operator = 15
                                                 precedence = 0
+                                                operator_width = 2
                                     0:
                                         operator = 10
                                         precedence = 0
@@ -941,8 +1070,20 @@ export fn generic_native_parser_expression(
                             0:
                                 match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 162:
                                     -1:
-                                        operator = 12
-                                        precedence = 0
+                                        match generic_native_parser_kind(
+                                            kinds,
+                                            generic_native_parser_packed_cursor(left_result) + 1
+                                        ) == 161:
+                                            -1:
+                                                operator = 16
+                                                precedence = 0
+                                                operator_width = 2
+                                            0:
+                                                operator = 12
+                                                precedence = 0
+                                            1:
+                                                operator = 12
+                                                precedence = 0
                                     0:
                                         match generic_native_parser_kind(kinds, generic_native_parser_packed_cursor(left_result)) == 161:
                                             -1:

@@ -4,13 +4,14 @@ from dataclasses import replace
 import hashlib
 import platform
 from pathlib import Path
+import re
 import subprocess
 import sys
 
 import pytest
 
 from bootstrap.s3 import run_source
-from bootstrap.s3.assembly import AssemblyType, parse_assembly
+from bootstrap.s3.assembly import AssemblyOpcode, AssemblyType, parse_assembly
 from bootstrap.s3.backends.x86_64 import (
     NativeBackendError,
     NativeToolchain,
@@ -86,6 +87,17 @@ def _stage1_artifact(
         return b""
     assert status == 1, f"Stage1 compilation failed: phase={phase}, error_code={error_code}"
     return bytes(envelope[4 : 4 + output_length])
+
+
+def _canonical_function_source(source: str, name: str) -> str:
+    headers = list(
+        re.finditer(r"(?m)^(?:export\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", source)
+    )
+    for index, header in enumerate(headers):
+        if header.group(1) == name:
+            end = headers[index + 1].start() if index + 1 < len(headers) else len(source)
+            return source[header.start() : end].rstrip()
+    raise AssertionError(f"canonical function not found: {name}")
 
 
 def _stage1_v2_emit_three_way_cfg() -> bytes:
@@ -615,6 +627,425 @@ def test_stage1_v2_compiles_real_reference_vector_helpers(
 
 
 @pytest.mark.parametrize(
+    ("source_text", "first_start", "first_end", "second_start", "second_end", "expected"),
+    (
+        ("abcabc", 0, 3, 3, 6, -1),
+        ("abcabd", 0, 3, 3, 6, 0),
+        ("abc", 0, 0, 3, 3, -1),
+    ),
+)
+def test_stage1_v2_compiles_canonical_source_span_helper_with_nested_loop(
+    source_text: str,
+    first_start: int,
+    first_end: int,
+    second_start: int,
+    second_end: int,
+    expected: int,
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).parents[1]
+    canonical = (repository / "selfhost/compiler/stage1_compiler_v1.s3").read_text(
+        encoding="utf-8"
+    )
+    start = canonical.index("fn stage1_source_spans_equal(")
+    end = canonical.index("\n\n", start)
+    helper = canonical[start:end]
+    source_bytes = source_text.encode("ascii")
+    main = [
+        "fn main() -> trit:",
+        f"    mut source: vector<i64> = vector_new<i64>({len(source_bytes)})",
+    ]
+    main.extend(
+        f"    discard vector_push<i64>(&mut source, {byte})"
+        for byte in source_bytes
+    )
+    main.append(
+        "    return stage1_source_spans_equal("
+        f"&source, {first_start}, {first_end}, {second_start}, {second_end})"
+    )
+    diagnostics: list[int] = []
+    program_source = helper + "\n\n" + "\n".join(main) + "\n"
+    artifact_bytes = _stage1_artifact(
+        program_source,
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert {function.name for function in artifact.functions} >= {
+        "main",
+        "stage1_source_spans_equal",
+    }
+    assert run_source(program_source) == expected
+    if platform.system() == "Linux" and platform.machine().lower() in {"x86_64", "amd64"}:
+        toolchain = NativeToolchain.detect()
+        executable = toolchain.build(
+            generate_native_assembly(artifact),
+            tmp_path / f"stage1-v2-source-span-{first_start}-{second_start}",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == expected % 256
+
+
+def test_stage1_v2_compiles_canonical_name_resolution_cluster_natively(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).parents[1]
+    canonical = (repository / "selfhost/compiler/stage1_compiler_v1.s3").read_text(
+        encoding="utf-8"
+    )
+    function_names = (
+        "stage1_source_spans_equal",
+        "stage1_find_symbol_value",
+        "stage1_parameter_name_seen",
+        "stage1_parameter_names_unique",
+    )
+    functions = []
+    for name in function_names:
+        start = canonical.index(f"fn {name}(")
+        end = canonical.index("\n\n", start)
+        functions.append(canonical[start:end])
+
+    program_source = "\n\n".join(
+        (*functions, "fn main() -> i64:\n    return 0")
+    ) + "\n"
+
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        program_source,
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert {function.name for function in artifact.functions} >= {
+        *function_names,
+        "main",
+    }
+    assert Emulator().execute(artifact) == 0
+
+    if platform.system() == "Linux" and platform.machine().lower() in {"x86_64", "amd64"}:
+        toolchain = NativeToolchain.detect()
+        executable = toolchain.build(
+            generate_native_assembly(artifact),
+            tmp_path / "stage1-v2-name-resolution-cluster",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+
+
+def test_stage1_v2_compiles_canonical_source_name_predicate_natively(
+    tmp_path: Path,
+) -> None:
+    canonical = (
+        Path(__file__).parents[1] / "selfhost/compiler/stage1_compiler_v1.s3"
+    ).read_text(encoding="utf-8")
+    source = _canonical_function_source(canonical, "stage1_source_name_is_main") + """
+
+fn main() -> i64:
+    mut main_name: vector<i64> = vector_new<i64>(4)
+    discard vector_push<i64>(&mut main_name, 109)
+    discard vector_push<i64>(&mut main_name, 97)
+    discard vector_push<i64>(&mut main_name, 105)
+    discard vector_push<i64>(&mut main_name, 110)
+    mut other_name: vector<i64> = vector_new<i64>(4)
+    discard vector_push<i64>(&mut other_name, 110)
+    discard vector_push<i64>(&mut other_name, 97)
+    discard vector_push<i64>(&mut other_name, 109)
+    discard vector_push<i64>(&mut other_name, 101)
+    mut score: i64 = stage1_source_name_is_main(&main_name, 0, 4) * 100
+    score = score + stage1_source_name_is_main(&other_name, 0, 4) * 10
+    score = score + stage1_source_name_is_main(&main_name, 0, 3)
+    return score
+"""
+    assert len(source.encode("ascii")) <= 4096
+
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source,
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert "stage1_source_name_is_main" in {
+        function.name for function in artifact.functions
+    }
+    expected = run_source(source)
+    assert expected == 100
+
+    if platform.system() == "Linux" and platform.machine().lower() in {
+        "x86_64",
+        "amd64",
+    }:
+        toolchain = NativeToolchain.detect()
+        executable = toolchain.build(
+            generate_native_assembly(artifact),
+            tmp_path / "stage1-v2-source-name-predicate",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stderr == ""
+        assert completed.stdout.strip() == f"program returned: {expected}"
+
+
+def test_stage1_v2_parses_multiline_call_arguments_in_match_selector(
+    tmp_path: Path,
+) -> None:
+    source = """\
+fn same(left: i64, right: i64) -> trit:
+    return left == right
+
+fn choose(left: i64, right: i64) -> i64:
+    match same(
+        left,
+        right
+    ):
+        -1:
+            return 7
+        0:
+            return 8
+        1:
+            return 9
+
+fn main() -> i64:
+    return choose(3, 3)
+"""
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source,
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert Emulator().execute(artifact) == 7
+
+    if platform.system() == "Linux" and platform.machine().lower() in {"x86_64", "amd64"}:
+        toolchain = NativeToolchain.detect()
+        executable = toolchain.build(
+            generate_native_assembly(artifact),
+            tmp_path / "stage1-v2-multiline-match-call",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 7
+
+
+def test_stage1_v2_executes_canonical_symbol_lookup_cluster(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).parents[1]
+    canonical = (repository / "selfhost/compiler/stage1_compiler_v1.s3").read_text(
+        encoding="utf-8"
+    )
+    function_names = ("stage1_source_spans_equal", "stage1_find_symbol_value")
+    functions = []
+    for name in function_names:
+        start = canonical.index(f"fn {name}(")
+        end = canonical.index("\n\n", start)
+        functions.append(canonical[start:end])
+
+    source_bytes = b"a b"
+    main_lines = [
+        "fn check(actual: i64, expected: i64) -> i64:",
+        "    match actual == expected:",
+        "        -1:",
+        "            return 0",
+        "        0:",
+        "            return 1",
+        "        1:",
+        "            return 1",
+        "fn main() -> i64:",
+        f"    mut source: vector<i64> = vector_new<i64>({len(source_bytes)})",
+    ]
+    main_lines.extend(
+        f"    discard vector_push<i64>(&mut source, {byte})"
+        for byte in source_bytes
+    )
+    main_lines.extend(
+        (
+            "    mut starts: vector<i64> = vector_new<i64>(2)",
+            "    discard vector_push<i64>(&mut starts, 0)",
+            "    discard vector_push<i64>(&mut starts, 2)",
+            "    mut ends: vector<i64> = vector_new<i64>(2)",
+            "    discard vector_push<i64>(&mut ends, 1)",
+            "    discard vector_push<i64>(&mut ends, 3)",
+            "    mut values: vector<i64> = vector_new<i64>(2)",
+            "    discard vector_push<i64>(&mut values, 11)",
+            "    discard vector_push<i64>(&mut values, 22)",
+            "    mut first: i64 = stage1_find_symbol_value(&source, &starts, &ends, &values, 0, 1)",
+            "    mut second: i64 = stage1_find_symbol_value(&source, &starts, &ends, &values, 2, 3)",
+                "    mut missing: i64 = stage1_find_symbol_value(&source, &starts, &ends, &values, 0, 3)",
+            "    return check(first, 11) + check(second, 22) + check(missing, -1)",
+        )
+    )
+    program_source = "\n\n".join((*functions, "\n".join(main_lines))) + "\n"
+
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        program_source,
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert {function.name for function in artifact.functions} >= {
+        *function_names,
+        "check",
+        "main",
+    }
+    assert run_source(program_source) == 0
+
+    if platform.system() == "Linux" and platform.machine().lower() in {"x86_64", "amd64"}:
+        toolchain = NativeToolchain.detect()
+        executable = toolchain.build(
+            generate_native_assembly(artifact),
+            tmp_path / "stage1-v2-symbol-lookup-cluster",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+
+
+def test_stage1_v2_executes_canonical_parameter_name_validation_cluster(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).parents[1]
+    canonical = (repository / "selfhost/compiler/stage1_compiler_v1.s3").read_text(
+        encoding="utf-8"
+    )
+    function_names = (
+        "stage1_source_spans_equal",
+        "stage1_parameter_name_seen",
+        "stage1_parameter_names_unique",
+    )
+    functions = []
+    for name in function_names:
+        start = canonical.index(f"fn {name}(")
+        end = canonical.index("\n\n", start)
+        functions.append(canonical[start:end])
+
+    source_bytes = b"a a"
+    main_lines = [
+        "fn check(actual: i64, expected: i64) -> i64:",
+        "    match actual == expected:",
+        "        -1:",
+        "            return 0",
+        "        0:",
+        "            return 1",
+        "        1:",
+        "            return 1",
+        "fn main() -> i64:",
+        f"    mut source: vector<i64> = vector_new<i64>({len(source_bytes)})",
+    ]
+    main_lines.extend(
+        f"    discard vector_push<i64>(&mut source, {byte})"
+        for byte in source_bytes
+    )
+    main_lines.extend(
+        (
+            "    mut unique_starts: vector<i64> = vector_new<i64>(1)",
+            "    discard vector_push<i64>(&mut unique_starts, 0)",
+            "    mut unique_ends: vector<i64> = vector_new<i64>(1)",
+            "    discard vector_push<i64>(&mut unique_ends, 1)",
+            "    mut duplicate_starts: vector<i64> = vector_new<i64>(2)",
+            "    discard vector_push<i64>(&mut duplicate_starts, 0)",
+            "    discard vector_push<i64>(&mut duplicate_starts, 2)",
+            "    mut duplicate_ends: vector<i64> = vector_new<i64>(2)",
+            "    discard vector_push<i64>(&mut duplicate_ends, 1)",
+            "    discard vector_push<i64>(&mut duplicate_ends, 3)",
+            "    mut duplicate_seen: i64 = stage1_parameter_name_seen(&source, &duplicate_starts, &duplicate_ends, 0, 1, 1)",
+            "    mut absent_seen: i64 = stage1_parameter_name_seen(&source, &duplicate_starts, &duplicate_ends, 0, 3, 0)",
+            "    mut unique_result: i64 = stage1_parameter_names_unique(&source, &unique_starts, &unique_ends, 0)",
+            "    mut duplicate_result: i64 = stage1_parameter_names_unique(&source, &duplicate_starts, &duplicate_ends, 0)",
+            "    return check(duplicate_seen, 1) + check(absent_seen, 0) + check(unique_result, 1) + check(duplicate_result, 0)",
+        )
+    )
+    program_source = "\n\n".join((*functions, "\n".join(main_lines))) + "\n"
+
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        program_source,
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert {function.name for function in artifact.functions} >= {
+        *function_names,
+        "check",
+        "main",
+    }
+    assert run_source(program_source) == 0
+
+    if platform.system() == "Linux" and platform.machine().lower() in {"x86_64", "amd64"}:
+        toolchain = NativeToolchain.detect()
+        executable = toolchain.build(
+            generate_native_assembly(artifact),
+            tmp_path / "stage1-v2-parameter-name-validation-cluster",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+
+
+def test_stage1_v2_accepts_exhaustive_match_as_function_return() -> None:
+    source = (
+        "fn choose(value: trit) -> i64:\n"
+        "    match value:\n"
+        "        -1:\n"
+        "            return 11\n"
+        "        0:\n"
+        "            return 22\n"
+        "        1:\n"
+        "            return 33\n"
+        "fn main() -> i64:\n"
+        "    return choose(0 <=> 0)\n"
+    )
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile diagnostics: {diagnostics}"
+    assert Emulator().execute(parse_assembly(artifact_bytes.decode("ascii"))) == 22
+
+
+@pytest.mark.parametrize("value", (-1, 0, 1))
+def test_stage1_v2_contextually_types_trit_return_literals(value: int) -> None:
+    source = (
+        "fn value() -> trit:\n"
+        f"    return {value}\n"
+        "fn after() -> trit:\n"
+        "    return 1\n"
+        "fn main() -> trit:\n"
+        "    return value()\n"
+    )
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert Emulator().execute(artifact) == value
+
+
+def test_stage1_v2_negative_integer_literal_advances_to_following_functions() -> None:
+    source = (
+        "fn negative() -> i64:\n"
+        "    return -7\n"
+        "fn after() -> i64:\n"
+        "    return 9\n"
+        "fn main() -> i64:\n"
+        "    return negative() + after()\n"
+    )
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert Emulator().execute(artifact) == 2
+
+
+@pytest.mark.parametrize(
     "source",
     (
         "fn main() -> i64:\n    return vector_get<f64>(1, 0)\n",
@@ -916,7 +1347,14 @@ def test_stage1_v2_rejects_nontrit_or_incomplete_match(
 
 @pytest.mark.parametrize(
     ("operator", "relation_code", "left", "right", "expected"),
-    (("<", 2, 1, 2, -1), ("==", 0, 1, 1, -1), ("==", 0, 1, 2, 0)),
+    (
+        ("<", 2, 1, 2, -1),
+        ("==", 0, 1, 1, -1),
+        ("==", 0, 1, 2, 0),
+        (">", 4, 2, 1, -1),
+        (">=", 5, 2, 2, -1),
+        (">=", 5, 1, 2, 0),
+    ),
 )
 def test_stage1_v2_lowers_typed_scalar_comparisons(
     operator: str,
@@ -951,6 +1389,177 @@ def test_stage1_v2_lowers_typed_scalar_comparisons(
     assert relations[0].immediate == relation_code
     assert Emulator().execute(artifact) == expected
     assert Emulator().execute(artifact) == run_source(source)
+
+
+def test_stage1_v2_emits_canonical_decimal_comparison_relations(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).parents[1]
+    canonical_path = repository / "selfhost/compiler/stage1_compiler_v1.s3"
+    canonical = canonical_path.read_text(encoding="utf-8")
+    start = canonical.index("fn stage1_emit_decimal(")
+    end = canonical.index("\n\n", start)
+    decimal_emitter = canonical[start:end]
+    source = decimal_emitter + """
+
+fn main() -> i64:
+    mut output: vector<i64> = vector_new<i64>(3)
+    discard stage1_emit_decimal(&mut output, 123)
+    return vector_get<i64>(&output, 0) * 10000 + vector_get<i64>(&output, 1) * 100 + vector_get<i64>(&output, 2)
+"""
+
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source,
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    decimal = next(
+        function
+        for function in artifact.functions
+        if function.name == "stage1_emit_decimal"
+    )
+    relations = {
+        instruction.immediate
+        for instruction in decimal.instructions
+        if instruction.opcode is AssemblyOpcode.TREL
+    }
+
+    assert {4, 5} <= relations
+    assert run_source(source) == 495_051
+    if platform.system() == "Linux" and platform.machine().lower() in {
+        "x86_64",
+        "amd64",
+    }:
+        reference = compile_sources({"main.s3": source}, entry_module="main")
+        reference_target = next(
+            function
+            for function in reference.assembly.functions
+            if function.name.endswith("__stage1_emit_decimal")
+        )
+        candidate_target = replace(decimal, name=reference_target.name)
+        functions = tuple(
+            candidate_target if function.name == reference_target.name else function
+            for function in reference.assembly.functions
+        )
+        assert sum(
+            function.name == reference_target.name
+            for function in functions
+        ) == 1
+        composed = replace(reference.assembly, functions=functions)
+        toolchain = NativeToolchain.detect()
+        executable = toolchain.build(
+            generate_native_assembly(composed),
+            tmp_path / "stage1-v2-canonical-decimal-emitter",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stderr == ""
+        assert completed.stdout.strip() == "program returned: 495051"
+
+
+def test_stage1_v2_self_compiles_emission_cluster_natively(tmp_path: Path) -> None:
+    canonical = (
+        Path(__file__).parents[1] / "selfhost/compiler/stage1_compiler_v1.s3"
+    ).read_text(encoding="utf-8")
+    function_names = (
+        "stage1_emit_decimal",
+        "stage1_emit_register",
+    )
+    functions = "\n\n".join(
+        _canonical_function_source(canonical, name) for name in function_names
+    )
+    source = functions + """
+
+fn main() -> i64:
+    mut decimal: vector<i64> = vector_new<i64>(3)
+    mut register: vector<i64> = vector_new<i64>(2)
+    discard stage1_emit_decimal(&mut decimal, 123)
+    discard stage1_emit_register(&mut register, 7)
+    mut score: i64 = vector_get<i64>(&decimal, 0) * 10000
+    score = score + vector_get<i64>(&decimal, 1) * 100
+    score = score + vector_get<i64>(&decimal, 2)
+    score = score + vector_get<i64>(&register, 0) * 100
+    score = score + vector_get<i64>(&register, 1)
+    return score
+"""
+    assert len(source.encode("ascii")) <= 4096
+
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source,
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    candidate = parse_assembly(artifact_bytes.decode("ascii"))
+    candidate_by_name = {function.name: function for function in candidate.functions}
+    assert set(function_names) <= candidate_by_name.keys()
+    assert "main" in candidate_by_name
+    expected = run_source(source)
+    assert expected == 506_506
+
+    if platform.system() != "Linux" or platform.machine().lower() not in {
+        "x86_64",
+        "amd64",
+    }:
+        return
+
+    reference = compile_sources({"main.s3": source}, entry_module="main")
+    reference_targets = {
+        name: [
+            function
+            for function in reference.assembly.functions
+            if function.name.endswith(f"__{name}")
+        ]
+        for name in (*function_names, "main")
+    }
+    assert all(len(targets) == 1 for targets in reference_targets.values())
+    callee_names = {
+        name: targets[0].name for name, targets in reference_targets.items()
+    }
+    replaced_names = set(callee_names.values())
+    composed_functions = []
+    for reference_function in reference.assembly.functions:
+        matched = next(
+            (
+                name
+                for name, targets in reference_targets.items()
+                if targets[0].name == reference_function.name
+            ),
+            None,
+        )
+        if matched is None:
+            composed_functions.append(reference_function)
+            continue
+        candidate_function = candidate_by_name[matched]
+        rewritten_instructions = tuple(
+            replace(
+                instruction,
+                callee=callee_names.get(instruction.callee, instruction.callee),
+            )
+            for instruction in candidate_function.instructions
+        )
+        composed_functions.append(
+            replace(
+                candidate_function,
+                name=reference_function.name,
+                instructions=rewritten_instructions,
+            )
+        )
+    assert {function.name for function in composed_functions} >= replaced_names
+    composed = replace(reference.assembly, functions=tuple(composed_functions))
+    toolchain = NativeToolchain.detect()
+    executable = toolchain.build(
+        generate_native_assembly(composed),
+        tmp_path / "stage1-v2-emission-cluster",
+    )
+    completed = toolchain.run(executable)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == f"program returned: {expected}"
 
 
 def test_stage1_v2_rejects_comparison_between_incompatible_scalar_types() -> None:
@@ -1236,6 +1845,82 @@ def test_stage1_v2_lowers_typed_vector_len_builtin() -> None:
     assert Emulator().execute(artifact) == 0
 
 
+def test_stage1_v2_emits_mutable_i64_vector_local_register_and_call() -> None:
+    source = (
+        "fn main() -> i64:\n"
+        "    mut values: vector<i64> = vector_new<i64>(3)\n"
+        "    discard vector_push<i64>(&mut values, 10)\n"
+        "    return vector_len<i64>(&values)\n"
+    )
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile diagnostics: {diagnostics}"
+
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    main = next(function for function in artifact.functions if function.name == "main")
+    assert AssemblyType.VECTOR in main.all_register_types.values()
+    assert any(
+        instruction.callee == "i64_vector_new"
+        for instruction in main.instructions
+    )
+    assert any(
+        instruction.callee == "i64_vector_push"
+        for instruction in main.instructions
+    )
+    addresses = [
+        instruction for instruction in main.instructions
+        if instruction.opcode is AssemblyOpcode.TADDR
+    ]
+    assert len(addresses) == 2
+    assert all(address.reference_target is AssemblyType.VECTOR for address in addresses)
+    assert {address.reference_mutable for address in addresses} == {False, True}
+    assert all(address.reference_is_slice is False for address in addresses)
+    assert any(
+        instruction.callee == "i64_vector_len"
+        for instruction in main.instructions
+    )
+
+
+def test_stage1_v2_passes_local_mutable_vector_reference_to_function() -> None:
+    source = (
+        "fn append_value(output: &mut vector<i64>, value: i64) -> i64:\n"
+        "    discard vector_push<i64>(output, value)\n"
+        "    return 1\n\n"
+        "fn main() -> i64:\n"
+        "    mut values: vector<i64> = vector_new<i64>(2)\n"
+        "    discard append_value(&mut values, 10)\n"
+        "    return vector_len<i64>(&values)\n"
+    )
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile diagnostics: {diagnostics}"
+
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    main = next(function for function in artifact.functions if function.name == "main")
+    append = next(
+        function for function in artifact.functions
+        if function.name.endswith("append_value")
+    )
+    assert append.parameters[0].type is AssemblyType.REFERENCE
+    assert append.parameters[0].reference_target is AssemblyType.VECTOR
+    assert append.parameters[0].reference_mutable is True
+    assert any(
+        instruction.callee is not None
+        and instruction.callee.endswith("append_value")
+        for instruction in main.instructions
+    )
+    addresses = [
+        instruction for instruction in main.instructions
+        if instruction.opcode is AssemblyOpcode.TADDR
+    ]
+    assert len(addresses) == 2
+    assert {address.reference_mutable for address in addresses} == {False, True}
+
+
 def test_stage1_v2_mutable_vector_push_is_typed() -> None:
     append_function = (
         "fn append_value(output: &mut vector<i64>, value: i64) -> i64:\n"
@@ -1289,43 +1974,14 @@ def test_stage1_v2_mutable_vector_push_is_visible_to_the_caller(
     )
     candidate = parse_assembly(
         _stage1_artifact(
-            append_function + "\n\nfn main() -> i64:\n    return 0\n",
+            program_source,
             compiler_version="v2",
         ).decode("ascii")
     )
-    lowered_append = next(
-        function for function in candidate.functions
-        if function.name.endswith("append_value") and not function.external
-    )
-
-    reference = compile_sources(
-        {"main.s3": program_source},
-        entry_module="main",
-    )
-    target = next(
-        function for function in reference.assembly.functions
-        if function.name.endswith("append_value") and not function.external
-    )
-    composed_append = replace(lowered_append, name=target.name)
-    replaced = False
-    functions = []
-    for function in reference.assembly.functions:
-        if function.name == target.name:
-            functions.append(composed_append)
-            replaced = True
-        else:
-            functions.append(function)
-    assert replaced
-    existing_names = {function.name for function in functions}
-    functions.extend(
-        function for function in candidate.functions
-        if function.external and function.name not in existing_names
-    )
-    composed = replace(reference.assembly, functions=tuple(functions))
 
     toolchain = NativeToolchain.detect()
     executable = toolchain.build(
-        generate_native_assembly(composed),
+        generate_native_assembly(candidate),
         tmp_path / "stage1-v2-mutable-vector-push",
     )
     completed = toolchain.run(executable)
