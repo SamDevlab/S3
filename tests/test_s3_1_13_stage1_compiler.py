@@ -1838,12 +1838,6 @@ fn main() -> i64:
     expected = run_source(source)
     assert expected == 506_506
 
-    if platform.system() != "Linux" or platform.machine().lower() not in {
-        "x86_64",
-        "amd64",
-    }:
-        return
-
     reference = compile_sources({"main.s3": source}, entry_module="main")
     reference_targets = {
         name: [
@@ -1876,22 +1870,35 @@ fn main() -> i64:
             composed_functions.append(reference_function)
             continue
         candidate_function = candidate_by_name[matched]
-        rewritten_instructions = tuple(
+        rewritten_blocks = tuple(
             replace(
-                instruction,
-                callee=callee_names.get(instruction.callee, instruction.callee),
+                block,
+                instructions=tuple(
+                    replace(
+                        instruction,
+                        callee=callee_names.get(instruction.callee, instruction.callee),
+                    )
+                    for instruction in block.instructions
+                ),
             )
-            for instruction in candidate_function.instructions
+            for block in candidate_function.blocks
         )
         composed_functions.append(
             replace(
                 candidate_function,
                 name=reference_function.name,
-                instructions=rewritten_instructions,
+                blocks=rewritten_blocks,
             )
         )
     assert {function.name for function in composed_functions} >= replaced_names
     composed = replace(reference.assembly, functions=tuple(composed_functions))
+
+    if platform.system() != "Linux" or platform.machine().lower() not in {
+        "x86_64",
+        "amd64",
+    }:
+        return
+
     toolchain = NativeToolchain.detect()
     executable = toolchain.build(
         generate_native_assembly(composed),

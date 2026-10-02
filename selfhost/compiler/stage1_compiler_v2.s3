@@ -2288,7 +2288,7 @@ fn stage1_parse_function_header_core(
                 0:
                     match parsed_result_type.type_code == 2:
                         -1:
-                            result_type_code = 2
+                            result_type_code = 1
                         0:
                             match parsed_result_type.type_code == 4:
                                 -1:
