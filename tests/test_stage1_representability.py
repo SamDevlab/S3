@@ -121,8 +121,8 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
     assert matrix["functions_body_representable"] == 23
     assert matrix["functions_representable"] == 23
     assert matrix["functions_dependency_closed"] == 23
-    assert matrix["functions_self_compile_proven"] == 16
-    assert matrix["functions_selfhosted_compiler_behavior"] == 9
+    assert matrix["functions_self_compile_proven"] == 17
+    assert matrix["functions_selfhosted_compiler_behavior"] == 10
     assert "vector<i64>" in matrix["capabilities"]["local_types"]
     assert "vector_new<i64>" in matrix["capabilities"]["external_calls"]
     assert "i64_vector_get" in matrix["capabilities"]["external_calls"]
@@ -148,6 +148,7 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         "stage1_find_function_id_by_source_name",
         "stage1_emit_ir_function_name",
         "stage1_emit_ir_callee_name",
+        "stage1_skip_body_newlines",
         "stage1_output_chunk",
     }
     assert all(
@@ -167,6 +168,7 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         "stage1_find_function_id_by_source_name": "symbol_resolution",
         "stage1_emit_ir_function_name": "assembly_emission",
         "stage1_emit_ir_callee_name": "assembly_emission",
+        "stage1_skip_body_newlines": "token_scanning",
         "stage1_output_chunk": "assembly_emission",
         "stage1_emit_decimal": "assembly_emission",
         "stage1_emit_register": "assembly_emission",
@@ -329,9 +331,13 @@ def test_stage1_v2_analyzer_models_token_newline_scanner_dependencies() -> None:
     assert function["signature_supported"] is True
     assert function["body_representable"] is True
     assert function["dependency_closed"] is True
-    assert function["self_compile_pass"] is False
-    assert function["selfhosted_compiler_behavior"] is False
-    assert function["compiler_behavior_category"] is None
+    assert function["self_compile_pass"] is True
+    assert function["selfhosted_compiler_behavior"] is True
+    assert function["compiler_behavior_category"] == "token_scanning"
+    assert function["self_compile_evidence"] == (
+        "tests/test_s3_1_13_stage1_compiler.py::"
+        "test_stage1_v2_emits_token_newline_scanner_for_native_execution"
+    )
     assert set(function["external_dependencies"]) >= {
         "generic_token_count",
         "generic_token_kind",

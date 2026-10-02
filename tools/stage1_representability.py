@@ -83,6 +83,7 @@ V2_PROVEN_SELF_COMPILED_FUNCTIONS = {
     "stage1_find_function_id_by_source_name",
     "stage1_emit_ir_function_name",
     "stage1_emit_ir_callee_name",
+    "stage1_skip_body_newlines",
     "stage1_output_chunk",
 }
 V2_SELFHOSTED_COMPILER_BEHAVIOR = {
@@ -95,6 +96,7 @@ V2_SELFHOSTED_COMPILER_BEHAVIOR = {
     "stage1_find_function_id_by_source_name": "symbol_resolution",
     "stage1_emit_ir_function_name": "assembly_emission",
     "stage1_emit_ir_callee_name": "assembly_emission",
+    "stage1_skip_body_newlines": "token_scanning",
 }
 
 
@@ -1267,6 +1269,10 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
                 entry["self_compile_evidence"] = (
                     "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_self_compiles_emission_cluster_natively"
                 )
+            elif name == "stage1_skip_body_newlines":
+                entry["self_compile_evidence"] = (
+                    "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_emits_token_newline_scanner_for_native_execution"
+                )
             elif name == "stage1_source_name_is_main":
                 entry["self_compile_evidence"] = (
                     "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_compiles_canonical_source_name_predicate_natively"
@@ -1333,7 +1339,8 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
             ],
             "external_calls": [
                 "vector_new<i64>", "vector_get<i64>", "vector_len<i64>",
-                "vector_push<i64>", "i64_vector_get", "i64_vector_len"
+                "vector_push<i64>", "i64_vector_get", "i64_vector_len",
+                "generic_token_count", "generic_token_kind"
             ],
             "statements": [
                 "i64_local_declaration",
