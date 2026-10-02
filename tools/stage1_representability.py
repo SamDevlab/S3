@@ -62,6 +62,8 @@ V2_SUPPORTED_EXTERNALS = {
     "vector_push",
     "i64_vector_get",
     "i64_vector_len",
+    "generic_token_count",
+    "generic_token_kind",
 }
 V2_MAX_SOURCE_BYTES = 4096
 V2_MAX_TOKEN_COUNT = 1024
@@ -468,6 +470,26 @@ def _v2_expression_type(
         if callee not in V2_SUPPORTED_EXTERNALS:
             unsupported_callees.add(callee)
             return None
+        if callee in {"generic_token_count", "generic_token_kind"}:
+            valid = not expression.type_arguments
+            if callee == "generic_token_count":
+                valid = valid and (
+                    len(argument_types) == 1
+                    and isinstance(argument_types[0], ast.ReferenceType)
+                    and not argument_types[0].mutable
+                    and _v2_is_i64_vector_reference(argument_types[0])
+                )
+            else:
+                valid = valid and (
+                    len(argument_types) == 2
+                    and isinstance(argument_types[0], ast.ReferenceType)
+                    and not argument_types[0].mutable
+                    and _v2_is_i64_vector_reference(argument_types[0])
+                    and argument_types[1] is ast.TypeName.I64
+                )
+            if not valid:
+                unsupported_operations.add(f"{callee}:argument-shape")
+            return ast.TypeName.I64
         if callee in {"i64_vector_get", "i64_vector_len"}:
             if expression.type_arguments:
                 unsupported_types.add(f"{callee}:does-not-take-type-arguments")

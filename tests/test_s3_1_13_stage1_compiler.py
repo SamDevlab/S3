@@ -694,6 +694,81 @@ def test_stage1_v2_compiles_canonical_source_span_helper_with_nested_loop(
         assert completed.stdout.strip() == f"program returned: {expected}"
 
 
+def test_stage1_v2_emits_token_newline_scanner_for_native_execution(
+    tmp_path: Path,
+) -> None:
+    repository = Path(__file__).parents[1]
+    canonical = (repository / "selfhost/compiler/stage1_compiler_v1.s3").read_text(
+        encoding="utf-8"
+    )
+    token_library = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    helpers = (
+        _canonical_function_source(token_library, "generic_token_count"),
+        _canonical_function_source(token_library, "generic_token_kind"),
+        _canonical_function_source(canonical, "stage1_skip_body_newlines"),
+    )
+    main = r"""fn main() -> i64:
+    mut tokens: vector<i64> = vector_new<i64>(13)
+    discard vector_push<i64>(&mut tokens, 4)
+    discard vector_push<i64>(&mut tokens, 1)
+    discard vector_push<i64>(&mut tokens, 0)
+    discard vector_push<i64>(&mut tokens, 1)
+    discard vector_push<i64>(&mut tokens, 6)
+    discard vector_push<i64>(&mut tokens, 1)
+    discard vector_push<i64>(&mut tokens, 2)
+    discard vector_push<i64>(&mut tokens, 6)
+    discard vector_push<i64>(&mut tokens, 2)
+    discard vector_push<i64>(&mut tokens, 3)
+    discard vector_push<i64>(&mut tokens, 2)
+    discard vector_push<i64>(&mut tokens, 3)
+    discard vector_push<i64>(&mut tokens, 4)
+    mut result: i64 = stage1_skip_body_newlines(&tokens, 0) * 10000
+    result = result + stage1_skip_body_newlines(&tokens, 1) * 1000
+    result = result + stage1_skip_body_newlines(&tokens, 2) * 100
+    result = result + stage1_skip_body_newlines(&tokens, 3) * 10
+    result = result + stage1_skip_body_newlines(&tokens, 4)
+    return result
+"""
+    program_source = "\n\n".join((*helpers, main)) + "\n"
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        program_source,
+        compiler_version="v2",
+        diagnostics=diagnostics,
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    assert {function.name for function in artifact.functions} >= {
+        "generic_token_count",
+        "generic_token_kind",
+        "stage1_skip_body_newlines",
+        "main",
+    }
+    scanner = next(
+        function for function in artifact.functions
+        if function.name == "stage1_skip_body_newlines"
+    )
+    assert {
+        instruction.callee
+        for instruction in scanner.instructions
+        if instruction.opcode is AssemblyOpcode.TCALL
+    } >= {"generic_token_count", "generic_token_kind"}
+    assert run_source(program_source) == 3334
+
+    if platform.system() == "Linux" and platform.machine().lower() in {"x86_64", "amd64"}:
+        toolchain = NativeToolchain.detect()
+        executable = toolchain.build(
+            generate_native_assembly(artifact),
+            tmp_path / "stage1-v2-token-newline-scanner",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stderr == ""
+        assert completed.stdout.strip() == "program returned: 3334"
+
+
 def test_stage1_v2_compiles_canonical_name_resolution_cluster_natively(
     tmp_path: Path,
 ) -> None:

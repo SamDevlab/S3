@@ -316,6 +316,30 @@ fn invalid(view: &vector<i64>, index: trit) -> i64:
     assert shaped["body_representable"] is False
 
 
+def test_stage1_v2_analyzer_models_token_newline_scanner_dependencies() -> None:
+    source = (
+        Path(__file__).parents[1] / "selfhost/compiler/stage1_compiler_v1.s3"
+    ).read_text(encoding="utf-8")
+    matrix = analyze_stage1(source, compiler_version="v2")
+    function = next(
+        item for item in matrix["functions"]
+        if item["name"] == "stage1_skip_body_newlines"
+    )
+
+    assert function["signature_supported"] is True
+    assert function["body_representable"] is True
+    assert function["dependency_closed"] is True
+    assert function["self_compile_pass"] is False
+    assert function["selfhosted_compiler_behavior"] is False
+    assert function["compiler_behavior_category"] is None
+    assert set(function["external_dependencies"]) >= {
+        "generic_token_count",
+        "generic_token_kind",
+    }
+    assert function["unsupported_callees"] == []
+    assert function["unsupported_operations"] == []
+
+
 def test_stage1_v2_analyzer_recognizes_canonical_output_chunk_capabilities() -> None:
     source_path = Path(__file__).parents[1] / "selfhost/compiler/stage1_compiler_v1.s3"
     source = source_path.read_text(encoding="utf-8")
