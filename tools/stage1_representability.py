@@ -355,7 +355,11 @@ def _v2_local_type_supported(value: object) -> bool:
 
 
 def _v2_return_type_supported(value: object) -> bool:
-    return value is ast.TypeName.I64 or value is ast.TypeName.TRIT
+    return (
+        value is ast.TypeName.I64
+        or value is ast.TypeName.TRIT
+        or _v2_is_i64_vector(value)
+    )
 
 
 def _v2_same_type(left: object | None, right: object) -> bool:
@@ -1293,7 +1297,7 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
         "function_attributed_source_bytes": sum(int(entry["source_bytes"]) for entry in entries),
         "capabilities": {
             "signature_parameter_types": ["i64", "&vector<i64>", "&mut vector<i64>"],
-            "signature_return_types": ["i64", "trit"],
+            "signature_return_types": ["i64", "trit", "vector<i64>"],
             "local_types": ["i64", "vector<i64>"],
             "expressions": [
                 "integer_literal",

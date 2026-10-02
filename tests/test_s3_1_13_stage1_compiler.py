@@ -2149,6 +2149,78 @@ def test_stage1_v2_emits_mutable_i64_vector_local_register_and_call() -> None:
     )
 
 
+@pytest.fixture(scope="module")
+def stage1_v2_vector_return_artifact() -> AssemblyProgram:
+    source = """\
+fn make_pair() -> vector<i64>:
+    mut values: vector<i64> = vector_new<i64>(2)
+    discard vector_push<i64>(&mut values, 17)
+    discard vector_push<i64>(&mut values, 23)
+    return values
+
+fn main() -> i64:
+    mut result: vector<i64> = make_pair()
+    return vector_get<i64>(&result, 1) + vector_len<i64>(&result)
+"""
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 vector-return diagnostics: {diagnostics}"
+    return parse_assembly(artifact_bytes.decode("ascii"))
+
+
+def test_stage1_v2_returns_and_calls_i64_vectors_by_value(
+    stage1_v2_vector_return_artifact: AssemblyProgram,
+) -> None:
+    artifact = stage1_v2_vector_return_artifact
+    make_pair = next(function for function in artifact.functions if function.name == "make_pair")
+    main = next(function for function in artifact.functions if function.name == "main")
+
+    assert make_pair.return_type is AssemblyType.VECTOR
+    assert any(
+        instruction.opcode is AssemblyOpcode.TCALL
+        and instruction.callee == "make_pair"
+        for instruction in main.instructions
+    )
+    Emulator().validate(artifact)
+
+
+@pytest.mark.parametrize(
+    "result_type",
+    ("vector<f64>", "&vector<i64>", "&mut vector<i64>"),
+)
+def test_stage1_v2_rejects_unsupported_vector_result_types(result_type: str) -> None:
+    source = (
+        f"fn produce() -> {result_type}:\n"
+        "    return 0\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+    assert _stage1_artifact(source, compiler_version="v2") == b""
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux"
+    or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_stage1_v2_executes_vector_return_and_call_natively(
+    tmp_path: Path,
+    stage1_v2_vector_return_artifact: AssemblyProgram,
+) -> None:
+    toolchain = NativeToolchain.detect()
+    executable = toolchain.build(
+        generate_native_assembly(stage1_v2_vector_return_artifact),
+        tmp_path / "stage1-v2-vector-return",
+    )
+    completed = toolchain.run(executable)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == "program returned: 25"
+
+
 def test_stage1_v2_passes_local_mutable_vector_reference_to_function() -> None:
     source = (
         "fn append_value(output: &mut vector<i64>, value: i64) -> i64:\n"

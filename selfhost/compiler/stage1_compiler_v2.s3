@@ -2276,36 +2276,50 @@ fn stage1_parse_function_header_core(
             valid = 0
         1:
             valid = 0
-    match generic_native_parser_program_type_code_for_token(source, tokens, suffix + 2) == 2:
+    mut parsed_result_type: Stage1ParameterTypeParse = stage1_parse_parameter_type(
+        source, tokens, suffix + 2
+    )
+    match parsed_result_type.accepted == 1:
         -1:
-            result_type_code = 0
-        0:
-            match generic_native_parser_program_type_code_for_token(
-                source, tokens, suffix + 2
-            ) == 6:
+            match parsed_result_type.type_code == 0:
                 -1:
-                    result_type_code = 1
+                    result_type_code = 0
                 0:
-                    valid = 0
+                    match parsed_result_type.type_code == 2:
+                        -1:
+                            result_type_code = 2
+                        0:
+                            match parsed_result_type.type_code == 4:
+                                -1:
+                                    result_type_code = 4
+                                0:
+                                    valid = 0
+                                1:
+                                    valid = 0
+                        1:
+                            valid = 0
                 1:
                     valid = 0
+        0:
+            valid = 0
         1:
             valid = 0
-    match generic_token_kind(tokens, suffix + 3) == 158:
+    mut result_suffix_cursor: i64 = parsed_result_type.next_cursor
+    match generic_token_kind(tokens, result_suffix_cursor) == 158:
         -1:
             discard 0
         0:
             valid = 0
         1:
             valid = 0
-    match generic_token_kind(tokens, suffix + 4) == 6:
+    match generic_token_kind(tokens, result_suffix_cursor + 1) == 6:
         -1:
             discard 0
         0:
             valid = 0
         1:
             valid = 0
-    mut body_cursor: i64 = suffix + 5
+    mut body_cursor: i64 = result_suffix_cursor + 2
     match valid == 1:
         -1:
             mut next_cursor: i64 = stage1_function_body_end(source, tokens, body_cursor)
@@ -4078,6 +4092,84 @@ fn stage1_emit_ir_control_instruction(
         1:
             return 0
 
+fn stage1_emit_ir_vector_function_result_suffix(
+    output: &mut vector<i64>
+) -> i64:
+    discard vector_push<i64>(output, 32)
+    discard vector_push<i64>(output, 45)
+    discard vector_push<i64>(output, 62)
+    discard vector_push<i64>(output, 32)
+    discard vector_push<i64>(output, 118)
+    discard vector_push<i64>(output, 101)
+    discard vector_push<i64>(output, 99)
+    discard vector_push<i64>(output, 116)
+    discard vector_push<i64>(output, 111)
+    discard vector_push<i64>(output, 114)
+    discard vector_push<i64>(output, 10)
+    return 1
+
+fn stage1_emit_ir_function_result_type(
+    type_id: i64,
+    type_kinds: &vector<i64>,
+    type_element_ids: &vector<i64>,
+    type_mutability_flags: &vector<i64>,
+    type_lengths: &vector<i64>,
+    output: &mut vector<i64>
+) -> i64:
+    match type_id == 0:
+        -1:
+            discard stage1_emit_literal(output, 2)
+            return 1
+        0:
+            match type_id == 1:
+                -1:
+                    discard stage1_emit_literal(output, 15)
+                    return 1
+                0:
+                    match type_id >= 0:
+                        -1:
+                            match type_id < vector_len<i64>(type_kinds):
+                                -1:
+                                    match vector_get<i64>(type_kinds, type_id) == 2:
+                                        -1:
+                                            match vector_get<i64>(type_element_ids, type_id) == 0:
+                                                -1:
+                                                    match vector_get<i64>(type_mutability_flags, type_id) == 0:
+                                                        -1:
+                                                            match vector_get<i64>(type_lengths, type_id) == -1:
+                                                                -1:
+                                                                    return stage1_emit_ir_vector_function_result_suffix(
+                                                                        output
+                                                                    )
+                                                                0:
+                                                                    return 0
+                                                                1:
+                                                                    return 0
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                0:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        0:
+                                            return 0
+                                        1:
+                                            return 0
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
 fn stage1_emit_native_function(
     function_ids: &vector<i64>,
     function_name_first: &vector<i64>,
@@ -4133,17 +4225,18 @@ fn stage1_emit_native_function(
         function_index,
         output
     )
-    match i64_vector_get(function_result_type_ids, function_index) == 0:
+    match stage1_emit_ir_function_result_type(
+        i64_vector_get(function_result_type_ids, function_index),
+        type_kinds,
+        type_element_ids,
+        type_mutability_flags,
+        type_lengths,
+        output
+    ) == 1:
         -1:
-            discard stage1_emit_literal(output, 2)
+            discard 0
         0:
-            match i64_vector_get(function_result_type_ids, function_index) == 1:
-                -1:
-                    discard stage1_emit_literal(output, 15)
-                0:
-                    return 0
-                1:
-                    return 0
+            return 0
         1:
             return 0
     match stage1_emit_ir_parameters(
@@ -7289,7 +7382,36 @@ fn stage1_apply_result_type(
                 -1:
                     return native_ir_set_function_result_type(program, function_id, 1)
                 0:
-                    return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+                    match result_type_code == 4:
+                        -1:
+                            mut vector_type: Stage1InternedTypeResult = stage1_intern_parameter_type(
+                                program, result_type_code
+                            )
+                            match vector_type.accepted == 1:
+                                -1:
+                                    mut result_type_id: i64 = vector_type.type_id
+                                    mut typed_program: NativeIR = vector_type.program
+                                    return native_ir_set_function_result_type(
+                                        typed_program,
+                                        function_id,
+                                        result_type_id
+                                    )
+                                0:
+                                    return NativeIRAppendResult(
+                                        program=vector_type.program,
+                                        accepted=0,
+                                        value_id=-1
+                                    )
+                                1:
+                                    return NativeIRAppendResult(
+                                        program=vector_type.program,
+                                        accepted=0,
+                                        value_id=-1
+                                    )
+                        0:
+                            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
+                        1:
+                            return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
                 1:
                     return NativeIRAppendResult(program=program, accepted=0, value_id=-1)
         1:

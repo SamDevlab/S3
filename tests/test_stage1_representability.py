@@ -115,12 +115,12 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         repeated.encode("ascii")
     ).hexdigest()
     assert matrix["functions_total"] == 50
-    # This matrix includes bounded local vector values and typed vector refs;
+    # Vector-valued results close a small transitive emission cluster;
     # self-compilation remains gated by separate execution evidence.
-    assert matrix["functions_signature_supported"] == 23
-    assert matrix["functions_body_representable"] == 21
-    assert matrix["functions_representable"] == 20
-    assert matrix["functions_dependency_closed"] == 17
+    assert matrix["functions_signature_supported"] == 24
+    assert matrix["functions_body_representable"] == 22
+    assert matrix["functions_representable"] == 22
+    assert matrix["functions_dependency_closed"] == 22
     assert matrix["functions_self_compile_proven"] == 16
     assert matrix["functions_selfhosted_compiler_behavior"] == 9
     assert "vector<i64>" in matrix["capabilities"]["local_types"]
@@ -591,6 +591,42 @@ fn unsupported_parameter(view: &vector<f64>) -> i64:
     assert function["body_representable"] is True
     assert function["representable"] is False
     assert function["unsupported_signature_types"] == ["&vector<f64>"]
+
+
+def test_stage1_v2_analyzer_supports_typed_vector_results_without_broad_casts() -> None:
+    source = """\
+fn make() -> vector<i64>:
+    mut values: vector<i64> = vector_new<i64>(2)
+    discard vector_push<i64>(&mut values, 17)
+    return values
+
+fn consume() -> i64:
+    mut values: vector<i64> = make()
+    return vector_len<i64>(&values)
+"""
+    make, consume = analyze_stage1(source, compiler_version="v2")["functions"]
+
+    assert make["signature_supported"] is True
+    assert make["body_representable"] is True
+    assert make["dependency_closed"] is True
+    assert consume["representable"] is True
+    assert consume["local_calls"] == ["make"]
+
+    wrong_return = """\
+fn make() -> vector<i64>:
+    return 17
+"""
+    wrong_element = """\
+fn make() -> vector<f64>:
+    return 17
+"""
+    invalid_return, = analyze_stage1(wrong_return, compiler_version="v2")["functions"]
+    unsupported_element, = analyze_stage1(wrong_element, compiler_version="v2")["functions"]
+
+    assert invalid_return["representable"] is False
+    assert "return_type_mismatch" in invalid_return["unsupported_operations"]
+    assert unsupported_element["signature_supported"] is False
+    assert unsupported_element["unsupported_signature_types"] == ["vector<f64>"]
 
 
 def test_stage1_v2_analyzer_counts_only_supported_straight_line_mutation() -> None:
