@@ -115,12 +115,12 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         repeated.encode("ascii")
     ).hexdigest()
     assert matrix["functions_total"] == 50
-    # Vector-valued results close a small transitive emission cluster;
-    # self-compilation remains gated by separate execution evidence.
+    # The token newline scanner is representable through its explicit external
+    # helper contracts; self-compilation remains gated by execution evidence.
     assert matrix["functions_signature_supported"] == 24
-    assert matrix["functions_body_representable"] == 22
-    assert matrix["functions_representable"] == 22
-    assert matrix["functions_dependency_closed"] == 22
+    assert matrix["functions_body_representable"] == 23
+    assert matrix["functions_representable"] == 23
+    assert matrix["functions_dependency_closed"] == 23
     assert matrix["functions_self_compile_proven"] == 16
     assert matrix["functions_selfhosted_compiler_behavior"] == 9
     assert "vector<i64>" in matrix["capabilities"]["local_types"]
