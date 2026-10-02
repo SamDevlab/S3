@@ -1570,6 +1570,27 @@ def test_native_verifier_multi_result_call_fixture_returns_each_declared_result(
     assert (wrong_signature % 1_000_000_000) // 100_000_000 == 1
 
 
+def test_native_verifier_reference_matrix_fixtures_are_well_typed() -> None:
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(
+        encoding="utf-8"
+    )
+    probe = """
+fn reference_case_score(case_id: i64) -> i64:
+    mut result: NativeIRVerifiedResult = verify_program(case_program(case_id))
+    mut accepted: i64 = native_ir_trit_to_i64(result.verification.accepted == 1)
+    mut digest_equal: i64 = native_ir_trit_to_i64(
+        result.verification.digest_before == result.verification.digest_after
+    )
+    return accepted * 10 + digest_equal
+
+fn main() -> i64:
+    return reference_case_score(6) * 100 + reference_case_score(27)
+"""
+
+    assert run_source(verifier + probe) == 1111
+
+
 def test_native_verifier_preserves_valid_dominance_case_fixtures() -> None:
     repository = Path(__file__).parents[1]
     verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(

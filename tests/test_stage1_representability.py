@@ -118,13 +118,15 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
     # This matrix includes bounded local vector values and typed vector refs;
     # self-compilation remains gated by separate execution evidence.
     assert matrix["functions_signature_supported"] == 23
-    assert matrix["functions_body_representable"] == 15
-    assert matrix["functions_representable"] == 14
-    assert matrix["functions_dependency_closed"] == 14
-    assert matrix["functions_self_compile_proven"] == 13
-    assert matrix["functions_selfhosted_compiler_behavior"] == 6
+    assert matrix["functions_body_representable"] == 21
+    assert matrix["functions_representable"] == 20
+    assert matrix["functions_dependency_closed"] == 17
+    assert matrix["functions_self_compile_proven"] == 16
+    assert matrix["functions_selfhosted_compiler_behavior"] == 9
     assert "vector<i64>" in matrix["capabilities"]["local_types"]
     assert "vector_new<i64>" in matrix["capabilities"]["external_calls"]
+    assert "i64_vector_get" in matrix["capabilities"]["external_calls"]
+    assert "i64_vector_len" in matrix["capabilities"]["external_calls"]
     assert matrix["capabilities"]["program_function_capacity"] == 16
     assert matrix["capabilities"]["program_block_capacity"] == 64
     assert matrix["capabilities"]["max_source_bytes"] == 4096
@@ -143,6 +145,9 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         "stage1_emit_decimal",
         "stage1_emit_register",
         "stage1_source_name_is_main",
+        "stage1_find_function_id_by_source_name",
+        "stage1_emit_ir_function_name",
+        "stage1_emit_ir_callee_name",
         "stage1_output_chunk",
     }
     assert all(
@@ -150,6 +155,7 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         for item in matrix["functions"]
         if item["self_compile_pass"]
     )
+
     behavior = {
         item["name"]: item["compiler_behavior_category"]
         for item in matrix["functions"]
@@ -158,6 +164,9 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
     assert behavior == {
         "stage1_find_symbol_value": "symbol_resolution",
         "stage1_parameter_names_unique": "parameter_validation",
+        "stage1_find_function_id_by_source_name": "symbol_resolution",
+        "stage1_emit_ir_function_name": "assembly_emission",
+        "stage1_emit_ir_callee_name": "assembly_emission",
         "stage1_output_chunk": "assembly_emission",
         "stage1_emit_decimal": "assembly_emission",
         "stage1_emit_register": "assembly_emission",
@@ -184,6 +193,9 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         for item in matrix["functions"]
         if item["name"]
         in {
+            "stage1_find_function_id_by_source_name",
+            "stage1_emit_ir_function_name",
+            "stage1_emit_ir_callee_name",
             "stage1_source_spans_equal",
             "stage1_parameter_name_seen",
             "stage1_parameter_names_unique",
@@ -195,6 +207,9 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         and item["dependency_closed"]
     }
     assert newly_closed == {
+        "stage1_find_function_id_by_source_name",
+        "stage1_emit_ir_function_name",
+        "stage1_emit_ir_callee_name",
         "stage1_source_spans_equal",
         "stage1_parameter_name_seen",
         "stage1_parameter_names_unique",
@@ -214,6 +229,91 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
     assert decimal["unsupported_operations"] == []
     assert decimal["unsupported_types"] == []
     assert decimal["unsupported_callees"] == []
+
+
+def test_stage1_v2_analyzer_closes_canonical_i64_vector_symbol_lookup() -> None:
+    source = (
+        Path(__file__).parents[1] / "selfhost/compiler/stage1_compiler_v1.s3"
+    ).read_text(encoding="utf-8")
+    matrix = analyze_stage1(source, compiler_version="v2")
+    function = next(
+        item for item in matrix["functions"]
+        if item["name"] == "stage1_find_function_id_by_source_name"
+    )
+
+    assert function["signature_supported"] is True
+    assert function["body_representable"] is True
+    assert function["dependency_closed"] is True
+    assert function["self_compile_pass"] is True
+    assert function["selfhosted_compiler_behavior"] is True
+    assert function["compiler_behavior_category"] == "symbol_resolution"
+    assert function["self_compile_evidence"] == (
+        "tests/test_s3_1_13_stage1_compiler.py::"
+        "test_stage1_v2_executes_canonical_function_symbol_lookup_natively"
+    )
+    assert function["unsupported_callees"] == []
+    assert function["unsupported_operations"] == []
+
+
+def test_stage1_v2_analyzer_closes_canonical_ir_name_emission_cluster() -> None:
+    source = (
+        Path(__file__).parents[1] / "selfhost/compiler/stage1_compiler_v1.s3"
+    ).read_text(encoding="utf-8")
+    matrix = analyze_stage1(source, compiler_version="v2")
+    functions = {
+        item["name"]: item
+        for item in matrix["functions"]
+        if item["name"] in {
+            "stage1_emit_ir_function_name",
+            "stage1_emit_ir_callee_name",
+        }
+    }
+
+    assert set(functions) == {
+        "stage1_emit_ir_function_name",
+        "stage1_emit_ir_callee_name",
+    }
+    assert functions["stage1_emit_ir_function_name"]["dependency_closed"] is True
+    assert functions["stage1_emit_ir_callee_name"]["dependency_closed"] is True
+    assert functions["stage1_emit_ir_callee_name"]["local_calls"] == [
+        "stage1_emit_ir_function_name"
+    ]
+    assert all(
+        item["compiler_behavior_category"] == "assembly_emission"
+        for item in functions.values()
+    )
+
+
+def test_stage1_v2_analyzer_validates_i64_vector_intrinsic_signatures() -> None:
+    valid = """\
+fn lookup(view: &vector<i64>, index: i64) -> i64:
+    return i64_vector_get(view, index)
+fn count(view: &vector<i64>) -> i64:
+    return i64_vector_len(view)
+"""
+    wrong_type_arguments = """\
+fn invalid(view: &vector<i64>) -> i64:
+    return i64_vector_len<i64>(view)
+"""
+    wrong_argument_shape = """\
+fn invalid(view: &vector<i64>, index: trit) -> i64:
+    return i64_vector_get(view, index)
+"""
+
+    valid_matrix = analyze_stage1(valid, compiler_version="v2")
+    assert all(item["body_representable"] for item in valid_matrix["functions"])
+
+    typed, = analyze_stage1(
+        wrong_type_arguments, compiler_version="v2"
+    )["functions"]
+    assert "i64_vector_len:does-not-take-type-arguments" in typed["unsupported_types"]
+    assert typed["body_representable"] is False
+
+    shaped, = analyze_stage1(
+        wrong_argument_shape, compiler_version="v2"
+    )["functions"]
+    assert "i64_vector_get:argument-shape" in shaped["unsupported_operations"]
+    assert shaped["body_representable"] is False
 
 
 def test_stage1_v2_analyzer_recognizes_canonical_output_chunk_capabilities() -> None:

@@ -5297,7 +5297,57 @@ fn memory_program(opcode: i64) -> NativeIR:
         1:
             return index.program
 
+fn verifier_valid_reference_case_program() -> NativeIR:
+    mut vector_type: NativeIRAppendResult = native_ir_intern_composite_type(
+        native_ir_empty(), 2, native_ir_type_i64(), 0, -1
+    )
+    mut vector_type_id: i64 = vector_type.value_id
+    mut function: NativeIRAppendResult = native_ir_append_function(
+        vector_type.program, 0, 1
+    )
+    mut result_type: NativeIRAppendResult = native_ir_set_function_result_type(
+        function.program, 0, native_ir_type_i64()
+    )
+    mut block: NativeIRAppendResult = native_ir_append_block_for_function(
+        result_type.program, 0, 0, 1
+    )
+    mut parameter: NativeIRAppendResult = native_ir_append_typed_parameter(
+        block.program, 0, 0, vector_type_id
+    )
+    mut parameter_value_id: i64 = parameter.value_id
+    mut reference: NativeIRAppendResult = native_ir_append_reference_for_function(
+        parameter.program, 0, 0, parameter_value_id, vector_type_id, 1
+    )
+    mut scalar: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        reference.program, 0, 0, 0, 55, -1, -1, native_ir_type_i64()
+    )
+    mut scalar_value_id: i64 = scalar.value_id
+    mut returned: NativeIRAppendResult = native_ir_append_instruction_for_function(
+        scalar.program, 0, 0, 1, 0, scalar_value_id, -1, -1
+    )
+    return returned.program
+
 fn reference_program(opcode: i64, valid: i64) -> NativeIR:
+    match opcode == 6:
+        -1:
+            mut reference: NativeIR = verifier_valid_reference_case_program()
+            match valid == 1:
+                -1:
+                    return reference
+                0:
+                    discard i64_vector_set(
+                        &mut reference.instruction_reference_flags, 0, 2
+                    )
+                    return reference
+                1:
+                    discard i64_vector_set(
+                        &mut reference.instruction_reference_flags, 0, 2
+                    )
+                    return reference
+        0:
+            discard 0
+        1:
+            discard 0
     mut program: NativeIR = scalar_program()
     discard i64_vector_set(&mut program.instruction_opcodes, 0, opcode)
     match valid == 1:

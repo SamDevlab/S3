@@ -11,7 +11,12 @@ import sys
 import pytest
 
 from bootstrap.s3 import run_source
-from bootstrap.s3.assembly import AssemblyOpcode, AssemblyType, parse_assembly
+from bootstrap.s3.assembly import (
+    AssemblyOpcode,
+    AssemblyProgram,
+    AssemblyType,
+    parse_assembly,
+)
 from bootstrap.s3.backends.x86_64 import (
     NativeBackendError,
     NativeToolchain,
@@ -684,7 +689,9 @@ def test_stage1_v2_compiles_canonical_source_span_helper_with_nested_loop(
             tmp_path / f"stage1-v2-source-span-{first_start}-{second_start}",
         )
         completed = toolchain.run(executable)
-        assert completed.returncode == expected % 256
+        assert completed.returncode == 0
+        assert completed.stderr == ""
+        assert completed.stdout.strip() == f"program returned: {expected}"
 
 
 def test_stage1_v2_compiles_canonical_name_resolution_cluster_natively(
@@ -789,6 +796,259 @@ fn main() -> i64:
         assert completed.stdout.strip() == f"program returned: {expected}"
 
 
+@pytest.fixture(scope="module")
+def stage1_v2_canonical_function_symbol_lookup_candidate() -> tuple[AssemblyProgram, int]:
+    canonical = (
+        Path(__file__).parents[1] / "selfhost/compiler/stage1_compiler_v1.s3"
+    ).read_text(encoding="utf-8")
+    lookup = _canonical_function_source(
+        canonical, "stage1_find_function_id_by_source_name"
+    )
+
+    def vector_setup(name: str, values: tuple[int, ...]) -> list[str]:
+        lines = [f"    mut {name}: vector<i64> = vector_new<i64>({len(values)})"]
+        lines.extend(
+            f"    discard vector_push<i64>(&mut {name}, {value})"
+            for value in values
+        )
+        return lines
+
+    main_lines = [
+        "fn main() -> i64:",
+        *vector_setup("function_ids", (44, 55)),
+        *vector_setup("name_first", (0, 3)),
+        *vector_setup("name_count", (3, 3)),
+        *vector_setup("name_bytes", (102, 111, 111, 98, 97, 114)),
+        *vector_setup("foo", (102, 111, 111)),
+        *vector_setup("bar", (98, 97, 114)),
+        *vector_setup("baz", (98, 97, 122)),
+        "    mut score: i64 = 0",
+        "    match stage1_find_function_id_by_source_name(&function_ids, &name_first, &name_count, &name_bytes, &foo, 0, 3) == 44:",
+        "        -1:",
+        "            score = score + 1000",
+        "        0:",
+        "            discard 0",
+        "        1:",
+        "            discard 0",
+        "    match stage1_find_function_id_by_source_name(&function_ids, &name_first, &name_count, &name_bytes, &bar, 0, 3) == 55:",
+        "        -1:",
+        "            score = score + 100",
+        "        0:",
+        "            discard 0",
+        "        1:",
+        "            discard 0",
+        "    match stage1_find_function_id_by_source_name(&function_ids, &name_first, &name_count, &name_bytes, &baz, 0, 3) == -1:",
+        "        -1:",
+        "            score = score + 10",
+        "        0:",
+        "            discard 0",
+        "        1:",
+        "            discard 0",
+        "    match stage1_find_function_id_by_source_name(&function_ids, &name_first, &name_count, &name_bytes, &foo, 0, 2) == -1:",
+        "        -1:",
+        "            score = score + 1",
+        "        0:",
+        "            discard 0",
+        "        1:",
+        "            discard 0",
+        "    return score",
+    ]
+    source = lookup + "\n\n" + "\n".join(main_lines) + "\n"
+    assert len(source.encode("ascii")) <= 4096
+
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    expected = run_source(source)
+    assert expected == 1111
+    return artifact, expected
+
+
+def test_stage1_v2_self_compiles_canonical_function_symbol_lookup(
+    stage1_v2_canonical_function_symbol_lookup_candidate: tuple[AssemblyProgram, int],
+) -> None:
+    artifact, expected = stage1_v2_canonical_function_symbol_lookup_candidate
+    emitted_lookup = next(
+        function for function in artifact.functions
+        if function.name == "stage1_find_function_id_by_source_name"
+    )
+    assert any(
+        instruction.callee == "i64_vector_len"
+        for instruction in emitted_lookup.instructions
+    )
+    assert any(
+        instruction.callee == "i64_vector_get"
+        for instruction in emitted_lookup.instructions
+    )
+    assert expected == 1111
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux"
+    or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_stage1_v2_executes_canonical_function_symbol_lookup_natively(
+    tmp_path: Path,
+    stage1_v2_canonical_function_symbol_lookup_candidate: tuple[AssemblyProgram, int],
+) -> None:
+    artifact, expected = stage1_v2_canonical_function_symbol_lookup_candidate
+    toolchain = NativeToolchain.detect()
+    executable = toolchain.build(
+        generate_native_assembly(artifact),
+        tmp_path / "stage1-v2-function-symbol-lookup",
+    )
+    completed = toolchain.run(executable)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == f"program returned: {expected}"
+
+
+@pytest.fixture(scope="module")
+def stage1_v2_canonical_ir_name_emission_candidate() -> tuple[AssemblyProgram, int]:
+    canonical = (
+        Path(__file__).parents[1] / "selfhost/compiler/stage1_compiler_v1.s3"
+    ).read_text(encoding="utf-8")
+    function_names = (
+        "stage1_emit_ir_function_name",
+        "stage1_emit_ir_callee_name",
+    )
+    functions = "\n\n".join(
+        _canonical_function_source(canonical, name) for name in function_names
+    )
+    source = functions + """
+
+fn main() -> i64:
+    mut function_ids: vector<i64> = vector_new<i64>(1)
+    discard vector_push<i64>(&mut function_ids, 44)
+    mut name_first: vector<i64> = vector_new<i64>(1)
+    discard vector_push<i64>(&mut name_first, 0)
+    mut name_count: vector<i64> = vector_new<i64>(1)
+    discard vector_push<i64>(&mut name_count, 3)
+    mut name_bytes: vector<i64> = vector_new<i64>(3)
+    discard vector_push<i64>(&mut name_bytes, 102)
+    discard vector_push<i64>(&mut name_bytes, 111)
+    discard vector_push<i64>(&mut name_bytes, 111)
+    mut output: vector<i64> = vector_new<i64>(6)
+    discard stage1_emit_ir_function_name(&name_first, &name_count, &name_bytes, 0, &mut output)
+    discard stage1_emit_ir_callee_name(&function_ids, &name_first, &name_count, &name_bytes, 44, &mut output)
+    mut score: i64 = 0
+    match vector_len<i64>(&output) == 6:
+        -1:
+            score = score + 1
+        0:
+            discard 0
+        1:
+            discard 0
+    match vector_get<i64>(&output, 0) == 102:
+        -1:
+            score = score + 1
+        0:
+            discard 0
+        1:
+            discard 0
+    match vector_get<i64>(&output, 1) == 111:
+        -1:
+            score = score + 1
+        0:
+            discard 0
+        1:
+            discard 0
+    match vector_get<i64>(&output, 2) == 111:
+        -1:
+            score = score + 1
+        0:
+            discard 0
+        1:
+            discard 0
+    match vector_get<i64>(&output, 3) == 102:
+        -1:
+            score = score + 1
+        0:
+            discard 0
+        1:
+            discard 0
+    match vector_get<i64>(&output, 4) == 111:
+        -1:
+            score = score + 1
+        0:
+            discard 0
+        1:
+            discard 0
+    match vector_get<i64>(&output, 5) == 111:
+        -1:
+            score = score + 1
+        0:
+            discard 0
+        1:
+            discard 0
+    return score
+"""
+    assert len(source.encode("ascii")) <= 4096
+
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    expected = run_source(source)
+    assert expected == 7
+    return artifact, expected
+
+
+def test_stage1_v2_self_compiles_canonical_ir_name_emission_cluster(
+    stage1_v2_canonical_ir_name_emission_candidate: tuple[AssemblyProgram, int],
+) -> None:
+    artifact, expected = stage1_v2_canonical_ir_name_emission_candidate
+    by_name = {function.name: function for function in artifact.functions}
+    assert {
+        "stage1_emit_ir_function_name",
+        "stage1_emit_ir_callee_name",
+        "main",
+    } <= by_name.keys()
+    name_emitter = by_name["stage1_emit_ir_function_name"]
+    assert any(
+        instruction.callee == "i64_vector_get"
+        for instruction in name_emitter.instructions
+    )
+    assert any(
+        instruction.callee == "i64_vector_push"
+        for instruction in name_emitter.instructions
+    )
+    assert any(
+        instruction.callee == "stage1_emit_ir_function_name"
+        for instruction in by_name["stage1_emit_ir_callee_name"].instructions
+    )
+    assert expected == 7
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux"
+    or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_stage1_v2_executes_canonical_ir_name_emission_cluster_natively(
+    tmp_path: Path,
+    stage1_v2_canonical_ir_name_emission_candidate: tuple[AssemblyProgram, int],
+) -> None:
+    artifact, expected = stage1_v2_canonical_ir_name_emission_candidate
+    toolchain = NativeToolchain.detect()
+    executable = toolchain.build(
+        generate_native_assembly(artifact),
+        tmp_path / "stage1-v2-ir-name-emission-cluster",
+    )
+    completed = toolchain.run(executable)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout.strip() == f"program returned: {expected}"
+
+
 def test_stage1_v2_parses_multiline_call_arguments_in_match_selector(
     tmp_path: Path,
 ) -> None:
@@ -828,7 +1088,9 @@ fn main() -> i64:
             tmp_path / "stage1-v2-multiline-match-call",
         )
         completed = toolchain.run(executable)
-        assert completed.returncode == 7
+        assert completed.returncode == 0
+        assert completed.stderr == ""
+        assert completed.stdout.strip() == "program returned: 7"
 
 
 def test_stage1_v2_executes_canonical_symbol_lookup_cluster(
@@ -1512,7 +1774,11 @@ fn main() -> i64:
         name: [
             function
             for function in reference.assembly.functions
-            if function.name.endswith(f"__{name}")
+            if (
+                function.name == "main"
+                if name == "main"
+                else function.name.endswith(f"__{name}")
+            )
         ]
         for name in (*function_names, "main")
     }

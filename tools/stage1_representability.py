@@ -55,7 +55,14 @@ V2_COMPARISON_OPERATORS = {
     ast.BinaryOperator.GREATER_EQUAL,
     ast.BinaryOperator.COMPARE,
 }
-V2_SUPPORTED_EXTERNALS = {"vector_new", "vector_get", "vector_len", "vector_push"}
+V2_SUPPORTED_EXTERNALS = {
+    "vector_new",
+    "vector_get",
+    "vector_len",
+    "vector_push",
+    "i64_vector_get",
+    "i64_vector_len",
+}
 V2_MAX_SOURCE_BYTES = 4096
 V2_MAX_TOKEN_COUNT = 1024
 V2_PROVEN_SELF_COMPILED_FUNCTIONS = {
@@ -71,6 +78,9 @@ V2_PROVEN_SELF_COMPILED_FUNCTIONS = {
     "stage1_emit_decimal",
     "stage1_emit_register",
     "stage1_source_name_is_main",
+    "stage1_find_function_id_by_source_name",
+    "stage1_emit_ir_function_name",
+    "stage1_emit_ir_callee_name",
     "stage1_output_chunk",
 }
 V2_SELFHOSTED_COMPILER_BEHAVIOR = {
@@ -80,6 +90,9 @@ V2_SELFHOSTED_COMPILER_BEHAVIOR = {
     "stage1_emit_decimal": "assembly_emission",
     "stage1_emit_register": "assembly_emission",
     "stage1_source_name_is_main": "entry_point_classification",
+    "stage1_find_function_id_by_source_name": "symbol_resolution",
+    "stage1_emit_ir_function_name": "assembly_emission",
+    "stage1_emit_ir_callee_name": "assembly_emission",
 }
 
 
@@ -451,6 +464,27 @@ def _v2_expression_type(
         if callee not in V2_SUPPORTED_EXTERNALS:
             unsupported_callees.add(callee)
             return None
+        if callee in {"i64_vector_get", "i64_vector_len"}:
+            if expression.type_arguments:
+                unsupported_types.add(f"{callee}:does-not-take-type-arguments")
+            if callee == "i64_vector_len":
+                valid = (
+                    len(argument_types) == 1
+                    and isinstance(argument_types[0], ast.ReferenceType)
+                    and not argument_types[0].mutable
+                    and _v2_is_i64_vector_reference(argument_types[0])
+                )
+            else:
+                valid = (
+                    len(argument_types) == 2
+                    and isinstance(argument_types[0], ast.ReferenceType)
+                    and not argument_types[0].mutable
+                    and _v2_is_i64_vector_reference(argument_types[0])
+                    and argument_types[1] is ast.TypeName.I64
+                )
+            if not valid:
+                unsupported_operations.add(f"{callee}:argument-shape")
+            return ast.TypeName.I64
         if tuple(expression.type_arguments) != (ast.TypeName.I64,):
             unsupported_types.add(f"{callee}:requires-i64-type-argument")
         if callee == "vector_new":
@@ -1211,6 +1245,17 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
                 entry["self_compile_evidence"] = (
                     "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_compiles_canonical_source_name_predicate_natively"
                 )
+            elif name == "stage1_find_function_id_by_source_name":
+                entry["self_compile_evidence"] = (
+                    "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_executes_canonical_function_symbol_lookup_natively"
+                )
+            elif name in {
+                "stage1_emit_ir_function_name",
+                "stage1_emit_ir_callee_name",
+            }:
+                entry["self_compile_evidence"] = (
+                    "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_executes_canonical_ir_name_emission_cluster_natively"
+                )
             else:
                 entry["self_compile_evidence"] = (
                     "tests/test_s3_1_13_stage1_compiler.py::test_stage1_v2_compiles_real_reference_vector_helpers"
@@ -1262,7 +1307,7 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
             ],
             "external_calls": [
                 "vector_new<i64>", "vector_get<i64>", "vector_len<i64>",
-                "vector_push<i64>"
+                "vector_push<i64>", "i64_vector_get", "i64_vector_len"
             ],
             "statements": [
                 "i64_local_declaration",
