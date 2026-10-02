@@ -2186,7 +2186,7 @@ def test_stage1_v2_returns_and_calls_i64_vectors_by_value(
     Emulator().validate(artifact)
 
 
-def test_stage1_v2_emitter_rejects_multi_result_external_call() -> None:
+def test_stage1_v2_emitter_preserves_multi_result_call_and_return() -> None:
     repository = Path(__file__).parents[1]
     modules = {
         path: (repository / path).read_text(encoding="utf-8")
@@ -2205,30 +2205,37 @@ from selfhost.substrate.verifier_kernel import NativeIRVerifiedResult
 from selfhost.substrate.verifier_kernel import native_ir_empty
 from selfhost.substrate.verifier_kernel import native_ir_append_function_source
 from selfhost.substrate.verifier_kernel import native_ir_set_function_result_type
-from selfhost.substrate.verifier_kernel import native_ir_append_external_function_source
 from selfhost.substrate.verifier_kernel import native_ir_set_function_result_type_at
 from selfhost.substrate.verifier_kernel import native_ir_append_block_for_function
+from selfhost.substrate.verifier_kernel import native_ir_append_typed_instruction_for_function
 from selfhost.substrate.verifier_kernel import native_ir_append_call_arguments
 from selfhost.substrate.verifier_kernel import native_ir_append_return_values_for_function
+from selfhost.substrate.verifier_kernel import native_ir_order_blocks_by_instruction_first
 from selfhost.substrate.verifier_kernel import verify_program
 from selfhost.compiler.stage1_compiler_v2 import stage1_emit_verified_native_program
 
-fn main() -> i64:
-    mut caller_name: vector<i64> = vector_new<i64>(1)
-    discard vector_push<i64>(&mut caller_name, 102)
-    mut callee_name: vector<i64> = vector_new<i64>(1)
-    discard vector_push<i64>(&mut callee_name, 103)
+fn main() -> vector<i64>:
+    mut caller_name: vector<i64> = vector_new<i64>(4)
+    discard vector_push<i64>(&mut caller_name, 109)
+    discard vector_push<i64>(&mut caller_name, 97)
+    discard vector_push<i64>(&mut caller_name, 105)
+    discard vector_push<i64>(&mut caller_name, 110)
+    mut callee_name: vector<i64> = vector_new<i64>(4)
+    discard vector_push<i64>(&mut callee_name, 112)
+    discard vector_push<i64>(&mut callee_name, 97)
+    discard vector_push<i64>(&mut callee_name, 105)
+    discard vector_push<i64>(&mut callee_name, 114)
     mut program: NativeIR = native_ir_empty()
     mut caller: NativeIRAppendResult = native_ir_append_function_source(
-        program, 0, 1, &caller_name, 0, 1
+        program, 0, 1, &caller_name, 0, 4
     )
     program = caller.program
     mut caller_type: NativeIRAppendResult = native_ir_set_function_result_type(
         program, 0, 0
     )
     program = caller_type.program
-    mut callee: NativeIRAppendResult = native_ir_append_external_function_source(
-        program, 1, 2, 0, &callee_name, 0, 1
+    mut callee: NativeIRAppendResult = native_ir_append_function_source(
+        program, 1, 2, &callee_name, 0, 4
     )
     program = callee.program
     mut callee_second_type: NativeIRAppendResult = native_ir_set_function_result_type_at(
@@ -2239,6 +2246,10 @@ fn main() -> i64:
         program, 0, 0, 1
     )
     program = block.program
+    mut callee_block: NativeIRAppendResult = native_ir_append_block_for_function(
+        program, 1, 1, 1
+    )
+    program = callee_block.program
     mut arguments: i64_vector = i64_vector_new<i64>(0)
     mut call: NativeIRAppendResult = native_ir_append_call_arguments(
         program, 0, 0, 1, &arguments
@@ -2250,18 +2261,57 @@ fn main() -> i64:
     mut returned: NativeIRAppendResult = native_ir_append_return_values_for_function(
         program, 0, 0, &returned_values
     )
-    mut verified: NativeIRVerifiedResult = verify_program(returned.program)
+    program = returned.program
+    mut first: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 1, 1, 0, 42, -1, -1, 0
+    )
+    mut first_id: i64 = first.value_id
+    program = first.program
+    mut second: NativeIRAppendResult = native_ir_append_typed_instruction_for_function(
+        program, 1, 1, 0, 0, -1, -1, 1
+    )
+    mut second_id: i64 = second.value_id
+    program = second.program
+    mut callee_values: i64_vector = i64_vector_new<i64>(2)
+    discard i64_vector_push(&mut callee_values, first_id)
+    discard i64_vector_push(&mut callee_values, second_id)
+    mut callee_return: NativeIRAppendResult = native_ir_append_return_values_for_function(
+        program, 1, 1, &callee_values
+    )
+    program = callee_return.program
+    program = native_ir_order_blocks_by_instruction_first(program)
+    mut verified: NativeIRVerifiedResult = verify_program(program)
     match verified.verification.accepted == 1:
         -1:
             mut output: vector<i64> = vector_new<i64>(4096)
-            return stage1_emit_verified_native_program(verified.program, &mut output)
+            match stage1_emit_verified_native_program(verified.program, &mut output) == 1:
+                -1:
+                    return output
+                0:
+                    return vector_new<i64>(0)
+                1:
+                    return vector_new<i64>(0)
         0:
-            return -1
+            return vector_new<i64>(0)
         1:
-            return -1
+            return vector_new<i64>(0)
 """
 
-    assert execute_ir(compile_sources(modules, entry_module="main").ir) == 0
+    emitted = execute_ir(compile_sources(modules, entry_module="main").ir)
+    artifact_bytes = bytes(int(value) for value in emitted)
+    assert artifact_bytes, "Stage1 V2 rejected a verified multi-result program"
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    pair = next(function for function in artifact.functions if function.name == "pair")
+    call = next(
+        instruction
+        for function in artifact.functions
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode is AssemblyOpcode.TCALL
+    )
+    assert pair.result_types == (AssemblyType.I64, AssemblyType.TRIT)
+    assert call.result_width == 2
+    assert Emulator().execute(artifact) == 42
 
 
 @pytest.mark.parametrize(

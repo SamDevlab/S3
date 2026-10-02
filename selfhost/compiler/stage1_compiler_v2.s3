@@ -3492,6 +3492,46 @@ fn stage1_emit_ir_callee_name(
                 index = index + 1
     return 1
 
+fn stage1_emit_ir_value_group(
+    values: &vector<i64>,
+    first: i64,
+    count: i64,
+    output: &mut vector<i64>
+) -> i64:
+    match count >= 1:
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    match count == 1:
+        -1:
+            discard 0
+        0:
+            discard vector_push<i64>(output, 91)
+        1:
+            discard vector_push<i64>(output, 91)
+    mut index: i64 = 0
+    while index < count:
+        match index == 0:
+            -1:
+                discard 0
+            0:
+                discard stage1_emit_literal(output, 8)
+            1:
+                discard stage1_emit_literal(output, 8)
+        discard stage1_emit_register(output, i64_vector_get(values, first + index))
+        index = index + 1
+    match count == 1:
+        -1:
+            discard 0
+        0:
+            discard vector_push<i64>(output, 93)
+        1:
+            discard vector_push<i64>(output, 93)
+    return 1
+
 fn stage1_emit_memory_declaration(
     memory_id: i64,
     type_id: i64,
@@ -3825,7 +3865,7 @@ fn stage1_emit_ir_instruction(
     mut operand_count: i64 = i64_vector_get(instruction_operand_count, instruction_index)
     match opcode == 3:
         -1:
-            match i64_vector_get(instruction_result_count, instruction_index) == 1:
+            match i64_vector_get(instruction_result_count, instruction_index) >= 1:
                 -1:
                     discard 0
                 0:
@@ -3982,7 +4022,18 @@ fn stage1_emit_ir_instruction(
                                     match opcode == 3:
                                         -1:
                                             discard stage1_emit_literal(output, 12)
-                                            discard stage1_emit_register(output, i64_vector_get(result_value_ids, i64_vector_get(instruction_result_first, instruction_index)))
+                                            match stage1_emit_ir_value_group(
+                                                result_value_ids,
+                                                i64_vector_get(instruction_result_first, instruction_index),
+                                                i64_vector_get(instruction_result_count, instruction_index),
+                                                output
+                                            ) == 1:
+                                                -1:
+                                                    discard 0
+                                                0:
+                                                    return 0
+                                                1:
+                                                    return 0
                                             discard stage1_emit_literal(output, 8)
                                             discard stage1_emit_ir_callee_name(
                                                 function_ids,
@@ -4001,7 +4052,16 @@ fn stage1_emit_ir_instruction(
                                             match opcode == 1:
                                                 -1:
                                                     discard stage1_emit_literal(output, 11)
-                                                    discard stage1_emit_register(output, i64_vector_get(operand_value_ids, operand_first))
+                                                    match stage1_emit_ir_value_group(
+                                                        operand_value_ids, operand_first,
+                                                        operand_count, output
+                                                    ) == 1:
+                                                        -1:
+                                                            discard 0
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            return 0
                                                 0:
                                                     return 0
                                                 1:
@@ -4107,23 +4167,7 @@ fn stage1_emit_ir_control_instruction(
         1:
             return 0
 
-fn stage1_emit_ir_vector_function_result_suffix(
-    output: &mut vector<i64>
-) -> i64:
-    discard vector_push<i64>(output, 32)
-    discard vector_push<i64>(output, 45)
-    discard vector_push<i64>(output, 62)
-    discard vector_push<i64>(output, 32)
-    discard vector_push<i64>(output, 118)
-    discard vector_push<i64>(output, 101)
-    discard vector_push<i64>(output, 99)
-    discard vector_push<i64>(output, 116)
-    discard vector_push<i64>(output, 111)
-    discard vector_push<i64>(output, 114)
-    discard vector_push<i64>(output, 10)
-    return 1
-
-fn stage1_emit_ir_function_result_type(
+fn stage1_emit_ir_function_result_type_name(
     type_id: i64,
     type_kinds: &vector<i64>,
     type_element_ids: &vector<i64>,
@@ -4133,29 +4177,56 @@ fn stage1_emit_ir_function_result_type(
 ) -> i64:
     match type_id == 0:
         -1:
-            discard stage1_emit_literal(output, 2)
+            discard vector_push<i64>(output, 105)
+            discard vector_push<i64>(output, 54)
+            discard vector_push<i64>(output, 52)
             return 1
         0:
             match type_id == 1:
                 -1:
-                    discard stage1_emit_literal(output, 15)
+                    discard vector_push<i64>(output, 116)
+                    discard vector_push<i64>(output, 114)
+                    discard vector_push<i64>(output, 105)
+                    discard vector_push<i64>(output, 116)
                     return 1
                 0:
                     match type_id >= 0:
                         -1:
                             match type_id < vector_len<i64>(type_kinds):
                                 -1:
-                                    match vector_get<i64>(type_kinds, type_id) == 2:
+                                    match type_id < vector_len<i64>(type_element_ids):
                                         -1:
-                                            match vector_get<i64>(type_element_ids, type_id) == 0:
+                                            match type_id < vector_len<i64>(type_mutability_flags):
                                                 -1:
-                                                    match vector_get<i64>(type_mutability_flags, type_id) == 0:
+                                                    match type_id < vector_len<i64>(type_lengths):
                                                         -1:
-                                                            match vector_get<i64>(type_lengths, type_id) == -1:
+                                                            match vector_get<i64>(type_kinds, type_id) == 2:
                                                                 -1:
-                                                                    return stage1_emit_ir_vector_function_result_suffix(
-                                                                        output
-                                                                    )
+                                                                    match vector_get<i64>(type_element_ids, type_id) == 0:
+                                                                        -1:
+                                                                            match vector_get<i64>(type_mutability_flags, type_id) == 0:
+                                                                                -1:
+                                                                                    match vector_get<i64>(type_lengths, type_id) == -1:
+                                                                                        -1:
+                                                                                            discard vector_push<i64>(output, 118)
+                                                                                            discard vector_push<i64>(output, 101)
+                                                                                            discard vector_push<i64>(output, 99)
+                                                                                            discard vector_push<i64>(output, 116)
+                                                                                            discard vector_push<i64>(output, 111)
+                                                                                            discard vector_push<i64>(output, 114)
+                                                                                            return 1
+                                                                                        0:
+                                                                                            return 0
+                                                                                        1:
+                                                                                            return 0
+                                                                                0:
+                                                                                    return 0
+                                                                                1:
+                                                                                    return 0
+                                                                        0:
+                                                                            return 0
+                                                                        1:
+                                                                            return 0
                                                                 0:
                                                                     return 0
                                                                 1:
@@ -4185,25 +4256,84 @@ fn stage1_emit_ir_function_result_type(
         1:
             return 0
 
-fn stage1_native_function_result_type_supported(
-    function_ids: &vector<i64>,
+fn stage1_emit_ir_function_result_types(
     function_result_widths: &vector<i64>,
     function_result_type_first: &vector<i64>,
     function_result_type_ids: &vector<i64>,
-    function_index: i64
+    type_kinds: &vector<i64>,
+    type_element_ids: &vector<i64>,
+    type_mutability_flags: &vector<i64>,
+    type_lengths: &vector<i64>,
+    function_index: i64,
+    output: &mut vector<i64>
 ) -> i64:
-    mut function_id: i64 = i64_vector_get(function_ids, function_index)
     mut result_width: i64 = i64_vector_get(function_result_widths, function_index)
-    match result_width == 1:
+    mut result_first: i64 = i64_vector_get(function_result_type_first, function_index)
+    match result_width >= 1:
         -1:
-            return native_ir_function_result_type_id(
-                function_ids, function_result_widths, function_result_type_first,
-                function_result_type_ids, function_id, 0
-            )
+            match result_first >= 0:
+                -1:
+                    match result_first <= i64_vector_len(function_result_type_ids):
+                        -1:
+                            match result_width <= i64_vector_len(function_result_type_ids) - result_first:
+                                -1:
+                                    discard vector_push<i64>(output, 32)
+                                    discard vector_push<i64>(output, 45)
+                                    discard vector_push<i64>(output, 62)
+                                    discard vector_push<i64>(output, 32)
+                                    match result_width == 1:
+                                        -1:
+                                            discard 0
+                                        0:
+                                            discard vector_push<i64>(output, 91)
+                                        1:
+                                            discard vector_push<i64>(output, 91)
+                                    mut result_index: i64 = 0
+                                    while result_index < result_width:
+                                        match result_index == 0:
+                                            -1:
+                                                discard 0
+                                            0:
+                                                discard stage1_emit_literal(output, 8)
+                                            1:
+                                                discard stage1_emit_literal(output, 8)
+                                        match stage1_emit_ir_function_result_type_name(
+                                            i64_vector_get(function_result_type_ids, result_first + result_index),
+                                            type_kinds, type_element_ids,
+                                            type_mutability_flags, type_lengths, output
+                                        ) == 1:
+                                            -1:
+                                                discard 0
+                                            0:
+                                                return 0
+                                            1:
+                                                return 0
+                                        result_index = result_index + 1
+                                    match result_width == 1:
+                                        -1:
+                                            discard 0
+                                        0:
+                                            discard vector_push<i64>(output, 93)
+                                        1:
+                                            discard vector_push<i64>(output, 93)
+                                    discard vector_push<i64>(output, 10)
+                                    return 1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
         0:
-            return -1
+            return 0
         1:
-            return -1
+            return 0
 
 fn stage1_emit_native_function(
     function_ids: &vector<i64>,
@@ -4263,22 +4393,13 @@ fn stage1_emit_native_function(
         function_index,
         output
     )
-    mut result_type_id: i64 = stage1_native_function_result_type_supported(
-        function_ids, function_result_widths, function_result_type_first,
-        function_result_type_ids, function_index
-    )
-    match result_type_id >= 0:
+    match stage1_emit_ir_function_result_types(
+        function_result_widths, function_result_type_first,
+        function_result_type_ids, type_kinds, type_element_ids,
+        type_mutability_flags, type_lengths, function_index, output
+    ) == 1:
         -1:
-            match stage1_emit_ir_function_result_type(
-                result_type_id, type_kinds, type_element_ids,
-                type_mutability_flags, type_lengths, output
-            ) == 1:
-                -1:
-                    discard 0
-                0:
-                    return 0
-                1:
-                    return 0
+            discard 0
         0:
             return 0
         1:
