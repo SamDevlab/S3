@@ -94,6 +94,270 @@ def _stage1_artifact(
     return bytes(envelope[4 : 4 + output_length])
 
 
+def _stage1_v2_nominal_registry_values(
+    source: str,
+    *,
+    flatten_type_code: int | None = None,
+    field_queries: tuple[tuple[int, str], ...] = (),
+) -> tuple[int, ...]:
+    repository = Path(__file__).parents[1]
+    modules = {
+        path: (repository / path).read_text(encoding="utf-8")
+        for path in (
+            "selfhost/substrate/generic_lexer_state.s3",
+            "selfhost/substrate/verifier_kernel.s3",
+            "selfhost/substrate/output_sink.s3",
+            "selfhost/compiler/stage1_compiler_v2.s3",
+        )
+    }
+    source_bytes = source.encode("ascii")
+    main_lines = [
+        "module main",
+        "from selfhost.substrate.generic_lexer_state import generic_lexer_scan",
+        "from selfhost.compiler.stage1_compiler_v2 import Stage1NominalFlattenResult",
+        "from selfhost.compiler.stage1_compiler_v2 import Stage1NominalFieldLookupResult",
+        "from selfhost.compiler.stage1_compiler_v2 import Stage1NominalRegistry",
+        "from selfhost.compiler.stage1_compiler_v2 import stage1_nominal_type_registry",
+        "from selfhost.compiler.stage1_compiler_v2 import stage1_nominal_flatten_type",
+        "from selfhost.compiler.stage1_compiler_v2 import stage1_nominal_field_lookup",
+        "fn main() -> vector<i64>:",
+        f"    mut source: vector<i64> = vector_new<i64>({len(source_bytes)})",
+    ]
+    main_lines.extend(
+        f"    discard vector_push<i64>(&mut source, {byte})"
+        for byte in source_bytes
+    )
+    main_lines.extend(
+        (
+            "    mut tokens: vector<i64> = generic_lexer_scan(&source)",
+            "    mut registry: Stage1NominalRegistry = stage1_nominal_type_registry(&source, &tokens)",
+            "    mut output: vector<i64> = vector_new<i64>(128)",
+            "    discard vector_push<i64>(&mut output, registry.accepted)",
+            "    discard vector_push<i64>(&mut output, registry.error_code)",
+            "    mut type_count: i64 = vector_len<i64>(&registry.type_ids)",
+            "    discard vector_push<i64>(&mut output, type_count)",
+            "    discard vector_push<i64>(&mut output, registry.next_cursor)",
+            "    mut type_index: i64 = 0",
+            "    while type_index < type_count:",
+            "        discard vector_push<i64>(&mut output, vector_get<i64>(&registry.type_ids, type_index))",
+            "        discard vector_push<i64>(&mut output, vector_get<i64>(&registry.type_name_starts, type_index))",
+            "        discard vector_push<i64>(&mut output, vector_get<i64>(&registry.type_name_ends, type_index))",
+            "        discard vector_push<i64>(&mut output, vector_get<i64>(&registry.field_firsts, type_index))",
+            "        discard vector_push<i64>(&mut output, vector_get<i64>(&registry.field_counts, type_index))",
+            "        type_index = type_index + 1",
+            "    mut field_count: i64 = vector_len<i64>(&registry.field_type_codes)",
+            "    discard vector_push<i64>(&mut output, field_count)",
+            "    mut field_index: i64 = 0",
+            "    while field_index < field_count:",
+            "        discard vector_push<i64>(&mut output, vector_get<i64>(&registry.field_name_starts, field_index))",
+            "        discard vector_push<i64>(&mut output, vector_get<i64>(&registry.field_name_ends, field_index))",
+            "        discard vector_push<i64>(&mut output, vector_get<i64>(&registry.field_type_codes, field_index))",
+            "        field_index = field_index + 1",
+        )
+    )
+    if flatten_type_code is not None:
+        main_lines.extend(
+            (
+                f"    mut flattened: Stage1NominalFlattenResult = stage1_nominal_flatten_type(&source, &tokens, {flatten_type_code})",
+                "    discard vector_push<i64>(&mut output, flattened.accepted)",
+                "    mut flattened_count: i64 = vector_len<i64>(&flattened.type_codes)",
+                "    discard vector_push<i64>(&mut output, flattened_count)",
+                "    mut flattened_index: i64 = 0",
+                "    while flattened_index < flattened_count:",
+                "        discard vector_push<i64>(&mut output, vector_get<i64>(&flattened.type_codes, flattened_index))",
+                "        flattened_index = flattened_index + 1",
+            )
+        )
+    for query_index, (type_code, field_name) in enumerate(field_queries):
+        field_name_start = source.index(f"{field_name}:")
+        field_name_end = field_name_start + len(field_name)
+        main_lines.extend(
+            (
+                f"    mut field_lookup_{query_index}: Stage1NominalFieldLookupResult = stage1_nominal_field_lookup(&source, &tokens, {type_code}, {field_name_start}, {field_name_end})",
+                f"    discard vector_push<i64>(&mut output, field_lookup_{query_index}.accepted)",
+                f"    discard vector_push<i64>(&mut output, field_lookup_{query_index}.field_type_code)",
+                f"    discard vector_push<i64>(&mut output, field_lookup_{query_index}.flattened_first)",
+                f"    discard vector_push<i64>(&mut output, field_lookup_{query_index}.flattened_count)",
+            )
+        )
+    main_lines.append("    return output")
+    modules["main.s3"] = "\n".join(main_lines) + "\n"
+    stage0 = compile_sources(modules, entry_module="main")
+    output = execute_ir(stage0.ir)
+    return tuple(int(output[index]) for index in range(output.length))
+
+
+def test_stage1_v2_nominal_registry_is_ordered_and_preserves_field_layout() -> None:
+    source = ("""\
+record ParseCounts:
+    accepted: trit
+    next_cursor: i64
+    names: vector<i64>
+
+record HeaderCounts:
+    parse: i64
+    """).rstrip() + "\n"
+
+    first = _stage1_v2_nominal_registry_values(source)
+    second = _stage1_v2_nominal_registry_values(source)
+    assert first == second
+
+    assert first[0:3] == (1, 0, 2), first
+    assert first[3] > 0
+    records = []
+    offset = 4
+    for _ in range(first[2]):
+        type_id, name_start, name_end, field_first, field_count = first[offset : offset + 5]
+        records.append(
+            (
+                type_id,
+                source[name_start:name_end],
+                field_first,
+                field_count,
+            )
+        )
+        offset += 5
+    assert records == [(0, "ParseCounts", 0, 3), (1, "HeaderCounts", 3, 1)]
+
+    field_count = first[offset]
+    offset += 1
+    fields = []
+    for _ in range(field_count):
+        name_start, name_end, type_code = first[offset : offset + 3]
+        fields.append((source[name_start:name_end], type_code))
+        offset += 3
+    assert fields == [("accepted", 2), ("next_cursor", 0), ("names", 4), ("parse", 0)]
+
+
+def test_stage1_v2_nominal_registry_resolves_nested_and_forward_record_fields() -> None:
+    source = ("""\
+record HeaderCounts:
+    parse: ParseCounts
+    cursor: i64
+
+record ParseCounts:
+    next_cursor: i64
+    names: vector<i64>
+""").rstrip() + "\n"
+
+    values = _stage1_v2_nominal_registry_values(source, flatten_type_code=1000)
+    assert values[0:3] == (1, 0, 2), values
+
+    offset = 4
+    records = []
+    for _ in range(values[2]):
+        type_id, name_start, name_end, field_first, field_count = values[offset : offset + 5]
+        records.append((type_id, source[name_start:name_end], field_first, field_count))
+        offset += 5
+    assert records == [(0, "HeaderCounts", 0, 2), (1, "ParseCounts", 2, 2)]
+
+    field_count = values[offset]
+    offset += 1
+    fields = []
+    for _ in range(field_count):
+        name_start, name_end, type_code = values[offset : offset + 3]
+        fields.append((source[name_start:name_end], type_code))
+        offset += 3
+    assert fields == [("parse", 1001), ("cursor", 0), ("next_cursor", 0), ("names", 4)]
+    assert values[offset:] == (1, 3, 0, 4, 0), values[offset:]
+
+
+def test_stage1_v2_nominal_field_lookup_resolves_nested_layout_and_rejects_unknown() -> None:
+    source = ("""\
+record Outer:
+    before: i64
+    inner: Inner
+    after: trit
+
+record Inner:
+    value: i64
+    items: vector<i64>
+    missing: trit
+""").rstrip() + "\n"
+
+    values = _stage1_v2_nominal_registry_values(
+        source,
+        field_queries=((1000, "inner"), (1000, "after"), (1000, "missing")),
+    )
+
+    field_count_index = 4 + values[2] * 5
+    query_start = field_count_index + 1 + values[field_count_index] * 3
+    assert values[query_start:] == (
+        1, 1001, 1, 3,
+        1, 2, 4, 1,
+        0, -1, -1, 0,
+    )
+
+
+@pytest.mark.parametrize(
+    "function_source",
+    [
+        "fn consume(value: Counts) -> i64:\n    return 0\n",
+        "fn produce() -> Counts:\n    return 0\n",
+    ],
+)
+def test_stage1_v2_nominal_signatures_fail_closed_at_ir_registration(
+    function_source: str,
+) -> None:
+    source = (
+        "record Counts:\n    value: i64\n\n"
+        + function_source
+        + "\nfn main() -> i64:\n    return 0\n"
+    )
+    diagnostics: list[int] = []
+
+    artifact = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+
+    assert artifact == b""
+    assert diagnostics[:3] == [0, 3, 23], diagnostics
+
+
+def test_stage1_v2_scans_record_declarations_and_keeps_function_named_record() -> None:
+    source = """\
+export record Counts:
+    items: vector<i64>
+
+fn record() -> i64:
+    return 7
+
+fn main() -> i64:
+    return record()
+"""
+    artifact = _stage1_artifact(source, compiler_version="v2")
+    assert Emulator().execute(parse_assembly(artifact.decode("ascii"))) == 7
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_error"),
+    [
+        (
+            "record Duplicate:\n    value: i64\n\nrecord Duplicate:\n    value: i64\n",
+            80,
+        ),
+        (
+            "record InvalidField:\n    value: unknown_type\n",
+            81,
+        ),
+        (
+            "record DuplicateField:\n    value: i64\n    value: trit\n",
+            81,
+        ),
+    ],
+)
+def test_stage1_v2_nominal_registry_rejects_invalid_declarations(
+    source: str, expected_error: int
+) -> None:
+    source += "\nfn main() -> i64:\n    return 0\n"
+    diagnostics: list[int] = []
+    artifact = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact == b""
+    assert diagnostics[:3] == [0, 3, expected_error]
+
+
 def _canonical_function_source(source: str, name: str) -> str:
     headers = list(
         re.finditer(r"(?m)^(?:export\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", source)

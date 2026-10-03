@@ -189,6 +189,34 @@ record Stage1FunctionScanState:
     accepted: i64
     error_code: i64
 
+export record Stage1NominalRegistry:
+    type_name_starts: vector<i64>
+    type_name_ends: vector<i64>
+    type_ids: vector<i64>
+    field_firsts: vector<i64>
+    field_counts: vector<i64>
+    field_name_starts: vector<i64>
+    field_name_ends: vector<i64>
+    field_type_codes: vector<i64>
+    next_cursor: i64
+    accepted: i64
+    error_code: i64
+
+export record Stage1NominalFlattenResult:
+    type_codes: vector<i64>
+    accepted: i64
+
+export record Stage1NominalFieldLookupResult:
+    field_type_code: i64
+    flattened_first: i64
+    flattened_count: i64
+    accepted: i64
+
+record Stage1NominalRecordScan:
+    next_cursor: i64
+    accepted: i64
+    error_code: i64
+
 fn stage1_empty_ir() -> NativeIR:
     return native_ir_empty()
 
@@ -2037,7 +2065,7 @@ fn stage1_parse_parameters(
                         match generic_token_kind(tokens, cursor) == 158:
                             -1:
                                 cursor = cursor + 1
-                                mut parsed_type: Stage1ParameterTypeParse = stage1_parse_parameter_type(
+                                mut parsed_type: Stage1ParameterTypeParse = stage1_parse_registered_parameter_type(
                                     source, tokens, cursor
                                 )
                                 match parsed_type.accepted == 1:
@@ -2277,7 +2305,7 @@ fn stage1_parse_function_header_core(
             valid = 0
         1:
             valid = 0
-    mut parsed_result_type: Stage1ParameterTypeParse = stage1_parse_parameter_type(
+    mut parsed_result_type: Stage1ParameterTypeParse = stage1_parse_registered_parameter_type(
         source, tokens, suffix + 2
     )
     match parsed_result_type.accepted == 1:
@@ -2294,7 +2322,13 @@ fn stage1_parse_function_header_core(
                                 -1:
                                     result_type_code = 4
                                 0:
-                                    valid = 0
+                                    match parsed_result_type.type_code >= 1000:
+                                        -1:
+                                            result_type_code = parsed_result_type.type_code
+                                        0:
+                                            valid = 0
+                                        1:
+                                            valid = 0
                                 1:
                                     valid = 0
                         1:
@@ -7921,6 +7955,7 @@ fn stage1_register_function_at(
                             mut typed_function: NativeIRAppendResult = stage1_apply_result_type(
                                 function_append.program, function_count, header.result_type_code
                             )
+                            mut typed_function_accepted: i64 = typed_function.accepted
                             mut registered_parameters: Stage1ParameterRegistrationResult = stage1_register_parameters(
                                 typed_function.program,
                                 function_count,
@@ -7932,6 +7967,13 @@ fn stage1_register_function_at(
                                 parameter_name_ends
                             )
                             mut parameters_accepted: i64 = registered_parameters.accepted
+                            match typed_function_accepted == 1:
+                                -1:
+                                    discard 0
+                                0:
+                                    parameters_accepted = 0
+                                1:
+                                    parameters_accepted = 0
                             mut registered_parameter_name_starts: vector<i64> = i64_vector_clone(
                                 &registered_parameters.name_starts
                             )
@@ -8074,6 +8116,837 @@ fn stage1_source_name_is_export(
     discard vector_push<i64>(&mut expected, 116)
     return stage1_source_span_matches_bytes(source, name_start, name_end, &expected)
 
+fn stage1_source_name_is_record(
+    source: &vector<i64>, name_start: i64, name_end: i64
+) -> i64:
+    mut expected: vector<i64> = vector_new<i64>(6)
+    discard vector_push<i64>(&mut expected, 114)
+    discard vector_push<i64>(&mut expected, 101)
+    discard vector_push<i64>(&mut expected, 99)
+    discard vector_push<i64>(&mut expected, 111)
+    discard vector_push<i64>(&mut expected, 114)
+    discard vector_push<i64>(&mut expected, 100)
+    return stage1_source_span_matches_bytes(source, name_start, name_end, &expected)
+
+fn stage1_nominal_registry_state(
+    type_name_starts: vector<i64>,
+    type_name_ends: vector<i64>,
+    type_ids: vector<i64>,
+    field_firsts: vector<i64>,
+    field_counts: vector<i64>,
+    field_name_starts: vector<i64>,
+    field_name_ends: vector<i64>,
+    field_type_codes: vector<i64>,
+    next_cursor: i64,
+    accepted: i64,
+    error_code: i64
+) -> Stage1NominalRegistry:
+    return Stage1NominalRegistry(
+        type_name_starts=type_name_starts,
+        type_name_ends=type_name_ends,
+        type_ids=type_ids,
+        field_firsts=field_firsts,
+        field_counts=field_counts,
+        field_name_starts=field_name_starts,
+        field_name_ends=field_name_ends,
+        field_type_codes=field_type_codes,
+        next_cursor=next_cursor,
+        accepted=accepted,
+        error_code=error_code
+    )
+
+fn stage1_nominal_record_scan_failure(
+    cursor: i64, error_code: i64
+) -> Stage1NominalRecordScan:
+    return Stage1NominalRecordScan(
+        next_cursor=cursor,
+        accepted=0,
+        error_code=error_code
+    )
+
+fn stage1_nominal_type_name_seen(
+    source: &vector<i64>,
+    type_name_starts: &mut vector<i64>,
+    type_name_ends: &mut vector<i64>,
+    start: i64,
+    end: i64,
+    index: i64
+) -> i64:
+    match index < vector_len<i64>(&*type_name_starts):
+        -1:
+            match stage1_source_spans_equal(
+                source,
+                start,
+                end,
+                vector_get<i64>(&*type_name_starts, index),
+                vector_get<i64>(&*type_name_ends, index)
+            ):
+                -1:
+                    return 1
+                0:
+                    return stage1_nominal_type_name_seen(
+                        source, type_name_starts, type_name_ends,
+                        start, end, index + 1
+                    )
+                1:
+                    return stage1_nominal_type_name_seen(
+                        source, type_name_starts, type_name_ends,
+                        start, end, index + 1
+                    )
+        0:
+            return 0
+        1:
+            return 0
+
+fn stage1_nominal_type_id_for_span(
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    wanted_start: i64,
+    wanted_end: i64
+) -> i64:
+    mut token_count: i64 = generic_token_count(tokens)
+    mut cursor: i64 = 0
+    mut type_id: i64 = 0
+    while cursor < token_count:
+        mut indent: i64 = generic_native_parser_program_indent(
+            source, generic_token_start(tokens, cursor)
+        )
+        match indent == 0:
+            -1:
+                match stage1_nominal_declaration_start(source, tokens, cursor) == 1:
+                    -1:
+                        match stage1_source_name_is_record(
+                            source,
+                            generic_token_start(tokens, cursor),
+                            generic_token_end(tokens, cursor)
+                        ) == 1:
+                            -1:
+                                match stage1_source_spans_equal(
+                                    source,
+                                    wanted_start,
+                                    wanted_end,
+                                    generic_token_start(tokens, cursor + 1),
+                                    generic_token_end(tokens, cursor + 1)
+                                ):
+                                    -1:
+                                        return type_id
+                                    0:
+                                        type_id = type_id + 1
+                                    1:
+                                        type_id = type_id + 1
+                            0:
+                                discard 0
+                            1:
+                                discard 0
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+            0:
+                discard 0
+            1:
+                discard 0
+        cursor = cursor + 1
+    return -1
+
+fn stage1_parse_registered_parameter_type(
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    cursor: i64
+) -> Stage1ParameterTypeParse:
+    mut parsed: Stage1ParameterTypeParse = stage1_parse_parameter_type(
+        source, tokens, cursor
+    )
+    match parsed.accepted == 1:
+        -1:
+            return parsed
+        0:
+            match generic_token_kind(tokens, cursor) == 1:
+                -1:
+                    mut type_id: i64 = stage1_nominal_type_id_for_span(
+                        source,
+                        tokens,
+                        generic_token_start(tokens, cursor),
+                        generic_token_end(tokens, cursor)
+                    )
+                    match type_id >= 0:
+                        -1:
+                            return Stage1ParameterTypeParse(
+                                next_cursor=cursor + 1,
+                                type_code=1000 + type_id,
+                                accepted=1
+                            )
+                        0:
+                            return parsed
+                        1:
+                            return parsed
+                0:
+                    return parsed
+                1:
+                    return parsed
+        1:
+            return parsed
+
+fn stage1_nominal_flatten_type_inner(
+    type_ids: &vector<i64>,
+    field_firsts: &vector<i64>,
+    field_counts: &vector<i64>,
+    field_type_codes: &vector<i64>,
+    type_code: i64,
+    depth: i64,
+    output: &mut vector<i64>
+) -> i64:
+    match type_code >= 1000:
+        -1:
+            mut type_id: i64 = type_code - 1000
+            match type_id < vector_len<i64>(type_ids):
+                -1:
+                    match depth < vector_len<i64>(type_ids):
+                        -1:
+                            mut first: i64 = vector_get<i64>(field_firsts, type_id)
+                            mut count: i64 = vector_get<i64>(field_counts, type_id)
+                            match first >= 0:
+                                -1:
+                                    match count > 0:
+                                        -1:
+                                            match first <= vector_len<i64>(field_type_codes):
+                                                -1:
+                                                    match count <= vector_len<i64>(field_type_codes) - first:
+                                                        -1:
+                                                            mut index: i64 = 0
+                                                            mut accepted: i64 = 1
+                                                            while index < count:
+                                                                match stage1_nominal_flatten_type_inner(
+                                                                    type_ids,
+                                                                    field_firsts,
+                                                                    field_counts,
+                                                                    field_type_codes,
+                                                                    vector_get<i64>(field_type_codes, first + index),
+                                                                    depth + 1,
+                                                                    output
+                                                                ) == 1:
+                                                                    -1:
+                                                                        discard 0
+                                                                    0:
+                                                                        accepted = 0
+                                                                    1:
+                                                                        accepted = 0
+                                                                match accepted == 0:
+                                                                    -1:
+                                                                        index = count
+                                                                    0:
+                                                                        index = index + 1
+                                                                    1:
+                                                                        index = index + 1
+                                                            return accepted
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                0:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        0:
+                                            return 0
+                                        1:
+                                            return 0
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            match type_code >= 0:
+                -1:
+                    match type_code <= 4:
+                        -1:
+                            match vector_len<i64>(&*output) < 64:
+                                -1:
+                                    discard vector_push<i64>(output, type_code)
+                                    return 1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+export fn stage1_nominal_flatten_type(
+    source: &vector<i64>, tokens: &vector<i64>, type_code: i64
+) -> Stage1NominalFlattenResult:
+    mut registry: Stage1NominalRegistry = stage1_nominal_type_registry(source, tokens)
+    mut output: vector<i64> = vector_new<i64>(64)
+    match registry.accepted == 1:
+        -1:
+            mut accepted: i64 = stage1_nominal_flatten_type_inner(
+                &registry.type_ids,
+                &registry.field_firsts,
+                &registry.field_counts,
+                &registry.field_type_codes,
+                type_code,
+                0,
+                &mut output
+            )
+            return Stage1NominalFlattenResult(type_codes=output, accepted=accepted)
+        0:
+            return Stage1NominalFlattenResult(type_codes=output, accepted=0)
+        1:
+            return Stage1NominalFlattenResult(type_codes=output, accepted=0)
+
+export fn stage1_nominal_field_lookup(
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    type_code: i64,
+    field_name_start: i64,
+    field_name_end: i64
+) -> Stage1NominalFieldLookupResult:
+    mut registry: Stage1NominalRegistry = stage1_nominal_type_registry(source, tokens)
+    match registry.accepted == 1:
+        -1:
+            match type_code >= 1000:
+                -1:
+                    mut type_id: i64 = type_code - 1000
+                    mut type_index: i64 = 0
+                    while type_index < vector_len<i64>(&registry.type_ids):
+                        match vector_get<i64>(&registry.type_ids, type_index) == type_id:
+                            -1:
+                                mut first: i64 = vector_get<i64>(
+                                    &registry.field_firsts, type_index
+                                )
+                                mut count: i64 = vector_get<i64>(
+                                    &registry.field_counts, type_index
+                                )
+                                mut field_index: i64 = 0
+                                mut flattened_offset: i64 = 0
+                                while field_index < count:
+                                    mut absolute_field: i64 = first + field_index
+                                    mut name_start: i64 = vector_get<i64>(
+                                        &registry.field_name_starts, absolute_field
+                                    )
+                                    mut name_end: i64 = vector_get<i64>(
+                                        &registry.field_name_ends, absolute_field
+                                    )
+                                    mut current_type_code: i64 = vector_get<i64>(
+                                        &registry.field_type_codes, absolute_field
+                                    )
+                                    match stage1_source_spans_equal(
+                                        source,
+                                        name_start,
+                                        name_end,
+                                        field_name_start,
+                                        field_name_end
+                                    ):
+                                        -1:
+                                            mut leaves: vector<i64> = vector_new<i64>(64)
+                                            mut flattened: i64 = stage1_nominal_flatten_type_inner(
+                                                &registry.type_ids,
+                                                &registry.field_firsts,
+                                                &registry.field_counts,
+                                                &registry.field_type_codes,
+                                                current_type_code,
+                                                0,
+                                                &mut leaves
+                                            )
+                                            match flattened == 1:
+                                                -1:
+                                                    return Stage1NominalFieldLookupResult(
+                                                        field_type_code=current_type_code,
+                                                        flattened_first=flattened_offset,
+                                                        flattened_count=vector_len<i64>(&leaves),
+                                                        accepted=1
+                                                    )
+                                                0:
+                                                    return Stage1NominalFieldLookupResult(
+                                                        field_type_code=-1,
+                                                        flattened_first=-1,
+                                                        flattened_count=0,
+                                                        accepted=0
+                                                    )
+                                                1:
+                                                    return Stage1NominalFieldLookupResult(
+                                                        field_type_code=-1,
+                                                        flattened_first=-1,
+                                                        flattened_count=0,
+                                                        accepted=0
+                                                    )
+                                        0:
+                                            mut prior_leaves: vector<i64> = vector_new<i64>(64)
+                                            mut prior_flattened: i64 = stage1_nominal_flatten_type_inner(
+                                                &registry.type_ids,
+                                                &registry.field_firsts,
+                                                &registry.field_counts,
+                                                &registry.field_type_codes,
+                                                current_type_code,
+                                                0,
+                                                &mut prior_leaves
+                                            )
+                                            match prior_flattened == 1:
+                                                -1:
+                                                    flattened_offset = flattened_offset + vector_len<i64>(
+                                                        &prior_leaves
+                                                    )
+                                                0:
+                                                    return Stage1NominalFieldLookupResult(
+                                                        field_type_code=-1,
+                                                        flattened_first=-1,
+                                                        flattened_count=0,
+                                                        accepted=0
+                                                    )
+                                                1:
+                                                    return Stage1NominalFieldLookupResult(
+                                                        field_type_code=-1,
+                                                        flattened_first=-1,
+                                                        flattened_count=0,
+                                                        accepted=0
+                                                    )
+                                        1:
+                                            return Stage1NominalFieldLookupResult(
+                                                field_type_code=-1,
+                                                flattened_first=-1,
+                                                flattened_count=0,
+                                                accepted=0
+                                            )
+                                    field_index = field_index + 1
+                                return Stage1NominalFieldLookupResult(
+                                    field_type_code=-1,
+                                    flattened_first=-1,
+                                    flattened_count=0,
+                                    accepted=0
+                                )
+                            0:
+                                type_index = type_index + 1
+                            1:
+                                type_index = type_index + 1
+                    return Stage1NominalFieldLookupResult(
+                        field_type_code=-1,
+                        flattened_first=-1,
+                        flattened_count=0,
+                        accepted=0
+                    )
+                0:
+                    return Stage1NominalFieldLookupResult(
+                        field_type_code=-1,
+                        flattened_first=-1,
+                        flattened_count=0,
+                        accepted=0
+                    )
+                1:
+                    return Stage1NominalFieldLookupResult(
+                        field_type_code=-1,
+                        flattened_first=-1,
+                        flattened_count=0,
+                        accepted=0
+                    )
+        0:
+            return Stage1NominalFieldLookupResult(
+                field_type_code=-1,
+                flattened_first=-1,
+                flattened_count=0,
+                accepted=0
+            )
+        1:
+            return Stage1NominalFieldLookupResult(
+                field_type_code=-1,
+                flattened_first=-1,
+                flattened_count=0,
+                accepted=0
+            )
+
+fn stage1_nominal_field_name_seen(
+    source: &vector<i64>,
+    field_starts: &mut vector<i64>,
+    field_ends: &mut vector<i64>,
+    start: i64,
+    end: i64,
+    index: i64,
+    stop: i64
+) -> i64:
+    match index < stop:
+        -1:
+            match stage1_source_spans_equal(
+                source,
+                start,
+                end,
+                vector_get<i64>(&*field_starts, index),
+                vector_get<i64>(&*field_ends, index)
+            ):
+                -1:
+                    return 1
+                0:
+                    return stage1_nominal_field_name_seen(
+                        source, field_starts, field_ends, start, end, index + 1, stop
+                    )
+                1:
+                    return stage1_nominal_field_name_seen(
+                        source, field_starts, field_ends, start, end, index + 1, stop
+                    )
+        0:
+            return 0
+        1:
+            return 0
+
+fn stage1_nominal_declaration_start(
+    source: &vector<i64>, tokens: &vector<i64>, cursor: i64
+) -> i64:
+    match cursor == 0:
+        -1:
+            return 1
+        0:
+            match generic_token_kind(tokens, cursor - 1) == 6:
+                -1:
+                    return 1
+                0:
+                    return stage1_source_name_is_export(
+                        source,
+                        generic_token_start(tokens, cursor - 1),
+                        generic_token_end(tokens, cursor - 1)
+                    )
+                1:
+                    return stage1_source_name_is_export(
+                        source,
+                        generic_token_start(tokens, cursor - 1),
+                        generic_token_end(tokens, cursor - 1)
+                    )
+        1:
+            return 1
+
+fn stage1_nominal_registry_append_record(
+    type_name_starts: &mut vector<i64>,
+    type_name_ends: &mut vector<i64>,
+    type_ids: &mut vector<i64>,
+    field_firsts: &mut vector<i64>,
+    field_counts: &mut vector<i64>,
+    field_name_starts: &mut vector<i64>,
+    field_name_ends: &mut vector<i64>,
+    field_type_codes: &mut vector<i64>,
+    source: &vector<i64>,
+    tokens: &vector<i64>,
+    record_cursor: i64
+) -> Stage1NominalRecordScan:
+    mut token_count: i64 = generic_token_count(tokens)
+    match record_cursor + 3 < token_count:
+        -1:
+            discard 0
+        0:
+            return stage1_nominal_record_scan_failure(record_cursor, 42)
+        1:
+            return stage1_nominal_record_scan_failure(record_cursor, 42)
+    match generic_token_kind(tokens, record_cursor + 1) == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_nominal_record_scan_failure(record_cursor, 42)
+        1:
+            return stage1_nominal_record_scan_failure(record_cursor, 42)
+    match generic_token_kind(tokens, record_cursor + 2) == 158:
+        -1:
+            discard 0
+        0:
+            return stage1_nominal_record_scan_failure(record_cursor, 42)
+        1:
+            return stage1_nominal_record_scan_failure(record_cursor, 42)
+    match generic_token_kind(tokens, record_cursor + 3) == 6:
+        -1:
+            discard 0
+        0:
+            return stage1_nominal_record_scan_failure(record_cursor, 42)
+        1:
+            return stage1_nominal_record_scan_failure(record_cursor, 42)
+    mut name_start: i64 = generic_token_start(tokens, record_cursor + 1)
+    mut name_end: i64 = generic_token_end(tokens, record_cursor + 1)
+    match stage1_nominal_type_name_seen(
+        source,
+        type_name_starts,
+        type_name_ends,
+        name_start,
+        name_end,
+        0
+    ) == 0:
+        -1:
+            discard 0
+        0:
+            return stage1_nominal_record_scan_failure(record_cursor, 40)
+        1:
+            return stage1_nominal_record_scan_failure(record_cursor, 40)
+    mut body_start: i64 = record_cursor + 4
+    mut body_end: i64 = stage1_function_body_end(source, tokens, body_start)
+    match body_end >= body_start:
+        -1:
+            discard 0
+        0:
+            return stage1_nominal_record_scan_failure(body_end, 43)
+        1:
+            return stage1_nominal_record_scan_failure(body_end, 43)
+    mut field_first: i64 = vector_len<i64>(&*field_name_starts)
+    mut field_count: i64 = 0
+    mut field_cursor: i64 = body_start
+    mut valid: i64 = 1
+    while field_cursor < body_end:
+        match generic_token_kind(tokens, field_cursor) == 6:
+            -1:
+                field_cursor = field_cursor + 1
+            0:
+                match generic_native_parser_program_indent(
+                    source, generic_token_start(tokens, field_cursor)
+                ) == 4:
+                    -1:
+                        match generic_token_kind(tokens, field_cursor) == 1:
+                            -1:
+                                match generic_token_kind(tokens, field_cursor + 1) == 158:
+                                    -1:
+                                        mut parsed_type: Stage1ParameterTypeParse = stage1_parse_registered_parameter_type(
+                                            source, tokens, field_cursor + 2
+                                        )
+                                        match parsed_type.accepted == 1:
+                                            -1:
+                                                mut next_field_cursor: i64 = stage1_skip_body_newlines(
+                                                    tokens, parsed_type.next_cursor
+                                                )
+                                                match parsed_type.type_code == 0:
+                                                    -1:
+                                                        discard 0
+                                                    0:
+                                                        match parsed_type.type_code == 1:
+                                                            -1:
+                                                                discard 0
+                                                            0:
+                                                                match parsed_type.type_code == 2:
+                                                                    -1:
+                                                                        discard 0
+                                                                    0:
+                                                                        match parsed_type.type_code == 3:
+                                                                            -1:
+                                                                                discard 0
+                                                                            0:
+                                                                                match parsed_type.type_code == 4:
+                                                                                    -1:
+                                                                                        discard 0
+                                                                                    0:
+                                                                                        match parsed_type.type_code >= 1000:
+                                                                                            -1:
+                                                                                                discard 0
+                                                                                            0:
+                                                                                                valid = 0
+                                                                                            1:
+                                                                                                valid = 0
+                                                                                    1:
+                                                                                        valid = 0
+                                                                            1:
+                                                                                discard 0
+                                                                    1:
+                                                                        discard 0
+                                                            1:
+                                                                discard 0
+                                                    1:
+                                                        discard 0
+                                                match next_field_cursor > field_cursor + 2:
+                                                    -1:
+                                                        discard 0
+                                                    0:
+                                                        valid = 0
+                                                    1:
+                                                        valid = 0
+                                                match next_field_cursor <= body_end:
+                                                    -1:
+                                                        discard 0
+                                                    0:
+                                                        valid = 0
+                                                    1:
+                                                        valid = 0
+                                                match stage1_nominal_field_name_seen(
+                                                    source,
+                                                    field_name_starts,
+                                                    field_name_ends,
+                                                    generic_token_start(tokens, field_cursor),
+                                                    generic_token_end(tokens, field_cursor),
+                                                    field_first,
+                                                    vector_len<i64>(&*field_name_starts)
+                                                ) == 0:
+                                                    -1:
+                                                        discard vector_push<i64>(
+                                                            field_name_starts,
+                                                            generic_token_start(tokens, field_cursor)
+                                                        )
+                                                        discard vector_push<i64>(
+                                                            field_name_ends,
+                                                            generic_token_end(tokens, field_cursor)
+                                                        )
+                                                        discard vector_push<i64>(
+                                                            field_type_codes,
+                                                            parsed_type.type_code
+                                                        )
+                                                        field_count = field_count + 1
+                                                    0:
+                                                        valid = 0
+                                                    1:
+                                                        valid = 0
+                                                field_cursor = next_field_cursor
+                                            0:
+                                                valid = 0
+                                            1:
+                                                valid = 0
+                                    0:
+                                        valid = 0
+                                    1:
+                                        valid = 0
+                            0:
+                                valid = 0
+                            1:
+                                valid = 0
+                    0:
+                        valid = 0
+                    1:
+                        valid = 0
+            1:
+                valid = 0
+        match valid == 0:
+            -1:
+                field_cursor = body_end
+            0:
+                discard 0
+            1:
+                discard 0
+    match valid == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_nominal_record_scan_failure(record_cursor, 41)
+        1:
+            return stage1_nominal_record_scan_failure(record_cursor, 41)
+    match field_count > 0:
+        -1:
+            discard 0
+        0:
+            return stage1_nominal_record_scan_failure(record_cursor, 41)
+        1:
+            return stage1_nominal_record_scan_failure(record_cursor, 41)
+    mut type_id: i64 = vector_len<i64>(&*type_ids)
+    discard vector_push<i64>(type_name_starts, name_start)
+    discard vector_push<i64>(type_name_ends, name_end)
+    discard vector_push<i64>(type_ids, type_id)
+    discard vector_push<i64>(field_firsts, field_first)
+    discard vector_push<i64>(field_counts, field_count)
+    return Stage1NominalRecordScan(
+        next_cursor=body_end,
+        accepted=1,
+        error_code=0
+    )
+
+export fn stage1_nominal_type_registry(
+    source: &vector<i64>, tokens: &vector<i64>
+) -> Stage1NominalRegistry:
+    mut type_name_starts: vector<i64> = vector_new<i64>(16)
+    mut type_name_ends: vector<i64> = vector_new<i64>(16)
+    mut type_ids: vector<i64> = vector_new<i64>(16)
+    mut field_firsts: vector<i64> = vector_new<i64>(16)
+    mut field_counts: vector<i64> = vector_new<i64>(16)
+    mut field_name_starts: vector<i64> = vector_new<i64>(64)
+    mut field_name_ends: vector<i64> = vector_new<i64>(64)
+    mut field_type_codes: vector<i64> = vector_new<i64>(64)
+    mut token_count: i64 = generic_token_count(tokens)
+    mut cursor: i64 = 0
+    while cursor < token_count:
+        mut indent: i64 = generic_native_parser_program_indent(
+            source, generic_token_start(tokens, cursor)
+        )
+        match indent == 0:
+            -1:
+                match stage1_nominal_declaration_start(
+                    source, tokens, cursor
+                ) == 1:
+                    -1:
+                        match stage1_source_name_is_record(
+                            source,
+                            generic_token_start(tokens, cursor),
+                            generic_token_end(tokens, cursor)
+                        ) == 1:
+                            -1:
+                                mut parsed: Stage1NominalRecordScan = stage1_nominal_registry_append_record(
+                                    &mut type_name_starts,
+                                    &mut type_name_ends,
+                                    &mut type_ids,
+                                    &mut field_firsts,
+                                    &mut field_counts,
+                                    &mut field_name_starts,
+                                    &mut field_name_ends,
+                                    &mut field_type_codes,
+                                    source,
+                                    tokens,
+                                    cursor
+                                )
+                                match parsed.accepted == 1:
+                                    -1:
+                                        cursor = parsed.next_cursor
+                                    0:
+                                        return stage1_nominal_registry_state(
+                                            type_name_starts,
+                                            type_name_ends,
+                                            type_ids,
+                                            field_firsts,
+                                            field_counts,
+                                            field_name_starts,
+                                            field_name_ends,
+                                            field_type_codes,
+                                            parsed.next_cursor,
+                                            0,
+                                            parsed.error_code
+                                        )
+                                    1:
+                                        return stage1_nominal_registry_state(
+                                            type_name_starts,
+                                            type_name_ends,
+                                            type_ids,
+                                            field_firsts,
+                                            field_counts,
+                                            field_name_starts,
+                                            field_name_ends,
+                                            field_type_codes,
+                                            parsed.next_cursor,
+                                            0,
+                                            parsed.error_code
+                                        )
+                            0:
+                                cursor = cursor + 1
+                            1:
+                                cursor = cursor + 1
+                    0:
+                        cursor = cursor + 1
+                    1:
+                        cursor = cursor + 1
+            0:
+                cursor = cursor + 1
+            1:
+                cursor = cursor + 1
+    return stage1_nominal_registry_state(
+        type_name_starts,
+        type_name_ends,
+        type_ids,
+        field_firsts,
+        field_counts,
+        field_name_starts,
+        field_name_ends,
+        field_type_codes,
+        token_count,
+        1,
+        0
+    )
+
 fn stage1_scan_non_newline(
     initial_state: Stage1FunctionScanState,
     source: &vector<i64>,
@@ -8081,19 +8954,46 @@ fn stage1_scan_non_newline(
     token_count: i64,
     cursor: i64
 ) -> Stage1FunctionScanState:
-    match stage1_source_name_is_export(
+    match stage1_source_name_is_record(
         source,
         generic_token_start(tokens, cursor),
         generic_token_end(tokens, cursor)
     ) == 1:
         -1:
-            return stage1_scan_functions(
-                initial_state, source, tokens, token_count, cursor + 1
+            mut record_body_end: i64 = stage1_function_body_end(
+                source, tokens, cursor + 4
             )
+            match record_body_end >= 0:
+                -1:
+                    return stage1_scan_functions(
+                        initial_state, source, tokens, token_count, record_body_end
+                    )
+                0:
+                    return stage1_scan_non_newline_core(
+                        initial_state, source, tokens, token_count, cursor
+                    )
+                1:
+                    return stage1_scan_non_newline_core(
+                        initial_state, source, tokens, token_count, cursor
+                    )
         0:
-            return stage1_scan_non_newline_core(
-                initial_state, source, tokens, token_count, cursor
-            )
+            match stage1_source_name_is_export(
+                source,
+                generic_token_start(tokens, cursor),
+                generic_token_end(tokens, cursor)
+            ) == 1:
+                -1:
+                    return stage1_scan_functions(
+                        initial_state, source, tokens, token_count, cursor + 1
+                    )
+                0:
+                    return stage1_scan_non_newline_core(
+                        initial_state, source, tokens, token_count, cursor
+                    )
+                1:
+                    return stage1_scan_non_newline_core(
+                        initial_state, source, tokens, token_count, cursor
+                    )
         1:
             return stage1_scan_non_newline_core(
                 initial_state, source, tokens, token_count, cursor
@@ -8157,6 +9057,16 @@ export fn stage1_compile(source: vector<i64>) -> Stage1CompileResult:
             return stage1_empty_result(2, 2)
         1:
             return stage1_empty_result(2, 2)
+    mut nominal_registry: Stage1NominalRegistry = stage1_nominal_type_registry(
+        &source, &tokens
+    )
+    match nominal_registry.accepted == 1:
+        -1:
+            discard 0
+        0:
+            return stage1_empty_result(3, 40 + nominal_registry.error_code)
+        1:
+            return stage1_empty_result(3, 40 + nominal_registry.error_code)
     mut initial_scan_state: Stage1FunctionScanState = stage1_function_scan_state(
         native_ir_empty(),
         vector_new<i64>(16),
