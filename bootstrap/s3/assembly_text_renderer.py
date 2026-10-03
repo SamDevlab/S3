@@ -11,7 +11,7 @@ from bootstrap.s3.static_text import (
 )
 
 
-DEFAULT_ASSEMBLY_TEXT_VERSION = "0.6.0"
+DEFAULT_ASSEMBLY_TEXT_VERSION = "0.7.0"
 AssemblyTextOperand = int | str
 
 
@@ -72,10 +72,22 @@ class AssemblyTextRenderer:
         self,
         register: int,
         type_name: str,
+        *,
+        reference_target: str | None = None,
+        reference_mutable: bool = False,
+        reference_is_slice: bool = False,
     ) -> AssemblyTextRenderer:
+        fields = [f"r{_register_number(register)}", _line_fragment(type_name, "parameter type")]
+        if reference_target is not None:
+            fields.extend(
+                (
+                    _line_fragment(reference_target, "reference target type"),
+                    "mutable" if reference_mutable else "immutable",
+                    "slice" if reference_is_slice else "value",
+                )
+            )
         self._emitter.emit_line(
-            f".param r{_register_number(register)}, "
-            f"{_line_fragment(type_name, 'parameter type')}",
+            ".param " + ", ".join(fields),
             indent=1,
         )
         return self

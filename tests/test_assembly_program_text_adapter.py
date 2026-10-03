@@ -365,7 +365,7 @@ def test_render_supported_program_matches_first_fixture_outputs() -> None:
     assert document.line_count == 16
     assert (
         document.sha256
-        == "31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316"
+        == "d50d859255b8b5cffff19b1806346cb3172ef160715e1aa6797382c8ff230804"
     )
     assert "\r\n" not in document.text
     assert b"\r\n" not in document.utf8_bytes
@@ -383,7 +383,7 @@ def test_render_supported_program_matches_simple_call_fixture_outputs() -> None:
     assert document.line_count == 21
     assert (
         document.sha256
-        == "a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b"
+        == "63760cea3c47f413a17fe2b4834cd929ac3909e8f34fd80685b003d272ce55e7"
     )
     assert "\r\n" not in document.text
     assert b"\r\n" not in document.utf8_bytes
@@ -401,7 +401,7 @@ def test_render_supported_program_matches_sign_fixture_outputs() -> None:
     assert document.line_count == 32
     assert (
         document.sha256
-        == "3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b"
+        == "5f3e9329782012bccfcbf9e1d005b7b7c5c3739ccee9e35f558d9422e1b49caf"
     )
     assert "\r\n" not in document.text
     assert b"\r\n" not in document.utf8_bytes
@@ -471,8 +471,8 @@ def test_render_sign_program_delegates_to_supported_program(
 def test_render_supported_program_preserves_program_without_functions() -> None:
     document = render_supported_program(AssemblyProgram(()))
 
-    assert document.text == ".s3asm 0.6.0\n\n\n"
-    assert document.utf8_bytes == b".s3asm 0.6.0\n\n\n"
+    assert document.text == ".s3asm 0.7.0\n\n\n"
+    assert document.utf8_bytes == b".s3asm 0.7.0\n\n\n"
     assert document.text.endswith("\n")
 
 
@@ -512,7 +512,7 @@ def test_render_supported_program_renders_memory_objects() -> None:
 
     assert (
         document.text
-        == ".s3asm 0.6.0\n"
+        == ".s3asm 0.7.0\n"
         "\n"
         ".function main -> tryte\n"
         "    .register r0, tryte\n"
@@ -540,7 +540,7 @@ def test_render_supported_program_preserves_empty_blocks() -> None:
 
     assert (
         document.text
-        == ".s3asm 0.6.0\n"
+        == ".s3asm 0.7.0\n"
         "\n"
         ".function main -> tryte\n"
         ".label entry\n"
@@ -612,7 +612,7 @@ def test_render_supported_program_covers_current_instruction_forms_without_sourc
     program = parse_assembly(source)
     document = render_supported_program(program)
 
-    assert document.text == source
+    assert document.text == source.replace(".s3asm 0.6.0", ".s3asm 0.7.0", 1)
     assert b"\r\n" not in document.utf8_bytes
     assert document.utf8_bytes.endswith(b"\n")
 
@@ -688,7 +688,7 @@ def test_render_first_program_matches_lf_normalized_inspect_golden() -> None:
     assert document.line_count == 16
     assert (
         document.sha256
-        == "31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316"
+        == "d50d859255b8b5cffff19b1806346cb3172ef160715e1aa6797382c8ff230804"
     )
     assert document.sha256 == hashlib.sha256(expected).hexdigest()
     assert document.text.endswith("\n")
@@ -770,7 +770,7 @@ def test_render_simple_call_program_matches_lf_normalized_inspect_golden() -> No
     assert document.line_count == 21
     assert (
         document.sha256
-        == "a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b"
+        == "63760cea3c47f413a17fe2b4834cd929ac3909e8f34fd80685b003d272ce55e7"
     )
     assert document.sha256 == hashlib.sha256(expected).hexdigest()
     assert document.text.endswith("\n")
@@ -835,7 +835,7 @@ def test_render_sign_program_matches_lf_normalized_inspect_golden() -> None:
     assert document.line_count == 32
     assert (
         document.sha256
-        == "3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b"
+        == "5f3e9329782012bccfcbf9e1d005b7b7c5c3739ccee9e35f558d9422e1b49caf"
     )
     assert document.sha256 == hashlib.sha256(expected).hexdigest()
     assert document.text.endswith("\n")

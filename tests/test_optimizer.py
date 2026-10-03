@@ -337,7 +337,7 @@ def test_cli_accepts_o1_for_asm_run_and_native_asm(
     assert cli_main(["asm", str(source), "-O1"]) == 0
     assembly_output = capsys.readouterr()
     assert assembly_output.err == ""
-    assert assembly_output.out.startswith(".s3asm 0.6.0\n")
+    assert assembly_output.out.startswith(".s3asm 0.7.0\n")
     assert "TADD" not in assembly_output.out
 
     assert cli_main(["run", str(source), "-O1"]) == 0

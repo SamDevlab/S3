@@ -4,7 +4,7 @@ import unittest
 from tools.s3_renderer_contract import (
     FIXTURE_METADATA,
     _capture_fixture_output,
-    _git_blob_bytes,
+    _golden_file_bytes,
 )
 
 EXPECTED_SHA256 = FIXTURE_METADATA["first"].expected_sha256
@@ -23,7 +23,7 @@ class TestFirstTextRenderer(unittest.TestCase):
         sha256 = hashlib.sha256(output).hexdigest()
         self.assertEqual(sha256, EXPECTED_SHA256)
 
-        golden = _git_blob_bytes(meta.golden_path)
+        golden = _golden_file_bytes(meta.golden_path)
 
         self.assertEqual(len(output), len(golden))
         self.assertEqual(output, golden)
@@ -31,7 +31,7 @@ class TestFirstTextRenderer(unittest.TestCase):
     def test_expected_sha256_constant(self):
         self.assertEqual(
             EXPECTED_SHA256,
-            "31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316",
+            "d50d859255b8b5cffff19b1806346cb3172ef160715e1aa6797382c8ff230804",
         )
 
     def test_expected_bytes_constant(self):

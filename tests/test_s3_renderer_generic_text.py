@@ -8,7 +8,7 @@ from collections import Counter
 from tools.s3_renderer_contract import (
     FIXTURE_METADATA,
     _capture_fixture_output,
-    _git_blob_bytes,
+    _golden_file_bytes,
 )
 
 
@@ -156,7 +156,7 @@ class TestGenericFirstStructure(unittest.TestCase):
         cls.events = _event_plan(cls.source, "first")
         cls.fragments = _text_table(cls.source, "fragment")
         cls.rendered = _reconstruct_bytes(cls.source, cls.events)
-        cls.golden = _git_blob_bytes(cls.meta.golden_path)
+        cls.golden = _golden_file_bytes(cls.meta.golden_path)
 
     def test_structure_class_does_not_call_vm_helpers(self):
         forbidden = (
@@ -280,7 +280,7 @@ class TestGenericFirstExecution(unittest.TestCase):
             cls.meta.max_instructions,
             cls.meta.expected_bytes,
         )
-        cls.golden = _git_blob_bytes(cls.meta.golden_path)
+        cls.golden = _golden_file_bytes(cls.meta.golden_path)
         legacy_meta = FIXTURE_METADATA["first"]
         legacy_source = _read_source("first")
         cls.legacy = _capture_fixture_output(

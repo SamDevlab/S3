@@ -1,5 +1,5 @@
 {
-  "assembly_format_version": "0.6.0",
+  "assembly_format_version": "0.7.0",
   "directives": [
     ".end",
     ".function",

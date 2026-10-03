@@ -35,7 +35,7 @@ def test_sign_fixture_output_probe_matches_lf_normalized_inspect_golden() -> Non
     assert document.sha256 == hashlib.sha256(expected).hexdigest()
     assert (
         document.sha256
-        == "3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b"
+        == "5f3e9329782012bccfcbf9e1d005b7b7c5c3739ccee9e35f558d9422e1b49caf"
     )
     assert document.text.endswith("\n")
     assert document.utf8_bytes.endswith(b"\n")
@@ -57,7 +57,7 @@ def test_sign_fixture_actual_output_matches_probe_and_golden() -> None:
     assert len(actual.decode("utf-8").splitlines()) == 32
     assert (
         hashlib.sha256(actual).hexdigest()
-        == "3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b"
+        == "5f3e9329782012bccfcbf9e1d005b7b7c5c3739ccee9e35f558d9422e1b49caf"
     )
     assert b"\r\n" not in actual
     assert actual.endswith(b"\n")

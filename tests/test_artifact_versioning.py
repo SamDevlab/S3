@@ -7,9 +7,11 @@ import pytest
 
 from bootstrap.s3.assembly import (
     ASSEMBLY_FORMAT_VERSION,
+    AssemblyType,
     AssemblyParseError,
     parse_assembly,
 )
+from bootstrap.s3.assembly_verifier import AssemblyVerifier
 from bootstrap.s3.emulator import execute_assembly
 from bootstrap.s3.ir_serialization import (
     IR_FORMAT_VERSION,
@@ -20,7 +22,8 @@ from bootstrap.s3.ir_serialization import (
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.cli import main as cli_main
 from bootstrap.s3.lexer import SyntaxMode
-from bootstrap.s3.pipeline import compile_source
+from bootstrap.s3.pipeline import compile_source, run_source
+from bootstrap.s3.backends.x86_64.backend import X8664Backend
 
 
 ROOT = Path(__file__).parents[1]
@@ -49,7 +52,7 @@ def test_generated_assembly_is_versioned_and_round_trips() -> None:
 def test_legacy_assembly_is_normalized_to_current_version() -> None:
     program = parse_assembly(_legacy_assembly())
     assert program.version == ASSEMBLY_FORMAT_VERSION
-    assert program.render().startswith(".s3asm 0.6.0\n")
+    assert program.render().startswith(f".s3asm {ASSEMBLY_FORMAT_VERSION}\n")
     instruction = program.functions[0].blocks[0].instructions[0]
     assert instruction.source is not None
     assert instruction.source.to_dict() == {
@@ -64,7 +67,7 @@ def test_legacy_assembly_is_normalized_to_current_version() -> None:
     ("header", "message"),
     (
         (".s3asm 1.0.0", "incompatible S3 Assembly major version"),
-        (".s3asm 0.7.0", "unknown S3 Assembly version"),
+        (".s3asm 0.8.0", "unknown S3 Assembly version"),
         (".s3asm next", "invalid .s3asm version"),
         (".s3asm 0.5", "invalid .s3asm version"),
     ),
@@ -88,7 +91,63 @@ def test_existing_normative_assembly_remains_executable() -> None:
     )
     assert normative.startswith(".s3asm 0.5.0\n")
     assert execute_assembly(normative) == 10
-    assert parse_assembly(normative).render().startswith(".s3asm 0.6.0\n")
+    assert parse_assembly(normative).render().startswith(
+        f".s3asm {ASSEMBLY_FORMAT_VERSION}\n"
+    )
+
+
+def test_reference_vector_parameter_round_trips_and_reaches_native_backend() -> None:
+    source = """\
+fn first(view: &vector<i64>) -> i64:
+    return vector_get<i64>(view, 0)
+
+fn main() -> i64:
+    mut values: vector<i64> = vector_new<i64>(1)
+    discard vector_push<i64>(&mut values, 73)
+    return first(&values)
+"""
+    program = compile_source(source).assembly
+    rendered = program.render()
+
+    assert rendered.startswith(".s3asm 0.7.0\n")
+    assert ".param r0, reference, vector, immutable, value\n" in rendered
+    assert ".register r" in rendered and ", vector\n" in rendered
+
+    restored = parse_assembly(rendered)
+    parameter = restored.functions[0].parameters[0]
+    assert parameter.type is AssemblyType.REFERENCE
+    assert parameter.reference_target is AssemblyType.VECTOR
+    assert parameter.reference_mutable is False
+    assert parameter.reference_is_slice is False
+    address_metadata = {
+        (
+            instruction.reference_target,
+            instruction.reference_mutable,
+            instruction.reference_is_slice,
+        )
+        for instruction in restored.functions[1].instructions
+        if instruction.opcode.value == "TADDR"
+    }
+    assert address_metadata == {
+        (AssemblyType.VECTOR, True, False),
+        (AssemblyType.VECTOR, False, False),
+    }
+    AssemblyVerifier().validate(restored)
+    assert X8664Backend().generate(restored)
+    assert run_source(source) == 73
+
+
+def test_typed_reference_parameter_metadata_is_rejected_in_legacy_assembly() -> None:
+    text = """\
+.s3asm 0.6.0
+.function get -> i64
+    .param r0, reference, vector, immutable, value
+.label entry
+    TRET r0
+.end
+"""
+    with pytest.raises(AssemblyParseError, match="requires Assembly 0.7.0"):
+        parse_assembly(text)
 
 
 @pytest.mark.parametrize(

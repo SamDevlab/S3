@@ -9,7 +9,7 @@ from collections import Counter
 from tools.s3_renderer_contract import (
     FIXTURE_METADATA,
     _capture_fixture_output,
-    _git_blob_bytes,
+    _golden_file_bytes,
     flatten_capture,
 )
 
@@ -176,7 +176,7 @@ class TestGenericSignStructure(unittest.TestCase):
         cls.symbols = _text_table(cls.source, "symbol")
         cls.opcodes = _text_table(cls.source, "opcode")
         cls.rendered = _reconstruct_bytes(cls.source, cls.events)
-        cls.golden = _git_blob_bytes(cls.meta.golden_path)
+        cls.golden = _golden_file_bytes(cls.meta.golden_path)
 
     def test_structure_class_does_not_call_vm_helpers(self):
         forbidden = (
@@ -372,7 +372,7 @@ class TestGenericSignExecution(unittest.TestCase):
             legacy_meta.max_instructions,
             legacy_meta.expected_bytes,
         )
-        cls.golden = _git_blob_bytes(cls.meta.golden_path)
+        cls.golden = _golden_file_bytes(cls.meta.golden_path)
 
     def test_execution_returns_zero(self):
         self.assertEqual(self.result, 0)

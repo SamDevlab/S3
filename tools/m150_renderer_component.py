@@ -12,7 +12,7 @@ from bootstrap.s3.compilation_context import CompilationContext
 from bootstrap.s3.pipeline import CompilationResult, _compile_source_with_context, compile_source
 from bootstrap.s3.optimizer import OptimizationLevel
 from bootstrap.s3.backends.registry import create_builtin_backend_registry
-from tools.s3_renderer_contract import FIXTURE_METADATA, _git_blob_bytes, flatten_capture
+from tools.s3_renderer_contract import FIXTURE_METADATA, _golden_file_bytes, flatten_capture
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -140,7 +140,7 @@ def check_component() -> dict[str, object]:
     compilation_cache: dict[tuple[str, str, str, str, str], CompilationResult] = {}
     for entry in ENTRY_METADATA:
         metadata = FIXTURE_METADATA[ENTRY_METADATA[entry]]
-        reference = _git_blob_bytes(metadata.golden_path)
+        reference = _golden_file_bytes(metadata.golden_path)
         o0 = _run(entry, OptimizationLevel.O0, compilation_cache)
         o1 = _run(entry, OptimizationLevel.O1, compilation_cache)
         if o0.output != reference:

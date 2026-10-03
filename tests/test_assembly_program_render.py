@@ -54,4 +54,4 @@ def test_assembly_program_render_matches_supported_path_for_inspect_goldens() ->
 
 
 def test_assembly_program_render_preserves_empty_program_output() -> None:
-    assert AssemblyProgram(()).render() == ".s3asm 0.6.0\n\n\n"
+    assert AssemblyProgram(()).render() == ".s3asm 0.7.0\n\n\n"

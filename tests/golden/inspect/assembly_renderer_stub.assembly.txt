@@ -1,4 +1,4 @@
-.s3asm 0.6.0
+.s3asm 0.7.0
 
 .function renderer_supported_directive_count -> tryte
     .register r0, tryte

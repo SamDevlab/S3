@@ -107,6 +107,14 @@ _COMPARISON_PROGRAM_SOURCE = (
     "        a = a + 1\n"
     "    return a\n"
 )
+_NAME_DIGEST_MODULUS = 1_000_000_000_039
+
+
+def _bounded_name_digest(source: str, start: int, end: int) -> int:
+    digest = 0
+    for unit in source[start:end].encode("utf-8"):
+        digest = (digest * 31 + unit) % _NAME_DIGEST_MODULUS
+    return digest
 
 
 def _candidate_source(case_id: int) -> str:
@@ -208,6 +216,96 @@ def _candidate_comparison_program_parser_source() -> str:
     )
 
 
+def _candidate_generic_call_parser_source(
+    expression: str, *, read_operator: bool = False
+) -> str:
+    repository = Path(__file__).parents[1]
+    substrate = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    encoded = expression.encode("ascii")
+    lines = [
+        "fn main() -> i64:",
+        f"    mut source: vector<i64> = vector_new<i64>({len(encoded)})",
+    ]
+    root_result = (
+        "generic_expression_node_operator(&tree, node)"
+        if read_operator
+        else "generic_expression_node_kind(&tree, node) * 100 + generic_expression_node_value(&tree, node)"
+    )
+    lines.extend(
+        f"    discard vector_push<i64>(&mut source, {byte})"
+        for byte in encoded
+    )
+    lines.extend(
+        (
+            "    mut tokens: vector<i64> = generic_lexer_scan(&source)",
+            "    mut tree: vector<i64> = generic_native_parser_parse_expression(&source, &tokens, 0, 0)",
+            "    mut packed: i64 = generic_expression_packed_result(&tree)",
+            "    match packed >= 0:",
+            "        -1:",
+            "            mut node: i64 = generic_native_parser_packed_node(packed)",
+            f"            return {root_result}",
+            "        0:",
+            "            return -1",
+            "        1:",
+            "            return -1",
+        )
+    )
+    return substrate + "\n" + "\n".join(lines) + "\n"
+
+
+def _candidate_expression_tree_probe_source(
+    expression: str, checks: tuple[str, ...]
+) -> str:
+    repository = Path(__file__).parents[1]
+    substrate = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    encoded = expression.encode("ascii")
+    lines = [
+        "fn main() -> i64:",
+        f"    mut source: vector<i64> = vector_new<i64>({len(encoded)})",
+    ]
+    lines.extend(
+        f"    discard vector_push<i64>(&mut source, {byte})"
+        for byte in encoded
+    )
+    lines.extend(
+        (
+            "    mut tokens: vector<i64> = generic_lexer_scan(&source)",
+            "    mut tree: vector<i64> = generic_native_parser_parse_expression(&source, &tokens, 0, 0)",
+            "    mut packed: i64 = generic_expression_packed_result(&tree)",
+            "    match packed >= 0:",
+            "        -1:",
+            "            mut root: i64 = generic_native_parser_packed_node(packed)",
+            "            mut score: i64 = 0",
+        )
+    )
+    for condition in checks:
+        lines.extend(
+            (
+                f"            match {condition}:",
+                "                -1:",
+                "                    score = score + 1",
+                "                0:",
+                "                    discard 0",
+                "                1:",
+                "                    discard 0",
+            )
+        )
+    lines.extend(
+        (
+            "            return score",
+            "        0:",
+            "            return -1",
+            "        1:",
+            "            return -1",
+        )
+    )
+    return substrate + "\n" + "\n".join(lines) + "\n"
+
+
 def _independent_digest(source: str) -> int:
     arena = TokenArena.from_source_independent(
         source,
@@ -245,9 +343,9 @@ def _independent_parser_digest(source: str) -> int:
         for _, token in tokens.tokens.items()
         if token.kind is TokenKind.IDENTIFIER and token.text != "i64"
     )
-    name_digest = 0
-    for unit in source[name_token.span.start:name_token.span.end].encode("utf-8"):
-        name_digest = name_digest * 31 + unit
+    name_digest = _bounded_name_digest(
+        source, name_token.span.start, name_token.span.end
+    )
     native_token_count = len(tokens) - sum(
         token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
         for _, token in tokens.tokens.items()
@@ -303,9 +401,9 @@ def _independent_binary_parser_digest(source: str) -> int:
         for _, token in tokens.tokens.items()
         if token.kind is TokenKind.IDENTIFIER and token.text != "i64"
     )
-    name_digest = 0
-    for unit in source[name_token.span.start:name_token.span.end].encode("utf-8"):
-        name_digest = name_digest * 31 + unit
+    name_digest = _bounded_name_digest(
+        source, name_token.span.start, name_token.span.end
+    )
     native_token_count = len(tokens) - sum(
         token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
         for _, token in tokens.tokens.items()
@@ -344,9 +442,7 @@ def _independent_identifier_parser_digest(source: str) -> int:
             assert isinstance(payload, IntegerPayload)
             return digest + payload.value * 109
         if node.kind is NodeKind.IDENTIFIER:
-            name_digest = 0
-            for unit in source[node.span.start:node.span.end].encode("utf-8"):
-                name_digest = name_digest * 31 + unit
+            name_digest = _bounded_name_digest(source, node.span.start, node.span.end)
             return digest + name_digest * 109
         assert node.kind is NodeKind.BINARY
         children = arena.child_ids(node.id)
@@ -365,9 +461,9 @@ def _independent_identifier_parser_digest(source: str) -> int:
         for _, token in tokens.tokens.items()
         if token.kind is TokenKind.IDENTIFIER and token.text != "i64"
     )
-    name_digest = 0
-    for unit in source[name_token.span.start:name_token.span.end].encode("utf-8"):
-        name_digest = name_digest * 31 + unit
+    name_digest = _bounded_name_digest(
+        source, name_token.span.start, name_token.span.end
+    )
     native_token_count = len(tokens) - sum(
         token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
         for _, token in tokens.tokens.items()
@@ -397,9 +493,7 @@ def _sequence_tree_digest(arena, source: str, node_id: int) -> int:
         assert isinstance(payload, IntegerPayload)
         return digest + payload.value * 109
     if node.kind is NodeKind.IDENTIFIER:
-        name_digest = 0
-        for unit in source[node.span.start:node.span.end].encode("utf-8"):
-            name_digest = name_digest * 31 + unit
+        name_digest = _bounded_name_digest(source, node.span.start, node.span.end)
         return digest + name_digest * 109
     assert node.kind is NodeKind.BINARY
     children = arena.child_ids(node.id)
@@ -437,9 +531,9 @@ def _independent_sequence_parser_digest(source: str) -> int:
         for _, token in tokens.tokens.items()
         if token.kind is TokenKind.IDENTIFIER and token.text != "i64"
     )
-    name_digest = 0
-    for unit in source[name_token.span.start:name_token.span.end].encode("utf-8"):
-        name_digest = name_digest * 31 + unit
+    name_digest = _bounded_name_digest(
+        source, name_token.span.start, name_token.span.end
+    )
     native_token_count = len(tokens) - sum(
         token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
         for _, token in tokens.tokens.items()
@@ -457,10 +551,7 @@ def _independent_sequence_parser_digest(source: str) -> int:
 
 
 def _program_name_digest(source: str, start: int, end: int) -> int:
-    digest = 0
-    for unit in source[start:end].encode("utf-8"):
-        digest = digest * 31 + unit
-    return digest
+    return _bounded_name_digest(source, start, end)
 
 
 def _program_identifier_token(source: str, start: int, end: int):
@@ -760,6 +851,119 @@ def test_native_parser_minimal_function_matches_independent_syntax_oracle(
 @pytest.mark.parametrize("case_id", (2, 3))
 def test_native_parser_minimal_function_rejects_malformed_input(case_id: int) -> None:
     assert run_source(_candidate_parser_source(case_id)) == -1
+
+
+@pytest.mark.parametrize(
+    ("expression", "expected"),
+    (
+        ("vector_get<i64>(view, 0)", 402),
+        ("vector_get<f64>(view, 0)", 403),
+        ("vector_get(view, 0)", 400),
+        ("left < right", 200),
+    ),
+)
+def test_native_expression_parser_preserves_generic_call_type_argument(
+    expression: str,
+    expected: int,
+) -> None:
+    assert run_source(_candidate_generic_call_parser_source(expression)) == expected
+
+
+def test_native_expression_parser_preserves_subtraction_operator() -> None:
+    assert (
+        run_source(
+            _candidate_generic_call_parser_source(
+                "left - right", read_operator=True
+            )
+        )
+        == 2
+    )
+
+
+def test_native_expression_parser_builds_nominal_record_and_field_access_nodes() -> None:
+    expression = "Point(x=1, y=2).x"
+    first_field_start = expression.index("x")
+    second_field_start = expression.index("y")
+    access_field_start = expression.rindex("x")
+    checks = (
+        "generic_expression_node_kind(&tree, root) == 9",
+        "generic_expression_node_start(&tree, root) == 0",
+        f"generic_expression_node_end(&tree, root) == {len(expression)}",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, root)) == 8",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, root)) == 3",
+        f"generic_expression_node_start(&tree, generic_expression_node_right(&tree, root)) == {access_field_start}",
+        f"generic_expression_node_end(&tree, generic_expression_node_right(&tree, root)) == {access_field_start + 1}",
+        "generic_expression_node_operator(&tree, generic_expression_node_left(&tree, root)) == 2",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, generic_expression_node_left(&tree, root))) == 3",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root))) == 7",
+        f"generic_expression_node_start(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root))) == {first_field_start}",
+        f"generic_expression_node_end(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root))) == {first_field_start + 1}",
+        "generic_expression_node_value(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root)))) == 1",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root)))) == 7",
+        f"generic_expression_node_start(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root)))) == {second_field_start}",
+        "generic_expression_node_value(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root))))) == 2",
+        "generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root)))) == -1",
+    )
+    assert run_source(
+        _candidate_expression_tree_probe_source(expression, checks)
+    ) == len(checks)
+
+
+def test_native_expression_parser_preserves_nested_nominal_and_postfix_order() -> None:
+    expression = "Outer(inner=Inner(value=3)).inner.value"
+    checks = (
+        "generic_expression_node_kind(&tree, root) == 9",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, root)) == 9",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, generic_expression_node_left(&tree, root))) == 8",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, generic_expression_node_left(&tree, root))))) == 8",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root))) == 3",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, root)) == 3",
+        "generic_expression_node_value(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, generic_expression_node_left(&tree, root))))))) == 3",
+    )
+    assert run_source(
+        _candidate_expression_tree_probe_source(expression, checks)
+    ) == len(checks)
+
+
+def test_native_expression_parser_keeps_positional_calls_and_rejects_mixed_record_fields() -> None:
+    positional_checks = (
+        "generic_expression_node_kind(&tree, root) == 4",
+        "generic_expression_node_operator(&tree, root) == 2",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, root)) == 3",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, root)) == 5",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, root))) == 5",
+        "generic_expression_node_value(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, root))) == 1",
+        "generic_expression_node_value(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, root)))) == 2",
+        "generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, root))) == -1",
+    )
+    assert run_source(
+        _candidate_expression_tree_probe_source("consume(1, 2)", positional_checks)
+    ) == len(positional_checks)
+    comparison_checks = (
+        "generic_expression_node_kind(&tree, root) == 4",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, root)) == 5",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, root))) == 2",
+        "generic_expression_node_operator(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, root))) == 13",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, root)))) == 3",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, root)))) == 3",
+    )
+    assert run_source(
+        _candidate_expression_tree_probe_source(
+            "consume(left == right)", comparison_checks
+        )
+    ) == len(comparison_checks)
+    assert run_source(
+        _candidate_generic_call_parser_source("Point(x=1, 2)")
+    ) == -1
+    assert run_source(
+        _candidate_generic_call_parser_source("Point(x=1).")
+    ) == -1
+
+
+def test_native_expression_parser_bounds_long_identifier_digest() -> None:
+    name = "stage1_emission_value_count"
+    expected = 300 + _bounded_name_digest(name, 0, len(name))
+    assert run_source(_candidate_generic_call_parser_source(name)) == expected
 
 
 @pytest.mark.parametrize(

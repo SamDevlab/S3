@@ -1,17 +1,170 @@
 module selfhost.substrate.output_sink
 
-record OutputSinkState:
-    buffer: bytes
+export record OutputSinkState:
+    buffer: vector<i64>
     limit: i64
     committed: i64
+    failed: trit
 
-record CompileResult:
+export record CompileResult:
     success: trit
     error_code: i64
     source_file_id: i64
     source_start: i64
     source_end: i64
     output_length: i64
+
+export fn output_sink_new(limit: i64) -> OutputSinkState:
+    mut effective_limit: i64 = limit
+    mut failed: trit = 0
+    match limit <=> 0:
+        -1:
+            failed = 1
+        0:
+            discard 0
+        1:
+            discard 0
+    match limit <=> 0:
+        -1:
+            effective_limit = 0
+        0:
+            effective_limit = 0
+        1:
+            effective_limit = limit
+    return OutputSinkState(
+        buffer=vector_new<i64>(effective_limit),
+        limit=effective_limit,
+        committed=0,
+        failed=failed
+    )
+
+export fn output_sink_append(sink: OutputSinkState, byte: i64) -> OutputSinkState:
+    mut limit: i64 = sink.limit
+    mut committed: i64 = sink.committed
+    mut failed: trit = sink.failed
+    mut buffer: vector<i64> = sink.buffer
+    match failed == 0:
+        -1:
+            match byte <=> 0:
+                -1:
+                    failed = 1
+                0:
+                    match byte <= 127:
+                        -1:
+                            match vector_len<i64>(&buffer) < limit:
+                                -1:
+                                    discard vector_push<i64>(&mut buffer, byte)
+                                0:
+                                    failed = 1
+                                1:
+                                    failed = 1
+                        0:
+                            failed = 1
+                        1:
+                            failed = 1
+                1:
+                    match byte <= 127:
+                        -1:
+                            match vector_len<i64>(&buffer) < limit:
+                                -1:
+                                    discard vector_push<i64>(&mut buffer, byte)
+                                0:
+                                    failed = 1
+                                1:
+                                    failed = 1
+                        0:
+                            failed = 1
+                        1:
+                            failed = 1
+        0:
+            discard 0
+        1:
+            discard 0
+    return OutputSinkState(buffer=buffer, limit=limit, committed=committed, failed=failed)
+
+export fn output_sink_append_bytes(sink: OutputSinkState, bytes: vector<i64>) -> OutputSinkState:
+    mut original_length: i64 = vector_len<i64>(&sink.buffer)
+    mut byte_count: i64 = vector_len<i64>(&bytes)
+    mut accepted: i64 = 1
+    match sink.failed == 0:
+        -1:
+            discard 0
+        0:
+            accepted = 0
+        1:
+            accepted = 0
+    match sink.committed == 0:
+        -1:
+            discard 0
+        0:
+            accepted = 0
+        1:
+            accepted = 0
+    match original_length + byte_count <= sink.limit:
+        -1:
+            discard 0
+        0:
+            accepted = 0
+        1:
+            accepted = 0
+    mut index: i64 = 0
+    while index < byte_count:
+        mut byte: i64 = vector_get<i64>(&bytes, index)
+        match byte < 0:
+            -1:
+                accepted = 0
+            0:
+                discard 0
+            1:
+                discard 0
+        match byte > 127:
+            -1:
+                accepted = 0
+            0:
+                discard 0
+            1:
+                discard 0
+        index = index + 1
+    mut target_length: i64 = original_length + byte_count * accepted
+    mut buffer: vector<i64> = vector_new<i64>(target_length)
+    index = 0
+    while index < target_length:
+        match index < original_length:
+            -1:
+                discard vector_push<i64>(&mut buffer, vector_get<i64>(&sink.buffer, index))
+            0:
+                discard vector_push<i64>(&mut buffer, vector_get<i64>(&bytes, index - original_length))
+            1:
+                discard vector_push<i64>(&mut buffer, vector_get<i64>(&bytes, index - original_length))
+        index = index + 1
+    mut failed: trit = sink.failed
+    match accepted == 1:
+        -1:
+            discard 0
+        0:
+            failed = 1
+        1:
+            failed = 1
+    return OutputSinkState(
+        buffer=buffer,
+        limit=sink.limit,
+        committed=sink.committed,
+        failed=failed
+    )
+
+export fn output_sink_commit(sink: OutputSinkState) -> OutputSinkState:
+    mut limit: i64 = sink.limit
+    mut committed: i64 = sink.committed
+    mut failed: trit = sink.failed
+    mut buffer: vector<i64> = sink.buffer
+    match failed == 0:
+        -1:
+            committed = vector_len<i64>(&buffer)
+        0:
+            discard 0
+        1:
+            discard 0
+    return OutputSinkState(buffer=buffer, limit=limit, committed=committed, failed=failed)
 
 export fn output_sink_anchor() -> i64:
     return 0

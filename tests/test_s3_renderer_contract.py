@@ -9,7 +9,7 @@ from tools.s3_renderer_contract import (
     FIXTURE_METADATA,
     COMMON_FRAGMENT_NAMES,
     _capture_fixture_output,
-    _git_blob_bytes,
+    _golden_file_bytes,
     RendererBufferLayout,
     verify_fixture_metadata,
     audit_duplication,
@@ -40,33 +40,33 @@ class TestRendererContract(unittest.TestCase):
     def test_golden_sha256_matches_git_blob(self):
         for name, meta in FIXTURE_METADATA.items():
             with self.subTest(fixture=name):
-                golden = _git_blob_bytes(meta.golden_path)
+                golden = _golden_file_bytes(meta.golden_path)
                 sha256 = hashlib.sha256(golden).hexdigest()
                 self.assertEqual(sha256, meta.expected_sha256)
 
     def test_golden_byte_count_matches_git_blob(self):
         for name, meta in FIXTURE_METADATA.items():
             with self.subTest(fixture=name):
-                golden = _git_blob_bytes(meta.golden_path)
+                golden = _golden_file_bytes(meta.golden_path)
                 self.assertEqual(len(golden), meta.expected_bytes)
 
     def test_golden_line_count_matches_git_blob(self):
         for name, meta in FIXTURE_METADATA.items():
             with self.subTest(fixture=name):
-                golden = _git_blob_bytes(meta.golden_path)
+                golden = _golden_file_bytes(meta.golden_path)
                 lines = golden.count(10)
                 self.assertEqual(lines, meta.expected_lines)
 
     def test_golden_ends_with_lf(self):
         for name, meta in FIXTURE_METADATA.items():
             with self.subTest(fixture=name):
-                golden = _git_blob_bytes(meta.golden_path)
+                golden = _golden_file_bytes(meta.golden_path)
                 self.assertTrue(golden.endswith(b"\n"))
 
     def test_golden_no_crlf(self):
         for name, meta in FIXTURE_METADATA.items():
             with self.subTest(fixture=name):
-                golden = _git_blob_bytes(meta.golden_path)
+                golden = _golden_file_bytes(meta.golden_path)
                 self.assertNotIn(b"\r\n", golden)
 
     def test_capture_first_matches_golden(self):
@@ -75,7 +75,7 @@ class TestRendererContract(unittest.TestCase):
         with open(path) as f:
             source = f.read()
         output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
-        golden = _git_blob_bytes(meta.golden_path)
+        golden = _golden_file_bytes(meta.golden_path)
         self.assertEqual(output, golden)
 
     def test_capture_first_generic_matches_golden(self):
@@ -84,7 +84,7 @@ class TestRendererContract(unittest.TestCase):
         with open(path) as f:
             source = f.read()
         output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
-        golden = _git_blob_bytes(meta.golden_path)
+        golden = _golden_file_bytes(meta.golden_path)
         self.assertEqual(output, golden)
 
     def test_capture_simple_call_matches_golden(self):
@@ -93,7 +93,7 @@ class TestRendererContract(unittest.TestCase):
         with open(path) as f:
             source = f.read()
         output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions)
-        golden = _git_blob_bytes(meta.golden_path)
+        golden = _golden_file_bytes(meta.golden_path)
         self.assertEqual(output, golden)
 
     def test_capture_sign_matches_golden(self):
@@ -102,7 +102,7 @@ class TestRendererContract(unittest.TestCase):
         with open(path) as f:
             source = f.read()
         output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
-        golden = _git_blob_bytes(meta.golden_path)
+        golden = _golden_file_bytes(meta.golden_path)
         self.assertEqual(output, golden)
 
     def test_capture_sign_generic_matches_golden(self):
@@ -111,7 +111,7 @@ class TestRendererContract(unittest.TestCase):
         with open(path) as f:
             source = f.read()
         output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
-        golden = _git_blob_bytes(meta.golden_path)
+        golden = _golden_file_bytes(meta.golden_path)
         self.assertEqual(output, golden)
 
     def test_capture_no_newline_normalization(self):
@@ -121,7 +121,7 @@ class TestRendererContract(unittest.TestCase):
                 with open(path) as f:
                     source = f.read()
                 output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
-                golden = _git_blob_bytes(meta.golden_path)
+                golden = _golden_file_bytes(meta.golden_path)
                 self.assertEqual(
                     output,
                     golden,

@@ -34,5 +34,5 @@ def test_stable_1_0_does_not_silently_bump_language_or_artifact_contracts() -> N
     mode_default = inspect.signature(compile_source).parameters["mode"].default
     assert mode_default is SyntaxMode.V0_6
     assert IR_FORMAT_VERSION == "0.6.0"
-    assert ASSEMBLY_FORMAT_VERSION == "0.6.0"
+    assert ASSEMBLY_FORMAT_VERSION == "0.7.0"
     assert DIAGNOSTIC_SCHEMA_VERSION == "1.0.0"

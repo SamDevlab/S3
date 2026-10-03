@@ -6,7 +6,7 @@ import unittest
 from tools.s3_renderer_contract import (
     FIXTURE_METADATA,
     _capture_fixture_output,
-    _git_blob_bytes,
+    _golden_file_bytes,
 )
 
 EXPECTED_SHA256 = FIXTURE_METADATA["sign"].expected_sha256
@@ -31,7 +31,7 @@ class TestSignTextRenderer(unittest.TestCase):
 
         cls.result, cls.output = run_and_capture(cls.source)
 
-        cls.golden = _git_blob_bytes(meta.golden_path)
+        cls.golden = _golden_file_bytes(meta.golden_path)
 
     def test_program_exists(self):
         meta = FIXTURE_METADATA["sign"]
