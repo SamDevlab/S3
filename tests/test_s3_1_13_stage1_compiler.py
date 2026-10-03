@@ -314,6 +314,91 @@ def test_stage1_v2_nominal_signatures_fail_closed_at_ir_registration(
     assert diagnostics[:3] == [0, 3, 23], diagnostics
 
 
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    (
+        (
+            "record Pair:\n    left: i64\n    right: i64\n\n"
+            "fn main() -> i64:\n"
+            "    return Pair(right=8, left=5).left\n",
+            5,
+        ),
+        (
+            "record Inner:\n    value: i64\n\n"
+            "record Outer:\n    inner: Inner\n\n"
+            "fn main() -> i64:\n"
+            "    return Outer(inner=Inner(value=9)).inner.value\n",
+            9,
+        ),
+    ),
+)
+def test_stage1_v2_lowers_nominal_temporary_construction_and_field_access(
+    source: str, expected: int
+) -> None:
+    diagnostics: list[int] = []
+    artifact = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact, f"Stage1 compile envelope: {diagnostics}"
+    assert Emulator().execute(parse_assembly(artifact.decode("ascii"))) == expected
+
+
+def test_stage1_v2_lowers_nominal_vector_field_reference() -> None:
+    source = (
+        "record Buffer:\n    items: vector<i64>\n\n"
+        "fn main() -> i64:\n"
+        "    mut values: vector<i64> = vector_new<i64>(2)\n"
+        "    discard vector_push<i64>(&mut values, 7)\n"
+        "    discard vector_push<i64>(&mut values, 9)\n"
+        "    return vector_len<i64>(&(Buffer(items=values).items))\n"
+    )
+    diagnostics: list[int] = []
+    artifact_bytes = _stage1_artifact(
+        source, compiler_version="v2", diagnostics=diagnostics
+    )
+    assert artifact_bytes, f"Stage1 compile envelope: {diagnostics}"
+
+    artifact = parse_assembly(artifact_bytes.decode("ascii"))
+    Emulator().validate(artifact)
+    main = next(function for function in artifact.functions if function.name == "main")
+    assert any(
+        instruction.callee == "i64_vector_len"
+        for instruction in main.instructions
+    )
+    assert any(
+        instruction.callee == "i64_vector_new"
+        for instruction in main.instructions
+    )
+    addresses = [
+        instruction for instruction in main.instructions
+        if instruction.opcode is AssemblyOpcode.TADDR
+    ]
+    assert addresses
+    assert all(address.reference_target is AssemblyType.VECTOR for address in addresses)
+    assert any(address.reference_mutable is False for address in addresses)
+
+
+@pytest.mark.parametrize(
+    "expression",
+    (
+        "Pair(left=1).left",
+        "Pair(left=1, left=2).left",
+        "Pair(left=1, right=true).left",
+        "Pair(left=1, right=2).missing",
+        "Pair(left=1, right=2).left.value",
+    ),
+)
+def test_stage1_v2_rejects_invalid_nominal_construction_and_field_access(
+    expression: str,
+) -> None:
+    source = (
+        "record Pair:\n    left: i64\n    right: i64\n\n"
+        "fn main() -> i64:\n"
+        f"    return {expression}\n"
+    )
+    assert _stage1_artifact(source, compiler_version="v2") == b""
+
+
 def test_stage1_v2_scans_record_declarations_and_keeps_function_named_record() -> None:
     source = """\
 export record Counts:

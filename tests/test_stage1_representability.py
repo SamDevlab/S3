@@ -120,7 +120,7 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
     assert matrix["functions_signature_supported"] == 24
     assert matrix["functions_body_representable"] == 23
     assert matrix["functions_representable"] == 23
-    assert matrix["functions_dependency_closed"] == 23
+    assert matrix["functions_dependency_closed"] == 17
     assert matrix["functions_self_compile_proven"] == 17
     assert matrix["functions_selfhosted_compiler_behavior"] == 10
     assert "vector<i64>" in matrix["capabilities"]["local_types"]
@@ -190,6 +190,31 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         if item["name"] in large_selfhost_targets
     )
 
+    by_name = {item["name"]: item for item in matrix["functions"]}
+    body_representable_not_closed = {
+        item["name"]
+        for item in matrix["functions"]
+        if item["body_representable"] and not item["dependency_closed"]
+    }
+    assert body_representable_not_closed == {
+        "stage1_emit_single_main_program",
+        "stage1_literal_bytes",
+        "stage1_emit_literal",
+        "stage1_emit_ir_register_declarations",
+        "stage1_emit_ir_parameters",
+        "stage1_emit_ir_instruction",
+    }
+    assert by_name["stage1_literal_bytes"]["dependency_closed"] is False
+    assert by_name["stage1_literal_bytes"]["dependency_within_source_byte_limit"] is False
+    assert by_name["stage1_literal_bytes"]["dependency_source_bytes"] > 4096
+    assert by_name["stage1_emit_single_main_program"]["dependency_closed"] is False
+    assert by_name["stage1_emit_single_main_program"]["dependency_within_source_byte_limit"] is False
+    assert by_name["stage1_emit_single_main_program"]["dependency_source_bytes"] > 4096
+    assert by_name["stage1_emit_literal"]["function_source_within_byte_limit"] is True
+    assert by_name["stage1_emit_literal"]["dependency_closed"] is False
+    assert by_name["stage1_emit_literal"]["dependency_source_bytes"] > 4096
+    assert by_name["stage1_emit_ir_instruction"]["function_source_within_byte_limit"] is False
+
     newly_closed = {
         item["name"]
         for item in matrix["functions"]
@@ -204,7 +229,6 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
             "stage1_source_name_is_main",
             "stage1_emit_decimal",
             "stage1_emit_register",
-            "stage1_emit_single_main_program",
         }
         and item["dependency_closed"]
     }
@@ -218,7 +242,6 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
         "stage1_source_name_is_main",
         "stage1_emit_decimal",
         "stage1_emit_register",
-        "stage1_emit_single_main_program",
     }
 
     decimal = next(
@@ -231,6 +254,27 @@ def test_stage1_v2_analyzer_reports_proven_canonical_self_compile_slice() -> Non
     assert decimal["unsupported_operations"] == []
     assert decimal["unsupported_types"] == []
     assert decimal["unsupported_callees"] == []
+
+
+def test_stage1_v2_dependency_closure_obeys_composed_source_limit() -> None:
+    padding = "#" + ("x" * 2050) + "\n"
+    source = (
+        "fn leaf() -> i64:\n"
+        "    return 1\n"
+        + padding
+        + "fn main() -> i64:\n"
+        "    return leaf()\n"
+        + padding
+    )
+
+    leaf, main = analyze_stage1(source, compiler_version="v2")["functions"]
+
+    assert leaf["function_source_within_byte_limit"] is True
+    assert leaf["dependency_closed"] is True
+    assert main["function_source_within_byte_limit"] is True
+    assert main["dependency_source_bytes"] > 4096
+    assert main["dependency_within_source_byte_limit"] is False
+    assert main["dependency_closed"] is False
 
 
 def test_stage1_v2_analyzer_closes_canonical_i64_vector_symbol_lookup() -> None:

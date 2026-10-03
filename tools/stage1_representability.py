@@ -67,6 +67,7 @@ V2_SUPPORTED_EXTERNALS = {
 }
 V2_MAX_SOURCE_BYTES = 4096
 V2_MAX_TOKEN_COUNT = 1024
+V2_MINIMAL_ENTRYPOINT = "fn main() -> i64:\n    return 0\n"
 V2_PROVEN_SELF_COMPILED_FUNCTIONS = {
     "stage1_source_spans_equal",
     "stage1_find_symbol_value",
@@ -1041,6 +1042,7 @@ def _function_entry_v2(
     function: ast.FunctionDeclaration,
     end_offset: int,
     functions: dict[str, ast.FunctionDeclaration],
+    source: str,
     source_sha256: str,
 ) -> dict[str, object]:
     syntax, operations, unsupported_types, unsupported_callees, local_calls = (
@@ -1109,12 +1111,18 @@ def _function_entry_v2(
          *(f"type:{item}" for item in body_unsupported_types),
          *(f"callee:{item}" for item in unsupported_callees)]
     )
+    function_source = source[function.location.offset:end_offset].rstrip()
+    function_source_bytes = len(function_source.encode("utf-8"))
+    standalone_source = function_source
+    if function.name != "main":
+        standalone_source += "\n\n" + V2_MINIMAL_ENTRYPOINT
     return {
         "name": function.name,
         "function_name": function.name,
         "source_start": function.location.offset,
         "source_end": end_offset,
         "source_bytes": end_offset - function.location.offset,
+        "self_compile_source_bytes": len(standalone_source.encode("utf-8")),
         "source_span": {
             "start_offset": function.location.offset,
             "end_offset": end_offset,
@@ -1196,6 +1204,7 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
             function,
             starts[index + 1] if index + 1 < len(starts) else len(source),
             functions,
+            source,
             source_sha256,
         )
         for index, function in enumerate(declarations)
@@ -1218,12 +1227,30 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
                 return False, names
         return len(names) <= 16, names
 
+    def dependency_source_size(names: set[str]) -> int:
+        ordered = sorted(names, key=lambda item: int(by_name[item]["source_start"]))
+        source_parts = [
+            source[
+                int(by_name[item]["source_start"]):int(by_name[item]["source_end"])
+            ].rstrip()
+            for item in ordered
+        ]
+        module_source = "\n\n".join(source_parts)
+        if "main" not in names:
+            module_source += "\n\n" + V2_MINIMAL_ENTRYPOINT
+        return len(module_source.encode("utf-8"))
+
     for entry in entries:
         name = str(entry["name"])
         closed, dependency_names = closure(name, set())
+        dependency_bytes = dependency_source_size(dependency_names)
+        dependency_within_byte_limit = dependency_bytes <= V2_MAX_SOURCE_BYTES
+        closed = closed and dependency_within_byte_limit
         entry["dependency_closed"] = closed
         entry["dependencies_supported"] = closed
         entry["dependency_function_count"] = len(dependency_names)
+        entry["dependency_source_bytes"] = dependency_bytes
+        entry["dependency_within_source_byte_limit"] = dependency_within_byte_limit
         entry["external_dependencies"] = sorted(
             set(entry["calls"]) - set(entry["local_calls"])
         )
@@ -1244,7 +1271,7 @@ def _analyze_stage1_v2(source: str) -> dict[str, object]:
             else None
         )
         entry["function_source_within_byte_limit"] = (
-            int(entry["source_bytes"]) <= V2_MAX_SOURCE_BYTES
+            int(entry["self_compile_source_bytes"]) <= V2_MAX_SOURCE_BYTES
         )
         entry["self_compile_evidence"] = None
         if proven:
