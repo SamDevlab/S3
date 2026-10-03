@@ -688,6 +688,41 @@ fn generic_native_parser_span_is_mut(
         1:
             return 0
 
+fn generic_native_parser_has_named_argument(
+    kinds: &vector<i64>, cursor: i64
+) -> i64:
+    match generic_native_parser_kind(kinds, cursor) == 1:
+        -1:
+            match generic_native_parser_kind(kinds, cursor + 1) == 161:
+                -1:
+                    match generic_native_parser_kind(kinds, cursor + 2) == 161:
+                        -1:
+                            return 0
+                        0:
+                            match generic_native_parser_kind(kinds, cursor + 2) == 162:
+                                -1:
+                                    return 0
+                                0:
+                                    return 1
+                                1:
+                                    return 1
+                        1:
+                            match generic_native_parser_kind(kinds, cursor + 2) == 162:
+                                -1:
+                                    return 0
+                                0:
+                                    return 1
+                                1:
+                                    return 1
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
 export fn generic_native_parser_expression(
     source: &vector<i64>,
     kinds: &vector<i64>,
@@ -842,19 +877,82 @@ export fn generic_native_parser_expression(
                             mut argument_head: i64 = -1
                             mut argument_tail: i64 = -1
                             mut argument_count: i64 = 0
+                            mut named_argument_mode: i64 = 0
+                            mut after_argument_comma: i64 = 0
                             mut parsing_arguments: i64 = 1
                             while parsing_arguments == 1:
                                 match generic_native_parser_kind(kinds, call_cursor) == 8:
                                     -1:
-                                        call_cursor = call_cursor + 1
-                                        parsing_arguments = 0
+                                        match named_argument_mode == 1:
+                                            -1:
+                                                match after_argument_comma == 1:
+                                                    -1:
+                                                        return -1
+                                                    0:
+                                                        call_cursor = call_cursor + 1
+                                                        parsing_arguments = 0
+                                                    1:
+                                                        return -1
+                                            0:
+                                                call_cursor = call_cursor + 1
+                                                parsing_arguments = 0
+                                            1:
+                                                call_cursor = call_cursor + 1
+                                                parsing_arguments = 0
                                     0:
+                                        mut argument_is_named: i64 = generic_native_parser_has_named_argument(
+                                            kinds, call_cursor
+                                        )
+                                        mut argument_expression_cursor: i64 = call_cursor
+                                        mut field_name_start: i64 = -1
+                                        mut field_name_end: i64 = -1
+                                        match argument_is_named == 1:
+                                            -1:
+                                                match argument_count == 0:
+                                                    -1:
+                                                        named_argument_mode = 1
+                                                    0:
+                                                        match named_argument_mode == 1:
+                                                            -1:
+                                                                discard 0
+                                                            0:
+                                                                return -1
+                                                            1:
+                                                                return -1
+                                                    1:
+                                                        match named_argument_mode == 1:
+                                                            -1:
+                                                                discard 0
+                                                            0:
+                                                                return -1
+                                                            1:
+                                                                return -1
+                                                argument_expression_cursor = call_cursor + 2
+                                                field_name_start = vector_get<i64>(starts, call_cursor)
+                                                field_name_end = vector_get<i64>(ends, call_cursor)
+                                                after_argument_comma = 0
+                                            0:
+                                                match named_argument_mode == 1:
+                                                    -1:
+                                                        return -1
+                                                    0:
+                                                        after_argument_comma = 0
+                                                    1:
+                                                        return -1
+                                            1:
+                                                match named_argument_mode == 1:
+                                                    -1:
+                                                        return -1
+                                                    0:
+                                                        after_argument_comma = 0
+                                                    1:
+                                                        return -1
                                         mut argument_result: i64 = generic_native_parser_expression(
                                             source,
                                             kinds,
                                             starts,
                                             ends,
-                                            call_cursor,
+                                            argument_expression_cursor,
                                             0,
                                             node_kinds,
                                             node_operators,
@@ -874,6 +972,16 @@ export fn generic_native_parser_expression(
                                         mut argument_node: i64 = generic_native_parser_packed_node(argument_result)
                                         mut argument_start: i64 = vector_get<i64>(&*node_starts, argument_node)
                                         mut argument_end: i64 = vector_get<i64>(&*node_ends, argument_node)
+                                        mut argument_link_kind: i64 = 5
+                                        match argument_is_named == 1:
+                                            -1:
+                                                argument_link_kind = 7
+                                                argument_start = field_name_start
+                                                argument_end = field_name_end
+                                            0:
+                                                discard 0
+                                            1:
+                                                discard 0
                                         mut argument_link: i64 = generic_native_parser_add_node(
                                             node_kinds,
                                             node_operators,
@@ -882,7 +990,7 @@ export fn generic_native_parser_expression(
                                             node_starts,
                                             node_ends,
                                             node_values,
-                                            5,
+                                            argument_link_kind,
                                             0,
                                             argument_node,
                                             -1,
@@ -909,6 +1017,7 @@ export fn generic_native_parser_expression(
                                                 call_cursor = generic_native_parser_skip_newlines(
                                                     kinds, call_cursor + 1
                                                 )
+                                                after_argument_comma = 1
                                             0:
                                                 match generic_native_parser_take(kinds, call_cursor, 8):
                                                     -1:
@@ -923,6 +1032,14 @@ export fn generic_native_parser_expression(
                                     1:
                                         return -1
                             mut call_end: i64 = vector_get<i64>(ends, call_cursor - 1)
+                            mut call_node_kind: i64 = 4
+                            match named_argument_mode == 1:
+                                -1:
+                                    call_node_kind = 8
+                                0:
+                                    discard 0
+                                1:
+                                    call_node_kind = 8
                             mut call_node: i64 = generic_native_parser_add_node(
                                 node_kinds,
                                 node_operators,
@@ -931,7 +1048,7 @@ export fn generic_native_parser_expression(
                                 node_starts,
                                 node_ends,
                                 node_values,
-                                4,
+                                call_node_kind,
                                 argument_count,
                                 identifier_node,
                                 argument_head,
@@ -1124,6 +1241,28 @@ export fn generic_native_parser_expression(
                 discard 0
             1:
                 discard 0
+        match generic_native_parser_kind(
+            kinds,
+            generic_native_parser_packed_cursor(left_result)
+        ) == 146:
+            -1:
+                match generic_native_parser_kind(
+                    kinds,
+                    generic_native_parser_packed_cursor(left_result) + 1
+                ) == 1:
+                    -1:
+                        operator = 17
+                        precedence = 3
+                        operator_width = 1
+                        scanning = 1
+                    0:
+                        return -1
+                    1:
+                        return -1
+            0:
+                discard 0
+            1:
+                discard 0
         match scanning == 1:
             -1:
                 match precedence < minimum_precedence:
@@ -1157,6 +1296,23 @@ export fn generic_native_parser_expression(
                         mut right_node: i64 = generic_native_parser_packed_node(right_result)
                         mut binary_start: i64 = vector_get<i64>(starts, operator_cursor)
                         mut binary_end: i64 = vector_get<i64>(&*node_ends, right_node)
+                        mut binary_kind: i64 = 2
+                        mut binary_operator: i64 = operator
+                        match operator == 17:
+                            -1:
+                                binary_kind = 9
+                                binary_operator = 0
+                                binary_start = vector_get<i64>(
+                                    &*node_starts, left_node
+                                )
+                            0:
+                                discard 0
+                            1:
+                                binary_kind = 9
+                                binary_operator = 0
+                                binary_start = vector_get<i64>(
+                                    &*node_starts, left_node
+                                )
                         mut binary_node: i64 = generic_native_parser_add_node(
                             node_kinds,
                             node_operators,
@@ -1165,8 +1321,8 @@ export fn generic_native_parser_expression(
                             node_starts,
                             node_ends,
                             node_values,
-                            2,
-                            operator,
+                            binary_kind,
+                            binary_operator,
                             left_node,
                             right_node,
                             binary_start,

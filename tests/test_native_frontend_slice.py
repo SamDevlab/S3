@@ -255,6 +255,57 @@ def _candidate_generic_call_parser_source(
     return substrate + "\n" + "\n".join(lines) + "\n"
 
 
+def _candidate_expression_tree_probe_source(
+    expression: str, checks: tuple[str, ...]
+) -> str:
+    repository = Path(__file__).parents[1]
+    substrate = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    encoded = expression.encode("ascii")
+    lines = [
+        "fn main() -> i64:",
+        f"    mut source: vector<i64> = vector_new<i64>({len(encoded)})",
+    ]
+    lines.extend(
+        f"    discard vector_push<i64>(&mut source, {byte})"
+        for byte in encoded
+    )
+    lines.extend(
+        (
+            "    mut tokens: vector<i64> = generic_lexer_scan(&source)",
+            "    mut tree: vector<i64> = generic_native_parser_parse_expression(&source, &tokens, 0, 0)",
+            "    mut packed: i64 = generic_expression_packed_result(&tree)",
+            "    match packed >= 0:",
+            "        -1:",
+            "            mut root: i64 = generic_native_parser_packed_node(packed)",
+            "            mut score: i64 = 0",
+        )
+    )
+    for condition in checks:
+        lines.extend(
+            (
+                f"            match {condition}:",
+                "                -1:",
+                "                    score = score + 1",
+                "                0:",
+                "                    discard 0",
+                "                1:",
+                "                    discard 0",
+            )
+        )
+    lines.extend(
+        (
+            "            return score",
+            "        0:",
+            "            return -1",
+            "        1:",
+            "            return -1",
+        )
+    )
+    return substrate + "\n" + "\n".join(lines) + "\n"
+
+
 def _independent_digest(source: str) -> int:
     arena = TokenArena.from_source_independent(
         source,
@@ -827,6 +878,86 @@ def test_native_expression_parser_preserves_subtraction_operator() -> None:
         )
         == 2
     )
+
+
+def test_native_expression_parser_builds_nominal_record_and_field_access_nodes() -> None:
+    expression = "Point(x=1, y=2).x"
+    first_field_start = expression.index("x")
+    second_field_start = expression.index("y")
+    access_field_start = expression.rindex("x")
+    checks = (
+        "generic_expression_node_kind(&tree, root) == 9",
+        "generic_expression_node_start(&tree, root) == 0",
+        f"generic_expression_node_end(&tree, root) == {len(expression)}",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, root)) == 8",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, root)) == 3",
+        f"generic_expression_node_start(&tree, generic_expression_node_right(&tree, root)) == {access_field_start}",
+        f"generic_expression_node_end(&tree, generic_expression_node_right(&tree, root)) == {access_field_start + 1}",
+        "generic_expression_node_operator(&tree, generic_expression_node_left(&tree, root)) == 2",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, generic_expression_node_left(&tree, root))) == 3",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root))) == 7",
+        f"generic_expression_node_start(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root))) == {first_field_start}",
+        f"generic_expression_node_end(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root))) == {first_field_start + 1}",
+        "generic_expression_node_value(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root)))) == 1",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root)))) == 7",
+        f"generic_expression_node_start(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root)))) == {second_field_start}",
+        "generic_expression_node_value(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root))))) == 2",
+        "generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root)))) == -1",
+    )
+    assert run_source(
+        _candidate_expression_tree_probe_source(expression, checks)
+    ) == len(checks)
+
+
+def test_native_expression_parser_preserves_nested_nominal_and_postfix_order() -> None:
+    expression = "Outer(inner=Inner(value=3)).inner.value"
+    checks = (
+        "generic_expression_node_kind(&tree, root) == 9",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, root)) == 9",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, generic_expression_node_left(&tree, root))) == 8",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, generic_expression_node_left(&tree, root))))) == 8",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, root))) == 3",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, root)) == 3",
+        "generic_expression_node_value(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, generic_expression_node_left(&tree, root))))))) == 3",
+    )
+    assert run_source(
+        _candidate_expression_tree_probe_source(expression, checks)
+    ) == len(checks)
+
+
+def test_native_expression_parser_keeps_positional_calls_and_rejects_mixed_record_fields() -> None:
+    positional_checks = (
+        "generic_expression_node_kind(&tree, root) == 4",
+        "generic_expression_node_operator(&tree, root) == 2",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, root)) == 3",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, root)) == 5",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, root))) == 5",
+        "generic_expression_node_value(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, root))) == 1",
+        "generic_expression_node_value(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, root)))) == 2",
+        "generic_expression_node_right(&tree, generic_expression_node_right(&tree, generic_expression_node_right(&tree, root))) == -1",
+    )
+    assert run_source(
+        _candidate_expression_tree_probe_source("consume(1, 2)", positional_checks)
+    ) == len(positional_checks)
+    comparison_checks = (
+        "generic_expression_node_kind(&tree, root) == 4",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, root)) == 5",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, root))) == 2",
+        "generic_expression_node_operator(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, root))) == 13",
+        "generic_expression_node_kind(&tree, generic_expression_node_left(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, root)))) == 3",
+        "generic_expression_node_kind(&tree, generic_expression_node_right(&tree, generic_expression_node_left(&tree, generic_expression_node_right(&tree, root)))) == 3",
+    )
+    assert run_source(
+        _candidate_expression_tree_probe_source(
+            "consume(left == right)", comparison_checks
+        )
+    ) == len(comparison_checks)
+    assert run_source(
+        _candidate_generic_call_parser_source("Point(x=1, 2)")
+    ) == -1
+    assert run_source(
+        _candidate_generic_call_parser_source("Point(x=1).")
+    ) == -1
 
 
 def test_native_expression_parser_bounds_long_identifier_digest() -> None:
