@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 import os
 import platform
+from pathlib import Path
 import shutil
 import subprocess
 
@@ -123,6 +124,20 @@ fn main() -> tryte:
     return total
 """,
 }
+
+REAL_QBE_EXAMPLES = {
+    "static_array_example": ("examples/static_array.s3", 13),
+    "trit_array_example": ("examples/trit_array.s3", 1),
+    "recursive_sum_example": ("examples/recursive_sum.s3", 10),
+}
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+QBE_PROGRAMS = dict(SCALAR_PROGRAMS)
+QBE_PROGRAMS.update(
+    {
+        name: (_REPOSITORY_ROOT / path).read_text(encoding="utf-8")
+        for name, (path, _) in REAL_QBE_EXAMPLES.items()
+    }
+)
 
 I64_MIN = -(1 << 63)
 I64_MAX = (1 << 63) - 1
@@ -413,9 +428,9 @@ def _error_category(call) -> str:
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
-@pytest.mark.parametrize("name", tuple(SCALAR_PROGRAMS))
-def test_qbe_oracle_emits_deterministic_verified_scalar_il(name: str, optimization) -> None:
-    program = compile_source(SCALAR_PROGRAMS[name], optimization=optimization).ir
+@pytest.mark.parametrize("name", tuple(QBE_PROGRAMS))
+def test_qbe_oracle_emits_deterministic_verified_program_il(name: str, optimization) -> None:
+    program = compile_source(QBE_PROGRAMS[name], optimization=optimization).ir
     assert program is not None
 
     first = translate_verified_ir(program)
@@ -426,6 +441,19 @@ def test_qbe_oracle_emits_deterministic_verified_scalar_il(name: str, optimizati
     assert "QBE oracle; generated from verified S3 IR" in first
     assert "export function " in first
     assert "$main()" in first
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+@pytest.mark.parametrize(
+    "name,expected",
+    tuple((name, expected) for name, (_, expected) in REAL_QBE_EXAMPLES.items()),
+)
+def test_qbe_real_s3_examples_match_explicit_results(name, expected, optimization) -> None:
+    compilation = compile_source(QBE_PROGRAMS[name], optimization=optimization)
+    assert compilation.ir is not None
+    assert execute_ir(compilation.ir) == expected
+    assert execute_assembly(compilation.assembly) == expected
+    assert translate_verified_ir(compilation.ir)
 
 
 def test_qbe_oracle_preserves_compare_branch_and_scalar_call_shapes() -> None:
@@ -704,8 +732,8 @@ def test_qbe_oracle_verifies_ir_before_translation() -> None:
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
-@pytest.mark.parametrize("name", tuple(SCALAR_PROGRAMS))
-def test_qbe_native_scalar_differential_when_linux_toolchain_exists(
+@pytest.mark.parametrize("name", tuple(QBE_PROGRAMS))
+def test_qbe_native_program_differential_when_linux_toolchain_exists(
     name, optimization, tmp_path
 ) -> None:
     required = os.environ.get("S3_QBE_NATIVE_REQUIRED") == "1"
@@ -721,7 +749,7 @@ def test_qbe_native_scalar_differential_when_linux_toolchain_exists(
         pytest.skip("QBE and a native C toolchain are required for the QBE execution gate")
 
     compilation = compile_source(
-        SCALAR_PROGRAMS[name], optimization=optimization
+        QBE_PROGRAMS[name], optimization=optimization
     )
     program = compilation.ir
     assert program is not None
@@ -746,6 +774,8 @@ def test_qbe_native_scalar_differential_when_linux_toolchain_exists(
 
     result = execute_ir(program)
     assert isinstance(result, int)
+    if name in REAL_QBE_EXAMPLES:
+        assert result == REAL_QBE_EXAMPLES[name][1]
     assert execute_assembly(compilation.assembly) == result
     assert native.returncode == (result & 0xFF), (
         f"QBE_RUNTIME_MISMATCH: {name} {optimization.value}: "
