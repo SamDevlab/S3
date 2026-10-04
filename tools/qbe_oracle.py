@@ -13,15 +13,25 @@ class QBETranslationError(ValueError):
 
 
 _IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
-_QBE_TYPES = {IRType.I64: "l", IRType.F64: "d", IRType.TRIT: "l"}
+_QBE_TYPES = {
+    IRType.I64: "l",
+    IRType.F64: "d",
+    IRType.TRIT: "l",
+    IRType.TRYTE: "l",
+}
+_QBE_SCALAR_TYPES = frozenset(_QBE_TYPES)
+_I64_MIN = -(1 << 63)
+_I64_MAX = (1 << 63) - 1
+_TRIT_MIN, _TRIT_MAX = -1, 1
+_TRYTE_MIN, _TRYTE_MAX = -364, 364
 
 
 def translate_verified_ir(module: IRModule) -> str:
-    """Verify and translate a deliberately small scalar subset to QBE IL.
+    """Verify and translate the experimental scalar/fixed-memory subset.
 
-    Integer arithmetic, memory, aggregates, references, dynamic builtins and
-    non-scalar ABI shapes are rejected. In particular, S3 checked i64
-    arithmetic is never silently mapped to QBE's wrapping machine arithmetic.
+    Checked numeric operations and memory accesses are guarded before QBE
+    machine operations. Aggregates, references, dynamic builtins and
+    non-scalar ABI shapes remain fail-closed.
     """
 
     verify_ir(module)
@@ -35,27 +45,27 @@ def translate_verified_ir(module: IRModule) -> str:
 
 def _validate_supported_module(module: IRModule) -> None:
     if module.static_strings:
-        raise QBETranslationError("static strings are outside QBE oracle V1")
+        raise QBETranslationError("static strings are outside QBE oracle V5")
     functions = {function.name: function for function in module.functions}
     for function in module.functions:
         if function.external:
             raise QBETranslationError(
-                f"external function '{function.name}' is outside QBE oracle V1"
+                f"external function '{function.name}' is outside QBE oracle V5"
             )
         if not _IDENTIFIER.fullmatch(function.name):
             raise QBETranslationError(
                 f"function name '{function.name}' cannot be represented safely in QBE IL"
             )
-        if function.return_type not in {IRType.I64, IRType.F64}:
+        if function.return_type not in _QBE_SCALAR_TYPES:
             raise QBETranslationError(
                 f"function '{function.name}' result type {function.return_type.value} "
-                "is outside QBE oracle V1"
+                "is outside QBE oracle V5"
             )
         if function.result_width != 1:
             raise QBETranslationError(
                 f"function '{function.name}' has a non-scalar result width"
             )
-        if any(parameter.type not in {IRType.I64, IRType.F64} for parameter in function.parameters):
+        if any(parameter.type not in _QBE_SCALAR_TYPES for parameter in function.parameters):
             raise QBETranslationError(
                 f"function '{function.name}' has a non-scalar ABI parameter"
             )
@@ -67,11 +77,156 @@ def _validate_supported_module(module: IRModule) -> None:
             )
             raise QBETranslationError(
                 f"function '{function.name}' uses unsupported register type {unsupported}; "
-                "this is outside QBE oracle V1"
+                "this is outside QBE oracle V5"
             )
+        for memory in function.memory_objects:
+            if memory.element_type not in _QBE_SCALAR_TYPES:
+                raise QBETranslationError(
+                    f"function '{function.name}' memory m{memory.index} has non-scalar "
+                    f"element type {memory.element_type.value}; this is outside QBE oracle V5"
+                )
+            if memory.length <= 0 or memory.length > _I64_MAX // 8:
+                raise QBETranslationError(
+                    f"function '{function.name}' memory m{memory.index} has a length "
+                    "that cannot be represented by the QBE stack layout"
+                )
         for block in function.blocks:
             for instruction in block.instructions:
                 _validate_instruction(function, block.name, instruction, functions)
+        _validate_memory_initialization(function)
+
+
+def _validate_memory_initialization(function: IRFunction) -> None:
+    """Reject loads that verified IR permits but S3 would trap at runtime."""
+
+    if not any(
+        instruction.opcode is IROpcode.LOAD
+        for block in function.blocks
+        for instruction in block.instructions
+    ):
+        return
+
+    constants: dict[int, int] = {}
+    moves: dict[int, int] = {}
+    for block in function.blocks:
+        for instruction in block.instructions:
+            if instruction.opcode is IROpcode.CONST and instruction.result is not None:
+                if isinstance(instruction.immediate, int):
+                    constants[instruction.result] = instruction.immediate
+            elif instruction.opcode is IROpcode.MOVE and instruction.result is not None:
+                moves[instruction.result] = instruction.operands[0]
+
+    def index_key(register: int) -> tuple[str, int]:
+        seen: set[int] = set()
+        while register in moves and register not in seen:
+            seen.add(register)
+            register = moves[register]
+        if register in constants:
+            return ("constant", constants[register])
+        return ("register", register)
+
+    memory_lengths = {memory.index: memory.length for memory in function.memory_objects}
+    top: dict[int, frozenset[tuple[str, int]] | None] = {
+        index: None for index in memory_lengths
+    }
+    empty = {index: frozenset() for index in memory_lengths}
+    blocks = {block.name: block for block in function.blocks}
+    predecessors: dict[str, set[str]] = {name: set() for name in blocks}
+    for block in function.blocks:
+        terminator = block.instructions[-1]
+        for target in terminator.targets:
+            predecessors[target].add(block.name)
+
+    entry = function.blocks[0].name
+    reachable: set[str] = set()
+    pending = [entry]
+    while pending:
+        name = pending.pop()
+        if name in reachable:
+            continue
+        reachable.add(name)
+        pending.extend(blocks[name].instructions[-1].targets)
+
+    def intersect(
+        states: list[dict[int, frozenset[tuple[str, int]] | None]],
+    ) -> dict[int, frozenset[tuple[str, int]] | None]:
+        result: dict[int, frozenset[tuple[str, int]] | None] = {}
+        for memory_index in memory_lengths:
+            finite = [state[memory_index] for state in states if state[memory_index] is not None]
+            if not finite:
+                result[memory_index] = None
+            else:
+                common = set(finite[0])
+                for facts in finite[1:]:
+                    common.intersection_update(facts)
+                result[memory_index] = frozenset(common)
+        return result
+
+    def transfer_stores(
+        block_name: str,
+        state: dict[int, frozenset[tuple[str, int]] | None],
+    ) -> dict[int, frozenset[tuple[str, int]] | None]:
+        result = dict(state)
+        for instruction in blocks[block_name].instructions:
+            if instruction.opcode is not IROpcode.STORE or instruction.memory is None:
+                continue
+            key = index_key(instruction.operands[0])
+            length = memory_lengths[instruction.memory]
+            if key[0] == "constant" and not 0 <= key[1] < length:
+                continue
+            facts = result[instruction.memory]
+            if facts is not None:
+                result[instruction.memory] = facts | {key}
+        return result
+
+    incoming = {name: dict(top) for name in reachable}
+    outgoing = {name: dict(top) for name in reachable}
+    while True:
+        changed = False
+        for name in (block.name for block in function.blocks if block.name in reachable):
+            if name == entry:
+                new_in = dict(empty)
+            else:
+                incoming_states = [
+                    outgoing[pred]
+                    for pred in predecessors[name]
+                    if pred in reachable
+                ]
+                new_in = intersect(incoming_states) if incoming_states else dict(empty)
+            new_out = transfer_stores(name, new_in)
+            if new_in != incoming[name] or new_out != outgoing[name]:
+                incoming[name] = new_in
+                outgoing[name] = new_out
+                changed = True
+        if not changed:
+            break
+
+    for name in (block.name for block in function.blocks if block.name in reachable):
+        state = dict(incoming[name])
+        for instruction in blocks[name].instructions:
+            if instruction.opcode is IROpcode.LOAD:
+                assert instruction.memory is not None
+                key = index_key(instruction.operands[0])
+                facts = state[instruction.memory]
+                length = memory_lengths[instruction.memory]
+                fully_initialized = facts is not None and sum(
+                    1
+                    for kind, value in facts
+                    if kind == "constant" and 0 <= value < length
+                ) == length
+                if facts is not None and key not in facts and not fully_initialized:
+                    raise QBETranslationError(
+                        f"function '{function.name}' may load uninitialized memory "
+                        f"m{instruction.memory} in block '{name}'"
+                    )
+            elif instruction.opcode is IROpcode.STORE and instruction.memory is not None:
+                key = index_key(instruction.operands[0])
+                length = memory_lengths[instruction.memory]
+                if key[0] == "constant" and not 0 <= key[1] < length:
+                    continue
+                facts = state[instruction.memory]
+                if facts is not None:
+                    state[instruction.memory] = facts | {key}
 
 
 def _validate_instruction(
@@ -86,17 +241,37 @@ def _validate_instruction(
 
     if op is IROpcode.CONST:
         result_type = _result_type(function, instruction)
-        if result_type not in {IRType.I64, IRType.F64, IRType.TRIT}:
+        if result_type not in _QBE_SCALAR_TYPES:
             _unsupported(function, block_name, instruction, "constant type")
         return
     if op is IROpcode.MOVE:
         result_type = _result_type(function, instruction)
-        if result_type not in {IRType.I64, IRType.F64, IRType.TRIT}:
+        if result_type not in _QBE_SCALAR_TYPES:
             _unsupported(function, block_name, instruction, "move type")
+        return
+    if op is IROpcode.INVERT:
+        if len(operands) != 1 or _result_type(function, instruction) not in _QBE_SCALAR_TYPES:
+            _unsupported(function, block_name, instruction, "invert shape")
+        return
+    if op in {
+        IROpcode.ADD,
+        IROpcode.NUMERIC_DIFFERENCE,
+        IROpcode.MULTIPLY,
+        IROpcode.DIVIDE,
+    }:
+        result_type = _result_type(function, instruction)
+        if len(operands) != 2 or result_type not in _QBE_SCALAR_TYPES:
+            _unsupported(function, block_name, instruction, "numeric operation shape")
+        if op in {
+            IROpcode.NUMERIC_DIFFERENCE,
+            IROpcode.MULTIPLY,
+            IROpcode.DIVIDE,
+        } and result_type not in {IRType.I64, IRType.F64}:
+            _unsupported(function, block_name, instruction, "numeric operation type")
         return
     if op in {IROpcode.COMPARE, IROpcode.RELATE}:
         if len(operands) != 2 or any(
-            registers[operand] not in {IRType.I64, IRType.F64} for operand in operands
+            registers[operand] not in _QBE_SCALAR_TYPES for operand in operands
         ):
             _unsupported(function, block_name, instruction, "comparison operands")
         if _result_type(function, instruction) is not IRType.TRIT:
@@ -109,14 +284,50 @@ def _validate_instruction(
         if len(instruction.results) != 1:
             _unsupported(function, block_name, instruction, "non-scalar call result")
         if any(
-            registers[operand] not in {IRType.I64, IRType.F64}
+            registers[operand] not in _QBE_SCALAR_TYPES
             for operand in operands
         ):
             _unsupported(function, block_name, instruction, "non-scalar call argument")
-        if any(parameter.type not in {IRType.I64, IRType.F64} for parameter in callee.parameters):
+        if any(parameter.type not in _QBE_SCALAR_TYPES for parameter in callee.parameters):
             _unsupported(function, block_name, instruction, "non-scalar callee ABI")
-        if callee.return_type not in {IRType.I64, IRType.F64} or callee.result_width != 1:
+        if callee.return_type not in _QBE_SCALAR_TYPES or callee.result_width != 1:
             _unsupported(function, block_name, instruction, "non-scalar callee result")
+        return
+    if op in {IROpcode.LOAD, IROpcode.STORE}:
+        memory = _memory_object(function, instruction.memory)
+        if memory.element_type not in _QBE_SCALAR_TYPES:
+            _unsupported(function, block_name, instruction, "non-scalar memory element")
+        expected_operands = 1 if op is IROpcode.LOAD else 2
+        if len(operands) != expected_operands:
+            _unsupported(function, block_name, instruction, "memory operation shape")
+        if registers[operands[0]] not in {IRType.I64, IRType.TRYTE}:
+            _unsupported(function, block_name, instruction, "memory index type")
+        if op is IROpcode.LOAD:
+            if _result_type(function, instruction) is not memory.element_type:
+                _unsupported(function, block_name, instruction, "memory load type")
+        else:
+            if instruction.results or registers[operands[1]] is not memory.element_type:
+                _unsupported(function, block_name, instruction, "memory store type")
+        return
+    if op is IROpcode.CONVERT:
+        source_type = registers[operands[0]] if len(operands) == 1 else None
+        result_type = _result_type(function, instruction)
+        if (source_type, result_type) not in {
+            (IRType.TRIT, IRType.I64),
+            (IRType.TRYTE, IRType.I64),
+            (IRType.TRIT, IRType.F64),
+            (IRType.TRYTE, IRType.F64),
+            (IRType.I64, IRType.F64),
+            (IRType.I64, IRType.TRYTE),
+        }:
+            _unsupported(function, block_name, instruction, "conversion shape")
+        return
+    if op in {IROpcode.MINIMUM, IROpcode.MAXIMUM}:
+        if len(operands) != 2 or _result_type(function, instruction) not in {
+            IRType.TRIT,
+            IRType.TRYTE,
+        }:
+            _unsupported(function, block_name, instruction, "balanced extreme shape")
         return
     if op is IROpcode.JUMP:
         return
@@ -144,9 +355,18 @@ def _translate_function(
     )
     lines = [f"{linkage}function {result_type} ${function.name}({parameters}) {{"]
     block_names = {block.name: f"b{index}" for index, block in enumerate(function.blocks)}
+    memory_pointers = {
+        memory.index: f"%s3_f{function_index}_memory_{memory.index}"
+        for memory in function.memory_objects
+    }
     temporary_index = 0
     for block_index, block in enumerate(function.blocks):
         lines.append(f"@{block_names[block.name]}")
+        if block_index == 0:
+            for memory in function.memory_objects:
+                lines.append(
+                    f"\t{memory_pointers[memory.index]} =l alloc8 {memory.length * 8}"
+                )
         for instruction in block.instructions:
             op = instruction.opcode
             result = instruction.result
@@ -162,6 +382,51 @@ def _translate_function(
                 lines.append(
                     f"\t%r{result} ={_qbe_type(result_type)} copy %r{args[0]}"
                 )
+            elif op is IROpcode.INVERT:
+                assert result is not None
+                result_type = _register_type(function, result)
+                if result_type is IRType.I64:
+                    _emit_i64_negation(lines, function_index, function.return_type, result, args[0])
+                else:
+                    lines.append(
+                        f"\t%r{result} ={_qbe_type(result_type)} neg %r{args[0]}"
+                    )
+            elif op in {
+                IROpcode.ADD,
+                IROpcode.NUMERIC_DIFFERENCE,
+                IROpcode.MULTIPLY,
+                IROpcode.DIVIDE,
+            }:
+                assert result is not None
+                result_type = _register_type(function, result)
+                if result_type is IRType.I64:
+                    emit_i64 = {
+                        IROpcode.ADD: _emit_i64_add,
+                        IROpcode.NUMERIC_DIFFERENCE: _emit_i64_sub,
+                        IROpcode.MULTIPLY: _emit_i64_mul,
+                        IROpcode.DIVIDE: _emit_i64_div,
+                    }[op]
+                    emit_i64(lines, function_index, function.return_type, result, args[0], args[1])
+                elif result_type is IRType.F64:
+                    qbe_op = {
+                        IROpcode.ADD: "add",
+                        IROpcode.NUMERIC_DIFFERENCE: "sub",
+                        IROpcode.MULTIPLY: "mul",
+                        IROpcode.DIVIDE: "div",
+                    }[op]
+                    lines.append(
+                        f"\t%r{result} =d {qbe_op} %r{args[0]}, %r{args[1]}"
+                    )
+                else:
+                    _emit_balanced_add(
+                        lines,
+                        function_index,
+                        function.return_type,
+                        result,
+                        args[0],
+                        args[1],
+                        result_type,
+                    )
             elif op is IROpcode.RELATE:
                 assert result is not None and instruction.immediate is not None
                 operand_type = _register_type(function, args[0])
@@ -202,6 +467,48 @@ def _translate_function(
                         f"\t%r{result} =l phi @{less_label} -1, @{equal_label} 0, @{greater_label} 1",
                     ]
                 )
+            elif op is IROpcode.CONVERT:
+                assert result is not None
+                source_type = _register_type(function, args[0])
+                result_type = _register_type(function, result)
+                if source_type is IRType.I64 and result_type is IRType.TRYTE:
+                    _emit_range_guard(
+                        lines,
+                        function_index,
+                        result,
+                        function.return_type,
+                        args[0],
+                        _TRYTE_MIN,
+                        _TRYTE_MAX,
+                        "overflow",
+                    )
+                if result_type is IRType.F64:
+                    lines.append(f"\t%r{result} =d sltof %r{args[0]}")
+                else:
+                    lines.append(
+                        f"\t%r{result} ={_qbe_type(result_type)} copy %r{args[0]}"
+                    )
+            elif op in {IROpcode.MINIMUM, IROpcode.MAXIMUM}:
+                assert result is not None
+                result_type = _register_type(function, result)
+                if result_type is IRType.TRIT:
+                    _emit_trit_extreme(
+                        lines,
+                        function_index,
+                        result,
+                        args[0],
+                        args[1],
+                        op is IROpcode.MINIMUM,
+                    )
+                else:
+                    _emit_tryte_extreme(
+                        lines,
+                        function_index,
+                        result,
+                        args[0],
+                        args[1],
+                        op is IROpcode.MINIMUM,
+                    )
             elif op is IROpcode.CALL:
                 assert result is not None and instruction.callee is not None
                 callee = functions[instruction.callee]
@@ -216,6 +523,33 @@ def _translate_function(
                     f"\t%r{result} ={_qbe_type(result_type)} call "
                     f"${callee.name}({call_arguments})"
                 )
+            elif op in {IROpcode.LOAD, IROpcode.STORE}:
+                memory = _memory_object(function, instruction.memory)
+                index = args[0]
+                pointer = _temporary(function_index, temporary_index, "memory_ptr")
+                temporary_index += 1
+                _emit_memory_address(
+                    lines,
+                    function_index,
+                    temporary_index,
+                    function.return_type,
+                    index,
+                    memory.length,
+                    memory_pointers[memory.index],
+                    pointer,
+                )
+                if op is IROpcode.LOAD:
+                    assert result is not None
+                    value_type = _register_type(function, result)
+                    lines.append(
+                        f"\t%r{result} ={_qbe_type(value_type)} "
+                        f"load{_qbe_type(value_type)} {pointer}"
+                    )
+                else:
+                    value_type = _register_type(function, args[1])
+                    lines.append(
+                        f"\tstore{_qbe_type(value_type)} %r{args[1]}, {pointer}"
+                    )
             elif op is IROpcode.JUMP:
                 lines.append(f"\tjmp @{block_names[instruction.targets[0]]}")
             elif op is IROpcode.BRANCH3:
@@ -254,6 +588,364 @@ def _qbe_type(type_: IRType) -> str:
         raise QBETranslationError(f"unsupported S3 type {type_.value}") from error
 
 
+def _failure_return_value(type_: IRType) -> str:
+    return "d_0.0" if type_ is IRType.F64 else "0"
+
+
+def _memory_object(function: IRFunction, index: int | None):
+    if index is None:
+        raise QBETranslationError(
+            f"function '{function.name}' memory operation has no memory identity"
+        )
+    for memory in function.memory_objects:
+        if memory.index == index:
+            return memory
+    raise QBETranslationError(
+        f"function '{function.name}' references missing memory m{index}"
+    )
+
+
+def _emit_memory_address(
+    lines: list[str],
+    function_index: int,
+    sequence: int,
+    return_type: IRType,
+    index: int,
+    length: int,
+    base: str,
+    pointer: str,
+) -> None:
+    stem = f"s3_f{function_index}_mem_{sequence}"
+    negative = f"%{stem}_negative"
+    high = f"%{stem}_high"
+    fail_label = _label(function_index, sequence, "fail_bounds")
+    check_high_label = _label(function_index, sequence, "check_bounds_high")
+    ok_label = _label(function_index, sequence, "bounds_ok")
+    lines.extend(
+        [
+            f"\t{negative} =l csltl %r{index}, 0",
+            f"\tjnz {negative}, @{fail_label}, @{check_high_label}",
+            f"@{check_high_label}",
+            f"\t{high} =l csgel %r{index}, {length}",
+            f"\tjnz {high}, @{fail_label}, @{ok_label}",
+        ]
+    )
+    _emit_failure_body(lines, function_index, sequence, return_type, "bounds")
+    offset = f"%{stem}_offset"
+    lines.extend(
+        [
+            f"@{ok_label}",
+            f"\t{offset} =l mul %r{index}, 8",
+            f"\t{pointer} =l add {base}, {offset}",
+        ]
+    )
+
+
+def _failure_label(function_index: int, result: int, category: str) -> str:
+    return _label(function_index, result, f"fail_{category}")
+
+
+def _emit_failure_body(
+    lines: list[str],
+    function_index: int,
+    result: int,
+    return_type: IRType,
+    category: str,
+) -> None:
+    label = _failure_label(function_index, result, category)
+    lines.extend(
+        [
+            f"@{label}",
+            f"\tcall $s3_qbe_fail_{category}()",
+            f"\tret {_failure_return_value(return_type)}",
+        ]
+    )
+
+
+def _emit_i64_add(
+    lines: list[str], function_index: int, return_type: IRType, result: int, left: int, right: int
+) -> None:
+    stem = f"s3_f{function_index}_r{result}"
+    label = _failure_label(function_index, result, "overflow")
+    xor_inputs, xor_result = f"%{stem}_xor_inputs", f"%{stem}_xor_result"
+    same_sign, overflow_bits, overflow = (
+        f"%{stem}_same_sign",
+        f"%{stem}_overflow_bits",
+        f"%{stem}_overflow",
+    )
+    lines.extend(
+        [
+            f"\t%{stem}_sum =l add %r{left}, %r{right}",
+            f"\t{xor_inputs} =l xor %r{left}, %r{right}",
+            f"\t{xor_result} =l xor %r{left}, %{stem}_sum",
+            f"\t{same_sign} =l xor {xor_inputs}, -1",
+            f"\t{overflow_bits} =l and {same_sign}, {xor_result}",
+            f"\t{overflow} =l csltl {overflow_bits}, 0",
+            f"\tjnz {overflow}, @{label}, @{label}_ok",
+        ]
+    )
+    _emit_failure_body(lines, function_index, result, return_type, "overflow")
+    lines.extend([f"@{label}_ok", f"\t%r{result} =l copy %{stem}_sum"])
+
+
+def _emit_i64_sub(
+    lines: list[str], function_index: int, return_type: IRType, result: int, left: int, right: int
+) -> None:
+    stem = f"s3_f{function_index}_r{result}"
+    label = _failure_label(function_index, result, "overflow")
+    xor_inputs, xor_result = f"%{stem}_xor_inputs", f"%{stem}_xor_result"
+    overflow_bits, overflow = f"%{stem}_overflow_bits", f"%{stem}_overflow"
+    lines.extend(
+        [
+            f"\t%{stem}_difference =l sub %r{left}, %r{right}",
+            f"\t{xor_inputs} =l xor %r{left}, %r{right}",
+            f"\t{xor_result} =l xor %r{left}, %{stem}_difference",
+            f"\t{overflow_bits} =l and {xor_inputs}, {xor_result}",
+            f"\t{overflow} =l csltl {overflow_bits}, 0",
+            f"\tjnz {overflow}, @{label}, @{label}_ok",
+        ]
+    )
+    _emit_failure_body(lines, function_index, result, return_type, "overflow")
+    lines.extend([f"@{label}_ok", f"\t%r{result} =l copy %{stem}_difference"])
+
+
+def _emit_i64_mul(
+    lines: list[str], function_index: int, return_type: IRType, result: int, left: int, right: int
+) -> None:
+    stem = f"s3_f{function_index}_r{result}"
+    failure, zero, quotient = (
+        _failure_label(function_index, result, "overflow"),
+        _label(function_index, result, "mul_zero"),
+        _label(function_index, result, "mul_check_quotient"),
+    )
+    lines.extend(
+        [
+            f"\t%{stem}_product =l mul %r{left}, %r{right}",
+            f"\t%{stem}_left_negone =l ceql %r{left}, -1",
+            f"\t%{stem}_right_min =l ceql %r{right}, {_I64_MIN}",
+            f"\t%{stem}_dangerous_division =l and %{stem}_left_negone, %{stem}_right_min",
+            f"\tjnz %{stem}_dangerous_division, @{failure}, @{zero}_check",
+        ]
+    )
+    _emit_failure_body(lines, function_index, result, return_type, "overflow")
+    lines.extend(
+        [
+            f"@{zero}_check",
+            f"\t%{stem}_left_zero =l ceql %r{left}, 0",
+            f"\tjnz %{stem}_left_zero, @{zero}, @{quotient}",
+            f"@{quotient}",
+            f"\t%{stem}_product_quotient =l div %{stem}_product, %r{left}",
+            f"\t%{stem}_quotient_mismatch =l cnel %{stem}_product_quotient, %r{right}",
+            f"\tjnz %{stem}_quotient_mismatch, @{failure}, @{zero}",
+        ]
+    )
+    lines.extend([f"@{zero}", f"\t%r{result} =l copy %{stem}_product"])
+
+
+def _emit_i64_div(
+    lines: list[str], function_index: int, return_type: IRType, result: int, left: int, right: int
+) -> None:
+    stem = f"s3_f{function_index}_r{result}"
+    zero_label = _failure_label(function_index, result, "division_by_zero")
+    overflow_label = _failure_label(function_index, result, "overflow")
+    check_label = _label(function_index, result, "div_check_overflow")
+    safe_label = _label(function_index, result, "div_safe")
+    lines.extend(
+        [
+            f"\t%{stem}_divisor_zero =l ceql %r{right}, 0",
+            f"\tjnz %{stem}_divisor_zero, @{zero_label}, @{check_label}",
+        ]
+    )
+    _emit_failure_body(lines, function_index, result, return_type, "division_by_zero")
+    lines.extend(
+        [
+            f"@{check_label}",
+            f"\t%{stem}_dividend_min =l ceql %r{left}, {_I64_MIN}",
+            f"\t%{stem}_divisor_negone =l ceql %r{right}, -1",
+            f"\t%{stem}_div_overflow =l and %{stem}_dividend_min, %{stem}_divisor_negone",
+            f"\tjnz %{stem}_div_overflow, @{overflow_label}, @{safe_label}",
+        ]
+    )
+    _emit_failure_body(lines, function_index, result, return_type, "overflow")
+    lines.extend(
+        [
+            f"@{safe_label}",
+            f"\t%r{result} =l div %r{left}, %r{right}",
+        ]
+    )
+
+
+def _emit_i64_negation(
+    lines: list[str], function_index: int, return_type: IRType, result: int, operand: int
+) -> None:
+    stem = f"s3_f{function_index}_r{result}"
+    label = _failure_label(function_index, result, "overflow")
+    lines.extend(
+        [
+            f"\t%{stem}_is_min =l ceql %r{operand}, {_I64_MIN}",
+            f"\tjnz %{stem}_is_min, @{label}, @{label}_ok",
+        ]
+    )
+    _emit_failure_body(lines, function_index, result, return_type, "overflow")
+    lines.extend([f"@{label}_ok", f"\t%r{result} =l neg %r{operand}"])
+
+
+def _emit_range_guard(
+    lines: list[str],
+    function_index: int,
+    result: int,
+    return_type: IRType,
+    operand: int,
+    minimum: int,
+    maximum: int,
+    category: str,
+) -> None:
+    stem = f"s3_f{function_index}_r{result}"
+    label = _failure_label(function_index, result, category)
+    lines.extend(
+        [
+            f"\t%{stem}_below_min =l csltl %r{operand}, {minimum}",
+            f"\t%{stem}_above_max =l csgtl %r{operand}, {maximum}",
+            f"\t%{stem}_outside_range =l or %{stem}_below_min, %{stem}_above_max",
+            f"\tjnz %{stem}_outside_range, @{label}, @{label}_ok",
+        ]
+    )
+    _emit_failure_body(lines, function_index, result, return_type, category)
+    lines.append(f"@{label}_ok")
+
+
+def _emit_balanced_add(
+    lines: list[str],
+    function_index: int,
+    return_type: IRType,
+    result: int,
+    left: int,
+    right: int,
+    type_: IRType,
+) -> None:
+    minimum, maximum = (
+        (_TRIT_MIN, _TRIT_MAX) if type_ is IRType.TRIT else (_TRYTE_MIN, _TRYTE_MAX)
+    )
+    stem = f"s3_f{function_index}_r{result}"
+    label = _failure_label(function_index, result, "overflow")
+    lines.extend(
+        [
+            f"\t%{stem}_sum =l add %r{left}, %r{right}",
+            f"\t%{stem}_below_min =l csltl %{stem}_sum, {minimum}",
+            f"\t%{stem}_above_max =l csgtl %{stem}_sum, {maximum}",
+            f"\t%{stem}_outside_range =l or %{stem}_below_min, %{stem}_above_max",
+            f"\tjnz %{stem}_outside_range, @{label}, @{label}_ok",
+        ]
+    )
+    _emit_failure_body(lines, function_index, result, return_type, "overflow")
+    lines.extend([f"@{label}_ok", f"\t%r{result} =l copy %{stem}_sum"])
+
+
+def _emit_trit_extreme(
+    lines: list[str],
+    function_index: int,
+    result: int,
+    left: int,
+    right: int,
+    minimum: bool,
+) -> None:
+    stem = f"s3_f{function_index}_r{result}"
+    take_left = _label(function_index, result, "trit_extreme_left")
+    take_right = _label(function_index, result, "trit_extreme_right")
+    join = _label(function_index, result, "trit_extreme_join")
+    predicate = "csltl" if minimum else "csgtl"
+    lines.extend(
+        [
+            f"\t%{stem}_select_left =l {predicate} %r{left}, %r{right}",
+            f"\tjnz %{stem}_select_left, @{take_left}, @{take_right}",
+            f"@{take_left}",
+            f"\tjmp @{join}",
+            f"@{take_right}",
+            f"\tjmp @{join}",
+            f"@{join}",
+            f"\t%r{result} =l phi @{take_left} %r{left}, @{take_right} %r{right}",
+        ]
+    )
+
+
+def _emit_tryte_extreme(
+    lines: list[str],
+    function_index: int,
+    result: int,
+    left: int,
+    right: int,
+    minimum: bool,
+) -> None:
+    stem = f"s3_f{function_index}_r{result}"
+    left_value, right_value = f"%{stem}_left_value_0", f"%{stem}_right_value_0"
+    lines.extend(
+        [
+            f"\t{left_value} =l copy %r{left}",
+            f"\t{right_value} =l copy %r{right}",
+        ]
+    )
+    digits: list[str] = []
+    for position in range(6):
+        next_left, next_right = (
+            f"%{stem}_left_value_{position + 1}",
+            f"%{stem}_right_value_{position + 1}",
+        )
+        left_digit = _emit_balanced_digit(lines, stem, "left", position, left_value, next_left)
+        right_digit = _emit_balanced_digit(lines, stem, "right", position, right_value, next_right)
+        take_left = _label(function_index, result * 6 + position, "tryte_min_left")
+        take_right = _label(function_index, result * 6 + position, "tryte_min_right")
+        join = _label(function_index, result * 6 + position, "tryte_min_join")
+        predicate = "csltl" if minimum else "csgtl"
+        selected = f"%{stem}_digit_{position}"
+        lines.extend(
+            [
+                f"\t%{stem}_select_{position} =l {predicate} {left_digit}, {right_digit}",
+                f"\tjnz %{stem}_select_{position}, @{take_left}, @{take_right}",
+                f"@{take_left}",
+                f"\tjmp @{join}",
+                f"@{take_right}",
+                f"\tjmp @{join}",
+                f"@{join}",
+                f"\t{selected} =l phi @{take_left} {left_digit}, @{take_right} {right_digit}",
+            ]
+        )
+        digits.append(selected)
+        left_value, right_value = next_left, next_right
+    accumulated = "0"
+    for position, digit in enumerate(digits):
+        term = f"%{stem}_term_{position}"
+        total = f"%{stem}_total_{position}"
+        lines.append(f"\t{term} =l mul {digit}, {3 ** position}")
+        lines.append(f"\t{total} =l add {accumulated}, {term}")
+        accumulated = total
+    lines.append(f"\t%r{result} =l copy {accumulated}")
+
+
+def _emit_balanced_digit(
+    lines: list[str], stem: str, side: str, position: int, current: str, next_value: str
+) -> str:
+    quotient = f"%{stem}_{side}_quotient_{position}"
+    remainder = f"%{stem}_{side}_remainder_{position}"
+    plus_two = f"%{stem}_{side}_plus_two_{position}"
+    minus_two = f"%{stem}_{side}_minus_two_{position}"
+    carry = f"%{stem}_{side}_carry_{position}"
+    correction = f"%{stem}_{side}_correction_{position}"
+    digit = f"%{stem}_{side}_digit_{position}"
+    lines.extend(
+        [
+            f"\t{quotient} =l div {current}, 3",
+            f"\t{remainder} =l rem {current}, 3",
+            f"\t{plus_two} =l ceql {remainder}, 2",
+            f"\t{minus_two} =l ceql {remainder}, -2",
+            f"\t{carry} =l sub {plus_two}, {minus_two}",
+            f"\t{correction} =l mul {carry}, 3",
+            f"\t{digit} =l sub {remainder}, {correction}",
+            f"\t{next_value} =l add {quotient}, {carry}",
+        ]
+    )
+    return digit
+
+
 def _register_type(function: IRFunction, register: int) -> IRType:
     for item in function.registers:
         if item.index == register:
@@ -276,21 +968,21 @@ def _format_constant(value: int | float, type_: IRType) -> str:
 
 
 def _comparison_suffix(type_: IRType) -> tuple[str, str]:
-    if type_ is IRType.I64:
+    if type_ in {IRType.I64, IRType.TRIT, IRType.TRYTE}:
         return "csltl", "csgtl"
     if type_ is IRType.F64:
         return "cltd", "cgtd"
-    raise QBETranslationError(f"comparison for {type_.value} is outside QBE oracle V1")
+    raise QBETranslationError(f"comparison for {type_.value} is outside QBE oracle V5")
 
 
 def _qbe_predicate(relation: int, type_: IRType) -> str:
     names = {0: "ceq", 1: "cne", 2: "clt", 3: "cle", 4: "cgt", 5: "cge"}
     if relation not in names:
         raise QBETranslationError(f"unknown S3 relation code {relation}")
-    suffix = "l" if type_ is IRType.I64 else "d" if type_ is IRType.F64 else None
+    suffix = "l" if type_ in {IRType.I64, IRType.TRIT, IRType.TRYTE} else "d" if type_ is IRType.F64 else None
     if suffix is None:
-        raise QBETranslationError(f"relation for {type_.value} is outside QBE oracle V1")
-    if type_ is IRType.I64 and relation in {2, 3, 4, 5}:
+        raise QBETranslationError(f"relation for {type_.value} is outside QBE oracle V5")
+    if type_ in {IRType.I64, IRType.TRIT, IRType.TRYTE} and relation in {2, 3, 4, 5}:
         names.update({2: "cslt", 3: "csle", 4: "csgt", 5: "csge"})
     return names[relation] + suffix
 
@@ -312,5 +1004,5 @@ def _unsupported(
     op = instruction.opcode.value if isinstance(instruction.opcode, IROpcode) else instruction.opcode
     raise QBETranslationError(
         f"function '{function.name}' block '{block}': {reason} is outside "
-        f"QBE oracle V1 (opcode {op})"
+        f"QBE oracle V5 (opcode {op})"
     )
