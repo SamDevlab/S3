@@ -431,6 +431,94 @@ fn main() -> i64:
     return failures
 """
 
+QBE_BYTES_PROGRAM = """\
+fn mismatch_i64(actual: i64, expected: i64) -> i64:
+    match actual == expected:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn at_least(actual: i64, minimum: i64) -> i64:
+    match actual >= minimum:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn main() -> i64:
+    mut data: bytes = bytes_new(2)
+    discard bytes_push(&mut data, 65)
+    discard bytes_push(&mut data, 255)
+    discard bytes_reserve(&mut data, 4)
+    discard bytes_set(&mut data, 0, 66)
+    mut clone: bytes = bytes_clone(&data)
+    discard bytes_reserve(&mut clone, 4)
+    discard bytes_push(&mut clone, 67)
+    mut tail: bytes = bytes_slice(&clone, 1, 2)
+    mut joined: bytes = bytes_concat(&data, &tail)
+    mut failures: i64 = 0
+    failures = failures + mismatch_i64(bytes_len(&data), 2)
+    failures = failures + at_least(bytes_capacity(&data), 4)
+    failures = failures + mismatch_i64(to_i64(bytes_get(&data, 0)), 66)
+    failures = failures + mismatch_i64(to_i64(bytes_get(&data, 1)), 255)
+    failures = failures + mismatch_i64(bytes_len(&clone), 3)
+    failures = failures + mismatch_i64(to_i64(bytes_get(&clone, 2)), 67)
+    failures = failures + mismatch_i64(bytes_len(&tail), 1)
+    failures = failures + mismatch_i64(to_i64(bytes_get(&tail, 0)), 255)
+    failures = failures + mismatch_i64(bytes_len(&joined), 3)
+    failures = failures + mismatch_i64(to_i64(bytes_get(&joined, 2)), 255)
+    return failures
+"""
+
+_QBE_BYTES_BUILTINS = (
+    "bytes_new",
+    "bytes_len",
+    "bytes_capacity",
+    "bytes_reserve",
+    "bytes_push",
+    "bytes_get",
+    "bytes_set",
+    "bytes_clone",
+    "bytes_concat",
+    "bytes_slice",
+)
+
+QBE_BYTES_ERROR_CASES = (
+    (
+        "bytes-capacity",
+        """\
+fn main() -> i64:
+    mut data: bytes = bytes_new(1)
+    discard bytes_push(&mut data, 65)
+    discard bytes_push(&mut data, 66)
+    return 0
+""",
+        "capacity",
+    ),
+    (
+        "bytes-bounds",
+        """\
+fn main() -> i64:
+    data: bytes = bytes_new(1)
+    return to_i64(bytes_get(&data, 0))
+""",
+        "bounds",
+    ),
+    (
+        "bytes-octet-range",
+        """\
+fn main() -> i64:
+    mut data: bytes = bytes_new(1)
+    discard bytes_push(&mut data, 256)
+    return 0
+""",
+        "overflow",
+    ),
+)
+
 _QBE_I64_MAP_SET_BUILTINS = (
     "i64_map_new",
     "i64_map_len",
@@ -822,6 +910,7 @@ def test_qbe_s3_runtime_provider_excludes_workload_functions(optimization) -> No
     assert "__s3_builtin_f64_vector_new:" in runtime_assembly
     assert "__s3_builtin_i64_map_new:" in runtime_assembly
     assert "__s3_builtin_i64_set_new:" in runtime_assembly
+    assert "__s3_builtin_bytes_new:" in runtime_assembly
     assert "s3_main:" in runtime_assembly
     assert "__s3mod_" not in runtime_assembly
 
@@ -917,6 +1006,7 @@ def _build_qbe_native(
             "__s3_builtin_i64_vector_clone",
             "__s3_builtin_i64_vector_slice",
             *[f"__s3_builtin_{builtin}" for builtin in _QBE_I64_MAP_SET_BUILTINS],
+            *[f"__s3_builtin_{builtin}" for builtin in _QBE_BYTES_BUILTINS],
         ]
         expose = subprocess.run(
             [
@@ -1011,6 +1101,7 @@ def _error_category(call) -> str:
             or "outside [" in text
             or "outside the" in text
             or "outside tryte range" in text
+            or "not an octet" in text
         ):
             return "overflow"
         pytest.fail(f"unclassified semantic error: {error!r}")
@@ -1463,6 +1554,151 @@ def test_qbe_i64_map_missing_key_is_classified_as_bounds(optimization) -> None:
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_bytes_operations_preserve_s3_semantics(optimization) -> None:
+    compilation = compile_source(QBE_BYTES_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+
+    il = translate_verified_ir(compilation.ir)
+    for builtin in _QBE_BYTES_BUILTINS:
+        assert f"call $__s3_builtin_{builtin}(" in il
+    assert "_bytes_slot_" in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_bytes_match_s3_when_linux_toolchain_exists(
+    optimization, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(QBE_BYTES_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "bytes-operations",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "bytes-operations", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+@pytest.mark.parametrize("name,source,category", QBE_BYTES_ERROR_CASES)
+def test_qbe_bytes_errors_match_s3_semantic_engines(
+    name, source, category, optimization
+) -> None:
+    compilation = compile_source(source, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert _error_category(lambda: execute_ir(compilation.ir)) == category
+    assert _error_category(lambda: execute_assembly(compilation.assembly)) == category
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+@pytest.mark.parametrize("name,source,category", QBE_BYTES_ERROR_CASES)
+def test_qbe_native_bytes_errors_match_s3(
+    name, source, category, optimization, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(source, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        f"bytes-{name}",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, f"bytes-{name}", tmp_path, cc
+    )
+
+    assert _error_category(lambda: execute_ir(compilation.ir)) == category
+    assert _error_category(lambda: execute_assembly(compilation.assembly)) == category
+    assert s3_native.returncode != 0
+    assert qbe_native.returncode == s3_native.returncode
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_executes_existing_hex_encoding_workload(optimization, tmp_path) -> None:
+    payload = bytes((0, 1, 15, 16, 127, 128, 254, 255))
+    expected = payload.hex().encode("ascii")
+    lines = [
+        "module main",
+        "from s3.workloads.encoding import hex_encode",
+        "fn main() -> i64:",
+        f"    mut input: bytes = bytes_new({len(payload)})",
+    ]
+    lines.extend(f"    discard bytes_push(&mut input, {byte})" for byte in payload)
+    lines.extend(
+        [
+            "    mut encoded: bytes = hex_encode(&input)",
+            f"    mut failures: i64 = mismatch_i64(bytes_len(&encoded), {len(expected)})",
+        ]
+    )
+    lines.extend(
+        f"    failures = failures + mismatch_i64(to_i64(bytes_get(&encoded, {index})), {byte})"
+        for index, byte in enumerate(expected)
+    )
+    lines.extend(
+        [
+            "    return failures",
+            "fn mismatch_i64(actual: i64, expected: i64) -> i64:",
+            "    match actual == expected:",
+            "        -1:",
+            "            return 0",
+            "        0:",
+            "            return 1",
+            "        1:",
+            "            return 1",
+        ]
+    )
+    source_files = {
+        "main.s3": "\n".join(lines) + "\n",
+        "s3/workloads/encoding.s3": (
+            Path(__file__).resolve().parents[1]
+            / "examples"
+            / "language_maturity"
+            / "hex_encode.s3"
+        ).read_text(encoding="utf-8"),
+    }
+    compilation = compile_sources(
+        source_files, optimization=optimization, entry_module="main"
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe, cc = _require_qbe_native_tools()
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "hex-encoding-real-workload",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "hex-encoding-real-workload", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
 @pytest.mark.parametrize(
     "name,source",
     [
@@ -1800,10 +2036,10 @@ def test_qbe_oracle_rejects_memory_initialized_on_only_one_branch() -> None:
         (
             """\
 fn main() -> i64:
-    mut values: bytes = bytes_new(1)
-    return bytes_len(&values)
+    mut value: text = text_new(1)
+    return text_len(&value)
 """,
-            "unsupported register type bytes",
+            "unsupported register type text",
         ),
         (
             """\
@@ -1825,7 +2061,7 @@ fn main() -> i64:
     mut value: i64 = 1
     return read(&value)
 """,
-            "vector reference shape",
+            "owned container reference shape",
         ),
     ],
 )

@@ -25,13 +25,19 @@ _QBE_TYPES = {
     IRType.F64: "d",
     IRType.TRIT: "l",
     IRType.TRYTE: "l",
+    IRType.BYTES: "l",
     IRType.VECTOR: "l",
     IRType.REFERENCE: "l",
 }
 _QBE_SCALAR_TYPES = frozenset(
     {IRType.I64, IRType.F64, IRType.TRIT, IRType.TRYTE}
 )
-_QBE_ABI_TYPES = _QBE_SCALAR_TYPES | {IRType.VECTOR, IRType.REFERENCE}
+_QBE_FUNCTION_RESULT_TYPES = _QBE_SCALAR_TYPES | {IRType.BYTES, IRType.VECTOR}
+_QBE_ABI_TYPES = _QBE_SCALAR_TYPES | {
+    IRType.BYTES,
+    IRType.VECTOR,
+    IRType.REFERENCE,
+}
 _QBE_I64_VECTOR_BUILTINS = frozenset(
     {
         "i64_vector_new",
@@ -84,11 +90,26 @@ _QBE_I64_MAP_SET_BUILTINS = frozenset(
         "i64_set_clone",
     }
 )
+_QBE_BYTES_BUILTINS = frozenset(
+    {
+        "bytes_new",
+        "bytes_len",
+        "bytes_capacity",
+        "bytes_reserve",
+        "bytes_push",
+        "bytes_get",
+        "bytes_set",
+        "bytes_clone",
+        "bytes_concat",
+        "bytes_slice",
+    }
+)
 _QBE_DYNAMIC_CONTAINER_BUILTINS = (
     _QBE_I64_VECTOR_BUILTINS
     | _QBE_TRYTE_VECTOR_BUILTINS
     | _QBE_F64_VECTOR_BUILTINS
     | _QBE_I64_MAP_SET_BUILTINS
+    | _QBE_BYTES_BUILTINS
 )
 _QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS = {
     builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_I64_VECTOR_BUILTINS
@@ -105,6 +126,9 @@ _QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
 _QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
     {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_I64_MAP_SET_BUILTINS}
 )
+_QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
+    {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_BYTES_BUILTINS}
+)
 _I64_MIN = -(1 << 63)
 _I64_MAX = (1 << 63) - 1
 _TRIT_MIN, _TRIT_MAX = -1, 1
@@ -115,8 +139,8 @@ def translate_verified_ir(module: IRModule) -> str:
     """Verify and translate the experimental scalar/container subset.
 
     Checked numeric operations and memory accesses are guarded before QBE
-    machine operations. Dynamic builtins outside the checked scalar and
-    tryte/i64/f64-vector, and i64-map/set subsets remain fail-closed.
+    machine operations. Dynamic builtins outside the checked scalar,
+    tryte/i64/f64-vector, i64-map/set, and bytes subsets are rejected.
     """
 
     verify_ir(module)
@@ -141,7 +165,7 @@ def _validate_supported_module(module: IRModule) -> None:
             raise QBETranslationError(
                 f"function name '{function.name}' cannot be represented safely in QBE IL"
             )
-        if function.return_type not in _QBE_SCALAR_TYPES:
+        if function.return_type not in _QBE_FUNCTION_RESULT_TYPES:
             raise QBETranslationError(
                 f"function '{function.name}' result type {function.return_type.value} "
                 "is outside QBE oracle V5"
@@ -338,10 +362,10 @@ def _validate_instruction(
         if (
             len(operands) != 1
             or len(instruction.results) != 1
-            or registers[operands[0]] is not IRType.VECTOR
+            or registers[operands[0]] not in {IRType.VECTOR, IRType.BYTES}
             or _result_type(function, instruction) is not IRType.REFERENCE
         ):
-            _unsupported(function, block_name, instruction, "vector reference shape")
+            _unsupported(function, block_name, instruction, "owned container reference shape")
         return
     if op is IROpcode.INVERT:
         if len(operands) != 1 or _result_type(function, instruction) not in _QBE_SCALAR_TYPES:
@@ -395,7 +419,7 @@ def _validate_instruction(
         if any(parameter.type not in _QBE_ABI_TYPES for parameter in callee.parameters):
             _unsupported(function, block_name, instruction, "non-scalar callee ABI")
         if (
-            callee.return_type not in _QBE_SCALAR_TYPES
+            callee.return_type not in _QBE_FUNCTION_RESULT_TYPES
             or callee.result_width != 1
             or (
                 instruction.results
@@ -470,15 +494,18 @@ def _translate_function(
         memory.index: f"%s3_f{function_index}_memory_{memory.index}"
         for memory in function.memory_objects
     }
-    addressed_vectors = {
+    addressed_owners = {
         instruction.operands[0]
         for block in function.blocks
         for instruction in block.instructions
         if instruction.opcode is IROpcode.ADDRESS_OF
     }
     reference_slots = {
-        register: f"%s3_f{function_index}_vector_slot_{register}"
-        for register in addressed_vectors
+        register: (
+            f"%s3_f{function_index}_"
+            f"{'vector' if _register_type(function, register) is IRType.VECTOR else 'bytes'}_slot_{register}"
+        )
+        for register in addressed_owners
     }
     temporary_index = 0
     for block_index, block in enumerate(function.blocks):

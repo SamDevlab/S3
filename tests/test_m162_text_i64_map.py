@@ -149,6 +149,17 @@ fn main() -> i64:
             0,
         ),
         (
+            "contains-present-returns-negative-trit",
+            """\
+fn main() -> i64:
+    mut values: map<text, i64> = map_new<text, i64>(2)
+    alpha: text = text_from_static("alpha")
+    discard map_put<text, i64>(&mut values, &alpha, 7)
+    return to_i64(map_contains<text, i64>(&values, &alpha))
+""",
+            -1,
+        ),
+        (
             "reserve-and-capacity",
             """\
 fn main() -> i64:
