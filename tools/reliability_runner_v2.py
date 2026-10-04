@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import ctypes
 import json
 import os
 import signal
@@ -10,6 +11,7 @@ import subprocess
 import sys
 import threading
 import time
+import weakref
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -145,16 +147,121 @@ def _taskkill(pid: int, *, force: bool, timeout_seconds: float) -> None:
         return
 
 
+class _WindowsProcessJob:
+    """Contain a worker and every descendant in a kill-on-close Job Object."""
+
+    def __init__(self, handle: int, kernel32) -> None:
+        self._handle = handle
+        self._kernel32 = kernel32
+        self._finalizer = weakref.finalize(self, kernel32.CloseHandle, handle)
+
+    @classmethod
+    def assign(cls, process: subprocess.Popen[bytes]) -> _WindowsProcessJob | None:
+        if process.poll() is not None:
+            return None
+
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.CreateJobObjectW.argtypes = [wintypes.LPVOID, wintypes.LPCWSTR]
+        kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+        kernel32.SetInformationJobObject.argtypes = [
+            wintypes.HANDLE,
+            ctypes.c_int,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+        ]
+        kernel32.SetInformationJobObject.restype = wintypes.BOOL
+        kernel32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+        kernel32.AssignProcessToJobObject.restype = wintypes.BOOL
+        kernel32.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        kernel32.TerminateJobObject.restype = wintypes.BOOL
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel32.CloseHandle.restype = wintypes.BOOL
+
+        class BasicLimitInformation(ctypes.Structure):
+            _fields_ = [
+                ("PerProcessUserTimeLimit", ctypes.c_longlong),
+                ("PerJobUserTimeLimit", ctypes.c_longlong),
+                ("LimitFlags", wintypes.DWORD),
+                ("MinimumWorkingSetSize", ctypes.c_size_t),
+                ("MaximumWorkingSetSize", ctypes.c_size_t),
+                ("ActiveProcessLimit", wintypes.DWORD),
+                ("Affinity", ctypes.c_size_t),
+                ("PriorityClass", wintypes.DWORD),
+                ("SchedulingClass", wintypes.DWORD),
+            ]
+
+        class IoCounters(ctypes.Structure):
+            _fields_ = [(name, ctypes.c_ulonglong) for name in (
+                "ReadOperationCount",
+                "WriteOperationCount",
+                "OtherOperationCount",
+                "ReadTransferCount",
+                "WriteTransferCount",
+                "OtherTransferCount",
+            )]
+
+        class ExtendedLimitInformation(ctypes.Structure):
+            _fields_ = [
+                ("BasicLimitInformation", BasicLimitInformation),
+                ("IoInfo", IoCounters),
+                ("ProcessMemoryLimit", ctypes.c_size_t),
+                ("JobMemoryLimit", ctypes.c_size_t),
+                ("PeakProcessMemoryUsed", ctypes.c_size_t),
+                ("PeakJobMemoryUsed", ctypes.c_size_t),
+            ]
+
+        job_handle = kernel32.CreateJobObjectW(None, None)
+        if not job_handle:
+            raise ctypes.WinError(ctypes.get_last_error())
+        job = cls(job_handle, kernel32)
+        limits = ExtendedLimitInformation()
+        # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE keeps timeout cleanup independent
+        # of a racy parent-PID tree walk.
+        limits.BasicLimitInformation.LimitFlags = 0x00002000
+        if not kernel32.SetInformationJobObject(
+            job_handle,
+            9,  # JobObjectExtendedLimitInformation
+            ctypes.byref(limits),
+            ctypes.sizeof(limits),
+        ):
+            error = ctypes.get_last_error()
+            job.close()
+            raise ctypes.WinError(error)
+
+        if process.poll() is not None:
+            job.close()
+            return None
+        if not kernel32.AssignProcessToJobObject(
+            job_handle,
+            wintypes.HANDLE(int(process._handle)),
+        ):
+            error = ctypes.get_last_error()
+            job.close()
+            if process.poll() is not None:
+                return None
+            raise ctypes.WinError(error)
+        return job
+
+    def terminate(self, exit_code: int = 1) -> bool:
+        return bool(self._handle) and bool(
+            self._kernel32.TerminateJobObject(self._handle, exit_code)
+        )
+
+    def close(self) -> None:
+        if self._finalizer.alive:
+            self._handle = 0
+            self._finalizer()
+
+
 def _kill_process_tree(process: subprocess.Popen[bytes], grace_ms: int) -> bool:
     grace_seconds = max(0.0, grace_ms / 1000.0)
 
     if os.name == "nt":
-        _taskkill(process.pid, force=False, timeout_seconds=max(0.25, grace_seconds))
-        try:
-            process.wait(timeout=grace_seconds)
-        except subprocess.TimeoutExpired:
-            pass
-        _taskkill(process.pid, force=True, timeout_seconds=max(0.25, grace_seconds))
+        job = getattr(process, "_s3_windows_job", None)
+        if job is None or not job.terminate():
+            _taskkill(process.pid, force=True, timeout_seconds=max(0.25, grace_seconds))
         if process.poll() is None:
             try:
                 process.kill()
@@ -210,6 +317,18 @@ def _result(
     stdout_reader: _BoundedReader,
     stderr_reader: _BoundedReader,
 ) -> IsolatedRunResult:
+    job = getattr(process, "_s3_windows_job", None)
+    if job is not None:
+        # Closing the kill-on-close job also catches descendants that exited
+        # the worker normally but outlived its pipe handles.
+        job.close()
+        process._s3_windows_job = None  # type: ignore[attr-defined]
+        if process.poll() is None:
+            try:
+                process.wait(timeout=0.5)
+            except subprocess.TimeoutExpired:
+                pass
+        reaped = process.poll() is not None
     stdout = stdout_reader.data
     stderr = stderr_reader.data
     return IsolatedRunResult(
@@ -359,6 +478,13 @@ def run_isolated_worker(
         creationflags=creationflags,
         **popen_kwargs,
     )
+    if os.name == "nt":
+        try:
+            process._s3_windows_job = _WindowsProcessJob.assign(process)  # type: ignore[attr-defined]
+        except OSError:
+            process.kill()
+            process.wait()
+            raise
     assert process.stdin is not None
     assert process.stdout is not None
     assert process.stderr is not None

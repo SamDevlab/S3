@@ -189,10 +189,14 @@ def test_r1_hard_timeout_kills_and_reaps_hung_worker(tmp_path: Path) -> None:
 
 
 def test_r1_timeout_kills_descendant_process_tree(tmp_path: Path) -> None:
+    started = tmp_path / "descendant-started.txt"
     marker = tmp_path / "descendant-survived.txt"
     child = (
-        "import os,pathlib,time; "
-        "time.sleep(0.8); "
+        "import json,os,pathlib,time; "
+        "pathlib.Path(os.environ['R1_STARTED']).write_text(json.dumps({"
+        "'pid':os.getpid(),'ppid':os.getppid(),'started_at':time.monotonic()}), "
+        "encoding='utf-8'); "
+        "time.sleep(2.0); "
         "pathlib.Path(os.environ['R1_MARKER']).write_text('survived', encoding='utf-8')"
     )
     parent = f"""
@@ -204,14 +208,22 @@ time.sleep(60)
     result = run_isolated_worker(
         _request(),
         worker_argv=(sys.executable, "-c", parent),
-        timeout_ms=120,
+        timeout_ms=1500,
         cwd=tmp_path,
-        env_overrides={"R1_MARKER": str(marker)},
+        env_overrides={"R1_MARKER": str(marker), "R1_STARTED": str(started)},
     )
     assert result.status == "TIMEOUT"
     assert result.reaped is True
-    time.sleep(1.0)
-    assert not marker.exists()
+    assert started.is_file(), "the descendant must be ready before timeout is exercised"
+    child_state = json.loads(started.read_text(encoding="utf-8"))
+    child_started_at = float(child_state["started_at"])
+    observation_deadline = child_started_at + 3.0
+    while time.monotonic() < observation_deadline and not marker.exists():
+        time.sleep(0.02)
+    assert not marker.exists(), (
+        f"descendant pid={child_state['pid']} ppid={child_state['ppid']} "
+        "survived worker timeout"
+    )
 
 
 def test_r1_protocol_flood_is_resource_limit(tmp_path: Path) -> None:

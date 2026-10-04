@@ -1,0 +1,80 @@
+record CsvParse:
+    valid: trit
+    total: i64
+    count: i64
+
+fn invalid_csv() -> CsvParse:
+    return CsvParse(valid=0, total=0, count=0)
+
+fn parse_csv_integers(input: &text) -> CsvParse:
+    mut data: bytes = bytes_from_text(input)
+    mut length: i64 = bytes_len(&data)
+    mut index: i64 = 0
+    mut total: i64 = 0
+    mut count: i64 = 0
+    mut value: i64 = 0
+    mut sign: i64 = 1
+    mut digits: i64 = 0
+    mut started: i64 = 0
+    while index < length:
+        mut octet: i64 = to_i64(bytes_get(&data, index))
+        match octet <=> 44:
+            -1:
+                return invalid_csv()
+            0:
+                match digits <=> 0:
+                    -1:
+                        return invalid_csv()
+                    0:
+                        return invalid_csv()
+                    1:
+                        total = total + sign * value
+                        count = count + 1
+                        value = 0
+                        sign = 1
+                        digits = 0
+                        started = 0
+            1:
+                match octet <=> 45:
+                    -1:
+                        return invalid_csv()
+                    0:
+                        match started <=> 0:
+                            -1:
+                                return invalid_csv()
+                            0:
+                                sign = 0 - 1
+                                started = 1
+                            1:
+                                return invalid_csv()
+                    1:
+                        mut digit: i64 = octet - 48
+                        match digit <=> 0:
+                            -1:
+                                return invalid_csv()
+                            0:
+                                value = value * 10
+                                digits = digits + 1
+                                started = 1
+                            1:
+                                match digit <=> 9:
+                                    -1:
+                                        value = value * 10 + digit
+                                        digits = digits + 1
+                                        started = 1
+                                    0:
+                                        value = value * 10 + digit
+                                        digits = digits + 1
+                                        started = 1
+                                    1:
+                                        return invalid_csv()
+        index = index + 1
+    match digits <=> 0:
+        -1:
+            return invalid_csv()
+        0:
+            return invalid_csv()
+        1:
+            total = total + sign * value
+            count = count + 1
+            return CsvParse(valid=-1, total=total, count=count)
