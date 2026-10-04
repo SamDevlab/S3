@@ -46,9 +46,16 @@ _QBE_I64_VECTOR_BUILTINS = frozenset(
         "i64_vector_slice",
     }
 )
-_QBE_I64_VECTOR_RUNTIME_SYMBOLS = {
+_QBE_TRYTE_VECTOR_BUILTINS = frozenset(
+    builtin.replace("i64_", "tryte_", 1) for builtin in _QBE_I64_VECTOR_BUILTINS
+)
+_QBE_VECTOR_BUILTINS = _QBE_I64_VECTOR_BUILTINS | _QBE_TRYTE_VECTOR_BUILTINS
+_QBE_VECTOR_RUNTIME_SYMBOLS = {
     builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_I64_VECTOR_BUILTINS
 }
+_QBE_VECTOR_RUNTIME_SYMBOLS.update(
+    {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_TRYTE_VECTOR_BUILTINS}
+)
 _I64_MIN = -(1 << 63)
 _I64_MAX = (1 << 63) - 1
 _TRIT_MIN, _TRIT_MAX = -1, 1
@@ -56,11 +63,11 @@ _TRYTE_MIN, _TRYTE_MAX = -364, 364
 
 
 def translate_verified_ir(module: IRModule) -> str:
-    """Verify and translate the experimental scalar/fixed-memory subset.
+    """Verify and translate the experimental scalar/vector subset.
 
     Checked numeric operations and memory accesses are guarded before QBE
-    machine operations. Aggregates and dynamic builtins outside the checked
-    scalar and i64-vector subsets remain fail-closed.
+    machine operations. Dynamic builtins outside the checked scalar and
+    tryte/i64-vector subsets remain fail-closed.
     """
 
     verify_ir(module)
@@ -320,7 +327,7 @@ def _validate_instruction(
         callee = functions.get(callee_name)
         if callee is None:
             signature = DYNAMIC_BUILTIN_SIGNATURES.get(callee_name)
-            if callee_name not in _QBE_I64_VECTOR_BUILTINS or signature is None:
+            if callee_name not in _QBE_VECTOR_BUILTINS or signature is None:
                 _unsupported(function, block_name, instruction, "external or builtin call")
             parameter_types, result_types = signature
             if tuple(registers[operand] for operand in operands) != parameter_types:
@@ -589,7 +596,7 @@ def _translate_function(
                     parameter_types = DYNAMIC_BUILTIN_SIGNATURES[
                         instruction.callee
                     ][0]
-                    callee_name = _QBE_I64_VECTOR_RUNTIME_SYMBOLS.get(
+                    callee_name = _QBE_VECTOR_RUNTIME_SYMBOLS.get(
                         instruction.callee, instruction.callee
                     )
                 else:
@@ -608,9 +615,24 @@ def _translate_function(
                     lines.append(f"\t{call}")
                 else:
                     result_type = _register_type(function, result)
-                    lines.append(
-                        f"\t%r{result} ={_qbe_type(result_type)} {call}"
-                    )
+                    if callee is None and instruction.callee in {
+                        "tryte_vector_get",
+                        "tryte_vector_pop",
+                    }:
+                        raw_result = _temporary(
+                            function_index, temporary_index, "tryte_vector_result"
+                        )
+                        temporary_index += 1
+                        lines.extend(
+                            [
+                                f"\t{raw_result} =l {call}",
+                                f"\t%r{result} =l extsh {raw_result}",
+                            ]
+                        )
+                    else:
+                        lines.append(
+                            f"\t%r{result} ={_qbe_type(result_type)} {call}"
+                        )
             elif op in {IROpcode.LOAD, IROpcode.STORE}:
                 memory = _memory_object(function, instruction.memory)
                 index = args[0]

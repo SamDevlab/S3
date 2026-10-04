@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from functools import lru_cache
 import os
 import platform
 from pathlib import Path
@@ -281,6 +282,49 @@ fn main() -> i64:
     return failures
 """
 
+QBE_TRYTE_VECTOR_PROGRAM = """\
+fn mismatch_tryte(actual: tryte, expected: tryte) -> i64:
+    match actual == expected:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn mismatch_i64(actual: i64, expected: i64) -> i64:
+    match actual == expected:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn main() -> i64:
+    mut values: tryte_vector = tryte_vector_new(2)
+    discard tryte_vector_push(&mut values, -364)
+    discard tryte_vector_push(&mut values, 364)
+    discard tryte_vector_reserve(&mut values, 4)
+    discard tryte_vector_push(&mut values, 0)
+    mut clone: tryte_vector = tryte_vector_clone(&values)
+    discard tryte_vector_set(&mut clone, 1, -123)
+    mut slice: tryte_vector = tryte_vector_slice(&clone, 0, 3)
+    mut failures: i64 = 0
+    failures = failures + mismatch_i64(tryte_vector_len(&values), 3)
+    failures = failures + mismatch_i64(tryte_vector_capacity(&values), 4)
+    failures = failures + mismatch_tryte(tryte_vector_get(&values, 0), -364)
+    failures = failures + mismatch_tryte(tryte_vector_get(&values, 1), 364)
+    failures = failures + mismatch_tryte(tryte_vector_get(&clone, 1), -123)
+    failures = failures + mismatch_tryte(tryte_vector_get(&slice, 0), -364)
+    failures = failures + mismatch_tryte(tryte_vector_get(&slice, 1), -123)
+    failures = failures + mismatch_tryte(tryte_vector_get(&slice, 2), 0)
+    discard tryte_vector_set(&mut clone, 2, -321)
+    failures = failures + mismatch_tryte(tryte_vector_pop(&mut clone), -321)
+    failures = failures + mismatch_i64(tryte_vector_len(&clone), 2)
+    failures = failures + mismatch_tryte(tryte_vector_pop(&mut values), 0)
+    failures = failures + mismatch_i64(tryte_vector_len(&values), 2)
+    return failures
+"""
+
 QBE_I64_VECTOR_PARAMETER_PROGRAM = """\
 fn append_and_read(values: i64_vector) -> i64:
     discard i64_vector_reserve(&mut values, 3)
@@ -546,6 +590,26 @@ def _i64_error_source(operation: str, left: int, right: int | None) -> str:
     )
 
 
+@lru_cache(maxsize=2)
+def _qbe_s3_runtime_assembly(optimization: OptimizationLevel) -> str:
+    runtime_provider = compile_source(
+        "fn main() -> i64:\n    return 0\n",
+        optimization=optimization,
+    )
+    assert runtime_provider.assembly is not None
+    return X8664Backend().generate(runtime_provider.assembly)
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_s3_runtime_provider_excludes_workload_functions(optimization) -> None:
+    runtime_assembly = _qbe_s3_runtime_assembly(optimization)
+
+    assert "__s3_builtin_i64_vector_new:" in runtime_assembly
+    assert "__s3_builtin_tryte_vector_new:" in runtime_assembly
+    assert "s3_main:" in runtime_assembly
+    assert "__s3mod_" not in runtime_assembly
+
+
 def _build_qbe_native(
     program,
     optimization,
@@ -603,6 +667,16 @@ def _build_qbe_native(
         objcopy = shutil.which("objcopy")
         assert objcopy is not None, "QBE_BUILD_FAILURE: objcopy is required to expose S3 runtime symbols"
         expose_symbols = [
+            "__s3_builtin_tryte_vector_new",
+            "__s3_builtin_tryte_vector_len",
+            "__s3_builtin_tryte_vector_capacity",
+            "__s3_builtin_tryte_vector_reserve",
+            "__s3_builtin_tryte_vector_push",
+            "__s3_builtin_tryte_vector_pop",
+            "__s3_builtin_tryte_vector_get",
+            "__s3_builtin_tryte_vector_set",
+            "__s3_builtin_tryte_vector_clone",
+            "__s3_builtin_tryte_vector_slice",
             "__s3_builtin_i64_vector_new",
             "__s3_builtin_i64_vector_len",
             "__s3_builtin_i64_vector_capacity",
@@ -904,7 +978,7 @@ def test_qbe_native_real_sorting_and_binary_search_differential_when_linux_toolc
         tmp_path,
         qbe,
         cc,
-        s3_runtime_assembly=X8664Backend().generate(compilation.assembly),
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
     )
     s3_native = _build_s3_native(
         compilation, optimization, "ordering-workload", tmp_path, cc
@@ -993,6 +1067,30 @@ def test_qbe_i64_vector_operations_preserve_s3_semantics(
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_tryte_vector_operations_preserve_s3_semantics(optimization) -> None:
+    compilation = compile_source(QBE_TRYTE_VECTOR_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+
+    il = translate_verified_ir(compilation.ir)
+    for operation in (
+        "new",
+        "len",
+        "capacity",
+        "reserve",
+        "push",
+        "pop",
+        "get",
+        "set",
+        "clone",
+        "slice",
+    ):
+        assert f"call $__s3_builtin_tryte_vector_{operation}(" in il
+    assert "=l extsh %s3_f" in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
 @pytest.mark.parametrize(
     "name,source",
     [
@@ -1013,9 +1111,36 @@ def test_qbe_native_i64_vector_semantics_match_s3_when_linux_toolchain_exists(
         tmp_path,
         qbe,
         cc,
-        s3_runtime_assembly=X8664Backend().generate(compilation.assembly),
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
     )
     s3_native = _build_s3_native(compilation, optimization, name, tmp_path, cc)
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_tryte_vector_semantics_match_s3_when_linux_toolchain_exists(
+    optimization, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(QBE_TRYTE_VECTOR_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "tryte-vector",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "tryte-vector", tmp_path, cc
+    )
 
     assert execute_ir(compilation.ir) == 0
     assert execute_assembly(compilation.assembly) == 0
@@ -1039,7 +1164,7 @@ def test_qbe_native_i64_vector_error_categories_match_s3(
         tmp_path,
         qbe,
         cc,
-        s3_runtime_assembly=X8664Backend().generate(compilation.assembly),
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
     )
     s3_native = _build_s3_native(
         compilation, optimization, f"i64-vector-{category}", tmp_path, cc
@@ -1055,7 +1180,7 @@ def test_qbe_native_i64_vector_error_categories_match_s3(
         "allocation": "runtime error: dynamic buffer allocation",
     }[category]
     assert native_error in s3_native.stderr
-    assert qbe_native.stderr == s3_native.stderr
+    assert qbe_native.stderr.decode(errors="replace") == s3_native.stderr
 
 
 def test_qbe_oracle_preserves_compare_branch_and_scalar_call_shapes() -> None:
