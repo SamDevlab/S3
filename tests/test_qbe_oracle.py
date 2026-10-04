@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import os
 import platform
 import shutil
 import subprocess
@@ -192,11 +193,16 @@ def test_qbe_oracle_verifies_ir_before_translation() -> None:
 def test_qbe_native_scalar_differential_when_linux_toolchain_exists(
     name, optimization, tmp_path
 ) -> None:
+    required = os.environ.get("S3_QBE_NATIVE_REQUIRED") == "1"
     if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
+        if required:
+            pytest.fail("QBE_BUILD_FAILURE: required native qualification is not Linux x86-64")
         pytest.skip("QBE native oracle requires Linux x86-64")
     qbe = shutil.which("qbe")
     cc = shutil.which("gcc") or shutil.which("cc")
     if qbe is None or cc is None:
+        if required:
+            pytest.fail("QBE_BUILD_FAILURE: required qbe executable or C compiler is unavailable")
         pytest.skip("QBE and a native C toolchain are required for the QBE execution gate")
 
     compilation = compile_source(
@@ -206,20 +212,53 @@ def test_qbe_native_scalar_differential_when_linux_toolchain_exists(
     assert program is not None
     il_path = tmp_path / f"{name}-{optimization.value}.ssa"
     assembly_path = tmp_path / f"{name}-{optimization.value}.s"
+    object_path = tmp_path / f"{name}-{optimization.value}.o"
     executable_path = tmp_path / f"{name}-{optimization.value}"
     s3_assembly_path = tmp_path / f"{name}-{optimization.value}-s3.s"
     s3_executable_path = tmp_path / f"{name}-{optimization.value}-s3"
     il_path.write_text(translate_verified_ir(program), encoding="utf-8")
-    subprocess.run([qbe, "-o", str(assembly_path), str(il_path)], check=True, capture_output=True)
-    subprocess.run([cc, "-no-pie", str(assembly_path), "-o", str(executable_path)], check=True, capture_output=True)
+    qbe_result = subprocess.run(
+        [qbe, "-o", str(assembly_path), str(il_path)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert qbe_result.returncode == 0, (
+        f"QBE_IL_REJECTED: {name} {optimization.value}: {qbe_result.stderr}"
+    )
+    assert assembly_path.is_file() and assembly_path.stat().st_size > 0, (
+        f"QBE_ASSEMBLY_FAILURE: {name} {optimization.value}: no assembly emitted"
+    )
+    qbe_assembly = subprocess.run(
+        [cc, "-c", str(assembly_path), "-o", str(object_path)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert qbe_assembly.returncode == 0, (
+        f"QBE_ASSEMBLY_FAILURE: {name} {optimization.value}: {qbe_assembly.stderr}"
+    )
+    qbe_link = subprocess.run(
+        [cc, "-no-pie", str(object_path), "-o", str(executable_path)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert qbe_link.returncode == 0, (
+        f"QBE_LINK_FAILURE: {name} {optimization.value}: {qbe_link.stderr}"
+    )
     native = subprocess.run([str(executable_path)], check=False, capture_output=True)
     s3_assembly_path.write_text(
         X8664Backend().generate(compilation.assembly), encoding="utf-8"
     )
-    subprocess.run(
+    s3_link = subprocess.run(
         [cc, "-nostartfiles", "-no-pie", str(s3_assembly_path), "-o", str(s3_executable_path)],
-        check=True,
+        check=False,
         capture_output=True,
+        text=True,
+    )
+    assert s3_link.returncode == 0, (
+        f"S3_NATIVE_MISMATCH: {name} {optimization.value}: {s3_link.stderr}"
     )
     s3_native = subprocess.run(
         [str(s3_executable_path)], check=False, capture_output=True, text=True
@@ -228,6 +267,10 @@ def test_qbe_native_scalar_differential_when_linux_toolchain_exists(
     result = execute_ir(program)
     assert isinstance(result, int)
     assert execute_assembly(compilation.assembly) == result
-    assert native.returncode == (result & 0xFF)
+    assert native.returncode == (result & 0xFF), (
+        f"QBE_RUNTIME_MISMATCH: {name} {optimization.value}: "
+        f"expected exit status {result & 0xFF}, got {native.returncode}; "
+        f"stderr={native.stderr.decode(errors='replace')}"
+    )
     assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
     assert f"program returned: {result}" in s3_native.stdout
