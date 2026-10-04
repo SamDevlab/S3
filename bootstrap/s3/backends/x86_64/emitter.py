@@ -1718,7 +1718,7 @@ class X8664Emitter:
         lines.extend(
             (
                 (
-                    f"    movsx eax, word ptr {load_address}"
+                    f"    movsx rax, word ptr {load_address}"
                     if sign_extend
                     else f"    mov rax, qword ptr {load_address}"
                 ),
