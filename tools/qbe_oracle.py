@@ -49,12 +49,33 @@ _QBE_I64_VECTOR_BUILTINS = frozenset(
 _QBE_TRYTE_VECTOR_BUILTINS = frozenset(
     builtin.replace("i64_", "tryte_", 1) for builtin in _QBE_I64_VECTOR_BUILTINS
 )
-_QBE_VECTOR_BUILTINS = _QBE_I64_VECTOR_BUILTINS | _QBE_TRYTE_VECTOR_BUILTINS
+_QBE_F64_VECTOR_BUILTINS = frozenset(
+    builtin.replace("i64_", "f64_", 1) for builtin in _QBE_I64_VECTOR_BUILTINS
+)
+_QBE_F64_VECTOR_ABI_ADAPTERS = frozenset(
+    {
+        "f64_vector_get",
+        "f64_vector_pop",
+        "f64_vector_push",
+        "f64_vector_set",
+    }
+)
+_QBE_VECTOR_BUILTINS = (
+    _QBE_I64_VECTOR_BUILTINS
+    | _QBE_TRYTE_VECTOR_BUILTINS
+    | _QBE_F64_VECTOR_BUILTINS
+)
 _QBE_VECTOR_RUNTIME_SYMBOLS = {
     builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_I64_VECTOR_BUILTINS
 }
 _QBE_VECTOR_RUNTIME_SYMBOLS.update(
     {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_TRYTE_VECTOR_BUILTINS}
+)
+_QBE_VECTOR_RUNTIME_SYMBOLS.update(
+    {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_F64_VECTOR_BUILTINS}
+)
+_QBE_VECTOR_RUNTIME_SYMBOLS.update(
+    {builtin: f"__s3_qbe_{builtin}" for builtin in _QBE_F64_VECTOR_ABI_ADAPTERS}
 )
 _I64_MIN = -(1 << 63)
 _I64_MAX = (1 << 63) - 1
@@ -67,7 +88,7 @@ def translate_verified_ir(module: IRModule) -> str:
 
     Checked numeric operations and memory accesses are guarded before QBE
     machine operations. Dynamic builtins outside the checked scalar and
-    tryte/i64-vector subsets remain fail-closed.
+    tryte/i64/f64-vector subsets remain fail-closed.
     """
 
     verify_ir(module)
