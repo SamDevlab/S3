@@ -139,6 +139,9 @@ REAL_QBE_EXAMPLES = {
     "recursive_sum_example": ("examples/recursive_sum.s3", 10),
 }
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+ORDERING_WORKLOAD_SOURCE = (
+    _REPOSITORY_ROOT / "examples/language_maturity/insertion_sort_search.s3"
+).read_text(encoding="utf-8")
 QBE_PROGRAMS = dict(SCALAR_PROGRAMS)
 QBE_PROGRAMS.update(
     {
@@ -193,6 +196,131 @@ export fn score(flag: Flag) -> tryte:
             return flag.amount
 """,
 }
+QBE_ORDERING_CASES = (
+    ((29, -4, 8, 8, 17, 0), (-4, 8, 17, 30)),
+    ((6, 5, 4, 3, 2, 1), (1, 4, 6, 7)),
+)
+
+
+def _qbe_ordering_program(values: tuple[int, ...], targets: tuple[int, ...]) -> dict[str, str]:
+    lines = [
+        "module main",
+        "from s3.workloads.ordering import insertion_sort",
+        "from s3.workloads.ordering import binary_search",
+        "fn main() -> i64:",
+        f"    mut values: i64_vector = i64_vector_new({len(values)})",
+    ]
+    lines.extend(
+        f"    discard i64_vector_push(&mut values, {value})" for value in values
+    )
+    lines.extend(
+        [
+            "    mut failures: i64 = 0",
+            "    discard insertion_sort(&mut values)",
+        ]
+    )
+    for index, expected in enumerate(sorted(values)):
+        lines.append(
+            f"    failures = failures + mismatch_index(i64_vector_get(&values, {index}), {expected})"
+        )
+    for target in targets:
+        expected_index = sorted(values).index(target) if target in values else -1
+        lines.append(
+            "    failures = failures + mismatch_index("
+            f"binary_search(&values, {target}), {expected_index})"
+        )
+    lines.extend(
+        [
+            "    return failures",
+            "fn mismatch_index(actual: i64, expected: i64) -> i64:",
+            "    match actual == expected:",
+            "        -1:",
+            "            return 0",
+            "        0:",
+            "            return 1",
+            "        1:",
+            "            return 1",
+        ]
+    )
+    return {
+        "main.s3": "\n".join(lines) + "\n",
+        "s3/workloads/ordering.s3": ORDERING_WORKLOAD_SOURCE,
+    }
+
+
+QBE_I64_VECTOR_PROGRAM = """\
+fn mismatch_index(actual: i64, expected: i64) -> i64:
+    match actual == expected:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn main() -> i64:
+    mut values: i64_vector = i64_vector_new(2)
+    discard i64_vector_push(&mut values, 4)
+    discard i64_vector_push(&mut values, -3)
+    discard i64_vector_reserve(&mut values, 4)
+    discard i64_vector_push(&mut values, 7)
+    mut clone: i64_vector = i64_vector_clone(&values)
+    discard i64_vector_set(&mut clone, 0, 10)
+    mut slice: i64_vector = i64_vector_slice(&values, 1, 3)
+    mut failures: i64 = 0
+    failures = failures + mismatch_index(i64_vector_len(&values), 3)
+    failures = failures + mismatch_index(i64_vector_capacity(&values), 4)
+    failures = failures + mismatch_index(i64_vector_capacity(&clone), 4)
+    failures = failures + mismatch_index(i64_vector_get(&values, 0), 4)
+    failures = failures + mismatch_index(i64_vector_get(&clone, 0), 10)
+    failures = failures + mismatch_index(i64_vector_len(&slice), 2)
+    failures = failures + mismatch_index(i64_vector_capacity(&slice), 2)
+    failures = failures + mismatch_index(i64_vector_get(&slice, 0), -3)
+    failures = failures + mismatch_index(i64_vector_get(&slice, 1), 7)
+    failures = failures + mismatch_index(i64_vector_pop(&mut values), 7)
+    failures = failures + mismatch_index(i64_vector_len(&values), 2)
+    return failures
+"""
+
+QBE_I64_VECTOR_PARAMETER_PROGRAM = """\
+fn append_and_read(values: i64_vector) -> i64:
+    discard i64_vector_reserve(&mut values, 3)
+    discard i64_vector_push(&mut values, 9)
+    return i64_vector_get(&values, 1) + i64_vector_capacity(&values) - 12
+fn main() -> i64:
+    mut values: i64_vector = i64_vector_new(1)
+    discard i64_vector_push(&mut values, 3)
+    return append_and_read(values)
+"""
+
+QBE_I64_VECTOR_ERROR_CASES = (
+    (
+        "capacity",
+        """\
+fn main() -> i64:
+    mut values: i64_vector = i64_vector_new(1)
+    discard i64_vector_push(&mut values, 1)
+    discard i64_vector_push(&mut values, 2)
+    return 0
+""",
+    ),
+    (
+        "bounds",
+        """\
+fn main() -> i64:
+    mut values: i64_vector = i64_vector_new(1)
+    discard i64_vector_push(&mut values, 1)
+    return i64_vector_get(&values, -1)
+""",
+    ),
+    (
+        "allocation",
+        """\
+fn main() -> i64:
+    mut values: i64_vector = i64_vector_new(8388609)
+    return i64_vector_len(&values)
+""",
+    ),
+)
 
 I64_MIN = -(1 << 63)
 I64_MAX = (1 << 63) - 1
@@ -248,7 +376,7 @@ I64_ERROR_CASES = (
     ("div", I64_MIN, -1, "overflow"),
 )
 
-_QBE_FAILURE_RUNTIME = r"""
+_QBE_TEST_RUNTIME = r"""
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -418,13 +546,25 @@ def _i64_error_source(operation: str, left: int, right: int | None) -> str:
     )
 
 
-def _build_qbe_native(program, optimization, name, tmp_path, qbe, cc):
+def _build_qbe_native(
+    program,
+    optimization,
+    name,
+    tmp_path,
+    qbe,
+    cc,
+    *,
+    s3_runtime_assembly: str | None = None,
+):
     stem = f"{name}-{optimization.value}"
     il_path = tmp_path / f"{stem}.ssa"
     assembly_path = tmp_path / f"{stem}.s"
     object_path = tmp_path / f"{stem}.o"
     executable_path = tmp_path / stem
     runtime_path = tmp_path / f"{stem}-runtime.c"
+    runtime_assembly_path = tmp_path / f"{stem}-s3-runtime.s"
+    runtime_object_path = tmp_path / f"{stem}-s3-runtime.o"
+    exported_runtime_object_path = tmp_path / f"{stem}-s3-runtime-exported.o"
     il_path.write_text(translate_verified_ir(program), encoding="utf-8")
     qbe_result = subprocess.run(
         [qbe, "-o", str(assembly_path), str(il_path)],
@@ -447,9 +587,51 @@ def _build_qbe_native(program, optimization, name, tmp_path, qbe, cc):
     assert qbe_assembly.returncode == 0, (
         f"QBE_ASSEMBLY_FAILURE: {name} {optimization.value}: {qbe_assembly.stderr}"
     )
-    runtime_path.write_text(_QBE_FAILURE_RUNTIME, encoding="utf-8")
+    runtime_path.write_text(_QBE_TEST_RUNTIME, encoding="utf-8")
+    link_inputs = [str(object_path)]
+    if s3_runtime_assembly is not None:
+        runtime_assembly_path.write_text(s3_runtime_assembly, encoding="utf-8")
+        runtime_compile = subprocess.run(
+            [cc, "-c", str(runtime_assembly_path), "-o", str(runtime_object_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert runtime_compile.returncode == 0, (
+            f"S3_RUNTIME_ASSEMBLY_FAILURE: {name}: {runtime_compile.stderr}"
+        )
+        objcopy = shutil.which("objcopy")
+        assert objcopy is not None, "QBE_BUILD_FAILURE: objcopy is required to expose S3 runtime symbols"
+        expose_symbols = [
+            "__s3_builtin_i64_vector_new",
+            "__s3_builtin_i64_vector_len",
+            "__s3_builtin_i64_vector_capacity",
+            "__s3_builtin_i64_vector_reserve",
+            "__s3_builtin_i64_vector_push",
+            "__s3_builtin_i64_vector_pop",
+            "__s3_builtin_i64_vector_get",
+            "__s3_builtin_i64_vector_set",
+            "__s3_builtin_i64_vector_clone",
+            "__s3_builtin_i64_vector_slice",
+        ]
+        expose = subprocess.run(
+            [
+                objcopy,
+                "--redefine-sym=_start=s3_qbe_test_unused_start",
+                *[f"--globalize-symbol={symbol}" for symbol in expose_symbols],
+                str(runtime_object_path),
+                str(exported_runtime_object_path),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert expose.returncode == 0, (
+            f"S3_RUNTIME_SYMBOL_EXPORT_FAILURE: {name}: {expose.stderr}"
+        )
+        link_inputs.append(str(exported_runtime_object_path))
     qbe_link = subprocess.run(
-        [cc, "-no-pie", str(object_path), str(runtime_path), "-o", str(executable_path)],
+        [cc, "-no-pie", *link_inputs, str(runtime_path), "-o", str(executable_path)],
         check=False,
         capture_output=True,
         text=True,
@@ -487,6 +669,10 @@ def _error_category(call) -> str:
         text = str(error).lower()
         if "division by zero" in text:
             return "division_by_zero"
+        if "capacity" in text or "reserved capacity" in text:
+            return "capacity"
+        if "allocation" in text or "active limit" in text:
+            return "allocation"
         if "out of bounds" in text or (" index " in text and "outside [" in text):
             return "bounds"
         if isinstance(error, IndexError):
@@ -500,6 +686,24 @@ def _error_category(call) -> str:
             return "overflow"
         pytest.fail(f"unclassified semantic error: {error!r}")
     pytest.fail("expected a semantic error")
+
+
+def _require_qbe_native_tools() -> tuple[str, str]:
+    required = os.environ.get("S3_QBE_NATIVE_REQUIRED") == "1"
+    if (
+        platform.system() != "Linux"
+        or platform.machine().lower() not in {"x86_64", "amd64"}
+    ):
+        if required:
+            pytest.fail("QBE_BUILD_FAILURE: required native qualification is not Linux x86-64")
+        pytest.skip("QBE native oracle requires Linux x86-64")
+    qbe = shutil.which("qbe")
+    cc = shutil.which("gcc") or shutil.which("cc")
+    if qbe is None or cc is None:
+        if required:
+            pytest.fail("QBE_BUILD_FAILURE: required qbe executable or C compiler is unavailable")
+        pytest.skip("QBE and a native C toolchain are required for the QBE execution gate")
+    return qbe, cc
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
@@ -656,6 +860,202 @@ def test_qbe_native_multi_module_differential_when_linux_toolchain_exists(
     assert qbe_native.returncode == 42, qbe_native.stderr.decode(errors="replace")
     assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
     assert "program returned: 42" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+@pytest.mark.parametrize("values,targets", QBE_ORDERING_CASES)
+def test_qbe_composes_real_sorting_and_binary_search_workload(
+    values, targets, optimization
+) -> None:
+    compilation = compile_sources(
+        _qbe_ordering_program(values, targets),
+        optimization=optimization,
+        entry_module="main",
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+
+    il = translate_verified_ir(compilation.ir)
+    assert "call $__s3_builtin_i64_vector_new(" in il
+    assert "call $__s3_builtin_i64_vector_push(" in il
+    assert "call $__s3_builtin_i64_vector_get(" in il
+    assert "call $__s3_builtin_i64_vector_set(" in il
+    assert "call $__s3mod_s3_workloads_ordering__insertion_sort(" in il
+    assert "call $__s3mod_s3_workloads_ordering__binary_search(" in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+@pytest.mark.parametrize("values,targets", QBE_ORDERING_CASES)
+def test_qbe_native_real_sorting_and_binary_search_differential_when_linux_toolchain_exists(
+    values, targets, optimization, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_sources(
+        _qbe_ordering_program(values, targets),
+        optimization=optimization,
+        entry_module="main",
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "ordering-workload",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=X8664Backend().generate(compilation.assembly),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "ordering-workload", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("target", ["arm64", "rv64"])
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_generates_portable_codegen_for_real_ordering_workload(
+    target, optimization, tmp_path
+) -> None:
+    required = os.environ.get("S3_QBE_NATIVE_REQUIRED") == "1"
+    qbe = shutil.which("qbe")
+    if qbe is None:
+        if required:
+            pytest.fail("QBE_BUILD_FAILURE: required qbe executable is unavailable")
+        pytest.skip("QBE executable is required for cross-target code generation")
+    compilation = compile_sources(
+        _qbe_ordering_program((5, -2, 7, 0), (-2, 0, 5, 7, 9)),
+        optimization=optimization,
+        entry_module="main",
+    )
+    assert compilation.ir is not None
+    il_path = tmp_path / f"ordering-{optimization.value}.ssa"
+    assembly_path = tmp_path / f"ordering-{optimization.value}-{target}.s"
+    il_path.write_text(translate_verified_ir(compilation.ir), encoding="utf-8")
+    result = subprocess.run(
+        [qbe, "-t", target, "-o", str(assembly_path), str(il_path)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"{target} codegen rejected ordering workload: {result.stderr}"
+    assert assembly_path.is_file() and assembly_path.stat().st_size > 0
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+@pytest.mark.parametrize(
+    "name,source",
+    [
+        ("i64-vector-operations", QBE_I64_VECTOR_PROGRAM),
+        ("i64-vector-value-parameter", QBE_I64_VECTOR_PARAMETER_PROGRAM),
+    ],
+)
+def test_qbe_i64_vector_operations_preserve_s3_semantics(
+    name, source, optimization
+) -> None:
+    compilation = compile_source(source, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+
+    il = translate_verified_ir(compilation.ir)
+    for builtin in (
+        "i64_vector_new",
+        "i64_vector_len",
+        "i64_vector_capacity",
+        "i64_vector_reserve",
+        "i64_vector_push",
+        "i64_vector_pop",
+        "i64_vector_get",
+        "i64_vector_set",
+        "i64_vector_clone",
+        "i64_vector_slice",
+    ):
+        if name == "i64-vector-operations" or builtin in {
+            "i64_vector_new",
+            "i64_vector_push",
+            "i64_vector_get",
+        }:
+            assert f"call $__s3_builtin_{builtin}(" in il
+    if name == "i64-vector-value-parameter":
+        function_index = next(
+            index
+            for index, function in enumerate(compilation.ir.functions)
+            if function.name == "append_and_read"
+        )
+        slot = f"%s3_f{function_index}_vector_slot_0"
+        assert f"storel %r0, {slot}" in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+@pytest.mark.parametrize(
+    "name,source",
+    [
+        ("i64-vector-operations", QBE_I64_VECTOR_PROGRAM),
+        ("i64-vector-value-parameter", QBE_I64_VECTOR_PARAMETER_PROGRAM),
+    ],
+)
+def test_qbe_native_i64_vector_semantics_match_s3_when_linux_toolchain_exists(
+    name, source, optimization, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(source, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        name,
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=X8664Backend().generate(compilation.assembly),
+    )
+    s3_native = _build_s3_native(compilation, optimization, name, tmp_path, cc)
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+@pytest.mark.parametrize("category,source", QBE_I64_VECTOR_ERROR_CASES)
+def test_qbe_native_i64_vector_error_categories_match_s3(
+    category, source, optimization, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(source, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        f"i64-vector-{category}",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=X8664Backend().generate(compilation.assembly),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, f"i64-vector-{category}", tmp_path, cc
+    )
+
+    assert _error_category(lambda: execute_ir(compilation.ir)) == category
+    assert _error_category(lambda: execute_assembly(compilation.assembly)) == category
+    assert s3_native.returncode != 0
+    assert qbe_native.returncode == s3_native.returncode
+    native_error = {
+        "capacity": "runtime error: dynamic buffer capacity",
+        "bounds": "runtime error: bounds",
+        "allocation": "runtime error: dynamic buffer allocation",
+    }[category]
+    assert native_error in s3_native.stderr
+    assert qbe_native.stderr == s3_native.stderr
 
 
 def test_qbe_oracle_preserves_compare_branch_and_scalar_call_shapes() -> None:
@@ -875,10 +1275,10 @@ def test_qbe_oracle_rejects_memory_initialized_on_only_one_branch() -> None:
         (
             """\
 fn main() -> i64:
-    mut values: i64_vector = i64_vector_new(1)
-    return i64_vector_len(&values)
+    mut values: f64_vector = f64_vector_new(1)
+    return f64_vector_len(&values)
 """,
-            "unsupported register type vector",
+            "external or builtin call",
         ),
         (
             """\
@@ -890,7 +1290,7 @@ fn main() -> i64:
     mut pair: Pair = Pair(value=1)
     return read(&pair)
 """,
-            "non-scalar ABI parameter",
+            "aggregate_field_load",
         ),
         (
             """\
@@ -900,7 +1300,7 @@ fn main() -> i64:
     mut value: i64 = 1
     return read(&value)
 """,
-            "non-scalar ABI parameter",
+            "vector reference shape",
         ),
     ],
 )

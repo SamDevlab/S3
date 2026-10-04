@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import re
 
-from bootstrap.s3.ir import IRFunction, IRInstruction, IRModule, IROpcode, IRType
+from bootstrap.s3.ir import (
+    DYNAMIC_BUILTIN_SIGNATURES,
+    IRFunction,
+    IRInstruction,
+    IRModule,
+    IROpcode,
+    IRType,
+)
 from bootstrap.s3.verifier import verify_ir
 
 
@@ -18,8 +25,30 @@ _QBE_TYPES = {
     IRType.F64: "d",
     IRType.TRIT: "l",
     IRType.TRYTE: "l",
+    IRType.VECTOR: "l",
+    IRType.REFERENCE: "l",
 }
-_QBE_SCALAR_TYPES = frozenset(_QBE_TYPES)
+_QBE_SCALAR_TYPES = frozenset(
+    {IRType.I64, IRType.F64, IRType.TRIT, IRType.TRYTE}
+)
+_QBE_ABI_TYPES = _QBE_SCALAR_TYPES | {IRType.VECTOR, IRType.REFERENCE}
+_QBE_I64_VECTOR_BUILTINS = frozenset(
+    {
+        "i64_vector_new",
+        "i64_vector_len",
+        "i64_vector_capacity",
+        "i64_vector_reserve",
+        "i64_vector_push",
+        "i64_vector_pop",
+        "i64_vector_get",
+        "i64_vector_set",
+        "i64_vector_clone",
+        "i64_vector_slice",
+    }
+)
+_QBE_I64_VECTOR_RUNTIME_SYMBOLS = {
+    builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_I64_VECTOR_BUILTINS
+}
 _I64_MIN = -(1 << 63)
 _I64_MAX = (1 << 63) - 1
 _TRIT_MIN, _TRIT_MAX = -1, 1
@@ -30,8 +59,8 @@ def translate_verified_ir(module: IRModule) -> str:
     """Verify and translate the experimental scalar/fixed-memory subset.
 
     Checked numeric operations and memory accesses are guarded before QBE
-    machine operations. Aggregates, references, dynamic builtins and
-    non-scalar ABI shapes remain fail-closed.
+    machine operations. Aggregates and dynamic builtins outside the checked
+    scalar and i64-vector subsets remain fail-closed.
     """
 
     verify_ir(module)
@@ -65,7 +94,7 @@ def _validate_supported_module(module: IRModule) -> None:
             raise QBETranslationError(
                 f"function '{function.name}' has a non-scalar result width"
             )
-        if any(parameter.type not in _QBE_SCALAR_TYPES for parameter in function.parameters):
+        if any(parameter.type not in _QBE_ABI_TYPES for parameter in function.parameters):
             raise QBETranslationError(
                 f"function '{function.name}' has a non-scalar ABI parameter"
             )
@@ -246,8 +275,17 @@ def _validate_instruction(
         return
     if op is IROpcode.MOVE:
         result_type = _result_type(function, instruction)
-        if result_type not in _QBE_SCALAR_TYPES:
+        if result_type not in _QBE_ABI_TYPES:
             _unsupported(function, block_name, instruction, "move type")
+        return
+    if op is IROpcode.ADDRESS_OF:
+        if (
+            len(operands) != 1
+            or len(instruction.results) != 1
+            or registers[operands[0]] is not IRType.VECTOR
+            or _result_type(function, instruction) is not IRType.REFERENCE
+        ):
+            _unsupported(function, block_name, instruction, "vector reference shape")
         return
     if op is IROpcode.INVERT:
         if len(operands) != 1 or _result_type(function, instruction) not in _QBE_SCALAR_TYPES:
@@ -278,19 +316,36 @@ def _validate_instruction(
             _unsupported(function, block_name, instruction, "comparison result")
         return
     if op is IROpcode.CALL:
-        callee = functions.get(instruction.callee or "")
+        callee_name = instruction.callee or ""
+        callee = functions.get(callee_name)
         if callee is None:
-            _unsupported(function, block_name, instruction, "external or builtin call")
-        if len(instruction.results) != 1:
+            signature = DYNAMIC_BUILTIN_SIGNATURES.get(callee_name)
+            if callee_name not in _QBE_I64_VECTOR_BUILTINS or signature is None:
+                _unsupported(function, block_name, instruction, "external or builtin call")
+            parameter_types, result_types = signature
+            if tuple(registers[operand] for operand in operands) != parameter_types:
+                _unsupported(function, block_name, instruction, "vector builtin arguments")
+            if instruction.results and tuple(
+                registers[result] for result in instruction.results
+            ) != result_types:
+                _unsupported(function, block_name, instruction, "vector builtin results")
+            return
+        if len(instruction.results) > 1:
             _unsupported(function, block_name, instruction, "non-scalar call result")
-        if any(
-            registers[operand] not in _QBE_SCALAR_TYPES
-            for operand in operands
+        if tuple(registers[operand] for operand in operands) != tuple(
+            parameter.type for parameter in callee.parameters
         ):
-            _unsupported(function, block_name, instruction, "non-scalar call argument")
-        if any(parameter.type not in _QBE_SCALAR_TYPES for parameter in callee.parameters):
+            _unsupported(function, block_name, instruction, "callee ABI arguments")
+        if any(parameter.type not in _QBE_ABI_TYPES for parameter in callee.parameters):
             _unsupported(function, block_name, instruction, "non-scalar callee ABI")
-        if callee.return_type not in _QBE_SCALAR_TYPES or callee.result_width != 1:
+        if (
+            callee.return_type not in _QBE_SCALAR_TYPES
+            or callee.result_width != 1
+            or (
+                instruction.results
+                and registers[instruction.results[0]] is not callee.return_type
+            )
+        ):
             _unsupported(function, block_name, instruction, "non-scalar callee result")
         return
     if op in {IROpcode.LOAD, IROpcode.STORE}:
@@ -359,6 +414,16 @@ def _translate_function(
         memory.index: f"%s3_f{function_index}_memory_{memory.index}"
         for memory in function.memory_objects
     }
+    addressed_vectors = {
+        instruction.operands[0]
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.ADDRESS_OF
+    }
+    reference_slots = {
+        register: f"%s3_f{function_index}_vector_slot_{register}"
+        for register in addressed_vectors
+    }
     temporary_index = 0
     for block_index, block in enumerate(function.blocks):
         lines.append(f"@{block_names[block.name]}")
@@ -367,6 +432,14 @@ def _translate_function(
                 lines.append(
                     f"\t{memory_pointers[memory.index]} =l alloc8 {memory.length * 8}"
                 )
+            for slot in reference_slots.values():
+                lines.append(f"\t{slot} =l alloc8 8")
+            for parameter in function.parameters:
+                if parameter.register in reference_slots:
+                    lines.append(
+                        f"\tstorel %r{parameter.register}, "
+                        f"{reference_slots[parameter.register]}"
+                    )
         for instruction in block.instructions:
             op = instruction.opcode
             result = instruction.result
@@ -510,19 +583,34 @@ def _translate_function(
                         op is IROpcode.MINIMUM,
                     )
             elif op is IROpcode.CALL:
-                assert result is not None and instruction.callee is not None
-                callee = functions[instruction.callee]
-                result_type = _register_type(function, result)
+                assert instruction.callee is not None
+                callee = functions.get(instruction.callee)
+                if callee is None:
+                    parameter_types = DYNAMIC_BUILTIN_SIGNATURES[
+                        instruction.callee
+                    ][0]
+                    callee_name = _QBE_I64_VECTOR_RUNTIME_SYMBOLS.get(
+                        instruction.callee, instruction.callee
+                    )
+                else:
+                    parameter_types = tuple(
+                        parameter.type for parameter in callee.parameters
+                    )
+                    callee_name = callee.name
                 call_arguments = ", ".join(
-                    f"{_qbe_type(parameter.type)} %r{register}"
-                    for parameter, register in zip(
-                        callee.parameters, args, strict=True
+                    f"{_qbe_type(parameter_type)} %r{register}"
+                    for parameter_type, register in zip(
+                        parameter_types, args, strict=True
                     )
                 )
-                lines.append(
-                    f"\t%r{result} ={_qbe_type(result_type)} call "
-                    f"${callee.name}({call_arguments})"
-                )
+                call = f"call ${callee_name}({call_arguments})"
+                if result is None:
+                    lines.append(f"\t{call}")
+                else:
+                    result_type = _register_type(function, result)
+                    lines.append(
+                        f"\t%r{result} ={_qbe_type(result_type)} {call}"
+                    )
             elif op in {IROpcode.LOAD, IROpcode.STORE}:
                 memory = _memory_object(function, instruction.memory)
                 index = args[0]
@@ -550,6 +638,11 @@ def _translate_function(
                     lines.append(
                         f"\tstore{_qbe_type(value_type)} %r{args[1]}, {pointer}"
                     )
+            elif op is IROpcode.ADDRESS_OF:
+                assert result is not None
+                lines.append(
+                    f"\t%r{result} =l copy {reference_slots[args[0]]}"
+                )
             elif op is IROpcode.JUMP:
                 lines.append(f"\tjmp @{block_names[instruction.targets[0]]}")
             elif op is IROpcode.BRANCH3:
@@ -571,6 +664,10 @@ def _translate_function(
                 lines.append(f"\tret %r{args[0]}")
             else:
                 raise AssertionError(f"validated opcode was not translated: {op}")
+            if result is not None and result in reference_slots:
+                lines.append(
+                    f"\tstorel %r{result}, {reference_slots[result]}"
+                )
         if block_index == 0 and block.instructions[-1].opcode not in {
             IROpcode.RETURN,
             IROpcode.JUMP,
