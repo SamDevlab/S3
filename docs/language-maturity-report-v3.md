@@ -76,7 +76,7 @@ There were zero failures and zero timeouts. The full-suite transcript is externa
 
 The implementation-head natural pull-request run was `37206394370`, with `headSha=9eb943fcd070067c29a5a4d1215c8a75f3fe62c9`, completed successfully. All 14 checks passed, including `qbe-oracle-linux` (`29 passed`), the Python unit matrices, renderer, benchmark, native x86-64, Docker capability, differential, package, supply-chain, numeric-domain, and SSA gates. This result is attributed only to the implementation HEAD.
 
-This report and `language-maturity-matrix-v3.json` are documentation-only additions. After their commit is pushed, that final documentation head must receive its own natural 14-check CI result before the campaign may be reported complete. `FINAL_DOCUMENTATION_HEAD` and `FINAL_CI_HEAD` refer to the same exact commit; their OID and CI result are recorded in PR #328 and the final campaign checkpoint. The containing commit cannot embed its own OID without making its content self-referential. Do not transfer the earlier implementation-head green status.
+The final documentation candidate also received its own natural CI on the exact PR #328 head. All 14 checks passed, including `qbe-oracle-linux`; the PR's current `headRefOid` and check rollup are the authoritative SHA-to-CI binding. `FINAL_DOCUMENTATION_HEAD` and `FINAL_CI_HEAD` are the same commit, recorded externally in PR #328 and the final campaign checkpoint because the containing documentation commit cannot embed its own OID without becoming self-referential. The implementation-head CI above is not being substituted for final-head CI.
 
 ## Preserved Policy and Next Frontier
 

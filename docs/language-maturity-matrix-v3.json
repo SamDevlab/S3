@@ -4,8 +4,8 @@
   "repository": "SamDevlab/S3",
   "start_head": "89d5d1de6e9a80e69c4d8d2e7514c1e29c58d945",
   "implementation_head": "9eb943fcd070067c29a5a4d1215c8a75f3fe62c9",
-  "final_documentation_head": "CONTAINING_COMMIT_OF_THIS_MATRIX_AND_REPORT; exact OID recorded externally in PR #328",
-  "final_ci_head": "SAME_EXACT_SHA_AS_FINAL_DOCUMENTATION_HEAD; natural CI evidence recorded in PR #328 and final campaign checkpoint",
+  "final_documentation_head": "CONTAINING_COMMIT_OF_THIS_MATRIX_AND_REPORT; exact OID recorded externally as PR #328 headRefOid",
+  "final_ci_head": "SAME_EXACT_SHA_AS_FINAL_DOCUMENTATION_HEAD; all 14 natural PR checks passed and are bound to the exact PR #328 head",
   "branch": "feat/s3-language-maturity-real-workloads-v1-20261004",
   "pr": 328,
   "pr_state": "OPEN_DRAFT",
@@ -176,12 +176,12 @@
       "status": "PASS"
     },
     "final_documentation_head_ci": {
-      "head": "SAME_EXACT_SHA_AS_FINAL_DOCUMENTATION_HEAD; see PR #328 checks",
-      "total": null,
-      "passed": null,
-      "failed": null,
-      "cancelled": null,
-      "status": "AWAITING_POST_PUSH_NATURAL_CI"
+      "head": "SAME_EXACT_SHA_AS_FINAL_DOCUMENTATION_HEAD; exact SHA externally resolved from PR #328",
+      "total": 14,
+      "passed": 14,
+      "failed": 0,
+      "cancelled": 0,
+      "status": "PASS"
     }
   },
   "policy": {
@@ -201,11 +201,11 @@
     "phase_qbe_complete": true,
     "phase_crlf_complete": true,
     "phase_windows_stability_complete": true,
-    "complete": false,
-    "primary_remaining_gap": "Natural CI on the final documentation-only HEAD must complete before campaign closure.",
+    "complete": true,
+    "primary_remaining_gap": "None; PR #328 remains open and Draft for review.",
     "secondary_remaining_gaps": [],
     "qbe_recommended_next_frontier": "Checked i64 add/subtract with explicit overflow semantics; recommendation only, not implemented.",
-    "next_recommended_s3_front": "No additional S3 front until the exact documentation-head CI closes; after that, consider a separately authorized checked-i64 QBE experiment.",
-    "final_assessment": "All targeted technical gates passed, including one Windows full suite and pinned Linux QBE native differential. Campaign closure awaits final documentation-head natural CI; PR remains Draft."
+    "next_recommended_s3_front": "No additional S3 front is started by V3; any checked-i64 QBE experiment requires separate authorization.",
+    "final_assessment": "All targeted technical gates passed, including one Windows full suite, pinned Linux QBE native differential, exact-byte checkout stability, Windows process-tree timeout repair, and 14/14 natural CI checks on the exact final documentation head. PR remains Draft."
   }
 }
