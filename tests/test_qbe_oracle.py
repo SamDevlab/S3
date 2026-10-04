@@ -531,6 +531,39 @@ def test_qbe_real_s3_examples_match_explicit_results(name, expected, optimizatio
     assert translate_verified_ir(compilation.ir)
 
 
+@pytest.mark.parametrize("target", ["arm64", "rv64"])
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_emits_portable_codegen_for_real_s3_examples(
+    target, optimization, tmp_path
+) -> None:
+    required = os.environ.get("S3_QBE_NATIVE_REQUIRED") == "1"
+    qbe = shutil.which("qbe")
+    if qbe is None:
+        if required:
+            pytest.fail("QBE_BUILD_FAILURE: required qbe executable is unavailable")
+        pytest.skip("QBE executable is required for cross-target code generation")
+
+    for name in REAL_QBE_EXAMPLES:
+        compilation = compile_source(
+            QBE_PROGRAMS[name], optimization=optimization
+        )
+        assert compilation.ir is not None
+        il_path = tmp_path / f"{name}-{optimization.value}.ssa"
+        assembly_path = tmp_path / f"{name}-{optimization.value}-{target}.s"
+        il_path.write_text(translate_verified_ir(compilation.ir), encoding="utf-8")
+        result = subprocess.run(
+            [qbe, "-t", target, "-o", str(assembly_path), str(il_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, (
+            f"QBE_TARGET_CODEGEN_FAILURE: {name} {optimization.value} {target}: "
+            f"{result.stderr}"
+        )
+        assert assembly_path.is_file() and assembly_path.stat().st_size > 0
+
+
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
 def test_qbe_composes_frontend_resolved_multi_module_program(optimization) -> None:
     compilation = compile_sources(MULTI_MODULE_PROGRAM, optimization=optimization)
