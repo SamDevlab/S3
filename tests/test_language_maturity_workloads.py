@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import platform
+import random
 import shutil
 import subprocess
 from pathlib import Path
@@ -343,6 +344,86 @@ PEBBLE_CASES = (
 )
 
 
+def _generated_pebble_cases(seed: int = 20261004, count: int = 12) -> tuple[tuple[str, int], ...]:
+    rng = random.Random(seed)
+    generated: list[tuple[str, int]] = []
+    names = "abcdefghijklmnop"
+    for _ in range(count):
+        available: dict[str, int] = {}
+        statements: list[str] = []
+        assignment_count = rng.randint(1, 4)
+        for index in range(assignment_count):
+            target = names[index]
+            if not available:
+                expression = str(rng.randint(0, 20))
+                value = int(expression)
+            else:
+                source_name = rng.choice(tuple(available))
+                operator = rng.choice(("+", "-"))
+                literal = rng.randint(0, 9)
+                expression = f"{source_name}{operator}{literal}"
+                value = available[source_name] + literal if operator == "+" else available[source_name] - literal
+            statements.append(f"{target}={expression};")
+            available[target] = value
+        result_name = rng.choice(tuple(available))
+        operator = rng.choice(("+", "-"))
+        literal = rng.randint(0, 9)
+        result_expression = f"{result_name}{operator}{literal}"
+        expected = available[result_name] + literal if operator == "+" else available[result_name] - literal
+        statements.append(f"! {result_expression};")
+        generated.append((" ".join(statements), expected))
+    return tuple(generated)
+
+
+def _pebble_reference_result(program: str) -> int:
+    """Test-only evaluator for the generated assignment/add/sub/output subset."""
+    environment: dict[str, int] = {}
+
+    def evaluate(expression: str) -> int:
+        cursor = 0
+
+        def atom() -> int:
+            nonlocal cursor
+            start = cursor
+            while cursor < len(expression) and expression[cursor].isdigit():
+                cursor += 1
+            if cursor > start:
+                return int(expression[start:cursor])
+            if cursor < len(expression) and "a" <= expression[cursor] <= "p":
+                name = expression[cursor]
+                cursor += 1
+                return environment[name]
+            raise AssertionError(f"invalid generated Pebble atom: {expression}")
+
+        value = atom()
+        while cursor < len(expression):
+            operator = expression[cursor]
+            cursor += 1
+            right = atom()
+            if operator == "+":
+                value += right
+            elif operator == "-":
+                value -= right
+            else:
+                raise AssertionError(f"invalid generated Pebble operator: {operator}")
+        return value
+
+    output: int | None = None
+    for statement in program.split(";"):
+        statement = statement.strip()
+        if not statement:
+            continue
+        if statement.startswith("!"):
+            assert output is None, "generated output statement must be final"
+            output = evaluate(statement[1:].strip())
+            continue
+        name, separator, expression = statement.partition("=")
+        assert separator and len(name) == 1 and "a" <= name <= "p"
+        environment[name] = evaluate(expression)
+    assert output is not None, "generated Pebble program must have one output"
+    return output
+
+
 def _pebble_program(cases: tuple[tuple[str, int | None], ...]) -> str:
     source = PEBBLE_SOURCE.read_text(encoding="utf-8") + "\n" + VM_SOURCE.read_text(encoding="utf-8")
     lines = ["fn main() -> i64:", "    mut failures: i64 = 0"]
@@ -378,7 +459,13 @@ def _pebble_program(cases: tuple[tuple[str, int | None], ...]) -> str:
                     "            failures = failures + 1",
                     "        0:",
                     f"            mut {result_name}: VmResult = run_vm(&{output_name})",
-                    f"            failures = failures + mismatch_index({result_name}.value, {expected})",
+                    f"            match {result_name}.valid <=> -1:",
+                    "                -1:",
+                    "                    failures = failures + 1",
+                    "                0:",
+                    f"                    failures = failures + mismatch_index({result_name}.value, {expected})",
+                    "                1:",
+                    "                    failures = failures + 1",
                     "        1:",
                     "            failures = failures + 1",
                 ]
@@ -401,7 +488,9 @@ def _pebble_program(cases: tuple[tuple[str, int | None], ...]) -> str:
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
 def test_pebble_compiler_canary_compiles_and_runs_unseen_programs(optimization) -> None:
-    source = _pebble_program(PEBBLE_CASES)
+    generated = _generated_pebble_cases()
+    assert all(_pebble_reference_result(program) == expected for program, expected in generated)
+    source = _pebble_program(PEBBLE_CASES + generated)
     compilation = compile_source(source, optimization=optimization)
     repeated = compile_source(source, optimization=optimization)
     assert compilation.ir == repeated.ir
@@ -414,6 +503,84 @@ def test_pebble_compiler_canary_compiles_and_runs_unseen_programs(optimization) 
         native = X8664Backend().generate(compilation.assembly)
         assert "__s3_builtin_bytes_from_text" in native
         assert "__s3_builtin_i64_vector_push" in native
+
+
+def test_pebble_parser_materializes_indexed_ast_and_verifier_rejects_malformed_ir() -> None:
+    ast_source = PEBBLE_SOURCE.read_text(encoding="utf-8") + """\
+fn main() -> i64:
+    mut input: text = text_from_static("a=2; ! a+1;")
+    mut token_kinds: i64_vector = i64_vector_new(text_len(&input) + 1)
+    mut token_values: i64_vector = i64_vector_new(text_len(&input) + 1)
+    discard tokenize_pebble(&input, &mut token_kinds, &mut token_values)
+    mut capacity: i64 = text_len(&input) + 1
+    mut node_kinds: i64_vector = i64_vector_new(capacity)
+    mut node_values: i64_vector = i64_vector_new(capacity)
+    mut node_left: i64_vector = i64_vector_new(capacity)
+    mut node_right: i64_vector = i64_vector_new(capacity)
+    mut statements: i64_vector = i64_vector_new(capacity)
+    match parse_pebble_program(&token_kinds, &token_values, &mut node_kinds, &mut node_values, &mut node_left, &mut node_right, &mut statements) <=> -1:
+        -1:
+            return -1
+        0:
+            return i64_vector_len(&node_kinds)
+        1:
+            return -2
+"""
+    ast_compilation = compile_source(ast_source, optimization=OptimizationLevel.O0)
+    assert execute_ir(ast_compilation.ir) == 6
+
+    malformed_ir = (
+        (True, (1, 6), (0, -1), (42, 0), (0, 0)),
+        (False, (7,), (0,), (0,), (0,)),
+        (False, (2, 6), (0, -1), (16, 0), (0, 0)),
+        (False, (4, 6), (1, -1), (0, 1), (1, 0)),
+        (False, (1, 1, 6), (0, 0, -1), (4, 5, 0), (0, 0, 0)),
+        (False, (1, 6, 1), (0, -1, 1), (4, 0, 5), (0, 0, 0)),
+        (False, (1,), (0,), (4,), (0,)),
+    )
+    lines = ["fn main() -> i64:", "    mut failures: i64 = 0"]
+    for index, (expected_valid, ops, results, operands_a, operands_b) in enumerate(malformed_ir):
+        for vector_name, values in (
+            (f"ops_{index}", ops),
+            (f"results_{index}", results),
+            (f"a_{index}", operands_a),
+            (f"b_{index}", operands_b),
+        ):
+            lines.append(f"    mut {vector_name}: i64_vector = i64_vector_new({len(values)})")
+            lines.extend(f"    discard i64_vector_push(&mut {vector_name}, {value})" for value in values)
+        lines.append(
+            f"    mut status_{index}: trit = pebble_verify_ir(&ops_{index}, &results_{index}, &a_{index}, &b_{index})"
+        )
+        if expected_valid:
+            lines.extend(
+                [
+                    f"    match status_{index} <=> -1:",
+                    "        -1:",
+                    "            failures = failures + 1",
+                    "        0:",
+                    "            failures = failures",
+                    "        1:",
+                    "            failures = failures + 1",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    f"    match status_{index} <=> 0:",
+                    "        -1:",
+                    "            failures = failures + 1",
+                    "        0:",
+                    "            failures = failures",
+                    "        1:",
+                    "            failures = failures + 1",
+                ]
+            )
+    lines.append("    return failures")
+    verifier_compilation = compile_source(
+        PEBBLE_SOURCE.read_text(encoding="utf-8") + "\n" + "\n".join(lines) + "\n",
+        optimization=OptimizationLevel.O0,
+    )
+    assert execute_ir(verifier_compilation.ir) == 0
 
 
 def test_pebble_compiler_accepts_exact_output_capacity_and_rejects_short_capacity() -> None:
@@ -527,6 +694,19 @@ def _native_workload(name: str):
 
 @pytest.mark.parametrize("name", ["ordering", "encoding", "csv", "vm", "pebble"])
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_maturity_workload_assembly_matches_ir(name, optimization) -> None:
+    source, multi_module = _native_workload(name)
+    compilation = (
+        compile_sources(source, optimization=optimization, entry_module="main")
+        if multi_module
+        else compile_source(source, optimization=optimization)
+    )
+
+    assert execute_assembly(compilation.assembly) == execute_ir(compilation.ir) == 0
+
+
+@pytest.mark.parametrize("name", ["ordering", "encoding", "csv", "vm", "pebble"])
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
 def test_maturity_workload_executes_as_linux_x86_64_native(
     name, optimization, tmp_path: Path
 ) -> None:
@@ -541,7 +721,7 @@ def test_maturity_workload_executes_as_linux_x86_64_native(
         if multi_module
         else compile_source(source, optimization=optimization)
     )
-    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == execute_ir(compilation.ir) == 0
     assembly_path = tmp_path / f"{name}-{optimization.value}.s"
     executable_path = tmp_path / f"{name}-{optimization.value}"
     assembly_path.write_text(X8664Backend().generate(compilation.assembly), encoding="utf-8")
