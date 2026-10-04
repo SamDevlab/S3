@@ -15,11 +15,12 @@ from bootstrap.s3.pipeline import compile_source, compile_sources
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ORDERING_SOURCE = ROOT / "examples" / "insertion_sort_search.s3"
-HEX_SOURCE = ROOT / "examples" / "hex_encode.s3"
-CSV_SOURCE = ROOT / "examples" / "csv_integer_parser.s3"
-VM_SOURCE = ROOT / "examples" / "bounded_stack_vm.s3"
-PEBBLE_SOURCE = ROOT / "examples" / "pebble_compiler.s3"
+WORKLOADS_DIR = ROOT / "examples" / "language_maturity"
+ORDERING_SOURCE = WORKLOADS_DIR / "insertion_sort_search.s3"
+HEX_SOURCE = WORKLOADS_DIR / "hex_encode.s3"
+CSV_SOURCE = WORKLOADS_DIR / "csv_integer_parser.s3"
+VM_SOURCE = WORKLOADS_DIR / "bounded_stack_vm.s3"
+PEBBLE_SOURCE = WORKLOADS_DIR / "pebble_compiler.s3"
 
 
 def _ordering_program(values: tuple[int, ...], targets: tuple[int, ...]) -> dict[str, str]:
