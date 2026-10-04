@@ -1,0 +1,430 @@
+{
+  "schema_version": 1,
+  "campaign": "S3_POST_1_13_LANGUAGE_MATURITY_REAL_WORKLOADS_AND_COMPILER_CANARY_V1",
+  "repository": "SamDevlab/S3",
+  "main_head": "5b4b8f12dc9aea94fab751136d98112a6e5c0098",
+  "generated_from": "origin/main at campaign start; focused Windows and Linux x86-64 WSL validation",
+  "status_vocabulary": [
+    "YES",
+    "LIMITED",
+    "STRUCTURAL_ONLY",
+    "NO",
+    "STALE_DOCUMENTATION",
+    "NOT_EVALUATED"
+  ],
+  "capabilities": [
+    {
+      "id": "runtime_text",
+      "source_language": "LIMITED",
+      "reference_compiler": "YES",
+      "hosted_runtime": "YES",
+      "native_backend": "LIMITED",
+      "library": "LIMITED",
+      "experimental_substrate": "LIMITED",
+      "selfhost_only": "NO",
+      "scope": "Static string operations coexist with owned UTF-8 text and byte buffers. Runtime text length is byte-based; no general Unicode code-point or grapheme API is claimed.",
+      "evidence": [
+        "docs/decisions/ADR-0027-m1.39-owned-dynamic-buffer-contract.md",
+        "docs/decisions/ADR-0024-bounded-text-cursors-and-spans.md",
+        "tests/test_m139_dynamic_buffers.py",
+        "tests/test_bounded_text_primitives.py",
+        "tests/test_s3_static_text_parser.py"
+      ],
+      "assembly_emulator": "LIMITED",
+      "caveat": "The campaign executed byte-length text operations in the CSV parser and Pebble compiler on Linux x86-64. General Unicode scalar/grapheme processing remains outside the contract; the Assembly emulator lacks dynamic text built-ins."
+    },
+    {
+      "id": "owned_dynamic_bytes",
+      "source_language": "YES",
+      "reference_compiler": "YES",
+      "hosted_runtime": "YES",
+      "native_backend": "YES",
+      "library": "LIMITED",
+      "experimental_substrate": "NO",
+      "selfhost_only": "NO",
+      "scope": "Closed bytes family with explicit capacity, checked access, reserve, push, clone, concat, slice, and text conversion; no generic Buffer<T> or implicit growth.",
+      "evidence": [
+        "docs/decisions/ADR-0027-m1.39-owned-dynamic-buffer-contract.md",
+        "tests/test_m139_dynamic_buffers.py",
+        "bootstrap/s3/dynamic.py",
+        "bootstrap/s3/ir_emulator.py"
+      ],
+      "assembly_emulator": "LIMITED",
+      "caveat": "Hosted IR and Linux x86-64 native O0/O1 execution passed for byte-oriented encoding and compiler workloads. The Assembly emulator does not provide the dynamic collection built-ins used by these workloads."
+    },
+    {
+      "id": "dynamic_text_construction",
+      "source_language": "YES",
+      "reference_compiler": "YES",
+      "hosted_runtime": "YES",
+      "native_backend": "YES",
+      "library": "LIMITED",
+      "experimental_substrate": "NO",
+      "selfhost_only": "NO",
+      "scope": "Owned UTF-8 text supports explicit construction/capacity and text operations; UTF-8 byte length and bounded allocation are part of the contract.",
+      "evidence": [
+        "docs/decisions/ADR-0027-m1.39-owned-dynamic-buffer-contract.md",
+        "tests/test_m139_dynamic_buffers.py::test_dynamic_text_round_trip_through_source_pipeline",
+        "tests/test_m151_composite_owned_values.py"
+      ],
+      "assembly_emulator": "LIMITED",
+      "caveat": "CSV parsing and the Pebble compiler exercised byte-length text conversion natively at O0/O1. General-purpose formatting/locale APIs and arbitrary Unicode scalar iteration are not established. The Assembly emulator lacks text/vector builtin execution."
+    },
+    {
+      "id": "runtime_text_parsing",
+      "source_language": "LIMITED",
+      "reference_compiler": "YES",
+      "hosted_runtime": "YES",
+      "native_backend": "LIMITED",
+      "library": "LIMITED",
+      "experimental_substrate": "LIMITED",
+      "selfhost_only": "NO",
+      "scope": "S3 code can process bounded bytes/text and the experimental substrate contains source-derived lexer/parser slices. A general mature parser library or unrestricted text runtime is not present.",
+      "evidence": [
+        "docs/decisions/ADR-0024-bounded-text-cursors-and-spans.md",
+        "docs/selfhost/STATUS.md",
+        "tests/test_bounded_text_primitives.py",
+        "tests/test_native_frontend_slice.py"
+      ],
+      "caveat": "The experimental parser is a bounded subset; it is not the production compiler frontend and does not establish a general source-language parser package."
+    },
+    {
+      "id": "filesystem_and_file_handles",
+      "source_language": "LIMITED",
+      "reference_compiler": "YES",
+      "hosted_runtime": "LIMITED",
+      "native_backend": "STRUCTURAL_ONLY",
+      "library": "LIMITED",
+      "experimental_substrate": "NO",
+      "selfhost_only": "NO",
+      "scope": "Programs have explicit opaque host_capability/resource_handle operations. Providers are injected at the embedding boundary; the source API is not a general path/open/read/write filesystem API.",
+      "evidence": [
+        "docs/decisions/ADR-0031-m1.43-scoped-host-resources.md",
+        "docs/milestone-1.43.md",
+        "tests/test_m143_scoped_resources.py",
+        "tests/test_m218_ffi_contract.py"
+      ],
+      "caveat": "Hosted provider lifecycle is tested with provider fixtures. The native provider is deterministic and does not access real files, processes, or sockets."
+    },
+    {
+      "id": "vectors",
+      "source_language": "YES",
+      "reference_compiler": "YES",
+      "hosted_runtime": "YES",
+      "native_backend": "YES",
+      "library": "LIMITED",
+      "experimental_substrate": "NO",
+      "selfhost_only": "NO",
+      "scope": "Closed tryte_vector, i64_vector, and f64_vector families with explicit capacity and deterministic operations; not arbitrary vector<T> syntax.",
+      "evidence": [
+        "docs/milestone-1.40.md",
+        "tests/test_m140_ordered_collections.py",
+        "bootstrap/s3/dynamic.py",
+        "bootstrap/s3/backends/x86_64/runtime.py"
+      ],
+      "assembly_emulator": "LIMITED",
+      "caveat": "The campaign ran hosted IR and Linux x86-64 native O0/O1 vector workloads. The Assembly emulator rejects dynamic vector built-ins rather than providing matching execution."
+    },
+    {
+      "id": "maps_and_sets",
+      "source_language": "LIMITED",
+      "reference_compiler": "YES",
+      "hosted_runtime": "YES",
+      "native_backend": "LIMITED",
+      "library": "LIMITED",
+      "experimental_substrate": "NO",
+      "selfhost_only": "NO",
+      "scope": "Deterministic closed families include i64_map, i64_set and text_i64_map; ordering is explicit and lookup is bounded by collection length.",
+      "evidence": [
+        "docs/milestone-1.41.md",
+        "docs/decisions/ADR-0029-m1.41-deterministic-maps-sets.md",
+        "tests/test_m161_generic_map_set.py",
+        "tests/test_m162_text_i64_map.py"
+      ],
+      "caveat": "The word generic in some milestone names does not mean arbitrary source-level key/value type constructors."
+    },
+    {
+      "id": "generic_collections",
+      "source_language": "NO",
+      "reference_compiler": "LIMITED",
+      "hosted_runtime": "LIMITED",
+      "native_backend": "LIMITED",
+      "library": "LIMITED",
+      "experimental_substrate": "NO",
+      "selfhost_only": "NO",
+      "scope": "There is no general user-defined vector<T>/map<K,V>/set<T> facility; implemented collection families are closed and type-specific.",
+      "evidence": [
+        "docs/milestone-1.40.md",
+        "docs/milestone-1.41.md",
+        "tests/test_m161_generic_map_set.py::test_generic_map_and_set_reject_unimplemented_type_domains"
+      ]
+    },
+    {
+      "id": "references_mutable_references_and_slices",
+      "source_language": "YES",
+      "reference_compiler": "YES",
+      "hosted_runtime": "YES",
+      "native_backend": "LIMITED",
+      "library": "LIMITED",
+      "experimental_substrate": "NO",
+      "selfhost_only": "NO",
+      "scope": "Typed shared/mutable references and bounded slices have provenance, borrow checks, indexing, and source/native ABI contracts.",
+      "evidence": [
+        "tests/test_advanced_reference_semantics.py",
+        "tests/test_reference_types_semantic.py",
+        "tests/test_s3_slice_capability.py",
+        "tests/test_advanced_reference_native.py"
+      ],
+      "caveat": "Native execution gates are platform-specific and were not run on this Windows host."
+    },
+    {
+      "id": "nested_aggregate_ownership",
+      "source_language": "LIMITED",
+      "reference_compiler": "YES",
+      "hosted_runtime": "YES",
+      "native_backend": "NOT_EVALUATED",
+      "library": "NO",
+      "experimental_substrate": "NO",
+      "selfhost_only": "NO",
+      "scope": "Hosted tests cover dynamic owners in records, enum payloads, fixed arrays of records, replacement and move/borrow rejection. Arbitrary dynamic collections of owned aggregates remain outside the closed design.",
+      "evidence": [
+        "tests/test_m151_composite_owned_values.py",
+        "docs/decisions/ADR-0037-m1.51a-composite-owned-values.md",
+        "docs/milestone-1.51.md"
+      ],
+      "caveat": "The two M1.51 documents still describe implementation as not started, contradicting current executable tests; native composite-owner execution was not evaluated in this campaign."
+    },
+    {
+      "id": "modules_and_cross_module_calls",
+      "source_language": "YES",
+      "reference_compiler": "YES",
+      "hosted_runtime": "YES",
+      "native_backend": "LIMITED",
+      "library": "YES",
+      "experimental_substrate": "LIMITED",
+      "selfhost_only": "NO",
+      "scope": "The normal compiler resolves explicit imports/exports, transitive dependencies, aliases, nominal identities and deterministic source ordering. Native module execution is available subject to platform validation.",
+      "evidence": [
+        "tests/test_modules_pipeline.py",
+        "tests/test_module_graph.py",
+        "tests/test_qualified_module_resolution.py",
+        "tests/test_cross_module_nominal_type_symbols.py"
+      ]
+    },
+    {
+      "id": "source_level_errors_and_results",
+      "source_language": "YES",
+      "reference_compiler": "YES",
+      "hosted_runtime": "YES",
+      "native_backend": "LIMITED",
+      "library": "LIMITED",
+      "experimental_substrate": "NO",
+      "selfhost_only": "NO",
+      "scope": "Recoverable domain failures can use declared nominal result enums and explicit exhaustive match/return. There is no generic Result<T,E>, exception unwinding, or implicit propagation.",
+      "evidence": [
+        "docs/decisions/ADR-0030-m1.42-explicit-result-error-flow.md",
+        "tests/test_m142_structured_results.py",
+        "tests/test_m164_explicit_result_propagation.py",
+        "tests/test_structured_result_flows.py"
+      ]
+    },
+    {
+      "id": "ffi",
+      "source_language": "LIMITED",
+      "reference_compiler": "YES",
+      "hosted_runtime": "STRUCTURAL_ONLY",
+      "native_backend": "LIMITED",
+      "library": "LIMITED",
+      "experimental_substrate": "NO",
+      "selfhost_only": "NO",
+      "scope": "C exports/imports and scalar plus borrowed-slice boundaries are present. Owned S3 dynamic aggregates do not cross C; actual shared-library execution requires the native host/toolchain.",
+      "evidence": [
+        "tests/test_ffi.py",
+        "tests/test_ffi_capability.py",
+        "tests/test_m218_ffi_contract.py"
+      ],
+      "caveat": "This campaign ran hosted/code-generation assertions only where Linux-native execution was skipped on Windows."
+    },
+    {
+      "id": "host_resource_providers",
+      "source_language": "LIMITED",
+      "reference_compiler": "YES",
+      "hosted_runtime": "LIMITED",
+      "native_backend": "STRUCTURAL_ONLY",
+      "library": "LIMITED",
+      "experimental_substrate": "NO",
+      "selfhost_only": "NO",
+      "scope": "Capability-scoped provider registry and deterministic opaque handles exist. Provider implementations are host supplied; current native fixture is not a real OS provider.",
+      "evidence": [
+        "docs/decisions/ADR-0031-m1.43-scoped-host-resources.md",
+        "tests/test_m143_scoped_resources.py",
+        "docs/milestone-1.44.md"
+      ]
+    },
+    {
+      "id": "historical_capability_inventory",
+      "source_language": "STALE_DOCUMENTATION",
+      "reference_compiler": "STALE_DOCUMENTATION",
+      "hosted_runtime": "STALE_DOCUMENTATION",
+      "native_backend": "STALE_DOCUMENTATION",
+      "library": "STALE_DOCUMENTATION",
+      "experimental_substrate": "STALE_DOCUMENTATION",
+      "selfhost_only": "STALE_DOCUMENTATION",
+      "scope": "docs/structured-data-capabilities.md predates later source-level records/enums/owned text; it says records/enums are unsupported and strings are reserved. Current tests and later ADRs prove portions of those capabilities exist. Treat that inventory as historical, not current truth.",
+      "evidence": [
+        "docs/structured-data-capabilities.md",
+        "tests/test_m151_composite_owned_values.py",
+        "tests/test_m139_dynamic_buffers.py",
+        "docs/milestone-1.39.md",
+        "docs/milestone-1.51.md"
+      ]
+    }
+  ],
+  "campaign_workload_frontier": {
+    "level_1_numeric_control_flow": "EXISTING_BASELINE_FOCUSED_PASS: 17 passed, 4 skipped; no numeric feature changes",
+    "level_2_data_structures": "PASS; insertion sort and binary search over runtime i64_vector; O0/O1 IR and Linux x86-64 native pass",
+    "level_3_encoding_hashing": "PARTIAL: hex encode is proven O0/O1 IR and Linux native; hashing not implemented because source integer bitwise XOR/AND/shift operations are absent",
+    "level_4_text_parsing": "PASS_WITH_BOUNDED_GRAMMAR; runtime CSV integer parser accepts unseen valid inputs and rejects malformed inputs; O0/O1 IR and native pass",
+    "level_5_vm_interpreter": "PASS; S3 bounded stack VM executes arithmetic, memory, conditional branch and loop programs; rejects malformed programs; O0/O1 IR and native pass",
+    "level_6_compiler_canary": "PASS_FOR_DECLARED_PEBBLE_SUBSET; S3 runtime lexer/parser/semantic checks emit bytecode executed by the S3 VM; five valid and five invalid inputs; O0/O1 IR and native pass",
+    "assembly_emulator_dynamic_workloads": "LIMITED: execute_assembly of vector workload raises KeyError('i64_vector_new'); record separately from IR/native success"
+  },
+  "normal_compiler_scale_probe": {
+    "script": "tools/language_maturity_scale_probe.py",
+    "optimization": "O1",
+    "measurement_host": "Linux x86_64 WSL, Python 3.12.3, GCC 13.3.0",
+    "source_shape": "32-field record, one record accessor, generated functions with a bounded loop and nested match, and one entrypoint",
+    "results": [
+      {
+        "functions": 10,
+        "modules": 1,
+        "source_bytes": 5439,
+        "tokens": 1320,
+        "ast_nodes": 674,
+        "ir_blocks": 138,
+        "ir_instructions": 705,
+        "compile_seconds_with_tracemalloc": 5.148313,
+        "peak_traced_bytes": 4753148,
+        "assembly_text_bytes": 47219,
+        "native_assembly_text_bytes": 523485,
+        "native_binary_bytes": 210304,
+        "result": 36
+      },
+      {
+        "functions": 25,
+        "modules": 1,
+        "source_bytes": 13419,
+        "tokens": 3210,
+        "ast_nodes": 1709,
+        "ir_blocks": 393,
+        "ir_instructions": 1950,
+        "compile_seconds_with_tracemalloc": 10.212094,
+        "peak_traced_bytes": 3856291,
+        "assembly_text_bytes": 130449,
+        "native_assembly_text_bytes": 1352385,
+        "native_binary_bytes": 543336,
+        "result": 37
+      },
+      {
+        "functions": 50,
+        "modules": 1,
+        "source_bytes": 26719,
+        "tokens": 6360,
+        "ast_nodes": 3434,
+        "ir_blocks": 818,
+        "ir_instructions": 4025,
+        "compile_seconds_with_tracemalloc": 19.643453,
+        "peak_traced_bytes": 5742564,
+        "assembly_text_bytes": 270424,
+        "native_assembly_text_bytes": 2733885,
+        "native_binary_bytes": 1097032,
+        "result": 41
+      },
+      {
+        "functions": 100,
+        "modules": 1,
+        "source_bytes": 53319,
+        "tokens": 12660,
+        "ast_nodes": 6884,
+        "ir_blocks": 1668,
+        "ir_instructions": 8175,
+        "compile_seconds_with_tracemalloc": 47.638931,
+        "peak_traced_bytes": 11737478,
+        "assembly_text_bytes": 554336,
+        "native_assembly_text_bytes": 5514577,
+        "native_binary_bytes": 2206360,
+        "result": 42
+      }
+    ],
+    "measurement_note": "compile_seconds includes tracemalloc overhead; peak_traced_bytes is Python traced allocation, not OS RSS. GCC sizes are unstripped ELF bytes. The measured scale programs were actually executed by the IR emulator and Linux native backend."
+  },
+  "external_workload_references": {
+    "embench": "Used only the design principles of small deterministic bounded embedded-like programs; no source copied or adapted. https://www.embench.org/",
+    "langarena": "Used only category diversity (sorting, encoding, CSV, interpreters, hashing); no source copied or adapted. MIT license was inspected. https://github.com/kostya/LangArena",
+    "qbe": "Bounded secondary-backend architecture study only; no code or dependency added. Official overview and IL docs: https://c9x.me/compile/ and https://c9x.me/compile/doc/il.html"
+  },
+  "documentation_conflicts": [
+    {
+      "path": "docs/structured-data-capabilities.md",
+      "status": "STALE_DOCUMENTATION",
+      "conflict": "Claims source records/enums and runtime strings are unsupported; later current source/tests support records, enums, owned text and dynamic buffers."
+    },
+    {
+      "path": "docs/milestone-1.51.md",
+      "status": "STALE_DOCUMENTATION",
+      "conflict": "Says implementation not started while tests cover composite-owned records/enums and fixed aggregates. This campaign did not alter the historical document."
+    },
+    {
+      "path": "docs/decisions/ADR-0037-m1.51a-composite-owned-values.md",
+      "status": "STALE_DOCUMENTATION",
+      "conflict": "Architecture-only status is inconsistent with later executable composite-owned-value tests; scope and native maturity still require separate audit."
+    },
+    {
+      "path": "docs/language-gaps.md",
+      "status": "STALE_DOCUMENTATION",
+      "conflict": "Current status table still says runtime text construction, records, enums, modules, vectors, maps, and file I/O are unavailable, contradicted by later source and executable tests."
+    }
+  ],
+  "selfhost_policy": {
+    "research_status": "PAUSED",
+    "automatic_reentry": false,
+    "stage1_v4_authorized": false,
+    "historical_pr_327_touched": false,
+    "historical_experiment": {
+      "canonical_stage1_functions": 50,
+      "self_compile_proven": 17,
+      "compiler_behavior": 10,
+      "parameter_parser_selfhost": false,
+      "function_header_selfhost": false,
+      "full_selfhost": false,
+      "stage2": false,
+      "default_compiler": "PYTHON",
+      "stage1_v1_sha256": "894a76a5c206b8e86b3149483b4bc2ad6904a4f6810aac62d1e235c1fd46a44c"
+    },
+    "full_selfhost": false,
+    "default_compiler": "PYTHON"
+  },
+  "validation_evidence": {
+    "windows_workload_tests": "PASS",
+    "windows_workload_tests_result": "40 passed, 10 skipped",
+    "windows_native_skips": "10 platform-gated Linux x86-64 cases",
+    "linux_pytest": "NOT_RUN",
+    "linux_pytest_reason": "The available WSL distro has Python 3.12.3 and GCC but no pytest or pip; no packages were installed.",
+    "linux_native_direct_driver": "PASS",
+    "linux_native_workload_cases": [
+      "ordering O0/O1",
+      "encoding O0/O1",
+      "CSV parser O0/O1",
+      "bounded VM O0/O1",
+      "Pebble compiler O0/O1"
+    ],
+    "linux_native_workload_result": "10/10 ELF executions returned the expected zero failure count",
+    "linux_native_multimodule": "PASS: three-module record/enum/imported-call program returned 19",
+    "linux_native_scale": "PASS: 10, 25, 50, and 100 function probes matched IR and native results",
+    "baseline_focused": "17 passed, 4 skipped",
+    "assembly_emulator_probe": "LIMITED: dynamic vector workload fails with KeyError('i64_vector_new')",
+    "production_compiler_runtime_changed": false,
+    "selfhost_branch_touched": false,
+    "qbe_backend_implemented": false
+  }
+}

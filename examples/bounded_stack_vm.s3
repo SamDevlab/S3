@@ -1,0 +1,207 @@
+record VmResult:
+    valid: trit
+    value: i64
+    steps: i64
+
+fn vm_error(steps: i64) -> VmResult:
+    return VmResult(valid=0, value=0, steps=steps)
+
+fn vm_index_valid(index: i64, length: i64) -> trit:
+    match index <=> 0:
+        -1:
+            return 0
+        0:
+            match index <=> length:
+                -1:
+                    return -1
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            match index <=> length:
+                -1:
+                    return -1
+                0:
+                    return 0
+                1:
+                    return 0
+
+fn vm_stack_has(stack: &i64_vector, required: i64) -> trit:
+    match i64_vector_len(stack) <=> required:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            return -1
+
+fn run_vm(program: &i64_vector) -> VmResult:
+    mut code_length: i64 = i64_vector_len(program)
+    mut stack: i64_vector = i64_vector_new(code_length)
+    mut memory: i64_vector = i64_vector_new(16)
+    mut initialized: i64 = 0
+    while initialized < 16:
+        discard i64_vector_push(&mut memory, 0)
+        initialized = initialized + 1
+    mut pc: i64 = 0
+    mut steps: i64 = 0
+    mut halted: i64 = 0
+    while pc < code_length:
+        mut opcode: i64 = i64_vector_get(program, pc)
+        pc = pc + 1
+        steps = steps + 1
+        match opcode <=> 0:
+            -1:
+                match pc <=> code_length:
+                    -1:
+                        discard i64_vector_push(&mut stack, i64_vector_get(program, pc))
+                        pc = pc + 1
+                    0:
+                        return vm_error(steps)
+                    1:
+                        return vm_error(steps)
+            0:
+                halted = -1
+            1:
+                match pc <=> code_length:
+                    -1:
+                        mut operation: i64 = i64_vector_get(program, pc)
+                        pc = pc + 1
+                        match operation <=> 0:
+                            -1:
+                                match vm_stack_has(&stack, 2) <=> -1:
+                                    -1:
+                                        return vm_error(steps)
+                                    0:
+                                        mut right: i64 = i64_vector_pop(&mut stack)
+                                        mut left: i64 = i64_vector_pop(&mut stack)
+                                        discard i64_vector_push(&mut stack, left + right)
+                                    1:
+                                        return vm_error(steps)
+                            0:
+                                match vm_stack_has(&stack, 2) <=> -1:
+                                    -1:
+                                        return vm_error(steps)
+                                    0:
+                                        mut right: i64 = i64_vector_pop(&mut stack)
+                                        mut left: i64 = i64_vector_pop(&mut stack)
+                                        discard i64_vector_push(&mut stack, left - right)
+                                    1:
+                                        return vm_error(steps)
+                            1:
+                                match pc <=> code_length:
+                                    -1:
+                                        mut action: i64 = i64_vector_get(program, pc)
+                                        pc = pc + 1
+                                        match action <=> 0:
+                                            -1:
+                                                match pc <=> code_length:
+                                                    -1:
+                                                        mut address: i64 = i64_vector_get(program, pc)
+                                                        pc = pc + 1
+                                                        match vm_index_valid(address, 16) <=> -1:
+                                                            0:
+                                                                match vm_stack_has(&stack, 1) <=> -1:
+                                                                    -1:
+                                                                        return vm_error(steps)
+                                                                    0:
+                                                                        mut stored: i64 = i64_vector_pop(&mut stack)
+                                                                        discard i64_vector_set(&mut memory, address, stored)
+                                                                    1:
+                                                                        return vm_error(steps)
+                                                            -1:
+                                                                return vm_error(steps)
+                                                            1:
+                                                                return vm_error(steps)
+                                                    0:
+                                                        return vm_error(steps)
+                                                    1:
+                                                        return vm_error(steps)
+                                            0:
+                                                match pc <=> code_length:
+                                                    -1:
+                                                        mut address: i64 = i64_vector_get(program, pc)
+                                                        pc = pc + 1
+                                                        match vm_index_valid(address, 16) <=> -1:
+                                                            0:
+                                                                discard i64_vector_push(&mut stack, i64_vector_get(&memory, address))
+                                                            -1:
+                                                                return vm_error(steps)
+                                                            1:
+                                                                return vm_error(steps)
+                                                    0:
+                                                        return vm_error(steps)
+                                                    1:
+                                                        return vm_error(steps)
+                                            1:
+                                                match pc <=> code_length:
+                                                    -1:
+                                                        mut target: i64 = i64_vector_get(program, pc)
+                                                        pc = pc + 1
+                                                        match vm_index_valid(target, code_length) <=> -1:
+                                                            0:
+                                                                match vm_stack_has(&stack, 1) <=> -1:
+                                                                    -1:
+                                                                        return vm_error(steps)
+                                                                    0:
+                                                                        mut condition: i64 = i64_vector_pop(&mut stack)
+                                                                        match condition <=> 0:
+                                                                            -1:
+                                                                                pc = pc
+                                                                            0:
+                                                                                pc = target
+                                                                            1:
+                                                                                pc = pc
+                                                                    1:
+                                                                        return vm_error(steps)
+                                                            -1:
+                                                                return vm_error(steps)
+                                                            1:
+                                                                return vm_error(steps)
+                                                    0:
+                                                        return vm_error(steps)
+                                                    1:
+                                                        return vm_error(steps)
+                                    0:
+                                        return vm_error(steps)
+                                    1:
+                                        return vm_error(steps)
+                    0:
+                        return vm_error(steps)
+                    1:
+                        return vm_error(steps)
+        match halted <=> -1:
+            -1:
+                pc = pc
+            0:
+                pc = code_length
+            1:
+                pc = pc
+        match steps <=> 10000:
+            -1:
+                pc = pc
+            0:
+                match halted <=> -1:
+                    -1:
+                        return vm_error(steps)
+                    0:
+                        pc = code_length
+                    1:
+                        return vm_error(steps)
+            1:
+                return vm_error(steps)
+    match halted <=> -1:
+        -1:
+            return vm_error(steps)
+        0:
+            match vm_stack_has(&stack, 1) <=> -1:
+                -1:
+                    return vm_error(steps)
+                0:
+                    mut result: i64 = i64_vector_pop(&mut stack)
+                    return VmResult(valid=-1, value=result, steps=steps)
+                1:
+                    return vm_error(steps)
+        1:
+            return vm_error(steps)

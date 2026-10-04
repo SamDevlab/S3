@@ -1,0 +1,22 @@
+module s3.workloads.encoding
+
+fn hex_digit(value: i64) -> tryte:
+    match value <=> 9:
+        -1:
+            return to_tryte(value + 48)
+        0:
+            return to_tryte(value + 48)
+        1:
+            return to_tryte(value + 87)
+
+export fn hex_encode(input: &bytes) -> bytes:
+    mut output: bytes = bytes_new(bytes_len(input) * 2)
+    mut index: i64 = 0
+    while index < bytes_len(input):
+        mut octet: i64 = to_i64(bytes_get(input, index))
+        mut high: i64 = octet / 16
+        mut low: i64 = octet - high * 16
+        discard bytes_push(&mut output, hex_digit(high))
+        discard bytes_push(&mut output, hex_digit(low))
+        index = index + 1
+    return output

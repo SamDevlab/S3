@@ -1,0 +1,40 @@
+module s3.workloads.ordering
+
+export fn insertion_sort(values: &mut i64_vector) -> i64:
+    mut length: i64 = i64_vector_len(&*values)
+    mut index: i64 = 1
+    mut shifts: i64 = 0
+    while index < length:
+        mut cursor: i64 = index
+        mut key: i64 = i64_vector_get(&*values, index)
+        while cursor > 0:
+            mut previous: i64 = i64_vector_get(&*values, cursor - 1)
+            match previous <=> key:
+                1:
+                    discard i64_vector_set(values, cursor, previous)
+                    cursor = cursor - 1
+                    shifts = shifts + 1
+                0:
+                    break
+                -1:
+                    break
+        discard i64_vector_set(values, cursor, key)
+        index = index + 1
+    return shifts
+
+export fn binary_search(values: &i64_vector, target: i64) -> i64:
+    mut lower: i64 = 0
+    mut upper: i64 = i64_vector_len(values)
+    mut found: i64 = -1
+    while lower < upper:
+        mut middle: i64 = lower + (upper - lower) / 2
+        mut current: i64 = i64_vector_get(values, middle)
+        match current <=> target:
+            -1:
+                lower = middle + 1
+            0:
+                found = middle
+                upper = middle
+            1:
+                upper = middle
+    return found

@@ -1,0 +1,333 @@
+record PebbleStep:
+    valid: trit
+    next: i64
+
+fn pebble_digit(code: i64) -> trit:
+    match code <=> 48:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match code <=> 58:
+                -1:
+                    return -1
+                0:
+                    return 0
+                1:
+                    return 0
+
+fn pebble_space(code: i64) -> trit:
+    match code <=> 32:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match code <=> 33:
+                -1:
+                    return 0
+                0:
+                    return 0
+                1:
+                    match code <=> 112:
+                        -1:
+                            match code <=> 10:
+                                -1:
+                                    return 0
+                                0:
+                                    return -1
+                                1:
+                                    match code <=> 13:
+                                        -1:
+                                            return 0
+                                        0:
+                                            return -1
+                                        1:
+                                            return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+
+fn pebble_identifier(code: i64) -> trit:
+    match code <=> 97:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match code <=> 112:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn pebble_token(kinds: &mut i64_vector, values: &mut i64_vector, kind: i64, value: i64) -> tryte:
+    discard i64_vector_push(kinds, kind)
+    discard i64_vector_push(values, value)
+    return 0
+
+fn tokenize_pebble(input: &text, kinds: &mut i64_vector, values: &mut i64_vector) -> trit:
+    mut source: bytes = bytes_from_text(input)
+    mut length: i64 = bytes_len(&source)
+    mut cursor: i64 = 0
+    while cursor < length:
+        mut code: i64 = to_i64(bytes_get(&source, cursor))
+        match pebble_space(code):
+            -1:
+                cursor = cursor + 1
+            0:
+                match pebble_digit(code):
+                    -1:
+                        mut number: i64 = 0
+                        while cursor < length:
+                            mut digit_code: i64 = to_i64(bytes_get(&source, cursor))
+                            match pebble_digit(digit_code):
+                                -1:
+                                    number = number * 10 + digit_code - 48
+                                    cursor = cursor + 1
+                                0:
+                                    break
+                                1:
+                                    break
+                        discard pebble_token(kinds, values, 1, number)
+                    0:
+                        match pebble_identifier(code):
+                            -1:
+                                discard pebble_token(kinds, values, 2, code - 97)
+                                cursor = cursor + 1
+                            0:
+                                match code <=> 33:
+                                    -1:
+                                        return 0
+                                    0:
+                                        discard pebble_token(kinds, values, 6, 0)
+                                        cursor = cursor + 1
+                                    1:
+                                        match code <=> 43:
+                                            -1:
+                                                return 0
+                                            0:
+                                                discard pebble_token(kinds, values, 4, 0)
+                                                cursor = cursor + 1
+                                            1:
+                                                match code <=> 45:
+                                                    -1:
+                                                        return 0
+                                                    0:
+                                                        discard pebble_token(kinds, values, 5, 0)
+                                                        cursor = cursor + 1
+                                                    1:
+                                                        match code <=> 59:
+                                                            -1:
+                                                                return 0
+                                                            0:
+                                                                discard pebble_token(kinds, values, 7, 0)
+                                                                cursor = cursor + 1
+                                                            1:
+                                                                match code <=> 61:
+                                                                    -1:
+                                                                        return 0
+                                                                    0:
+                                                                        discard pebble_token(kinds, values, 3, 0)
+                                                                        cursor = cursor + 1
+                                                                    1:
+                                                                        return 0
+                            1:
+                                return 0
+                    1:
+                        return 0
+            1:
+                return 0
+    discard pebble_token(kinds, values, 0, 0)
+    return -1
+
+fn emit_pebble_word(output: &mut i64_vector, value: i64) -> tryte:
+    discard i64_vector_push(output, value)
+    return 0
+
+fn parse_pebble_primary(
+    kinds: &i64_vector,
+    values: &i64_vector,
+    cursor: i64,
+    defined: &i64_vector,
+    output: &mut i64_vector
+) -> PebbleStep:
+    mut kind: i64 = i64_vector_get(kinds, cursor)
+    match kind <=> 1:
+        -1:
+            return PebbleStep(valid=0, next=cursor)
+        0:
+            mut literal: i64 = i64_vector_get(values, cursor)
+            discard emit_pebble_word(output, -1)
+            discard emit_pebble_word(output, literal)
+            return PebbleStep(valid=-1, next=cursor + 1)
+        1:
+            match kind <=> 2:
+                -1:
+                    return PebbleStep(valid=0, next=cursor)
+                0:
+                    mut id: i64 = i64_vector_get(values, cursor)
+                    match i64_vector_get(defined, id) <=> 1:
+                        -1:
+                            return PebbleStep(valid=0, next=cursor)
+                        0:
+                            discard emit_pebble_word(output, 1)
+                            discard emit_pebble_word(output, 1)
+                            discard emit_pebble_word(output, 0)
+                            discard emit_pebble_word(output, id)
+                            return PebbleStep(valid=-1, next=cursor + 1)
+                        1:
+                            return PebbleStep(valid=0, next=cursor)
+                1:
+                    return PebbleStep(valid=0, next=cursor)
+
+fn parse_pebble_expression(
+    kinds: &i64_vector,
+    values: &i64_vector,
+    start: i64,
+    defined: &i64_vector,
+    output: &mut i64_vector
+) -> PebbleStep:
+    mut first: PebbleStep = parse_pebble_primary(kinds, values, start, defined, output)
+    match first.valid <=> -1:
+        -1:
+            return PebbleStep(valid=0, next=start)
+        0:
+            mut cursor: i64 = first.next
+            while cursor < i64_vector_len(kinds):
+                mut kind: i64 = i64_vector_get(kinds, cursor)
+                match kind <=> 4:
+                    -1:
+                        break
+                    0:
+                        cursor = cursor + 1
+                        mut next: PebbleStep = parse_pebble_primary(kinds, values, cursor, defined, output)
+                        match next.valid <=> -1:
+                            -1:
+                                return PebbleStep(valid=0, next=start)
+                            0:
+                                discard emit_pebble_word(output, 1)
+                                discard emit_pebble_word(output, -1)
+                                cursor = next.next
+                            1:
+                                return PebbleStep(valid=0, next=start)
+                    1:
+                        match kind <=> 5:
+                            -1:
+                                break
+                            0:
+                                cursor = cursor + 1
+                                mut next: PebbleStep = parse_pebble_primary(kinds, values, cursor, defined, output)
+                                match next.valid <=> -1:
+                                    -1:
+                                        return PebbleStep(valid=0, next=start)
+                                    0:
+                                        discard emit_pebble_word(output, 1)
+                                        discard emit_pebble_word(output, 0)
+                                        cursor = next.next
+                                    1:
+                                        return PebbleStep(valid=0, next=start)
+                            1:
+                                break
+            return PebbleStep(valid=-1, next=cursor)
+        1:
+            return PebbleStep(valid=0, next=start)
+
+fn compile_pebble(input: &text, output: &mut i64_vector) -> trit:
+    mut required: i64 = text_len(input) * 8 + 8
+    match i64_vector_capacity(&*output) < required:
+        -1:
+            return 0
+        0:
+            mut kinds: i64_vector = i64_vector_new(text_len(input) + 1)
+            mut values: i64_vector = i64_vector_new(text_len(input) + 1)
+            match tokenize_pebble(input, &mut kinds, &mut values) <=> -1:
+                -1:
+                    return 0
+                0:
+                    mut defined: i64_vector = i64_vector_new(16)
+                    mut slot: i64 = 0
+                    while slot < 16:
+                        discard i64_vector_push(&mut defined, 0)
+                        slot = slot + 1
+                    mut cursor: i64 = 0
+                    mut token_count: i64 = i64_vector_len(&kinds)
+                    while cursor < token_count:
+                        mut kind: i64 = i64_vector_get(&kinds, cursor)
+                        match kind <=> 0:
+                            -1:
+                                return 0
+                            0:
+                                return 0
+                            1:
+                                match kind <=> 2:
+                                    -1:
+                                        return 0
+                                    0:
+                                        mut id: i64 = i64_vector_get(&values, cursor)
+                                        match i64_vector_get(&kinds, cursor + 1) <=> 3:
+                                            -1:
+                                                return 0
+                                            0:
+                                                mut expression: PebbleStep = parse_pebble_expression(
+                                                    &kinds, &values, cursor + 2, &defined, output
+                                                )
+                                                match expression.valid <=> -1:
+                                                    -1:
+                                                        return 0
+                                                    0:
+                                                        match i64_vector_get(&kinds, expression.next) <=> 7:
+                                                            -1:
+                                                                return 0
+                                                            0:
+                                                                discard emit_pebble_word(output, 1)
+                                                                discard emit_pebble_word(output, 1)
+                                                                discard emit_pebble_word(output, -1)
+                                                                discard emit_pebble_word(output, id)
+                                                                discard i64_vector_set(&mut defined, id, 1)
+                                                                cursor = expression.next + 1
+                                                            1:
+                                                                return 0
+                                                    1:
+                                                        return 0
+                                            1:
+                                                return 0
+                                    1:
+                                        match kind <=> 6:
+                                            -1:
+                                                return 0
+                                            0:
+                                                mut expression: PebbleStep = parse_pebble_expression(
+                                                    &kinds, &values, cursor + 1, &defined, output
+                                                )
+                                                match expression.valid <=> -1:
+                                                    -1:
+                                                        return 0
+                                                    0:
+                                                        match i64_vector_get(&kinds, expression.next) <=> 7:
+                                                            -1:
+                                                                return 0
+                                                            0:
+                                                                match i64_vector_get(&kinds, expression.next + 1) <=> 0:
+                                                                    -1:
+                                                                        return 0
+                                                                    0:
+                                                                        discard emit_pebble_word(output, 0)
+                                                                        return -1
+                                                                    1:
+                                                                        return 0
+                                                            1:
+                                                                return 0
+                                                    1:
+                                                        return 0
+                                            1:
+                                                return 0
+                1:
+                    return 0
+        1:
+            return 0
+    return 0
