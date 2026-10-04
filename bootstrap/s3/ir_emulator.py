@@ -381,23 +381,29 @@ def _reference_owner(value):
     return value.cell.value
 
 
-def _execute_dynamic_builtin(name: str, args: tuple[object, ...]) -> object:
+def _execute_dynamic_builtin(
+    name: str,
+    args: tuple[object, ...],
+    *,
+    runtime: SourceResourceRuntime | None = None,
+) -> object:
+    resource_context = resource_runtime if runtime is None else runtime
     if name == "sqrt":
         return sqrt_f64(args[0])
     if name == "host_capability_grant":
-        return resource_runtime.grant(args[0])
+        return resource_context.grant(args[0])
     if name == "resource_open":
-        return resource_runtime.open(args[0])
+        return resource_context.open(args[0])
     if name == "resource_is_open":
-        return resource_runtime.is_open(_reference_owner(args[0]))
+        return resource_context.is_open(_reference_owner(args[0]))
     if name == "resource_kind":
-        return resource_runtime.kind(_reference_owner(args[0]))
+        return resource_context.kind(_reference_owner(args[0]))
     if name == "resource_invoke":
-        return resource_runtime.invoke(_reference_owner(args[0]), args[1])
+        return resource_context.invoke(_reference_owner(args[0]), args[1])
     if name == "resource_close":
         reference = args[0]
         handle = _reference_owner(reference)
-        resource_runtime.close(handle)
+        resource_context.close(handle)
         reference.cell.value = 0
         return 0
     if name == "bytes_new":

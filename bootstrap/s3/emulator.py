@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Callable
 
 from .diagnostics import DiagnosticCategory, DiagnosticCode
 from .assembly import (
@@ -36,12 +37,37 @@ from .numeric import (
     checked_i64_div, checked_i64_neg, checked_i64_to_tryte,
     validate_f64, validate_i64,
 )
+from .dynamic import (
+    DynamicBytes,
+    DynamicCompositeVector,
+    DynamicMap,
+    DynamicSet,
+    DynamicText,
+    DynamicTextMap,
+    DynamicVector,
+)
+from .host_services import SourceResourceRuntime
+from .ir import DYNAMIC_BUILTIN_SIGNATURES, IRType, composite_vector_runtime_signature
+from .ir_emulator import ReferenceValue, _execute_dynamic_builtin
 
 
 EmulatorError = AssemblyVerifierError
 
 
-AssemblyValue = int | float | str
+AssemblyValue = (
+    int
+    | float
+    | str
+    | DynamicBytes
+    | DynamicText
+    | DynamicVector
+    | DynamicCompositeVector
+    | DynamicMap
+    | DynamicTextMap
+    | DynamicSet
+    | ReferenceValue
+    | tuple[object, ...]
+)
 
 DEFAULT_MAX_MEMORY_TRITS = 6561
 DEFAULT_MAX_FRAMES = 1024
@@ -59,6 +85,31 @@ class Frame:
     return_block: str | None = None
     return_instruction_index: int | None = None
     call_instruction: AssemblyInstruction | None = None
+
+
+@dataclass(slots=True)
+class _AssemblyReferenceCell:
+    """A referenceable Assembly slot exposed through the IR runtime protocol."""
+
+    read_value: Callable[[], AssemblyValue | None]
+    write_value: Callable[[AssemblyValue], None]
+    is_initialized: Callable[[], bool]
+
+    @property
+    def value(self) -> AssemblyValue:
+        if not self.initialized:
+            raise ValueError("read through an uninitialized Assembly reference")
+        value = self.read_value()
+        assert value is not None
+        return value
+
+    @value.setter
+    def value(self, value: AssemblyValue) -> None:
+        self.write_value(value)
+
+    @property
+    def initialized(self) -> bool:
+        return self.is_initialized()
 
 
 class Emulator(AssemblyVerifier):
@@ -119,6 +170,8 @@ class Emulator(AssemblyVerifier):
             }
             for function in program.functions
         }
+        static_strings = {item.id: item.value for item in program.static_strings}
+        resource_runtime = SourceResourceRuntime()
         stack = [self._create_frame(entry_function)]
         executed = 0
         if self.metrics:
@@ -306,6 +359,38 @@ class Emulator(AssemblyVerifier):
                     value = self._load_memory(frame, instruction, index)
                     self._write(frame, destination, value, instruction)
                     frame.instruction_index += 1
+                elif opcode is AssemblyOpcode.TADDR:
+                    self._execute_address(frame, instruction)
+                    frame.instruction_index += 1
+                elif opcode is AssemblyOpcode.TREFLOAD:
+                    destination, reference_register = instruction.registers
+                    reference = self._read_reference(
+                        frame, reference_register, instruction
+                    )
+                    self._write(
+                        frame,
+                        destination,
+                        reference.cell.value,
+                        instruction,
+                    )
+                    frame.instruction_index += 1
+                elif opcode is AssemblyOpcode.TREFSTORE:
+                    reference_register, source_register = instruction.registers
+                    reference = self._read_reference(
+                        frame, reference_register, instruction
+                    )
+                    if not reference.mutable:
+                        raise self._runtime_error(
+                            frame,
+                            instruction,
+                            "shared reference store",
+                            DiagnosticCategory.IMMUTABLE_WRITE,
+                            DiagnosticCode.RUNTIME_IMMUTABLE_WRITE,
+                        )
+                    reference.cell.value = self._read(
+                        frame, source_register, instruction
+                    )
+                    frame.instruction_index += 1
                 elif opcode is AssemblyOpcode.TJMP:
                     frame.block_label = instruction.labels[0]
                     frame.instruction_index = 0
@@ -319,6 +404,77 @@ class Emulator(AssemblyVerifier):
                     frame.block_label = instruction.labels[target_index]
                     frame.instruction_index = 0
                 elif opcode is AssemblyOpcode.TCALL:
+                    assert instruction.callee is not None
+                    argument_values = [
+                        self._read(frame, register, instruction)
+                        for register in instruction.argument_registers
+                    ]
+                    signature = DYNAMIC_BUILTIN_SIGNATURES.get(instruction.callee)
+                    if signature is None:
+                        signature = composite_vector_runtime_signature(
+                            instruction.callee
+                        )
+                    if signature is not None:
+                        argument_types, result_types = signature
+                        if len(argument_values) != len(argument_types):
+                            raise self._runtime_error(
+                                frame,
+                                instruction,
+                                f"dynamic builtin '{instruction.callee}' argument width mismatch",
+                                DiagnosticCategory.INTERNAL,
+                                DiagnosticCode.RUNTIME_INVALID_STATE,
+                            )
+                        for register, expected, value in zip(
+                            instruction.argument_registers,
+                            argument_types,
+                            argument_values,
+                            strict=True,
+                        ):
+                            if expected is IRType.REFERENCE and not isinstance(
+                                value, ReferenceValue
+                            ):
+                                raise self._runtime_error(
+                                    frame,
+                                    instruction,
+                                    f"dynamic builtin '{instruction.callee}' requires a reference argument",
+                                    DiagnosticCategory.INTERNAL,
+                                    DiagnosticCode.RUNTIME_INVALID_STATE,
+                                    notes=(f"register r{register}",),
+                                )
+                        runtime_arguments = tuple(
+                            static_strings.get(value, value)
+                            if expected is IRType.STRING and isinstance(value, str)
+                            else value
+                            for expected, value in zip(
+                                argument_types, argument_values, strict=True
+                            )
+                        )
+                        result = _execute_dynamic_builtin(
+                            instruction.callee,
+                            runtime_arguments,
+                            runtime=resource_runtime,
+                        )
+                        values = (
+                            result
+                            if isinstance(result, tuple)
+                            and len(instruction.result_registers) > 1
+                            else (result,)
+                        )
+                        if len(values) != len(instruction.result_registers):
+                            raise self._runtime_error(
+                                frame,
+                                instruction,
+                                f"dynamic builtin '{instruction.callee}' result width mismatch",
+                                DiagnosticCategory.INTERNAL,
+                                DiagnosticCode.RUNTIME_INVALID_STATE,
+                            )
+                        for destination, value in zip(
+                            instruction.result_registers, values, strict=True
+                        ):
+                            self._write(frame, destination, value, instruction)
+                        frame.instruction_index += 1
+                        continue
+
                     if len(stack) >= self.max_frames:
                         raise self._runtime_error(
                             frame,
@@ -328,12 +484,7 @@ class Emulator(AssemblyVerifier):
                             DiagnosticCode.RUNTIME_FRAME_LIMIT,
                             limit=self.max_frames,
                         )
-                    assert instruction.callee is not None
                     callee = functions[instruction.callee]
-                    argument_values = [
-                        self._read(frame, register, instruction)
-                        for register in instruction.argument_registers
-                    ]
                     return_block = frame.block_label
                     frame.instruction_index += 1
                     return_index = frame.instruction_index
@@ -432,6 +583,90 @@ class Emulator(AssemblyVerifier):
             diagnostic_code=DiagnosticCode.RUNTIME_INVALID_STATE,
         )
 
+    def _execute_address(
+        self, frame: Frame, instruction: AssemblyInstruction
+    ) -> None:
+        if instruction.reference_is_slice:
+            raise self._runtime_error(
+                frame,
+                instruction,
+                "slice references are not supported by the Assembly emulator",
+                DiagnosticCategory.INTERNAL,
+                DiagnosticCode.RUNTIME_INVALID_STATE,
+            )
+        destination = instruction.registers[0]
+        if instruction.memory is None:
+            source = instruction.registers[1]
+            cell = _AssemblyReferenceCell(
+                read_value=lambda: frame.registers.get(source),
+                write_value=lambda value: self._write(
+                    frame, source, value, instruction
+                ),
+                is_initialized=lambda: source in frame.registers,
+            )
+        else:
+            memory = self._memory_definition(frame, instruction.memory, instruction)
+            index = (
+                self._read_int(frame, instruction.registers[1], instruction)
+                if len(instruction.registers) > 1
+                else 0
+            )
+            index = self._checked_memory_index(frame, instruction, memory, index)
+            cells = frame.memory[memory.index]
+            cell = _AssemblyReferenceCell(
+                read_value=lambda: cells[index],
+                write_value=lambda value: self._write_memory_reference(
+                    frame, memory, index, value, instruction
+                ),
+                is_initialized=lambda: cells[index] is not None,
+            )
+        self._write(
+            frame,
+            destination,
+            ReferenceValue(cell, 0, instruction.reference_mutable),
+            instruction,
+        )
+
+    def _write_memory_reference(
+        self,
+        frame: Frame,
+        memory: AssemblyMemoryObject,
+        index: int,
+        value: AssemblyValue,
+        instruction: AssemblyInstruction,
+    ) -> None:
+        cells = frame.memory[memory.index]
+        if not memory.mutable and cells[index] is not None:
+            raise self._runtime_error(
+                frame,
+                instruction,
+                f"memory m{memory.index} index {index} is immutable and already initialized",
+                DiagnosticCategory.IMMUTABLE_WRITE,
+                DiagnosticCode.RUNTIME_IMMUTABLE_WRITE,
+                memory=f"m{memory.index}",
+                index=index,
+            )
+        self._validate_value(
+            frame, memory.element_type, value, instruction, register=None
+        )
+        cells[index] = value
+
+    @classmethod
+    def _read_reference(
+        cls, frame: Frame, register: int, instruction: AssemblyInstruction
+    ) -> ReferenceValue:
+        value = cls._read(frame, register, instruction)
+        if not isinstance(value, ReferenceValue):
+            raise cls._runtime_error(
+                frame,
+                instruction,
+                f"register r{register} does not contain a reference",
+                DiagnosticCategory.INTERNAL,
+                DiagnosticCode.RUNTIME_INVALID_STATE,
+                notes=(f"register r{register}",),
+            )
+        return value
+
     def _create_frame(
         self,
         function: AssemblyFunction,
@@ -528,69 +763,15 @@ class Emulator(AssemblyVerifier):
                     f"got {source_type.value}",
                 )
             )
-        if memory.element_type is AssemblyType.STRING:
-            if not isinstance(value, str):
-                raise self._runtime_error(
-                    frame,
-                    instruction,
-                    f"memory m{memory.index} expects a string handle",
-                    DiagnosticCategory.INTERNAL,
-                    DiagnosticCode.RUNTIME_INVALID_STATE,
-                    memory=f"m{memory.index}",
-                    index=index,
-                )
-        elif memory.element_type is AssemblyType.I64:
-            try:
-                validate_i64(value)
-            except (NumericError, TypeError, ValueError) as error:
-                raise self._runtime_error(
-                    frame,
-                    instruction,
-                    f"memory m{memory.index} index {index}: {error}",
-                    DiagnosticCategory.OVERFLOW,
-                    DiagnosticCode.RUNTIME_OVERFLOW,
-                    memory=f"m{memory.index}",
-                    index=index,
-                ) from error
-        elif memory.element_type is AssemblyType.F64:
-            try:
-                validate_f64(value)
-            except (NumericError, TypeError, ValueError) as error:
-                raise self._runtime_error(
-                    frame,
-                    instruction,
-                    f"memory m{memory.index} index {index}: {error}",
-                    DiagnosticCategory.OVERFLOW,
-                    DiagnosticCode.RUNTIME_OVERFLOW,
-                    memory=f"m{memory.index}",
-                    index=index,
-                ) from error
-        else:
-            if not isinstance(value, int):
-                raise self._runtime_error(
-                    frame,
-                    instruction,
-                    f"memory m{memory.index} expects a numeric value",
-                    DiagnosticCategory.INTERNAL,
-                    DiagnosticCode.RUNTIME_INVALID_STATE,
-                    memory=f"m{memory.index}",
-                    index=index,
-                )
-            try:
-                validate(value, WIDTH_MAP[memory.element_type])
-            except TernaryRangeError as error:
-                raise self._runtime_error(
-                    frame,
-                    instruction,
-                    f"memory m{memory.index} index {index}: {error}",
-                    DiagnosticCategory.OVERFLOW,
-                    DiagnosticCode.RUNTIME_OVERFLOW,
-                    memory=f"m{memory.index}",
-                    index=index,
-                    value=error.value,
-                    lower_bound=error.lower_bound,
-                    upper_bound=error.upper_bound,
-                ) from error
+        self._validate_value(
+            frame,
+            memory.element_type,
+            value,
+            instruction,
+            register=source_register,
+            memory_index=index,
+            memory_name=f"m{memory.index}",
+        )
         cells = frame.memory[memory.index]
         if not memory.mutable and cells[index] is not None:
             raise self._runtime_error(
@@ -686,56 +867,86 @@ class Emulator(AssemblyVerifier):
         instruction: AssemblyInstruction,
     ) -> None:
         type_name = self._register_type(frame, register, instruction)
+        self._validate_value(
+            frame, type_name, value, instruction, register=register
+        )
+        frame.registers[register] = value
+
+    @classmethod
+    def _validate_value(
+        cls,
+        frame: Frame,
+        type_name: AssemblyType,
+        value: AssemblyValue,
+        instruction: AssemblyInstruction,
+        *,
+        register: int | None,
+        memory_index: int | None = None,
+        memory_name: str | None = None,
+    ) -> None:
+        subject = (
+            f"register r{register}"
+            if register is not None
+            else f"memory {memory_name} index {memory_index}"
+        )
+        notes = () if register is None else (f"register r{register}",)
         if type_name is AssemblyType.STRING:
             if not isinstance(value, str):
-                raise self._runtime_error(
-                    frame,
-                    instruction,
-                    f"register r{register} expects a string handle",
-                    DiagnosticCategory.INTERNAL,
-                    DiagnosticCode.RUNTIME_INVALID_STATE,
-                    notes=(f"register r{register}",),
-                )
+                raise cls._runtime_error(frame, instruction, f"{subject} expects a string handle", DiagnosticCategory.INTERNAL, DiagnosticCode.RUNTIME_INVALID_STATE, notes=notes)
+        elif type_name is AssemblyType.BYTES:
+            if not isinstance(value, DynamicBytes):
+                raise cls._runtime_error(frame, instruction, f"{subject} expects a bytes value", DiagnosticCategory.INTERNAL, DiagnosticCode.RUNTIME_INVALID_STATE, notes=notes)
+        elif type_name is AssemblyType.TEXT:
+            if not isinstance(value, DynamicText):
+                raise cls._runtime_error(frame, instruction, f"{subject} expects a text value", DiagnosticCategory.INTERNAL, DiagnosticCode.RUNTIME_INVALID_STATE, notes=notes)
+        elif type_name is AssemblyType.VECTOR:
+            if not isinstance(value, (DynamicVector, DynamicCompositeVector, DynamicMap, DynamicTextMap, DynamicSet)):
+                raise cls._runtime_error(frame, instruction, f"{subject} expects a dynamic collection value", DiagnosticCategory.INTERNAL, DiagnosticCode.RUNTIME_INVALID_STATE, notes=notes)
+        elif type_name is AssemblyType.REFERENCE:
+            if not isinstance(value, ReferenceValue):
+                raise cls._runtime_error(frame, instruction, f"{subject} expects a reference", DiagnosticCategory.INTERNAL, DiagnosticCode.RUNTIME_INVALID_STATE, notes=notes)
         elif type_name is AssemblyType.I64:
             try:
                 validate_i64(value)
             except (NumericError, TypeError, ValueError) as error:
-                raise self._runtime_error(
+                raise cls._runtime_error(
                     frame, instruction, str(error), DiagnosticCategory.OVERFLOW,
                     DiagnosticCode.RUNTIME_OVERFLOW,
+                    notes=notes,
                 ) from error
         elif type_name is AssemblyType.F64:
             try:
                 validate_f64(value)
             except (NumericError, TypeError, ValueError) as error:
-                raise self._runtime_error(
+                raise cls._runtime_error(
                     frame, instruction, str(error), DiagnosticCategory.OVERFLOW,
                     DiagnosticCode.RUNTIME_OVERFLOW,
+                    notes=notes,
                 ) from error
         else:
             if not isinstance(value, int):
-                raise self._runtime_error(
+                raise cls._runtime_error(
                     frame,
                     instruction,
-                    f"register r{register} expects a numeric value",
+                    f"{subject} expects a numeric value",
                     DiagnosticCategory.INTERNAL,
                     DiagnosticCode.RUNTIME_INVALID_STATE,
-                    notes=(f"register r{register}",),
+                    notes=notes,
                 )
             try:
                 validate(value, WIDTH_MAP[type_name])
             except TernaryRangeError as error:
-                raise self._runtime_error(
+                raise cls._runtime_error(
                     frame,
                     instruction,
                     str(error),
                     DiagnosticCategory.OVERFLOW,
                     DiagnosticCode.RUNTIME_OVERFLOW,
+                    notes=notes,
                     value=error.value,
                     lower_bound=error.lower_bound,
                     upper_bound=error.upper_bound,
                 ) from error
-        frame.registers[register] = value
 
     @classmethod
     def _runtime_error(
