@@ -126,6 +126,14 @@ fn main() -> tryte:
 }
 
 REAL_QBE_EXAMPLES = {
+    "first_example": ("examples/first.s3", 6),
+    "mutable_switch_example": ("examples/mutable_switch.s3", 10),
+    "mutable_value_example": ("examples/mutable_value.s3", 15),
+    "native_abi_example": ("examples/native_abi.s3", 7),
+    "nested_calls_example": ("examples/nested_calls.s3", 12),
+    "recursive_memory_example": ("examples/recursive_memory.s3", 6),
+    "sign_example": ("examples/sign.s3", -1),
+    "simple_call_example": ("examples/simple_call.s3", 15),
     "static_array_example": ("examples/static_array.s3", 13),
     "trit_array_example": ("examples/trit_array.s3", 1),
     "recursive_sum_example": ("examples/recursive_sum.s3", 10),
@@ -149,6 +157,40 @@ fn main() -> i64:
 module arithmetic
 export fn double(value: i64) -> i64:
     return value * 2
+""",
+}
+MULTI_MODULE_NOMINAL_PROGRAM = {
+    "main.s3": """\
+module main
+from model import Flag
+from model import Sign
+from consumer import score
+fn main() -> tryte:
+    flag: Flag = Flag(active=-1, amount=8, sign=Sign.Positive)
+    return score(flag)
+""",
+    "model.s3": """\
+module model
+export enum Sign:
+    Negative
+    Positive
+export record Flag:
+    active: trit
+    amount: tryte
+    sign: Sign
+export fn marker() -> tryte:
+    return 0
+""",
+    "consumer.s3": """\
+module consumer
+from model import Flag
+from model import Sign
+export fn score(flag: Flag) -> tryte:
+    match flag.sign:
+        Sign.Negative:
+            return 0
+        Sign.Positive:
+            return flag.amount
 """,
 }
 
@@ -499,6 +541,57 @@ def test_qbe_composes_frontend_resolved_multi_module_program(optimization) -> No
     text = translate_verified_ir(compilation.ir)
     assert "function l $__s3mod_arithmetic__double(l %r" in text
     assert "call $__s3mod_arithmetic__double(" in text
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_composes_cross_module_record_and_enum_values(optimization) -> None:
+    compilation = compile_sources(
+        MULTI_MODULE_NOMINAL_PROGRAM,
+        optimization=optimization,
+        entry_module="main",
+    )
+    assert compilation.ir is not None
+    assert execute_ir(compilation.ir) == 8
+    assert execute_assembly(compilation.assembly) == 8
+
+    text = translate_verified_ir(compilation.ir)
+    assert "function l $__s3mod_consumer__score(" in text
+    assert "call $__s3mod_consumer__score(" in text
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_cross_module_record_enum_differential_when_linux_toolchain_exists(
+    optimization, tmp_path
+) -> None:
+    required = os.environ.get("S3_QBE_NATIVE_REQUIRED") == "1"
+    if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
+        if required:
+            pytest.fail("QBE_BUILD_FAILURE: required native qualification is not Linux x86-64")
+        pytest.skip("QBE native oracle requires Linux x86-64")
+    qbe = shutil.which("qbe")
+    cc = shutil.which("gcc") or shutil.which("cc")
+    if qbe is None or cc is None:
+        if required:
+            pytest.fail("QBE_BUILD_FAILURE: required qbe executable or C compiler is unavailable")
+        pytest.skip("QBE and a native C toolchain are required for the QBE execution gate")
+
+    compilation = compile_sources(
+        MULTI_MODULE_NOMINAL_PROGRAM,
+        optimization=optimization,
+        entry_module="main",
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir, optimization, "multi-module-nominal", tmp_path, qbe, cc
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "multi-module-nominal", tmp_path, cc
+    )
+    assert execute_ir(compilation.ir) == 8
+    assert execute_assembly(compilation.assembly) == 8
+    assert qbe_native.returncode == 8, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 8" in s3_native.stdout
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
