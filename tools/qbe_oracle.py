@@ -60,22 +60,50 @@ _QBE_F64_VECTOR_ABI_ADAPTERS = frozenset(
         "f64_vector_set",
     }
 )
-_QBE_VECTOR_BUILTINS = (
+_QBE_I64_MAP_SET_BUILTINS = frozenset(
+    {
+        "i64_map_new",
+        "i64_map_len",
+        "i64_map_capacity",
+        "i64_map_reserve",
+        "i64_map_put",
+        "i64_map_contains",
+        "i64_map_get",
+        "i64_map_remove",
+        "i64_map_key_at",
+        "i64_map_value_at",
+        "i64_map_clone",
+        "i64_set_new",
+        "i64_set_len",
+        "i64_set_capacity",
+        "i64_set_reserve",
+        "i64_set_add",
+        "i64_set_contains",
+        "i64_set_remove",
+        "i64_set_at",
+        "i64_set_clone",
+    }
+)
+_QBE_DYNAMIC_CONTAINER_BUILTINS = (
     _QBE_I64_VECTOR_BUILTINS
     | _QBE_TRYTE_VECTOR_BUILTINS
     | _QBE_F64_VECTOR_BUILTINS
+    | _QBE_I64_MAP_SET_BUILTINS
 )
-_QBE_VECTOR_RUNTIME_SYMBOLS = {
+_QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS = {
     builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_I64_VECTOR_BUILTINS
 }
-_QBE_VECTOR_RUNTIME_SYMBOLS.update(
+_QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
     {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_TRYTE_VECTOR_BUILTINS}
 )
-_QBE_VECTOR_RUNTIME_SYMBOLS.update(
+_QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
     {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_F64_VECTOR_BUILTINS}
 )
-_QBE_VECTOR_RUNTIME_SYMBOLS.update(
+_QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
     {builtin: f"__s3_qbe_{builtin}" for builtin in _QBE_F64_VECTOR_ABI_ADAPTERS}
+)
+_QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
+    {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_I64_MAP_SET_BUILTINS}
 )
 _I64_MIN = -(1 << 63)
 _I64_MAX = (1 << 63) - 1
@@ -84,11 +112,11 @@ _TRYTE_MIN, _TRYTE_MAX = -364, 364
 
 
 def translate_verified_ir(module: IRModule) -> str:
-    """Verify and translate the experimental scalar/vector subset.
+    """Verify and translate the experimental scalar/container subset.
 
     Checked numeric operations and memory accesses are guarded before QBE
     machine operations. Dynamic builtins outside the checked scalar and
-    tryte/i64/f64-vector subsets remain fail-closed.
+    tryte/i64/f64-vector, and i64-map/set subsets remain fail-closed.
     """
 
     verify_ir(module)
@@ -348,7 +376,7 @@ def _validate_instruction(
         callee = functions.get(callee_name)
         if callee is None:
             signature = DYNAMIC_BUILTIN_SIGNATURES.get(callee_name)
-            if callee_name not in _QBE_VECTOR_BUILTINS or signature is None:
+            if callee_name not in _QBE_DYNAMIC_CONTAINER_BUILTINS or signature is None:
                 _unsupported(function, block_name, instruction, "external or builtin call")
             parameter_types, result_types = signature
             if tuple(registers[operand] for operand in operands) != parameter_types:
@@ -617,7 +645,7 @@ def _translate_function(
                     parameter_types = DYNAMIC_BUILTIN_SIGNATURES[
                         instruction.callee
                     ][0]
-                    callee_name = _QBE_VECTOR_RUNTIME_SYMBOLS.get(
+                    callee_name = _QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.get(
                         instruction.callee, instruction.callee
                     )
                 else:

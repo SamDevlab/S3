@@ -367,6 +367,136 @@ fn main() -> i64:
     return failures
 """
 
+QBE_I64_MAP_SET_PROGRAM = """\
+fn mismatch_i64(actual: i64, expected: i64) -> i64:
+    match actual == expected:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn mismatch_trit(actual: trit, expected: trit) -> i64:
+    match actual == expected:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn at_least(actual: i64, minimum: i64) -> i64:
+    match actual >= minimum:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn main() -> i64:
+    mut mapping: i64_map = i64_map_new(2)
+    discard i64_map_put(&mut mapping, 7, 70)
+    discard i64_map_put(&mut mapping, -3, 30)
+    discard i64_map_reserve(&mut mapping, 4)
+    mut map_clone: i64_map = i64_map_clone(&mapping)
+    discard i64_map_put(&mut map_clone, 7, 77)
+    mut failures: i64 = 0
+    failures = failures + mismatch_i64(i64_map_len(&mapping), 2)
+    failures = failures + at_least(i64_map_capacity(&mapping), 4)
+    failures = failures + mismatch_trit(i64_map_contains(&mapping, 7), -1)
+    failures = failures + mismatch_trit(i64_map_contains(&mapping, 9), 0)
+    failures = failures + mismatch_i64(i64_map_get(&mapping, 7), 70)
+    failures = failures + mismatch_i64(i64_map_get(&map_clone, 7), 77)
+    first_key: i64 = i64_map_key_at(&mapping, 0)
+    first_value: i64 = i64_map_value_at(&mapping, 0)
+    failures = failures + mismatch_i64(first_value, i64_map_get(&mapping, first_key))
+    discard i64_map_remove(&mut map_clone, 7)
+    failures = failures + mismatch_i64(i64_map_len(&map_clone), 1)
+    failures = failures + mismatch_trit(i64_map_contains(&map_clone, 7), 0)
+    mut values: i64_set = i64_set_new(2)
+    discard i64_set_add(&mut values, 8)
+    discard i64_set_add(&mut values, -3)
+    discard i64_set_reserve(&mut values, 4)
+    mut set_clone: i64_set = i64_set_clone(&values)
+    discard i64_set_add(&mut set_clone, 11)
+    failures = failures + mismatch_i64(i64_set_len(&values), 2)
+    failures = failures + at_least(i64_set_capacity(&values), 4)
+    failures = failures + mismatch_i64(i64_set_len(&set_clone), 3)
+    failures = failures + mismatch_trit(i64_set_contains(&values, -3), -1)
+    failures = failures + mismatch_trit(i64_set_contains(&values, 7), 0)
+    first_set_value: i64 = i64_set_at(&values, 0)
+    failures = failures + mismatch_trit(i64_set_contains(&values, first_set_value), -1)
+    discard i64_set_remove(&mut values, -3)
+    failures = failures + mismatch_i64(i64_set_len(&values), 1)
+    failures = failures + mismatch_trit(i64_set_contains(&values, -3), 0)
+    return failures
+"""
+
+_QBE_I64_MAP_SET_BUILTINS = (
+    "i64_map_new",
+    "i64_map_len",
+    "i64_map_capacity",
+    "i64_map_reserve",
+    "i64_map_put",
+    "i64_map_contains",
+    "i64_map_get",
+    "i64_map_remove",
+    "i64_map_key_at",
+    "i64_map_value_at",
+    "i64_map_clone",
+    "i64_set_new",
+    "i64_set_len",
+    "i64_set_capacity",
+    "i64_set_reserve",
+    "i64_set_add",
+    "i64_set_contains",
+    "i64_set_remove",
+    "i64_set_at",
+    "i64_set_clone",
+)
+
+QBE_I64_MAP_SET_ERROR_CASES = (
+    (
+        "map-capacity",
+        """\
+fn main() -> i64:
+    mut values: i64_map = i64_map_new(1)
+    discard i64_map_put(&mut values, 1, 10)
+    discard i64_map_put(&mut values, 2, 20)
+    return 0
+""",
+        "capacity",
+    ),
+    (
+        "map-missing-key",
+        """\
+fn main() -> i64:
+    values: i64_map = i64_map_new(1)
+    return i64_map_get(&values, 42)
+""",
+        "bounds",
+    ),
+    (
+        "set-capacity",
+        """\
+fn main() -> i64:
+    mut values: i64_set = i64_set_new(1)
+    discard i64_set_add(&mut values, 1)
+    discard i64_set_add(&mut values, 2)
+    return 0
+""",
+        "capacity",
+    ),
+    (
+        "set-bounds",
+        """\
+fn main() -> i64:
+    values: i64_set = i64_set_new(1)
+    return i64_set_at(&values, 0)
+""",
+        "bounds",
+    ),
+)
+
 QBE_I64_VECTOR_PARAMETER_PROGRAM = """\
 fn append_and_read(values: i64_vector) -> i64:
     discard i64_vector_reserve(&mut values, 3)
@@ -690,6 +820,8 @@ def test_qbe_s3_runtime_provider_excludes_workload_functions(optimization) -> No
     assert "__s3_builtin_i64_vector_new:" in runtime_assembly
     assert "__s3_builtin_tryte_vector_new:" in runtime_assembly
     assert "__s3_builtin_f64_vector_new:" in runtime_assembly
+    assert "__s3_builtin_i64_map_new:" in runtime_assembly
+    assert "__s3_builtin_i64_set_new:" in runtime_assembly
     assert "s3_main:" in runtime_assembly
     assert "__s3mod_" not in runtime_assembly
 
@@ -784,6 +916,7 @@ def _build_qbe_native(
             "__s3_builtin_i64_vector_set",
             "__s3_builtin_i64_vector_clone",
             "__s3_builtin_i64_vector_slice",
+            *[f"__s3_builtin_{builtin}" for builtin in _QBE_I64_MAP_SET_BUILTINS],
         ]
         expose = subprocess.run(
             [
@@ -1233,6 +1366,72 @@ def test_qbe_f64_vector_operations_preserve_s3_semantics(optimization) -> None:
         assert f"call ${stem}{operation}(" in il
     assert "=d call $__s3_qbe_f64_vector_get(" in il
     assert "d %r" in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_i64_maps_and_sets_preserve_s3_semantics(optimization) -> None:
+    compilation = compile_source(QBE_I64_MAP_SET_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+
+    il = translate_verified_ir(compilation.ir)
+    for builtin in _QBE_I64_MAP_SET_BUILTINS:
+        assert f"call $__s3_builtin_{builtin}(" in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_i64_maps_and_sets_match_s3_when_linux_toolchain_exists(
+    optimization, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(QBE_I64_MAP_SET_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "i64-maps-sets",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "i64-maps-sets", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+@pytest.mark.parametrize("name,source,category", QBE_I64_MAP_SET_ERROR_CASES)
+def test_qbe_native_i64_map_set_errors_match_s3(
+    name, source, category, optimization, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(source, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        f"i64-{name}",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, f"i64-{name}", tmp_path, cc
+    )
+
+    assert _error_category(lambda: execute_ir(compilation.ir)) == category
+    assert _error_category(lambda: execute_assembly(compilation.assembly)) == category
+    assert s3_native.returncode != 0
+    assert qbe_native.returncode == s3_native.returncode
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
