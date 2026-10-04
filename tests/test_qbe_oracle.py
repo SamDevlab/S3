@@ -998,7 +998,11 @@ def _error_category(call) -> str:
             return "capacity"
         if "allocation" in text or "active limit" in text:
             return "allocation"
-        if "out of bounds" in text or (" index " in text and "outside [" in text):
+        if (
+            "out of bounds" in text
+            or "map key is absent" in text
+            or (" index " in text and "outside [" in text)
+        ):
             return "bounds"
         if isinstance(error, IndexError):
             return "bounds"
@@ -1378,6 +1382,19 @@ def test_qbe_i64_maps_and_sets_preserve_s3_semantics(optimization) -> None:
     il = translate_verified_ir(compilation.ir)
     for builtin in _QBE_I64_MAP_SET_BUILTINS:
         assert f"call $__s3_builtin_{builtin}(" in il
+    il_lines = il.splitlines()
+    for builtin in ("i64_map_contains", "i64_set_contains"):
+        call_lines = [
+            index
+            for index, line in enumerate(il_lines)
+            if f"call $__s3_builtin_{builtin}(" in line
+        ]
+        assert call_lines
+        assert all(
+            "=w call " in il_lines[index]
+            and "=l extsw " in il_lines[index + 1]
+            for index in call_lines
+        )
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
@@ -1432,6 +1449,17 @@ def test_qbe_native_i64_map_set_errors_match_s3(
     assert _error_category(lambda: execute_assembly(compilation.assembly)) == category
     assert s3_native.returncode != 0
     assert qbe_native.returncode == s3_native.returncode
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_i64_map_missing_key_is_classified_as_bounds(optimization) -> None:
+    _, source, category = next(
+        case for case in QBE_I64_MAP_SET_ERROR_CASES if case[0] == "map-missing-key"
+    )
+    compilation = compile_source(source, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert _error_category(lambda: execute_ir(compilation.ir)) == category
+    assert _error_category(lambda: execute_assembly(compilation.assembly)) == category
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])

@@ -664,7 +664,18 @@ def _translate_function(
                     lines.append(f"\t{call}")
                 else:
                     result_type = _register_type(function, result)
-                    if callee is None and instruction.callee in {
+                    if callee is None and result_type is IRType.TRIT:
+                        raw_result = _temporary(
+                            function_index, temporary_index, "dynamic_trit_result"
+                        )
+                        temporary_index += 1
+                        lines.extend(
+                            [
+                                f"\t{raw_result} =w {call}",
+                                f"\t%r{result} =l extsw {raw_result}",
+                            ]
+                        )
+                    elif callee is None and instruction.callee in {
                         "tryte_vector_get",
                         "tryte_vector_pop",
                     }:
