@@ -23,7 +23,7 @@ from bootstrap.s3.ir import (
 from bootstrap.s3.emulator import execute_assembly
 from bootstrap.s3.ir_emulator import execute_ir
 from bootstrap.s3.optimizer import OptimizationLevel
-from bootstrap.s3.pipeline import compile_source
+from bootstrap.s3.pipeline import compile_source, compile_sources
 from bootstrap.s3.backends.x86_64.backend import X8664Backend
 from bootstrap.s3.verifier import IRVerificationError, verify_ir
 from tools.qbe_oracle import QBETranslationError, translate_verified_ir
@@ -138,6 +138,19 @@ QBE_PROGRAMS.update(
         for name, (path, _) in REAL_QBE_EXAMPLES.items()
     }
 )
+MULTI_MODULE_PROGRAM = {
+    "main.s3": """\
+module main
+from arithmetic import double
+fn main() -> i64:
+    return double(21)
+""",
+    "arithmetic.s3": """\
+module arithmetic
+export fn double(value: i64) -> i64:
+    return value * 2
+""",
+}
 
 I64_MIN = -(1 << 63)
 I64_MAX = (1 << 63) - 1
@@ -405,6 +418,26 @@ def _build_qbe_native(program, optimization, name, tmp_path, qbe, cc):
     return subprocess.run([str(executable_path)], check=False, capture_output=True)
 
 
+def _build_s3_native(compilation, optimization, name, tmp_path, cc):
+    assert compilation.assembly is not None
+    stem = f"{name}-{optimization.value}-s3"
+    assembly_path = tmp_path / f"{stem}.s"
+    executable_path = tmp_path / stem
+    assembly_path.write_text(
+        X8664Backend().generate(compilation.assembly), encoding="utf-8"
+    )
+    link = subprocess.run(
+        [cc, "-nostartfiles", "-no-pie", str(assembly_path), "-o", str(executable_path)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert link.returncode == 0, link.stderr
+    return subprocess.run(
+        [str(executable_path)], check=False, capture_output=True, text=True
+    )
+
+
 def _error_category(call) -> str:
     try:
         call()
@@ -454,6 +487,49 @@ def test_qbe_real_s3_examples_match_explicit_results(name, expected, optimizatio
     assert execute_ir(compilation.ir) == expected
     assert execute_assembly(compilation.assembly) == expected
     assert translate_verified_ir(compilation.ir)
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_composes_frontend_resolved_multi_module_program(optimization) -> None:
+    compilation = compile_sources(MULTI_MODULE_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None
+    assert execute_ir(compilation.ir) == 42
+    assert execute_assembly(compilation.assembly) == 42
+
+    text = translate_verified_ir(compilation.ir)
+    assert "function l $__s3mod_arithmetic__double(l %r" in text
+    assert "call $__s3mod_arithmetic__double(" in text
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_multi_module_differential_when_linux_toolchain_exists(
+    optimization, tmp_path
+) -> None:
+    required = os.environ.get("S3_QBE_NATIVE_REQUIRED") == "1"
+    if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
+        if required:
+            pytest.fail("QBE_BUILD_FAILURE: required native qualification is not Linux x86-64")
+        pytest.skip("QBE native oracle requires Linux x86-64")
+    qbe = shutil.which("qbe")
+    cc = shutil.which("gcc") or shutil.which("cc")
+    if qbe is None or cc is None:
+        if required:
+            pytest.fail("QBE_BUILD_FAILURE: required qbe executable or C compiler is unavailable")
+        pytest.skip("QBE and a native C toolchain are required for the QBE execution gate")
+
+    compilation = compile_sources(MULTI_MODULE_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir, optimization, "multi-module", tmp_path, qbe, cc
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "multi-module", tmp_path, cc
+    )
+    assert execute_ir(compilation.ir) == 42
+    assert execute_assembly(compilation.assembly) == 42
+    assert qbe_native.returncode == 42, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 42" in s3_native.stdout
 
 
 def test_qbe_oracle_preserves_compare_branch_and_scalar_call_shapes() -> None:
@@ -753,24 +829,8 @@ def test_qbe_native_program_differential_when_linux_toolchain_exists(
     )
     program = compilation.ir
     assert program is not None
-    s3_assembly_path = tmp_path / f"{name}-{optimization.value}-s3.s"
-    s3_executable_path = tmp_path / f"{name}-{optimization.value}-s3"
     native = _build_qbe_native(program, optimization, name, tmp_path, qbe, cc)
-    s3_assembly_path.write_text(
-        X8664Backend().generate(compilation.assembly), encoding="utf-8"
-    )
-    s3_link = subprocess.run(
-        [cc, "-nostartfiles", "-no-pie", str(s3_assembly_path), "-o", str(s3_executable_path)],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert s3_link.returncode == 0, (
-        f"S3_NATIVE_MISMATCH: {name} {optimization.value}: {s3_link.stderr}"
-    )
-    s3_native = subprocess.run(
-        [str(s3_executable_path)], check=False, capture_output=True, text=True
-    )
+    s3_native = _build_s3_native(compilation, optimization, name, tmp_path, cc)
 
     result = execute_ir(program)
     assert isinstance(result, int)
