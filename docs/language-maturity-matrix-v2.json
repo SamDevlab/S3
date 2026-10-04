@@ -55,7 +55,7 @@
       "bounded_vm_O0_O1": "PASS",
       "pebble_O0_O1": "PASS"
     },
-    "linux_native_maturity_workloads": "PENDING_FINAL_NATURAL_CI",
+    "linux_native_maturity_workloads": "PASS_ON_CI_SNAPSHOT_HEAD_F87CF213",
     "redesign_required": false,
     "static_string_handle_contract_preserved": true
   },
@@ -206,7 +206,15 @@
         "classification": "INTERMITTENT_WINDOWS_PROCESS_SCHEDULING_OR_TREE_REAP"
       }
     ],
-    "final_natural_ci": "PENDING_AFTER_PUSH"
+    "natural_ci_snapshot": {
+      "head": "f87cf2135330f643cda1fb3e91702f2dd09b640c",
+      "total": 13,
+      "passed": 13,
+      "failed": 0,
+      "cancelled": 0,
+      "status": "PASS",
+      "final_report_commit_requires_its_own_ci": true
+    }
   },
   "release_and_promotion": {
     "phase_a_hosted_parity": "PASS",

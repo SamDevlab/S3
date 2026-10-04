@@ -12,6 +12,7 @@ This report extends, but does not rewrite, the historical [V1 report](language-m
 | Branch | `feat/s3-language-maturity-real-workloads-v1-20261004` |
 | PR | [#328](https://github.com/SamDevlab/S3/pull/328), open draft; do not merge |
 | Final implementation/test HEAD | `ed71d8a476c6d1d612aa08fd71637b2eb85d9d7c` |
+| Natural CI snapshot HEAD | `f87cf2135330f643cda1fb3e91702f2dd09b640c` |
 | PR #327 | Unchanged at `55f73a31e8f049a1e6d805154355917921bbd53b`; open draft |
 
 The campaign closes hosted dynamic-runtime execution in Assembly and proves a bounded S3-written compiler pipeline. It adds an experimental, fail-closed QBE translator, but does not prove that QBE accepts or executes its output in this environment. No language syntax, stable backend registration, default backend, compiler default, or release surface changed.
@@ -30,7 +31,7 @@ Evidence:
 - Five maturity workloads (ordering, hex encoding, CSV parsing, bounded VM, and Pebble compiler) compare Assembly with IR at O0 and O1.
 - Static Assembly strings retain their established `sN` handle behavior. Only a dynamic builtin argument whose registered signature says `STRING` is resolved to literal contents at that runtime boundary.
 
-`ASSEMBLY_DYNAMIC_BUILTIN_DISPATCH=PASS`, `ASSEMBLY_DYNAMIC_VALUE_MODEL=PASS`, `ASSEMBLY_MUTATION_PARITY=PASS`, and focused dynamic error parity passed. No Assembly-format change, heap redesign, ownership redesign, or verifier redesign was required. Linux x86-64 native executions are guarded on this Windows host and remain subject to the final natural Linux CI result; this report does not infer native success from IR/Assembly parity.
+`ASSEMBLY_DYNAMIC_BUILTIN_DISPATCH=PASS`, `ASSEMBLY_DYNAMIC_VALUE_MODEL=PASS`, `ASSEMBLY_MUTATION_PARITY=PASS`, and focused dynamic error parity passed. No Assembly-format change, heap redesign, ownership redesign, or verifier redesign was required. The natural Linux x86-64 CI run passed the native gate at CI snapshot HEAD `f87cf213…`; this is distinct from Windows-hosted IR/Assembly parity.
 
 ## Phase B: Pebble Compiler Architecture
 
@@ -76,7 +77,9 @@ The required Windows full suite terminated with exit 1: `4345 passed, 365 skippe
 1. Five tests in `tests/test_s3_16_public_dataset_agent_kernels.py` fail the same byte hash assertion. `core.autocrlf=true` converts the fixture's single final LF to CRLF in the working tree. The Git blob SHA-256 is the manifest's expected `daf23bc747d7d483391efad709b47ead8854bf2f70405829b2833cd0fee2a924`; the CRLF checkout hash is `afb74dc054c8eabed4faaec1312aba07c3aea6cd2e2d6220173644a01363f54b`. `git diff` reports the fixture and manifest unchanged. The fixture was not modified.
 2. `tests/test_reliability_runner_v2.py::test_r1_timeout_kills_descendant_process_tree` failed once in the loaded full run, then passed when run alone. The reliability runner and its test were not changed; this remains classified as an intermittent Windows scheduling/process-tree test result, not silently waived.
 
-The QBE native test body was subsequently strengthened to include S3 x86-64 execution in the three-way differential. Its focused collection/structural suite passed (`36 passed, 10 skipped` with static-text regressions); the native branch remains skipped here because the toolchain is absent. Natural CI for the final pushed HEAD is still required and must be reported separately from this local Windows suite.
+The QBE native test body was subsequently strengthened to include S3 x86-64 execution in the three-way differential. Its focused collection/structural suite passed (`36 passed, 10 skipped` with static-text regressions); the native branch remains skipped here because the toolchain is absent.
+
+The natural CI snapshot for HEAD `f87cf2135330f643cda1fb3e91702f2dd09b640c` passed all 13 checks, including the three Python unit matrices, renderer, benchmark, native x86-64, numeric-domain closure, differential, packaging, supply chain, and Docker capability gates. A subsequent report-only commit changes the PR head; do not transfer this earlier green result to that later SHA. The exact final PR head must be checked separately, and its result is captured by the PR checks and final campaign report.
 
 The V1 normal-compiler scale evidence remains unchanged: up to 53,319 source bytes, 100 functions, 3 modules, 6,884 AST nodes, 1,668 IR blocks, and 8,175 IR instructions. No new performance measurements or claims were made.
 
@@ -88,4 +91,4 @@ The existing V1 audit against `docs/selfhost/REENTRY_CRITERIA.md` is unchanged: 
 
 ## Assessment
 
-The campaign closes hosted Assembly execution for the currently registered dynamic runtime families and proves a bounded compiler-writing architecture. QBE has a deterministic, fail-closed structural translator and a prepared native differential harness, but no QBE executable evidence exists. The local Windows full suite is not green for the two explicitly classified existing/environmental issues above. Therefore the campaign is **not complete** until final-head natural CI is terminal and green, and QBE native execution remains a separate blocked/partial result unless a qualified Linux toolchain becomes available.
+The campaign closes hosted Assembly execution for the currently registered dynamic runtime families and proves a bounded compiler-writing architecture. QBE has a deterministic, fail-closed structural translator and a prepared native differential harness, but no QBE executable evidence exists. The local Windows full suite is not green for the two explicitly classified existing/environmental issues above; the natural Linux CI snapshot at `f87cf213…` passed. The report-only commit following that snapshot requires its own terminal natural CI result. QBE native execution remains a separate blocked/partial result unless a qualified Linux toolchain becomes available.
