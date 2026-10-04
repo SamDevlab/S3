@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "campaign_id": "agent-memory-v1",
+  "version": "1.0.0",
+  "category": "agent-memory",
+  "objective": "Compare external agent-memory configurations by measuring whether they preserve current S3 invariants across isolated coding tasks, stale-memory conflicts, session boundaries, and cross-agent handoffs.",
+  "configurations": [
+    {"id": "no-memory", "description": "No durable memory between task phases; only the current prompt and repository are available."},
+    {"id": "context-only", "description": "The agent may use the active model context but no external durable memory service."},
+    {"id": "ai-memory", "description": "AI-MEMORY is the external durable memory provider under test."},
+    {"id": "ai-memory+s3-integrity-gate", "description": "AI-MEMORY is used with an S3 correctness/integrity validation layer before durable conclusions are trusted."}
+  ],
+  "protocol": {
+    "subject_commit": "db5f4bf10e2066f52bf144d23e6f7db56154e298",
+    "worktree_isolation": "fresh-worktree-per-scenario",
+    "recommended_repetitions": 3,
+    "result_collection": "Run every scenario in an isolated clean worktree, persist one scenario result JSON, then aggregate one provider configuration at a time.",
+    "rules": [
+      "Agent Memory V1 is frozen to protocol.subject_commit; every provider and repetition uses that exact S3 subject commit.",
+      "Keep the benchmark controller checkout separate from subject worktrees so agents cannot inspect external-benchmarks task/oracle definitions.",
+      "Use the same agent model, harness version, task text, and tool permissions across provider configurations unless the scenario explicitly requires a distinct receiving agent.",
+      "Do not reuse modified worktrees, unrecorded notes, transcripts, or hidden handoff files between scenarios.",
+      "For cross-session scenarios, end Session A and start Session B without the Session A transcript; only the configured durable memory channel may carry state.",
+      "For cross-agent scenarios, Agent B must have a distinct agent or harness identity and must not receive Agent A's transcript.",
+      "For stale-memory scenarios, expose the declared stale claim unchanged before the hard boundary; if the arm supports durable memory, store it unchanged there.",
+      "Invariant recall is informative. Correctness oracle failures and required task-artifact failures always dominate recall scores.",
+      "Do not persist credentials, tokens, private host metadata, personal paths, environment dumps, or network identifiers in observations/results."
+    ]
+  },
+  "scenarios": [
+    {"scenario_id": "memory.host-shell-policy.v1", "mode": "single-session", "purpose": "Baseline retention of an explicit host-process safety policy during an ordinary repository change."},
+    {"scenario_id": "memory.ternary-subtraction.v1", "mode": "cross-session", "purpose": "Retain the distinction between balanced subtraction and machine numeric difference across a later compiler session."},
+    {"scenario_id": "memory.checked-i64.v1", "mode": "cross-session", "purpose": "Retain checked i64 overflow and division-failure semantics across later numeric refactoring."},
+    {"scenario_id": "memory.mut-no-noalias.v1", "mode": "cross-session", "purpose": "Prevent a later optimization session from importing an invalid machine noalias assumption from source &mut."},
+    {"scenario_id": "memory.stale-memory.v1", "mode": "stale-memory", "purpose": "Reject an obsolete durable claim when current repository evidence says otherwise.", "stale_claim_id": "ffi-is-future-work"},
+    {"scenario_id": "memory.cross-session.v1", "mode": "cross-session", "purpose": "Carry multiple invariants through a clean session boundary with no transcript reuse."},
+    {"scenario_id": "memory.cross-agent.v1", "mode": "cross-agent", "purpose": "Carry multiple invariants between distinct coding-agent identities using shared durable memory."}
+  ],
+  "gates": {"require_all_oracles_pass": true, "recall_is_gate": false, "provider_consistency": true}
+}

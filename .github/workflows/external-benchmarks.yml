@@ -1,0 +1,133 @@
+name: External Benchmarks
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "external-benchmarks/**"
+      - "tools/external_bench.py"
+      - "tools/external_bench_ai_memory.py"
+      - "tools/external_bench_observation.py"
+      - "tools/external_bench_runbook.py"
+      - "tools/external_bench_smoke.py"
+      - "tools/external_bench_task.py"
+      - "tools/external_bench_worktrees.py"
+      - "tools/s3_memory_gate.py"
+      - ".github/workflows/external-benchmarks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  harness-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository with subject history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install repository development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Compile external benchmark Python
+        run: >-
+          python -m compileall -q
+          external-benchmarks
+          tools/external_bench.py
+          tools/external_bench_ai_memory.py
+          tools/external_bench_observation.py
+          tools/external_bench_runbook.py
+          tools/external_bench_smoke.py
+          tools/external_bench_task.py
+          tools/external_bench_worktrees.py
+          tools/s3_memory_gate.py
+
+      - name: Validate external benchmark harness, campaigns, and providers
+        run: python -m pytest -q external-benchmarks/tests
+
+      - name: Validate scenario discovery
+        run: python tools/external_bench.py --list
+
+      - name: Validate campaign discovery
+        run: python tools/external_bench.py --list-campaigns
+
+      - name: Read pinned Agent Memory subject commit
+        run: |
+          SUBJECT_COMMIT="$(python -c "import json; print(json.load(open('external-benchmarks/campaigns/agent-memory-v1.json', encoding='utf-8'))['protocol']['subject_commit'])")"
+          git cat-file -e "${SUBJECT_COMMIT}^{commit}"
+          echo "SUBJECT_COMMIT=${SUBJECT_COMMIT}" >> "${GITHUB_ENV}"
+
+      - name: Validate deterministic Agent Memory run planning
+        run: >-
+          python tools/external_bench.py
+          --prepare-run
+          --campaign agent-memory-v1
+          --provider ai-memory
+          --provider-version offline-fixture
+          --repetition 1
+          --s3-commit "${SUBJECT_COMMIT}"
+          --agent-provider fixture
+          --agent-model offline-fixture-a
+          --agent-harness codex
+          --agent-harness-version offline-fixture-1
+          --tool-permissions-profile offline-validation
+          --output-json /tmp/agent-memory-plan.json
+
+      - name: Validate generated run-plan JSON
+        run: python -m json.tool /tmp/agent-memory-plan.json > /dev/null
+
+      - name: Validate deterministic observation materialization
+        run: >-
+          python tools/external_bench_observation.py
+          --plan-file /tmp/agent-memory-plan.json
+          --scenario memory.host-shell-policy.v1
+          --reported-invariant host-process-no-shell
+          --output-json /tmp/agent-memory-observation.json
+
+      - name: Validate generated observation JSON
+        run: python -m json.tool /tmp/agent-memory-observation.json > /dev/null
+
+      - name: Validate AI-MEMORY managed command preview
+        run: >-
+          python tools/external_bench_ai_memory.py command
+          --plan-file /tmp/agent-memory-plan.json
+          --scenario memory.cross-session.v1
+          --workspace s3bench
+          --project s3-agent-memory-v1
+          --phase resume
+          --harness codex
+          > /tmp/ai-memory-command.json
+
+      - name: Validate AI-MEMORY command JSON
+        run: python -m json.tool /tmp/ai-memory-command.json > /dev/null
+
+      - name: Validate S3 integrity gate fixture
+        run: |
+          python tools/s3_memory_gate.py \
+            < external-benchmarks/providers/ai_memory/sample-eval-proposal.json \
+            > /tmp/s3-memory-gate.json
+          python -m json.tool /tmp/s3-memory-gate.json > /dev/null
+          python -c "import json,pathlib; result=json.loads(pathlib.Path('/tmp/s3-memory-gate.json').read_text()); assert result.get('passed') is True, result"
+
+      - name: Validate all 28 Agent Memory V1 bundles and seven semantic oracles
+        run: >-
+          python tools/external_bench_smoke.py
+          --workspace-root /tmp/s3-agent-memory-v1-smoke
+          --with-oracles
+          --output-json /tmp/s3-agent-memory-v1-smoke.json
+
+      - name: Validate smoke result contract
+        run: |
+          python -m json.tool /tmp/s3-agent-memory-v1-smoke.json > /dev/null
+          python -c "import json,pathlib; r=json.loads(pathlib.Path('/tmp/s3-agent-memory-v1-smoke.json').read_text()); assert r['status']=='PASS', r; assert r['bundles']==28, r; assert r['phase_steps']==52, r; assert r['semantic_oracles_validated']==7, r; assert r['semantic_oracle_failures']==[], r; assert r['scientific_claims_allowed'] is False, r"
