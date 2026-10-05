@@ -154,6 +154,23 @@ QBE_PROGRAMS.update(
         for name, (path, _) in REAL_QBE_EXAMPLES.items()
     }
 )
+QBE_ARM64_NATIVE_PROGRAMS = {
+    "constant": (SCALAR_PROGRAMS["constant"], 42),
+    "compare_branch": (SCALAR_PROGRAMS["compare_branch"], 1),
+    "nested_call": (SCALAR_PROGRAMS["nested_call"], 7),
+    "f64_arithmetic": (SCALAR_PROGRAMS["f64_arithmetic"], -1),
+    "enum_match": (SCALAR_PROGRAMS["enum_match"], 1),
+    "record_scalar_fields": (SCALAR_PROGRAMS["record_scalar_fields"], 12),
+    "fixed_array_loop_sum": (SCALAR_PROGRAMS["fixed_array_loop_sum"], 6),
+    "recursive_sum_example": (
+        QBE_PROGRAMS["recursive_sum_example"],
+        REAL_QBE_EXAMPLES["recursive_sum_example"][1],
+    ),
+    "static_array_example": (
+        QBE_PROGRAMS["static_array_example"],
+        REAL_QBE_EXAMPLES["static_array_example"][1],
+    ),
+}
 MULTI_MODULE_PROGRAM = {
     "main.s3": """\
 module main
@@ -1292,6 +1309,7 @@ def _build_qbe_native(
     qbe,
     cc,
     *,
+    target: str | None = None,
     s3_runtime_assembly: str | None = None,
     f64_vector_abi_shim: bool = False,
 ):
@@ -1307,8 +1325,12 @@ def _build_qbe_native(
     f64_vector_shim_path = tmp_path / f"{stem}-f64-vector-shim.c"
     f64_vector_shim_object_path = tmp_path / f"{stem}-f64-vector-shim.o"
     il_path.write_text(translate_verified_ir(program), encoding="utf-8")
+    qbe_command = [qbe]
+    if target is not None:
+        qbe_command.extend(("-t", target))
+    qbe_command.extend(("-o", str(assembly_path), str(il_path)))
     qbe_result = subprocess.run(
-        [qbe, "-o", str(assembly_path), str(il_path)],
+        qbe_command,
         check=False,
         capture_output=True,
         text=True,
@@ -3459,6 +3481,53 @@ def test_qbe_native_program_differential_when_linux_toolchain_exists(
     )
     assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
     assert f"program returned: {result}" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+@pytest.mark.parametrize(
+    "name,source,expected",
+    tuple(
+        (name, source, expected)
+        for name, (source, expected) in QBE_ARM64_NATIVE_PROGRAMS.items()
+    ),
+)
+def test_qbe_native_arm64_program_differential(
+    name, source, expected, optimization, tmp_path
+) -> None:
+    required = os.environ.get("S3_QBE_ARM64_NATIVE_REQUIRED") == "1"
+    if platform.system() != "Linux" or platform.machine().lower() not in {
+        "aarch64",
+        "arm64",
+    }:
+        if required:
+            pytest.fail("QBE_ARM64_BUILD_FAILURE: required native qualification is not Linux ARM64")
+        pytest.skip("QBE ARM64 native oracle requires Linux ARM64")
+    qbe = shutil.which("qbe")
+    cc = shutil.which("gcc") or shutil.which("cc")
+    if qbe is None or cc is None:
+        if required:
+            pytest.fail("QBE_ARM64_BUILD_FAILURE: required qbe executable or C compiler is unavailable")
+        pytest.skip("QBE and a native ARM64 C toolchain are required for the QBE execution gate")
+
+    compilation = compile_source(source, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == expected
+    assert execute_assembly(compilation.assembly) == expected
+
+    native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        f"arm64-{name}",
+        tmp_path,
+        qbe,
+        cc,
+        target="arm64",
+    )
+    assert native.returncode == (expected & 0xFF), (
+        f"QBE_ARM64_RUNTIME_MISMATCH: {name} {optimization.value}: "
+        f"expected exit status {expected & 0xFF}, got {native.returncode}; "
+        f"stderr={native.stderr.decode(errors='replace')}"
+    )
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
