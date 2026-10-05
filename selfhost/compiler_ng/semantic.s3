@@ -244,6 +244,147 @@ fn ng_expression_type(source: &bytes, functions: &vector<NgFunction>, nodes: &ve
                                         1:
                                             return -11
 
+fn ng_check_match_return_arms(source: &bytes, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, function: NgFunction, statement: NgAstNode) -> i64:
+    mut selector_type: i64 = ng_expression_type(source, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left)
+    mut arm_id: i64 = statement.right
+    mut arm: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut body_link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut arm_return: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut return_type: i64 = 0
+    mut seen_negative: i64 = 0
+    mut seen_neutral: i64 = 0
+    mut seen_positive: i64 = 0
+    match selector_type <=> 2:
+        -1:
+            return -14
+        0:
+            selector_type = selector_type
+        1:
+            return -14
+    while arm_id >= 0:
+        arm = vector_get<NgAstNode>(nodes, arm_id)
+        match arm.kind <=> 13:
+            -1:
+                return -16
+            0:
+                match arm.operation <=> -1:
+                    -1:
+                        match seen_negative <=> 0:
+                            -1:
+                                return -18
+                            0:
+                                seen_negative = 1
+                            1:
+                                return -18
+                    0:
+                        match arm.operation <=> 0:
+                            -1:
+                                match seen_negative <=> 0:
+                                    -1:
+                                        return -18
+                                    0:
+                                        seen_negative = 1
+                                    1:
+                                        return -18
+                            0:
+                                match seen_neutral <=> 0:
+                                    -1:
+                                        return -18
+                                    0:
+                                        seen_neutral = 1
+                                    1:
+                                        return -18
+                            1:
+                                match seen_positive <=> 0:
+                                    -1:
+                                        return -18
+                                    0:
+                                        seen_positive = 1
+                                    1:
+                                        return -18
+                    1:
+                        match arm.operation <=> 0:
+                            -1:
+                                match seen_negative <=> 0:
+                                    -1:
+                                        return -18
+                                    0:
+                                        seen_negative = 1
+                                    1:
+                                        return -18
+                            0:
+                                match seen_neutral <=> 0:
+                                    -1:
+                                        return -18
+                                    0:
+                                        seen_neutral = 1
+                                    1:
+                                        return -18
+                            1:
+                                match seen_positive <=> 0:
+                                    -1:
+                                        return -18
+                                    0:
+                                        seen_positive = 1
+                                    1:
+                                        return -18
+                body_link = vector_get<NgAstNode>(nodes, arm.left)
+                match body_link.kind <=> 11:
+                    -1:
+                        return -16
+                    0:
+                        match body_link.right < 0:
+                            -1:
+                                arm_return = vector_get<NgAstNode>(nodes, body_link.left)
+                                match arm_return.kind <=> 9:
+                                    -1:
+                                        return -16
+                                    0:
+                                        return_type = ng_expression_type(source, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, arm_return.left)
+                                        match return_type < 0:
+                                            -1:
+                                                return return_type
+                                            0:
+                                                match return_type <=> function.return_type:
+                                                    -1:
+                                                        return -15
+                                                    0:
+                                                        arm_id = arm.right
+                                                    1:
+                                                        return -15
+                                            1:
+                                                return -15
+                                    1:
+                                        return -16
+                            0:
+                                return -16
+                            1:
+                                return -16
+                    1:
+                        return -16
+            1:
+                return -16
+        arm_id = arm.right
+    match seen_negative == 1:
+        -1:
+            match seen_neutral == 1:
+                -1:
+                    match seen_positive == 1:
+                        -1:
+                            return 0
+                        0:
+                            return -18
+                        1:
+                            return -18
+                0:
+                    return -18
+                1:
+                    return -18
+        0:
+            return -18
+        1:
+            return -18
+
 fn ng_check_function_body(source: &bytes, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, function: NgFunction) -> i64:
     mut locals: vector<NgLocal> = vector_new<NgLocal>(8)
     mut link_id: i64 = function.body_node
@@ -348,7 +489,27 @@ fn ng_check_function_body(source: &bytes, functions: &vector<NgFunction>, nodes:
                                             1:
                                                 return -15
                                     0:
-                                        return -16
+                                        match statement.kind == 12:
+                                            -1:
+                                                value_type = ng_check_match_return_arms(source, functions, nodes, parameters, &locals, function, statement)
+                                                match value_type <=> 0:
+                                                    -1:
+                                                        return value_type
+                                                    0:
+                                                        match link.right >= 0:
+                                                            -1:
+                                                                return -17
+                                                            0:
+                                                                saw_return = 1
+                                                                link_id = link.right
+                                                            1:
+                                                                link_id = link.right
+                                                    1:
+                                                        return value_type
+                                            0:
+                                                return -16
+                                            1:
+                                                return -16
                                     1:
                                         return -16
                             1:

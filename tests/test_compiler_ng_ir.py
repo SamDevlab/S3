@@ -45,6 +45,7 @@ _OPCODE_CODES = {
     "move": 8,
     "load": 9,
     "store": 10,
+    "branch3": 11,
 }
 
 
@@ -62,7 +63,7 @@ def _reference_events(program: object) -> list[int]:
 
     for function_index, function in enumerate(program.functions):
         call_argument_cursor = 0
-        assert len(function.blocks) == 1
+        block_indices = {block.name: index for index, block in enumerate(function.blocks)}
         event(
             1,
             function_index,
@@ -106,79 +107,57 @@ def _reference_events(program: object) -> list[int]:
                 0,
                 0,
             )
-        for instruction_index, instruction in enumerate(function.instructions):
-            operands = instruction.operands
-            immediate = instruction.immediate
-            assert immediate is None or isinstance(immediate, int)
-            if instruction.opcode.value == "call":
-                assert instruction.callee in function_indices
-                event(
-                    4,
-                    function_index,
-                    _OPCODE_CODES[instruction.opcode.value],
-                    -1 if instruction.result is None else instruction.result,
-                    len(operands),
-                    function_indices[instruction.callee],
-                    call_argument_cursor,
-                    0,
-                )
-                for argument_index, argument_register in enumerate(operands):
+        for block_index, block in enumerate(function.blocks):
+            event(9, function_index, block_index, 0, 0, 0, 0, 0)
+        instruction_index = 0
+        for block_index, block in enumerate(function.blocks):
+            for instruction in block.instructions:
+                operands = instruction.operands
+                immediate = instruction.immediate
+                assert immediate is None or isinstance(immediate, int)
+                opcode = instruction.opcode.value
+                if opcode == "call":
+                    assert instruction.callee in function_indices
                     event(
-                        6,
+                        4,
+                        function_index,
+                        _OPCODE_CODES[opcode],
+                        -1 if instruction.result is None else instruction.result,
+                        len(operands),
+                        function_indices[instruction.callee],
+                        call_argument_cursor,
+                        0,
+                    )
+                    for argument_index, argument_register in enumerate(operands):
+                        event(6, function_index, instruction_index, argument_index, argument_register, 0, 0, 0)
+                    call_argument_cursor += len(operands)
+                elif opcode == "load":
+                    event(4, function_index, _OPCODE_CODES[opcode], -1 if instruction.result is None else instruction.result, len(operands), operands[0], instruction.memory, 0)
+                elif opcode == "store":
+                    event(4, function_index, _OPCODE_CODES[opcode], -1, len(operands), operands[0], operands[1], instruction.memory)
+                    event(8, function_index, instruction_index, int(instruction.initialization), 0, 0, 0, 0)
+                else:
+                    event(
+                        4,
+                        function_index,
+                        _OPCODE_CODES[opcode],
+                        -1 if instruction.result is None else instruction.result,
+                        len(operands),
+                        -1 if len(operands) < 1 else operands[0],
+                        -1 if len(operands) < 2 else operands[1],
+                        0 if immediate is None else immediate,
+                    )
+                event(10, function_index, instruction_index, block_index, 0, 0, 0, 0)
+                if opcode == "branch3":
+                    event(
+                        11,
                         function_index,
                         instruction_index,
-                        argument_index,
-                        argument_register,
-                        0,
+                        *(block_indices[target] for target in instruction.targets),
                         0,
                         0,
                     )
-                call_argument_cursor += len(operands)
-                continue
-            if instruction.opcode.value == "load":
-                event(
-                    4,
-                    function_index,
-                    _OPCODE_CODES[instruction.opcode.value],
-                    -1 if instruction.result is None else instruction.result,
-                    len(operands),
-                    operands[0],
-                    instruction.memory,
-                    0,
-                )
-                continue
-            if instruction.opcode.value == "store":
-                event(
-                    4,
-                    function_index,
-                    _OPCODE_CODES[instruction.opcode.value],
-                    -1,
-                    len(operands),
-                    operands[0],
-                    operands[1],
-                    instruction.memory,
-                )
-                event(
-                    8,
-                    function_index,
-                    instruction_index,
-                    int(instruction.initialization),
-                    0,
-                    0,
-                    0,
-                    0,
-                )
-                continue
-            event(
-                4,
-                function_index,
-                _OPCODE_CODES[instruction.opcode.value],
-                -1 if instruction.result is None else instruction.result,
-                len(operands),
-                -1 if len(operands) < 1 else operands[0],
-                -1 if len(operands) < 2 else operands[1],
-                0 if immediate is None else immediate,
-            )
+                instruction_index += 1
         event(5, function_index, 0, 0, 0, 0, 0, 0)
     return events
 
@@ -198,6 +177,14 @@ def test_nextgen_emits_reference_equivalent_typed_ir_for_multiple_functions() ->
             "    mut current: i64 = value",
             "    current = current + 1",
             "    return current",
+            "fn choose(value: trit) -> i64:",
+            "    match value:",
+            "        -1:",
+            "            return 10",
+            "        0:",
+            "            return 20",
+            "        1:",
+            "            return 30",
             "fn pass_trit(value: trit) -> trit:",
             "    return value",
             "fn pass_value(value: tryte) -> tryte:",
@@ -253,11 +240,11 @@ fn main() -> i64:
                                     while index < {len(expected)}:
                                         match vector_get<i64>(&actual, index) <=> vector_get<i64>(&expected, index):
                                             -1:
-                                                return -104
+                                                return vector_get<i64>(&actual, index) * 10000 + vector_get<i64>(&expected, index)
                                             0:
                                                 index = index + 1
                                             1:
-                                                return -104
+                                                return vector_get<i64>(&actual, index) * 10000 + vector_get<i64>(&expected, index)
                                     return 0
                                 1:
                                     return -103
@@ -270,4 +257,5 @@ fn main() -> i64:
 '''
     compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
     assert compilation.ir is not None
-    assert execute_ir(compilation.ir) == 0
+    result = int(execute_ir(compilation.ir))
+    assert result == 0, f"serialized IR differs at flattened cell {result - 1}"

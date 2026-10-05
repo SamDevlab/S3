@@ -90,6 +90,23 @@ def test_nextgen_semantic_pass_tracks_initialized_mutable_locals() -> None:
     assert _ng_semantic_status(source) == 0
 
 
+def test_nextgen_semantic_pass_checks_exhaustive_terminal_ternary_match() -> None:
+    source = (
+        "fn choose(value: trit) -> i64:\n"
+        "    match value:\n"
+        "        -1:\n"
+        "            return 10\n"
+        "        0:\n"
+        "            return 20\n"
+        "        1:\n"
+        "            return 30\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+    assert compile_source(source).ir is not None
+    assert _ng_semantic_status(source) == 0
+
+
 @pytest.mark.parametrize(
     ("source", "expected_status"),
     [
@@ -155,6 +172,30 @@ def test_nextgen_semantic_pass_tracks_initialized_mutable_locals() -> None:
             "    return value\n"
             "    value: i64 = 1\n",
             -12,
+        ),
+        (
+            "fn choose(value: i64) -> i64:\n"
+            "    match value:\n"
+            "        -1:\n"
+            "            return 1\n"
+            "        0:\n"
+            "            return 2\n"
+            "        1:\n"
+            "            return 3\n"
+            "fn main() -> i64:\n"
+            "    return 0\n",
+            -14,
+        ),
+        (
+            "fn choose(value: trit) -> i64:\n"
+            "    match value:\n"
+            "        -1:\n"
+            "            return 1\n"
+            "        1:\n"
+            "            return 3\n"
+            "fn main() -> i64:\n"
+            "    return 0\n",
+            -18,
         ),
     ],
 )

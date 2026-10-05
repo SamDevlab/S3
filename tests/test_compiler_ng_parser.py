@@ -208,6 +208,25 @@ def test_nextgen_parser_preserves_local_declaration_assignment_and_return_order(
     assert _ng_parse_status(source) == 0
 
 
+def test_nextgen_parser_preserves_ternary_match_arm_order_and_nested_blocks() -> None:
+    source = (
+        "fn choose(value: trit) -> i64:\n"
+        "    match value:\n"
+        "        -1:\n"
+        "            return 10\n"
+        "        0:\n"
+        "            return 20\n"
+        "        1:\n"
+        "            return 30\n"
+    )
+    function = parse(source).functions[0]
+    statement = function.body.statements[0]
+    assert isinstance(statement, ast.SwitchStatement)
+    assert tuple(case.label for case in statement.cases) == (-1, 0, 1)
+    assert all(isinstance(case.body.statements[0], ast.ReturnStatement) for case in statement.cases)
+    assert _ng_parse_status(source) == 0
+
+
 def test_nextgen_parser_preserves_explicit_grouping() -> None:
     source = "fn grouped(value: i64) -> i64:\n    return (value + 1) * 2\n"
     reference = parse(source)
