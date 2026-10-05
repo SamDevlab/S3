@@ -1740,6 +1740,153 @@ fn main() -> i64:
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_executes_scientific_statistics_and_edge_cases(
+    optimization, tmp_path
+) -> None:
+    sources = standard_library_sources(modules=("s3.v1.science",))
+    sources["main.s3"] = """\
+module main
+from s3.v1.science import F64Result
+from s3.v1.science import sum
+from s3.v1.science import sum_squares
+from s3.v1.science import sum_abs
+from s3.v1.science import l1_norm
+from s3.v1.science import min
+from s3.v1.science import max
+from s3.v1.science import max_abs
+from s3.v1.science import dot
+from s3.v1.science import mean
+from s3.v1.science import variance
+from s3.v1.science import squared_distance
+from s3.v1.science import distance
+from s3.v1.science import l2_norm
+from s3.v1.science import rmsd
+from s3.v1.science import sum_squared_difference
+from s3.v1.science import mae
+from s3.v1.science import mse
+from s3.v1.science import rmse
+from s3.v1.science import standard_deviation
+from s3.v1.science import covariance
+from s3.v1.science import correlation
+from s3.v1.science import cosine_similarity
+fn mismatch(value: trit) -> i64:
+    match value:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn mismatch_f64(actual: f64, expected: f64) -> i64:
+    match (actual > expected - 0.00001) & (actual < expected + 0.00001):
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn main() -> i64:
+    mut values: f64_vector = f64_vector_new(3)
+    mut scaled: f64_vector = f64_vector_new(3)
+    mut empty: f64_vector = f64_vector_new(0)
+    mut zeros: f64_vector = f64_vector_new(2)
+    discard f64_vector_push(&mut values, -3.0)
+    discard f64_vector_push(&mut values, 0.0)
+    discard f64_vector_push(&mut values, 3.0)
+    discard f64_vector_push(&mut scaled, -2.0)
+    discard f64_vector_push(&mut scaled, 0.0)
+    discard f64_vector_push(&mut scaled, 2.0)
+    discard f64_vector_push(&mut zeros, 0.0)
+    discard f64_vector_push(&mut zeros, 0.0)
+    mut failures: i64 = mismatch_f64(sum(&values), 0.0)
+    failures = failures + mismatch_f64(sum_squares(&values), 18.0)
+    failures = failures + mismatch_f64(sum_abs(&values), 6.0)
+    failures = failures + mismatch_f64(l1_norm(&values), 6.0)
+    minimum: F64Result = min(&values)
+    maximum: F64Result = max(&values)
+    magnitude: F64Result = max_abs(&values)
+    failures = failures + mismatch(minimum.status == 0)
+    failures = failures + mismatch_f64(minimum.value, -3.0)
+    failures = failures + mismatch(maximum.status == 0)
+    failures = failures + mismatch_f64(maximum.value, 3.0)
+    failures = failures + mismatch(magnitude.status == 0)
+    failures = failures + mismatch_f64(magnitude.value, 3.0)
+    product: F64Result = dot(&values, &scaled)
+    square: F64Result = squared_distance(&values, &scaled)
+    length: F64Result = distance(&values, &scaled)
+    rmse_value: F64Result = rmse(&values, &scaled)
+    deviation: F64Result = standard_deviation(&values)
+    cov: F64Result = covariance(&values, &scaled)
+    corr: F64Result = correlation(&values, &scaled)
+    cosine: F64Result = cosine_similarity(&values, &scaled)
+    failures = failures + mismatch(product.status == 0)
+    failures = failures + mismatch_f64(product.value, 12.0)
+    failures = failures + mismatch_f64(mean(&values), 0.0)
+    failures = failures + mismatch_f64(variance(&values), 6.0)
+    failures = failures + mismatch(square.status == 0)
+    failures = failures + mismatch_f64(square.value, 2.0)
+    failures = failures + mismatch(length.status == 0)
+    failures = failures + mismatch_f64(length.value, sqrt(2.0))
+    failures = failures + mismatch_f64(l2_norm(&values), sqrt(18.0))
+    rmsd_value: F64Result = rmsd(&values, &scaled)
+    failures = failures + mismatch(rmsd_value.status == 0)
+    failures = failures + mismatch_f64(rmsd_value.value, sqrt(2.0 / 3.0))
+    alias: F64Result = sum_squared_difference(&values, &scaled)
+    failures = failures + mismatch(alias.status == 0)
+    failures = failures + mismatch_f64(alias.value, 2.0)
+    absolute_error: F64Result = mae(&values, &scaled)
+    squared_error: F64Result = mse(&values, &scaled)
+    failures = failures + mismatch(absolute_error.status == 0)
+    failures = failures + mismatch_f64(absolute_error.value, 2.0 / 3.0)
+    failures = failures + mismatch(squared_error.status == 0)
+    failures = failures + mismatch_f64(squared_error.value, 2.0 / 3.0)
+    failures = failures + mismatch_f64(rmse_value.value, sqrt(2.0 / 3.0))
+    failures = failures + mismatch_f64(deviation.value, sqrt(6.0))
+    failures = failures + mismatch_f64(cov.value, 4.0)
+    failures = failures + mismatch_f64(corr.value, 1.0)
+    failures = failures + mismatch_f64(cosine.value, 1.0)
+    empty_minimum: F64Result = min(&empty)
+    failures = failures + mismatch(empty_minimum.status == 2)
+    failures = failures + mismatch_f64(empty_minimum.value, 0.0)
+    empty_distance: F64Result = distance(&empty, &values)
+    failures = failures + mismatch(empty_distance.status == 1)
+    empty_correlation: F64Result = correlation(&empty, &values)
+    failures = failures + mismatch(empty_correlation.status == 1)
+    zero_cosine: F64Result = cosine_similarity(&zeros, &zeros)
+    failures = failures + mismatch(zero_cosine.status == 3)
+    return failures
+"""
+    compilation = compile_sources(
+        sources,
+        optimization=optimization,
+        entry_module="main",
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_il = translate_verified_ir(compilation.ir)
+    assert "call $sqrt(d " in qbe_il
+    qbe, cc = _require_qbe_native_tools()
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "scientific-statistics-edge-cases",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+        f64_vector_abi_shim=True,
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "scientific-statistics-edge-cases", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
 @pytest.mark.parametrize("values,targets", QBE_ORDERING_CASES)
 def test_qbe_composes_real_sorting_and_binary_search_workload(
     values, targets, optimization
