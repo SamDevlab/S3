@@ -55,7 +55,24 @@ def _register_number(name: str) -> int:
     return int(name.removeprefix("r"))
 
 
-def _reference_events(program: object) -> list[int]:
+def _source_name_span(source: str, name: str, character_offset: int, *, search_line: bool) -> tuple[int, int]:
+    encoded = source.encode("utf-8")
+    if search_line:
+        line_end = source.find("\n", character_offset)
+        if line_end < 0:
+            line_end = len(source)
+        character_start = source.find(name, character_offset, line_end)
+        assert character_start >= 0
+    else:
+        character_start = character_offset
+        assert source[character_start : character_start + len(name)] == name
+    byte_start = len(source[:character_start].encode("utf-8"))
+    byte_end = byte_start + len(name.encode("utf-8"))
+    assert byte_end <= len(encoded)
+    return byte_start, byte_end
+
+
+def _reference_events(program: object, source: str) -> list[int]:
     events: list[int] = []
     function_indices = {function.name: index for index, function in enumerate(program.functions)}
 
@@ -63,28 +80,37 @@ def _reference_events(program: object) -> list[int]:
         assert len(fields) == 7
         events.extend((kind, *fields))
 
+    event(0, 1, 8, 0, 0, 0, 0, 0)
     for function_index, function in enumerate(program.functions):
         call_argument_cursor = 0
         block_indices = {block.name: index for index, block in enumerate(function.blocks)}
+        assert function.location is not None
+        function_name_start, function_name_end = _source_name_span(
+            source, function.name, function.location.offset, search_line=True
+        )
         event(
             1,
             function_index,
             _TYPE_CODES[function.return_type],
             len(function.parameters),
-            0,
-            0,
-            0,
-            0,
+            function_name_start,
+            function_name_end,
+            function.result_width,
+            int(function.external) | (int(function.exported) << 1),
         )
         for parameter_index, parameter in enumerate(function.parameters):
+            assert parameter.location is not None
+            parameter_name_start, parameter_name_end = _source_name_span(
+                source, parameter.name, parameter.location.offset, search_line=False
+            )
             event(
                 2,
                 function_index,
                 parameter_index,
                 _TYPE_CODES[parameter.type],
                 parameter.register,
-                0,
-                0,
+                parameter_name_start,
+                parameter_name_end,
                 0,
             )
         for register in function.registers:
@@ -161,7 +187,7 @@ def _reference_events(program: object) -> list[int]:
 def _nextgen_event_parity_result(source: str) -> int:
     reference = compile_source(source).ir
     assert reference is not None
-    expected = _reference_events(reference)
+    expected = _reference_events(reference, source)
     expected_pushes = "\n".join(
         [f"discard vector_push<i64>(&mut expected, {expected[0]})"]
         + [
@@ -259,7 +285,7 @@ def test_nextgen_emits_reference_equivalent_typed_ir_for_multiple_functions() ->
     )
     reference = compile_source(source).ir
     assert reference is not None
-    expected = _reference_events(reference)
+    expected = _reference_events(reference, source)
     expected_pushes = "\n".join(
         [f"discard vector_push<i64>(&mut expected, {expected[0]})"]
         + [
