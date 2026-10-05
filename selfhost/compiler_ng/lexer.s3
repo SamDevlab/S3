@@ -1,5 +1,7 @@
 module selfhost.compiler_ng.lexer
 
+from selfhost.compiler_ng.character_classes import ng_is_digit
+
 export record NgToken:
     kind: i64
     start: i64
@@ -8,21 +10,6 @@ export record NgToken:
 fn ng_emit(tokens: &mut vector<NgToken>, kind: i64, start: i64, end: i64) -> i64:
     discard vector_push<NgToken>(tokens, NgToken(kind=kind, start=start, end=end))
     return end
-
-fn ng_is_digit(unit: i64) -> trit:
-    match unit <=> 48:
-        -1:
-            return 0
-        0:
-            return -1
-        1:
-            match unit <=> 57:
-                -1:
-                    return -1
-                0:
-                    return -1
-                1:
-                    return 0
 
 fn ng_is_alpha(unit: i64) -> trit:
     match unit <=> 65:

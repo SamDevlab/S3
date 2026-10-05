@@ -308,6 +308,7 @@ def _run_ng_source_set_events(
     sources: dict[str, str],
     *,
     entry_module: str = "main",
+    max_steps: int = 10_000_000,
 ) -> tuple[int, bytes, list[int]]:
     unit_initializers: list[str] = []
     for index, (path, contents) in enumerate(sources.items()):
@@ -345,6 +346,7 @@ fn main() -> vector<i64>:
     output = _execute_ir_with_step_budget(
         compilation.ir,
         source_text=_NG_SOURCE + "\n" + wrapper,
+        max_steps=max_steps,
     )
     assert isinstance(output, DynamicVector)
     values = [int(value) for value in output]
@@ -363,8 +365,13 @@ def _emit_ng_source_set_events(
     sources: dict[str, str],
     *,
     entry_module: str = "main",
+    max_steps: int = 10_000_000,
 ) -> tuple[bytes, list[int]]:
-    status, source, cells = _run_ng_source_set_events(sources, entry_module=entry_module)
+    status, source, cells = _run_ng_source_set_events(
+        sources,
+        entry_module=entry_module,
+        max_steps=max_steps,
+    )
     assert status == 0, f"S3C-NG source-set compilation failed with status {status}"
     return source, cells
 
@@ -561,6 +568,78 @@ def test_ng_source_set_accepts_qualified_module_identity() -> None:
     assert execute_ir(ng_ir) == execute_ir(reference) == 7
 
 
+def _character_class_self_module_sources() -> dict[str, str]:
+    character_module = (_ROOT / "selfhost/compiler_ng/character_classes.s3").read_text(
+        encoding="utf-8"
+    )
+    return {
+        "app.s3": (
+            "module app\n"
+            "from selfhost.compiler_ng.character_classes import ng_is_digit\n"
+            "fn main() -> i64:\n"
+            "    match ng_is_digit(52):\n"
+            "        -1:\n"
+            "            return 1\n"
+            "        0:\n"
+            "            return 0\n"
+            "        1:\n"
+            "            return 0\n"
+        ),
+        "character_classes.s3": character_module,
+    }
+
+
+def test_ng_compiles_its_own_character_class_module_through_source_set() -> None:
+    sources = _character_class_self_module_sources()
+    reference = compile_sources(sources, entry_module="app").ir
+    assert reference is not None
+
+    source, cells = _emit_ng_source_set_events(sources, entry_module="app", max_steps=50_000_000)
+    ng_ir = decode_ng_ir_events(source, cells)
+    verify_ir(ng_ir)
+
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
+    assert len(ng_ir.functions) == 3
+    assert execute_ir(ng_ir) == execute_ir(reference) == 1
+
+    reversed_source, reversed_cells = _emit_ng_source_set_events(
+        dict(reversed(tuple(sources.items()))), entry_module="app", max_steps=50_000_000
+    )
+    reversed_ir = decode_ng_ir_events(reversed_source, reversed_cells)
+    verify_ir(reversed_ir)
+    assert _canonical_structure(reversed_ir) == _canonical_structure(ng_ir)
+
+    assembly = generate_assembly(ng_ir)
+    emulator = Emulator()
+    emulator.validate(assembly, entry="main")
+    assert emulator.execute(assembly) == 1
+    assert ".globl s3_main" in generate_native_assembly(assembly)
+    assert "function" in translate_verified_ir(ng_ir)
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="S3 x86-64 native execution is qualified on Linux x86-64",
+)
+def test_ng_compiled_self_module_executes_linux_x86_64(tmp_path: Path) -> None:
+    sources = _character_class_self_module_sources()
+    reference = compile_sources(sources, entry_module="app").ir
+    assert reference is not None
+    source, cells = _emit_ng_source_set_events(sources, entry_module="app", max_steps=50_000_000)
+    ng_ir = decode_ng_ir_events(source, cells)
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
+    assert execute_ir(ng_ir) == execute_ir(reference) == 1
+
+    native_source = generate_native_assembly(generate_assembly(ng_ir))
+    executable = NativeToolchain.detect().build(native_source, tmp_path / "ng-self-module")
+    completed = subprocess.run([str(executable)], check=False, capture_output=True, text=True, timeout=30)
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stderr == ""
+    assert completed.stdout == "program returned: 1\n"
+
+
 @pytest.mark.parametrize(
     ("sources", "expected_status"),
     (
@@ -611,7 +690,7 @@ def test_ng_source_set_accepts_qualified_module_identity() -> None:
                 "main.s3": "module main\nfrom math import value\nfn flag() -> trit:\n    return 1\nfn main() -> i64:\n    return value(flag())\n",
                 "math.s3": "module math\nexport fn value(argument: i64) -> i64:\n    return argument\n",
             },
-            -15,
+            -14,
         ),
     ),
     ids=(

@@ -109,47 +109,68 @@ fn ng_supported_numeric_binary(operation: i64) -> trit:
         1:
             return 0
 
-fn ng_tryte_literal_fits(source: &bytes, node: NgAstNode) -> trit:
+fn ng_literal_magnitude_fits(source: &bytes, node: NgAstNode, maximum_prefix: i64, maximum_last_digit: i64) -> trit:
     mut index: i64 = node.start
     mut value: i64 = 0
     mut digit: i64 = 0
-    match node.end - node.start <=> 3:
+    match index < node.end:
         -1:
-            value = value
+            match to_i64(bytes_get(source, index)) <=> 45:
+                -1:
+                    value = value
+                0:
+                    index = index + 1
+                1:
+                    value = value
         0:
-            value = value
+            return 0
         1:
             return 0
-    match node.end - node.start <=> 0:
+    match index < node.end:
         -1:
-            return 0
-        0:
-            return 0
-        1:
             while index < node.end:
-                digit = to_i64(bytes_get(source, index))
-                match digit <=> 48:
+                digit = to_i64(bytes_get(source, index)) - 48
+                match digit < 0:
                     -1:
                         return 0
                     0:
-                        digit = 0
-                    1:
-                        match digit <=> 57:
+                        match digit > 9:
                             -1:
-                                digit = digit - 48
+                                digit = digit
                             0:
-                                digit = 9
+                                digit = digit
                             1:
                                 return 0
-                value = value * 10 + digit
-                index = index + 1
-            match value <=> 364:
-                -1:
-                    return -1
-                0:
-                    return -1
-                1:
-                    return 0
+                        match value <=> maximum_prefix:
+                            -1:
+                                value = value * 10 + digit
+                            0:
+                                match digit <=> maximum_last_digit:
+                                    -1:
+                                        value = value * 10 + digit
+                                    0:
+                                        value = value * 10 + digit
+                                    1:
+                                        return 0
+                            1:
+                                return 0
+                        index = index + 1
+                    1:
+                        return 0
+            return -1
+        0:
+            return 0
+        1:
+            return 0
+
+fn ng_trit_literal_fits(source: &bytes, node: NgAstNode) -> trit:
+    return ng_literal_magnitude_fits(source, node, 0, 1)
+
+fn ng_tryte_literal_fits(source: &bytes, node: NgAstNode) -> trit:
+    return ng_literal_magnitude_fits(source, node, 36, 4)
+
+fn ng_i64_literal_fits(source: &bytes, node: NgAstNode) -> trit:
+    return ng_literal_magnitude_fits(source, node, 922337203685477580, 7)
 
 fn ng_contextual_expression_type(source: &bytes, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node_id: i64, expected_type: i64) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
@@ -157,19 +178,37 @@ fn ng_contextual_expression_type(source: &bytes, functions: &vector<NgFunction>,
         -1:
             return ng_expression_type(source, functions, nodes, parameters, locals, first_parameter, parameter_count, node_id)
         0:
-            match expected_type <=> 3:
+            match expected_type <=> 2:
                 -1:
-                    return 1
-                0:
-                    match ng_tryte_literal_fits(source, node):
+                    match ng_i64_literal_fits(source, node):
                         -1:
-                            return 3
+                            return 1
+                        0:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    match ng_trit_literal_fits(source, node):
+                        -1:
+                            return 2
                         0:
                             return -14
                         1:
                             return -14
                 1:
-                    return 1
+                    match expected_type <=> 3:
+                        -1:
+                            return 1
+                        0:
+                            match ng_tryte_literal_fits(source, node):
+                                -1:
+                                    return 3
+                                0:
+                                    return -14
+                                1:
+                                    return -14
+                        1:
+                            return 1
         1:
             return ng_expression_type(source, functions, nodes, parameters, locals, first_parameter, parameter_count, node_id)
 

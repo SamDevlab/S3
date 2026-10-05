@@ -13,13 +13,24 @@ from bootstrap.s3.pipeline import compile_source
 
 
 _ROOT = Path(__file__).parents[1]
-_LEXER_SOURCE = (_ROOT / "selfhost/compiler_ng/lexer.s3").read_text(encoding="utf-8")
-_PARSER_SOURCE = "\n".join(
-    line
-    for line in (_ROOT / "selfhost/compiler_ng/parser.s3").read_text(encoding="utf-8").splitlines()
-    if not line.startswith("module ") and not line.startswith("from ")
+
+
+def _module_body(relative_path: str) -> str:
+    return "\n".join(
+        line
+        for line in (_ROOT / relative_path).read_text(encoding="utf-8").splitlines()
+        if not line.startswith("module ") and not line.startswith("from ")
+    )
+
+
+_COMPILER_SOURCE = "\n".join(
+    _module_body(path)
+    for path in (
+        "selfhost/compiler_ng/character_classes.s3",
+        "selfhost/compiler_ng/lexer.s3",
+        "selfhost/compiler_ng/parser.s3",
+    )
 )
-_COMPILER_SOURCE = _LEXER_SOURCE + "\n" + _PARSER_SOURCE
 
 
 def _ng_parse_status(source: str) -> int:
@@ -27,10 +38,10 @@ def _ng_parse_status(source: str) -> int:
 fn main() -> i64:
     mut source_text: text = text_from_static({json.dumps(source)})
     mut source_bytes: bytes = bytes_from_text(&source_text)
-    mut tokens: vector<NgToken> = vector_new<NgToken>(256)
-    mut functions: vector<NgFunction> = vector_new<NgFunction>(32)
-    mut parameters: vector<NgParameter> = vector_new<NgParameter>(128)
-    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(512)
+    mut tokens: vector<NgToken> = vector_new<NgToken>({len(source.encode("utf-8")) + 1})
+    mut functions: vector<NgFunction> = vector_new<NgFunction>({len(source.encode("utf-8")) + 1})
+    mut parameters: vector<NgParameter> = vector_new<NgParameter>({len(source.encode("utf-8")) + 1})
+    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>({len(source.encode("utf-8")) + 1})
     mut lex_status: i64 = ng_lex(&source_bytes, &mut tokens)
     match lex_status <=> 0:
         -1:
@@ -233,6 +244,22 @@ def test_nextgen_parser_accepts_compare_expression_as_match_selector() -> None:
         "    return value <=> 0\n"
     )
     assert _ng_parse_status(source) == 0
+
+
+def test_nextgen_parser_accepts_signed_integer_literal_expression() -> None:
+    source = "fn negative() -> i64:\n    return -42\n"
+    expression = parse(source).functions[0].body.statements[0].expression
+    assert isinstance(expression, ast.UnaryExpression)
+    assert isinstance(expression.operand, ast.IntegerLiteral)
+    assert expression.operand.value == 42
+    assert _ng_parse_status(source) == 0
+
+
+def test_nextgen_parser_rejects_minus_without_integer_operand() -> None:
+    source = "fn broken() -> i64:\n    return -\n"
+    with pytest.raises(ParseError):
+        parse(source)
+    assert _ng_parse_status(source) < 0
 
 
 def test_nextgen_parser_stops_return_expression_before_next_negative_match_label() -> None:

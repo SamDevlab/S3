@@ -21,7 +21,8 @@ def _module_body(relative_path: str) -> str:
 
 _NG_SOURCE = "\n".join(
     (
-        (_ROOT / "selfhost/compiler_ng/lexer.s3").read_text(encoding="utf-8"),
+        _module_body("selfhost/compiler_ng/character_classes.s3"),
+        _module_body("selfhost/compiler_ng/lexer.s3"),
         _module_body("selfhost/compiler_ng/parser.s3"),
         _module_body("selfhost/compiler_ng/semantic.s3"),
         _module_body("selfhost/compiler_ng/ir.s3"),
@@ -348,6 +349,15 @@ fn main() -> i64:
     assert compilation.ir is not None
     result = int(execute_ir(compilation.ir))
     assert result == 0, f"serialized IR differs at flattened cell {result - 1}"
+
+
+def test_nextgen_emits_reference_equivalent_ir_for_signed_i64_boundaries() -> None:
+    source = (
+        "fn minimum() -> i64:\n    return -9223372036854775807\n"
+        "fn maximum() -> i64:\n    return 9223372036854775807\n"
+        "fn main() -> i64:\n    return minimum() + maximum()\n"
+    )
+    assert _nextgen_event_parity_result(source) == 0
 
 
 def test_nextgen_emits_reference_equivalent_ir_for_branches_workload() -> None:

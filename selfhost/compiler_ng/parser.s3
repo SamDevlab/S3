@@ -674,18 +674,35 @@ fn ng_parse_identifier_or_call(source: &bytes, tokens: &vector<NgToken>, cursor:
 
 fn ng_parse_primary(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>) -> i64:
     mut token: NgToken = ng_token_at(tokens, cursor)
-    match token.kind <=> 2:
+    mut signed_start: i64 = 0
+    match token.kind <=> 345:
         -1:
-            match token.kind <=> 1:
+            match token.kind <=> 2:
+                -1:
+                    match token.kind <=> 1:
+                        -1:
+                            return -1
+                        0:
+                            return ng_parse_identifier_or_call(source, tokens, cursor, nodes, token)
+                        1:
+                            return -1
+                0:
+                    discard ng_advance(cursor)
+                    return ng_append_node(nodes, NgAstNode(kind=1, start=token.start, end=token.end, left=-1, right=-1, operation=0))
+                1:
+                    return ng_parse_group(source, tokens, cursor, nodes)
+        0:
+            signed_start = token.start
+            discard ng_advance(cursor)
+            token = ng_token_at(tokens, cursor)
+            match token.kind <=> 2:
                 -1:
                     return -1
                 0:
-                    return ng_parse_identifier_or_call(source, tokens, cursor, nodes, token)
+                    discard ng_advance(cursor)
+                    return ng_append_node(nodes, NgAstNode(kind=1, start=signed_start, end=token.end, left=-1, right=-1, operation=0))
                 1:
                     return -1
-        0:
-            discard ng_advance(cursor)
-            return ng_append_node(nodes, NgAstNode(kind=1, start=token.start, end=token.end, left=-1, right=-1, operation=0))
         1:
             return ng_parse_group(source, tokens, cursor, nodes)
 

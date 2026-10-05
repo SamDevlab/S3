@@ -23,7 +23,8 @@ def _module_body(relative_path: str) -> str:
 
 _NG_SOURCE = "\n".join(
     (
-        (_ROOT / "selfhost/compiler_ng/lexer.s3").read_text(encoding="utf-8"),
+        _module_body("selfhost/compiler_ng/character_classes.s3"),
+        _module_body("selfhost/compiler_ng/lexer.s3"),
         _module_body("selfhost/compiler_ng/parser.s3"),
         _module_body("selfhost/compiler_ng/semantic.s3"),
     )
@@ -35,10 +36,10 @@ def _ng_semantic_status(source: str) -> int:
 fn main() -> i64:
     mut source_text: text = text_from_static({json.dumps(source)})
     mut source_bytes: bytes = bytes_from_text(&source_text)
-    mut tokens: vector<NgToken> = vector_new<NgToken>(64)
-    mut functions: vector<NgFunction> = vector_new<NgFunction>(16)
-    mut parameters: vector<NgParameter> = vector_new<NgParameter>(32)
-    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(64)
+    mut tokens: vector<NgToken> = vector_new<NgToken>({len(source.encode("utf-8")) + 1})
+    mut functions: vector<NgFunction> = vector_new<NgFunction>({len(source.encode("utf-8")) + 1})
+    mut parameters: vector<NgParameter> = vector_new<NgParameter>({len(source.encode("utf-8")) + 1})
+    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>({len(source.encode("utf-8")) + 1})
     mut lex_status: i64 = ng_lex(&source_bytes, &mut tokens)
     match lex_status <=> 0:
         -1:
@@ -114,6 +115,44 @@ def test_nextgen_semantic_accepts_maximum_contextual_tryte_literal() -> None:
     )
     assert compile_source(source).ir is not None
     assert _ng_semantic_status(source) == 0
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "fn minimum() -> trit:\n    return -1\nfn main() -> i64:\n    return 0\n",
+        "fn minimum() -> tryte:\n    return -364\nfn main() -> i64:\n    return 0\n",
+        "fn maximum() -> tryte:\n    return 364\nfn main() -> i64:\n    return 0\n",
+    ],
+)
+def test_nextgen_semantics_accepts_signed_contextual_numeric_boundaries(source: str) -> None:
+    assert compile_source(source).ir is not None
+    assert _ng_semantic_status(source) == 0
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "fn out_of_range() -> trit:\n    return -2\nfn main() -> i64:\n    return 0\n",
+        "fn out_of_range() -> trit:\n    return 2\nfn main() -> i64:\n    return 0\n",
+        "fn out_of_range() -> tryte:\n    return -365\nfn main() -> i64:\n    return 0\n",
+        "fn out_of_range() -> tryte:\n    return 365\nfn main() -> i64:\n    return 0\n",
+    ],
+)
+def test_nextgen_semantics_rejects_signed_contextual_numeric_out_of_range(source: str) -> None:
+    with pytest.raises(SemanticError):
+        compile_source(source)
+
+
+@pytest.mark.parametrize(
+    "literal",
+    ["9223372036854775808", "-9223372036854775808"],
+)
+def test_nextgen_semantics_rejects_i64_literal_outside_reference_range(literal: str) -> None:
+    source = f"fn outside() -> i64:\n    return {literal}\nfn main() -> i64:\n    return 0\n"
+    with pytest.raises(SemanticError):
+        compile_source(source)
+    assert _ng_semantic_status(source) == -14
 
 
 @pytest.mark.parametrize(

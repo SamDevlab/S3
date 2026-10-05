@@ -36,6 +36,10 @@ export record NgIRInstruction:
     target1: i64
     target2: i64
 
+record NgIntegerResult:
+    value: i64
+    valid: i64
+
 fn ng_ir_event(events: &mut vector<i64>, kind: i64, a: i64, b: i64, c: i64, d: i64, e: i64, f: i64, g: i64) -> i64:
     discard vector_push<i64>(events, kind)
     discard vector_push<i64>(events, a)
@@ -76,12 +80,47 @@ fn ng_ir_variable_index(source: &bytes, variables: &vector<NgIRVariable>, name_s
                 index = index
     return -12
 
-fn ng_integer_value(source: &bytes, start: i64, end: i64) -> i64:
+fn ng_integer_value(source: &bytes, start: i64, end: i64) -> NgIntegerResult:
     mut index: i64 = start
     mut value: i64 = 0
     mut digit: i64 = 0
+    mut negative: i64 = 0
+    match index < end:
+        -1:
+            match to_i64(bytes_get(source, index)) <=> 45:
+                -1:
+                    negative = 0
+                0:
+                    negative = 1
+                    index = index + 1
+                1:
+                    negative = 0
+        0:
+            return NgIntegerResult(value=0, valid=0)
+        1:
+            return NgIntegerResult(value=0, valid=0)
+    match index < end:
+        -1:
+            value = value
+        0:
+            return NgIntegerResult(value=0, valid=0)
+        1:
+            value = value
     while index < end:
         digit = to_i64(bytes_get(source, index)) - 48
+        match digit < 0:
+            -1:
+                return NgIntegerResult(value=0, valid=0)
+            0:
+                match digit > 9:
+                    -1:
+                        return NgIntegerResult(value=0, valid=0)
+                    0:
+                        digit = digit
+                    1:
+                        return NgIntegerResult(value=0, valid=0)
+            1:
+                return NgIntegerResult(value=0, valid=0)
         match value <=> 922337203685477580:
             -1:
                 value = value * 10 + digit
@@ -92,11 +131,17 @@ fn ng_integer_value(source: &bytes, start: i64, end: i64) -> i64:
                     0:
                         value = value * 10 + digit
                     1:
-                        return -16
+                        return NgIntegerResult(value=0, valid=0)
             1:
-                return -16
+                return NgIntegerResult(value=0, valid=0)
         index = index + 1
-    return value
+    match negative <=> 1:
+        -1:
+            return NgIntegerResult(value=value, valid=1)
+        0:
+            return NgIntegerResult(value=0 - value, valid=1)
+        1:
+            return NgIntegerResult(value=value, valid=1)
 
 fn ng_set_contextual_literal_type(nodes: &vector<NgAstNode>, node_id: i64, expected_type: i64, registers: &mut vector<NgIRRegister>, register_id: i64) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
@@ -105,7 +150,7 @@ fn ng_set_contextual_literal_type(nodes: &vector<NgAstNode>, node_id: i64, expec
         -1:
             return 0
         0:
-            match expected_type <=> 3:
+            match expected_type <=> 2:
                 -1:
                     return 0
                 0:
@@ -114,7 +159,16 @@ fn ng_set_contextual_literal_type(nodes: &vector<NgAstNode>, node_id: i64, expec
                     discard vector_set<NgIRRegister>(&mut *registers, register_id, register)
                     return 0
                 1:
-                    return 0
+                    match expected_type <=> 3:
+                        -1:
+                            return 0
+                        0:
+                            register = vector_get<NgIRRegister>(&*registers, register_id)
+                            register.type_kind = expected_type
+                            discard vector_set<NgIRRegister>(&mut *registers, register_id, register)
+                            return 0
+                        1:
+                            return 0
         1:
             return 0
 
@@ -169,6 +223,7 @@ fn ng_emit_expression(source: &bytes, functions: &vector<NgFunction>, nodes: &ve
     mut opcode: i64 = 0
     mut result_type: i64 = 0
     mut value: i64 = 0
+    mut parsed_integer: NgIntegerResult = NgIntegerResult(value=0, valid=0)
     mut variable_index: i64 = -1
     mut variable: NgIRVariable = NgIRVariable(name_start=0, name_end=0, type_kind=0, mutable=0, register=-1, memory=-1)
     mut left_info: NgIRRegister = NgIRRegister(type_kind=0)
@@ -178,20 +233,17 @@ fn ng_emit_expression(source: &bytes, functions: &vector<NgFunction>, nodes: &ve
         -1:
             return -20
         0:
-            value = ng_integer_value(source, node.start, node.end)
-            match value <=> 0:
+            parsed_integer = ng_integer_value(source, node.start, node.end)
+            match parsed_integer.valid <=> 1:
                 -1:
-                    return value
+                    return -16
                 0:
                     register = vector_len<NgIRRegister>(&*registers)
                     discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=1))
-                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=1, result=register, operand_count=0, operand0=-1, operand1=-1, immediate=value, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
+                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=1, result=register, operand_count=0, operand0=-1, operand1=-1, immediate=parsed_integer.value, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
                     return register
                 1:
-                    register = vector_len<NgIRRegister>(&*registers)
-                    discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=1))
-                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=1, result=register, operand_count=0, operand0=-1, operand1=-1, immediate=value, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
-                    return register
+                    return -16
         1:
             match node.kind <=> 2:
                 -1:

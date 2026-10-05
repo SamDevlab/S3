@@ -10,9 +10,23 @@ from bootstrap.s3.ir_emulator import execute_ir
 from bootstrap.s3.lexer import Lexer, SyntaxMode
 
 
-_LEXER_SOURCE = (
-    Path(__file__).parents[1] / "selfhost/compiler_ng/lexer.s3"
-).read_text(encoding="utf-8")
+_ROOT = Path(__file__).parents[1]
+
+
+def _module_body(relative_path: str) -> str:
+    return "\n".join(
+        line
+        for line in (_ROOT / relative_path).read_text(encoding="utf-8").splitlines()
+        if not line.startswith("module ") and not line.startswith("from ")
+    )
+
+
+_LEXER_SOURCE = "\n".join(
+    (
+        _module_body("selfhost/compiler_ng/character_classes.s3"),
+        _module_body("selfhost/compiler_ng/lexer.s3"),
+    )
+)
 
 _PAIR_KINDS = {
     "->": 201,
