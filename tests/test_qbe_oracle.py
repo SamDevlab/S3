@@ -28,6 +28,8 @@ from bootstrap.s3.pipeline import compile_source, compile_sources
 from bootstrap.s3.backends.x86_64.backend import X8664Backend
 from bootstrap.s3.stdlib import standard_library_sources
 from bootstrap.s3.verifier import IRVerificationError, verify_ir
+from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
+from tests.test_compiler_ng_ir_bridge import _emit_ng_events
 from tools.qbe_oracle import QBETranslationError, translate_verified_ir
 
 
@@ -1682,6 +1684,33 @@ def test_qbe_real_s3_examples_match_explicit_results(name, expected, optimizatio
     assert execute_ir(compilation.ir) == expected
     assert execute_assembly(compilation.assembly) == expected
     assert translate_verified_ir(compilation.ir)
+
+
+@pytest.mark.s3_native
+@pytest.mark.parametrize("workload", ("branches.s3", "calls.s3"))
+def test_qbe_native_executes_s3c_ng_origin_ir_when_linux_toolchain_exists(
+    workload, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    source = (
+        Path(__file__).parents[1] / "benchmarks/workloads" / workload
+    ).read_text(encoding="utf-8")
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+    ng_canonical_ir = decode_ng_ir_events(source.encode("utf-8"), _emit_ng_events(source))
+    verify_ir(ng_canonical_ir)
+    expected = execute_ir(reference_ir)
+    assert execute_ir(ng_canonical_ir) == expected
+
+    qbe_native = _build_qbe_native(
+        ng_canonical_ir,
+        OptimizationLevel.O0,
+        f"s3c-ng-{Path(workload).stem}",
+        tmp_path,
+        qbe,
+        cc,
+    )
+    assert qbe_native.returncode == expected, qbe_native.stderr.decode(errors="replace")
 
 
 @pytest.mark.parametrize("target", ["arm64", "rv64"])
