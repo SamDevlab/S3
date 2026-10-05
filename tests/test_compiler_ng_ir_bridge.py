@@ -541,6 +541,26 @@ def test_ng_source_set_imports_exported_function_and_matches_reference() -> None
     assert "function" in translate_verified_ir(ng_ir)
 
 
+def test_ng_source_set_accepts_qualified_module_identity() -> None:
+    module_name = "selfhost.compiler_ng.lexer"
+    sources = {
+        "lexer.s3": (
+            f"module {module_name}\n"
+            "export fn main() -> i64:\n"
+            "    return 7\n"
+        ),
+    }
+    reference = compile_sources(sources, entry_module=module_name).ir
+    assert reference is not None
+
+    source, cells = _emit_ng_source_set_events(sources, entry_module=module_name)
+    ng_ir = decode_ng_ir_events(source, cells)
+
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
+    assert execute_ir(ng_ir) == execute_ir(reference) == 7
+
+
 @pytest.mark.parametrize(
     ("sources", "expected_status"),
     (

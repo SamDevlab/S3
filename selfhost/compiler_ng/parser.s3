@@ -1270,6 +1270,9 @@ fn ng_parse_module_name_span(source: &bytes, tokens: &vector<NgToken>, cursor: &
     mut first: NgToken = ng_token_at(tokens, cursor)
     mut last_end: i64 = first.end
     mut current: NgToken = first
+    mut scan_index: i64 = 0
+    mut next_cursor: i64 = 0
+    mut token_count: i64 = vector_len<NgToken>(tokens)
     match ng_expect_kind(tokens, cursor, 1):
         -1:
             return NgSpan(start=-1, end=-1)
@@ -1278,18 +1281,36 @@ fn ng_parse_module_name_span(source: &bytes, tokens: &vector<NgToken>, cursor: &
         1:
             return NgSpan(start=-1, end=-1)
     current = ng_token_at(tokens, cursor)
-    while current.kind == 346:
-        discard ng_advance(cursor)
-        current = ng_token_at(tokens, cursor)
-        match current.kind <=> 1:
+    scan_index = vector_get<i64>(&*cursor, 0)
+    next_cursor = scan_index
+    while scan_index < token_count:
+        current = vector_get<NgToken>(tokens, scan_index)
+        match current.kind <=> 346:
             -1:
-                return NgSpan(start=-1, end=-1)
+                next_cursor = scan_index
+                scan_index = token_count
             0:
-                last_end = current.end
-                discard ng_advance(cursor)
-                current = ng_token_at(tokens, cursor)
+                scan_index = scan_index + 1
+                match scan_index < token_count:
+                    -1:
+                        current = vector_get<NgToken>(tokens, scan_index)
+                        match current.kind <=> 1:
+                            -1:
+                                return NgSpan(start=-1, end=-1)
+                            0:
+                                last_end = current.end
+                                scan_index = scan_index + 1
+                                next_cursor = scan_index
+                            1:
+                                return NgSpan(start=-1, end=-1)
+                    0:
+                        return NgSpan(start=-1, end=-1)
+                    1:
+                        return NgSpan(start=-1, end=-1)
             1:
-                return NgSpan(start=-1, end=-1)
+                next_cursor = scan_index
+                scan_index = token_count
+    discard vector_set<i64>(&mut *cursor, 0, next_cursor)
     return NgSpan(start=first.start, end=last_end)
 
 fn ng_module_error(module_index: i64, source_start: i64, source_end: i64, path_start: i64, path_end: i64, first_import: i64) -> NgModule:
