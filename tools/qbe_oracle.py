@@ -25,18 +25,32 @@ _QBE_TYPES = {
     IRType.F64: "d",
     IRType.TRIT: "l",
     IRType.TRYTE: "l",
+    IRType.STRING: "l",
     IRType.BYTES: "l",
+    IRType.TEXT: "l",
     IRType.VECTOR: "l",
     IRType.REFERENCE: "l",
 }
 _QBE_SCALAR_TYPES = frozenset(
     {IRType.I64, IRType.F64, IRType.TRIT, IRType.TRYTE}
 )
-_QBE_FUNCTION_RESULT_TYPES = _QBE_SCALAR_TYPES | {IRType.BYTES, IRType.VECTOR}
-_QBE_ABI_TYPES = _QBE_SCALAR_TYPES | {
+_QBE_FUNCTION_RESULT_TYPES = _QBE_SCALAR_TYPES | {
+    IRType.STRING,
     IRType.BYTES,
+    IRType.TEXT,
+    IRType.VECTOR,
+}
+_QBE_ABI_TYPES = _QBE_SCALAR_TYPES | {
+    IRType.STRING,
+    IRType.BYTES,
+    IRType.TEXT,
     IRType.VECTOR,
     IRType.REFERENCE,
+}
+_QBE_REFERENCE_OWNER_NAMES = {
+    IRType.VECTOR: "vector",
+    IRType.BYTES: "bytes",
+    IRType.TEXT: "text",
 }
 _QBE_I64_VECTOR_BUILTINS = frozenset(
     {
@@ -104,12 +118,46 @@ _QBE_BYTES_BUILTINS = frozenset(
         "bytes_slice",
     }
 )
+_QBE_TEXT_BUILTINS = frozenset(
+    {
+        "text_new",
+        "text_from_static",
+        "text_len",
+        "text_capacity",
+        "text_reserve",
+        "text_append",
+        "text_append_static",
+        "text_clone",
+        "text_concat",
+        "text_slice",
+        "text_find",
+        "text_from_bytes",
+        "bytes_from_text",
+    }
+)
+_QBE_TEXT_MAP_BUILTINS = frozenset(
+    {
+        "text_i64_map_new",
+        "text_i64_map_len",
+        "text_i64_map_capacity",
+        "text_i64_map_reserve",
+        "text_i64_map_put",
+        "text_i64_map_contains",
+        "text_i64_map_get",
+        "text_i64_map_remove",
+        "text_i64_map_key_at",
+        "text_i64_map_value_at",
+        "text_i64_map_clone",
+    }
+)
 _QBE_DYNAMIC_CONTAINER_BUILTINS = (
     _QBE_I64_VECTOR_BUILTINS
     | _QBE_TRYTE_VECTOR_BUILTINS
     | _QBE_F64_VECTOR_BUILTINS
     | _QBE_I64_MAP_SET_BUILTINS
     | _QBE_BYTES_BUILTINS
+    | _QBE_TEXT_BUILTINS
+    | _QBE_TEXT_MAP_BUILTINS
 )
 _QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS = {
     builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_I64_VECTOR_BUILTINS
@@ -129,6 +177,12 @@ _QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
 _QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
     {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_BYTES_BUILTINS}
 )
+_QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
+    {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_TEXT_BUILTINS}
+)
+_QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
+    {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_TEXT_MAP_BUILTINS}
+)
 _I64_MIN = -(1 << 63)
 _I64_MAX = (1 << 63) - 1
 _TRIT_MIN, _TRIT_MAX = -1, 1
@@ -136,25 +190,29 @@ _TRYTE_MIN, _TRYTE_MAX = -364, 364
 
 
 def translate_verified_ir(module: IRModule) -> str:
-    """Verify and translate the experimental scalar/container subset.
+    """Verify and translate the supported experimental QBE subset.
 
     Checked numeric operations and memory accesses are guarded before QBE
-    machine operations. Dynamic builtins outside the checked scalar,
-    tryte/i64/f64-vector, i64-map/set, and bytes subsets are rejected.
+    machine operations. Dynamic builtins outside the explicitly supported
+    shared-runtime families are rejected.
     """
 
     verify_ir(module)
     _validate_supported_module(module)
     emitted = ["# Experimental QBE oracle; generated from verified S3 IR."]
+    static_string_symbols = _static_string_symbols(module)
+    emitted.extend(_emit_static_string_data(module, static_string_symbols))
     functions = {function.name: function for function in module.functions}
     for function_index, function in enumerate(module.functions):
-        emitted.extend(_translate_function(function, function_index, functions))
+        emitted.extend(
+            _translate_function(
+                function, function_index, functions, static_string_symbols
+            )
+        )
     return "\n".join(emitted) + "\n"
 
 
 def _validate_supported_module(module: IRModule) -> None:
-    if module.static_strings:
-        raise QBETranslationError("static strings are outside QBE oracle V5")
     functions = {function.name: function for function in module.functions}
     for function in module.functions:
         if function.external:
@@ -170,10 +228,12 @@ def _validate_supported_module(module: IRModule) -> None:
                 f"function '{function.name}' result type {function.return_type.value} "
                 "is outside QBE oracle V5"
             )
-        if function.result_width != 1:
+        if any(type_ not in _QBE_FUNCTION_RESULT_TYPES for type_ in function.result_types):
             raise QBETranslationError(
-                f"function '{function.name}' has a non-scalar result width"
+                f"function '{function.name}' has a result cell outside QBE oracle V5"
             )
+        if function.name == "main" and function.result_width != 1:
+            raise QBETranslationError("QBE entry function 'main' must have one result cell")
         if any(parameter.type not in _QBE_ABI_TYPES for parameter in function.parameters):
             raise QBETranslationError(
                 f"function '{function.name}' has a non-scalar ABI parameter"
@@ -358,11 +418,19 @@ def _validate_instruction(
         if result_type not in _QBE_ABI_TYPES:
             _unsupported(function, block_name, instruction, "move type")
         return
+    if op is IROpcode.CONST_STR:
+        if (
+            operands
+            or _result_type(function, instruction) is not IRType.STRING
+            or instruction.static_string is None
+        ):
+            _unsupported(function, block_name, instruction, "static string constant shape")
+        return
     if op is IROpcode.ADDRESS_OF:
         if (
             len(operands) != 1
             or len(instruction.results) != 1
-            or registers[operands[0]] not in {IRType.VECTOR, IRType.BYTES}
+            or registers[operands[0]] not in _QBE_REFERENCE_OWNER_NAMES
             or _result_type(function, instruction) is not IRType.REFERENCE
         ):
             _unsupported(function, block_name, instruction, "owned container reference shape")
@@ -404,29 +472,24 @@ def _validate_instruction(
                 _unsupported(function, block_name, instruction, "external or builtin call")
             parameter_types, result_types = signature
             if tuple(registers[operand] for operand in operands) != parameter_types:
-                _unsupported(function, block_name, instruction, "vector builtin arguments")
+                _unsupported(function, block_name, instruction, "dynamic builtin arguments")
             if instruction.results and tuple(
                 registers[result] for result in instruction.results
             ) != result_types:
-                _unsupported(function, block_name, instruction, "vector builtin results")
+                _unsupported(function, block_name, instruction, "dynamic builtin results")
             return
-        if len(instruction.results) > 1:
-            _unsupported(function, block_name, instruction, "non-scalar call result")
         if tuple(registers[operand] for operand in operands) != tuple(
             parameter.type for parameter in callee.parameters
         ):
             _unsupported(function, block_name, instruction, "callee ABI arguments")
         if any(parameter.type not in _QBE_ABI_TYPES for parameter in callee.parameters):
             _unsupported(function, block_name, instruction, "non-scalar callee ABI")
-        if (
-            callee.return_type not in _QBE_FUNCTION_RESULT_TYPES
-            or callee.result_width != 1
-            or (
-                instruction.results
-                and registers[instruction.results[0]] is not callee.return_type
-            )
+        if instruction.results and (
+            len(instruction.results) != callee.result_width
+            or tuple(registers[result] for result in instruction.results)
+            != callee.result_types
         ):
-            _unsupported(function, block_name, instruction, "non-scalar callee result")
+            _unsupported(function, block_name, instruction, "callee result cells")
         return
     if op in {IROpcode.LOAD, IROpcode.STORE}:
         memory = _memory_object(function, instruction.memory)
@@ -471,7 +534,9 @@ def _validate_instruction(
             _unsupported(function, block_name, instruction, "branch3 condition")
         return
     if op is IROpcode.RETURN:
-        if len(operands) != 1 or registers[operands[0]] is not function.return_type:
+        if len(operands) != function.result_width or tuple(
+            registers[operand] for operand in operands
+        ) != function.result_types:
             _unsupported(function, block_name, instruction, "return value")
         return
     _unsupported(function, block_name, instruction, "opcode")
@@ -481,15 +546,35 @@ def _translate_function(
     function: IRFunction,
     function_index: int,
     functions: dict[str, IRFunction],
+    static_string_symbols: dict[str, str],
 ) -> list[str]:
     linkage = "export " if function.exported or function.name == "main" else ""
-    result_type = _qbe_type(function.return_type)
-    parameters = ", ".join(
+    result_type = (
+        f"{_qbe_type(function.return_type)} "
+        if function.result_width == 1
+        else ""
+    )
+    parameters = [
         f"{_qbe_type(parameter.type)} %r{parameter.register}"
         for parameter in function.parameters
-    )
-    lines = [f"{linkage}function {result_type} ${function.name}({parameters}) {{"]
+    ]
+    if function.result_width > 1:
+        parameters.insert(0, "l %s3_sret")
+    lines = [
+        f"{linkage}function {result_type}${function.name}({', '.join(parameters)}) {{"
+    ]
     block_names = {block.name: f"b{index}" for index, block in enumerate(function.blocks)}
+    sret_call_slots = {
+        (block.name, instruction_index): (
+            f"%s3_f{function_index}_call_result_b{block_index}_i{instruction_index}",
+            functions[instruction.callee].result_width,
+        )
+        for block_index, block in enumerate(function.blocks)
+        for instruction_index, instruction in enumerate(block.instructions)
+        if instruction.opcode is IROpcode.CALL
+        and instruction.callee in functions
+        and functions[instruction.callee].result_width > 1
+    }
     memory_pointers = {
         memory.index: f"%s3_f{function_index}_memory_{memory.index}"
         for memory in function.memory_objects
@@ -503,10 +588,13 @@ def _translate_function(
     reference_slots = {
         register: (
             f"%s3_f{function_index}_"
-            f"{'vector' if _register_type(function, register) is IRType.VECTOR else 'bytes'}_slot_{register}"
+            f"{_QBE_REFERENCE_OWNER_NAMES[_register_type(function, register)]}_slot_{register}"
         )
         for register in addressed_owners
     }
+    failure_return_type = (
+        function.return_type if function.result_width == 1 else None
+    )
     temporary_index = 0
     for block_index, block in enumerate(function.blocks):
         lines.append(f"@{block_names[block.name]}")
@@ -517,13 +605,17 @@ def _translate_function(
                 )
             for slot in reference_slots.values():
                 lines.append(f"\t{slot} =l alloc8 8")
+            for slot, result_width in sret_call_slots.values():
+                lines.append(
+                    f"\t{slot} =l alloc8 {result_width * 8}"
+                )
             for parameter in function.parameters:
                 if parameter.register in reference_slots:
                     lines.append(
                         f"\tstorel %r{parameter.register}, "
                         f"{reference_slots[parameter.register]}"
                     )
-        for instruction in block.instructions:
+        for instruction_index, instruction in enumerate(block.instructions):
             op = instruction.opcode
             result = instruction.result
             args = instruction.operands
@@ -532,6 +624,11 @@ def _translate_function(
                 result_type = _register_type(function, result)
                 value = _format_constant(instruction.immediate, result_type)
                 lines.append(f"\t%r{result} ={_qbe_type(result_type)} copy {value}")
+            elif op is IROpcode.CONST_STR:
+                assert result is not None and instruction.static_string is not None
+                lines.append(
+                    f"\t%r{result} =l copy ${static_string_symbols[instruction.static_string]}"
+                )
             elif op is IROpcode.MOVE:
                 assert result is not None
                 result_type = _register_type(function, result)
@@ -542,7 +639,9 @@ def _translate_function(
                 assert result is not None
                 result_type = _register_type(function, result)
                 if result_type is IRType.I64:
-                    _emit_i64_negation(lines, function_index, function.return_type, result, args[0])
+                    _emit_i64_negation(
+                        lines, function_index, failure_return_type, result, args[0]
+                    )
                 else:
                     lines.append(
                         f"\t%r{result} ={_qbe_type(result_type)} neg %r{args[0]}"
@@ -562,7 +661,14 @@ def _translate_function(
                         IROpcode.MULTIPLY: _emit_i64_mul,
                         IROpcode.DIVIDE: _emit_i64_div,
                     }[op]
-                    emit_i64(lines, function_index, function.return_type, result, args[0], args[1])
+                    emit_i64(
+                        lines,
+                        function_index,
+                        failure_return_type,
+                        result,
+                        args[0],
+                        args[1],
+                    )
                 elif result_type is IRType.F64:
                     qbe_op = {
                         IROpcode.ADD: "add",
@@ -577,7 +683,7 @@ def _translate_function(
                     _emit_balanced_add(
                         lines,
                         function_index,
-                        function.return_type,
+                        failure_return_type,
                         result,
                         args[0],
                         args[1],
@@ -632,7 +738,7 @@ def _translate_function(
                         lines,
                         function_index,
                         result,
-                        function.return_type,
+                        failure_return_type,
                         args[0],
                         _TRYTE_MIN,
                         _TRYTE_MAX,
@@ -680,46 +786,76 @@ def _translate_function(
                         parameter.type for parameter in callee.parameters
                     )
                     callee_name = callee.name
-                call_arguments = ", ".join(
-                    f"{_qbe_type(parameter_type)} %r{register}"
-                    for parameter_type, register in zip(
-                        parameter_types, args, strict=True
+                if callee is not None and callee.result_width > 1:
+                    slot, result_width = sret_call_slots[(block.name, instruction_index)]
+                    assert result_width == callee.result_width
+                    call_arguments = [f"l {slot}"]
+                    call_arguments.extend(
+                        f"{_qbe_type(parameter_type)} %r{register}"
+                        for parameter_type, register in zip(
+                            parameter_types, args, strict=True
+                        )
                     )
-                )
-                call = f"call ${callee_name}({call_arguments})"
-                if result is None:
-                    lines.append(f"\t{call}")
-                else:
-                    result_type = _register_type(function, result)
-                    if callee is None and result_type is IRType.TRIT:
-                        raw_result = _temporary(
-                            function_index, temporary_index, "dynamic_trit_result"
-                        )
-                        temporary_index += 1
-                        lines.extend(
-                            [
-                                f"\t{raw_result} =w {call}",
-                                f"\t%r{result} =l extsw {raw_result}",
-                            ]
-                        )
-                    elif callee is None and instruction.callee in {
-                        "tryte_vector_get",
-                        "tryte_vector_pop",
-                    }:
-                        raw_result = _temporary(
-                            function_index, temporary_index, "tryte_vector_result"
-                        )
-                        temporary_index += 1
-                        lines.extend(
-                            [
-                                f"\t{raw_result} =l {call}",
-                                f"\t%r{result} =l extsh {raw_result}",
-                            ]
-                        )
-                    else:
+                    lines.append(
+                        f"\tcall ${callee_name}({', '.join(call_arguments)})"
+                    )
+                    for cell_index, result_register in enumerate(instruction.results):
+                        cell_type = callee.result_types[cell_index]
+                        pointer = slot
+                        if cell_index:
+                            pointer = _temporary(
+                                function_index, temporary_index, "sret_result_ptr"
+                            )
+                            temporary_index += 1
+                            lines.append(
+                                f"\t{pointer} =l add {slot}, {cell_index * 8}"
+                            )
+                        qbe_type = _qbe_type(cell_type)
                         lines.append(
-                            f"\t%r{result} ={_qbe_type(result_type)} {call}"
+                            f"\t%r{result_register} ={qbe_type} "
+                            f"load{qbe_type} {pointer}"
                         )
+                else:
+                    call_arguments = ", ".join(
+                        f"{_qbe_type(parameter_type)} %r{register}"
+                        for parameter_type, register in zip(
+                            parameter_types, args, strict=True
+                        )
+                    )
+                    call = f"call ${callee_name}({call_arguments})"
+                    if result is None:
+                        lines.append(f"\t{call}")
+                    else:
+                        result_type = _register_type(function, result)
+                        if callee is None and result_type is IRType.TRIT:
+                            raw_result = _temporary(
+                                function_index, temporary_index, "dynamic_trit_result"
+                            )
+                            temporary_index += 1
+                            lines.extend(
+                                [
+                                    f"\t{raw_result} =w {call}",
+                                    f"\t%r{result} =l extsw {raw_result}",
+                                ]
+                            )
+                        elif callee is None and instruction.callee in {
+                            "tryte_vector_get",
+                            "tryte_vector_pop",
+                        }:
+                            raw_result = _temporary(
+                                function_index, temporary_index, "tryte_vector_result"
+                            )
+                            temporary_index += 1
+                            lines.extend(
+                                [
+                                    f"\t{raw_result} =l {call}",
+                                    f"\t%r{result} =l extsh {raw_result}",
+                                ]
+                            )
+                        else:
+                            lines.append(
+                                f"\t%r{result} ={_qbe_type(result_type)} {call}"
+                            )
             elif op in {IROpcode.LOAD, IROpcode.STORE}:
                 memory = _memory_object(function, instruction.memory)
                 index = args[0]
@@ -729,7 +865,7 @@ def _translate_function(
                     lines,
                     function_index,
                     temporary_index,
-                    function.return_type,
+                    failure_return_type,
                     index,
                     memory.length,
                     memory_pointers[memory.index],
@@ -770,12 +906,33 @@ def _translate_function(
                     ]
                 )
             elif op is IROpcode.RETURN:
-                lines.append(f"\tret %r{args[0]}")
+                if function.result_width == 1:
+                    lines.append(f"\tret %r{args[0]}")
+                else:
+                    for cell_index, register in enumerate(args):
+                        cell_type = function.result_types[cell_index]
+                        pointer = "%s3_sret"
+                        if cell_index:
+                            pointer = _temporary(
+                                function_index, temporary_index, "sret_return_ptr"
+                            )
+                            temporary_index += 1
+                            lines.append(
+                                f"\t{pointer} =l add %s3_sret, {cell_index * 8}"
+                            )
+                        qbe_type = _qbe_type(cell_type)
+                        lines.append(
+                            f"\tstore{qbe_type} %r{register}, {pointer}"
+                        )
+                    lines.append("\tret")
             else:
                 raise AssertionError(f"validated opcode was not translated: {op}")
-            if result is not None and result in reference_slots:
+            for result_register in instruction.results:
+                if result_register not in reference_slots:
+                    continue
                 lines.append(
-                    f"\tstorel %r{result}, {reference_slots[result]}"
+                    f"\tstorel %r{result_register}, "
+                    f"{reference_slots[result_register]}"
                 )
         if block_index == 0 and block.instructions[-1].opcode not in {
             IROpcode.RETURN,
@@ -792,6 +949,30 @@ def _qbe_type(type_: IRType) -> str:
         return _QBE_TYPES[type_]
     except KeyError as error:
         raise QBETranslationError(f"unsupported S3 type {type_.value}") from error
+
+
+def _static_string_symbols(module: IRModule) -> dict[str, str]:
+    occupied = {function.name for function in module.functions}
+    occupied.update(_QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.values())
+    symbols: dict[str, str] = {}
+    for entry in module.static_strings:
+        symbol = f"s3_qbe_static_{entry.id}"
+        while symbol in occupied:
+            symbol = f"_{symbol}"
+        symbols[entry.id] = symbol
+        occupied.add(symbol)
+    return symbols
+
+
+def _emit_static_string_data(
+    module: IRModule, symbols: dict[str, str]
+) -> list[str]:
+    lines: list[str] = []
+    for entry in module.static_strings:
+        encoded = (*entry.utf8_bytes, 0)
+        fields = ", ".join(f"b {byte}" for byte in encoded)
+        lines.append(f"data ${symbols[entry.id]} = {{ {fields} }}")
+    return lines
 
 
 def _failure_return_value(type_: IRType) -> str:
@@ -815,7 +996,7 @@ def _emit_memory_address(
     lines: list[str],
     function_index: int,
     sequence: int,
-    return_type: IRType,
+    return_type: IRType | None,
     index: int,
     length: int,
     base: str,
@@ -855,21 +1036,19 @@ def _emit_failure_body(
     lines: list[str],
     function_index: int,
     result: int,
-    return_type: IRType,
+    return_type: IRType | None,
     category: str,
 ) -> None:
     label = _failure_label(function_index, result, category)
-    lines.extend(
-        [
-            f"@{label}",
-            f"\tcall $s3_qbe_fail_{category}()",
-            f"\tret {_failure_return_value(return_type)}",
-        ]
-    )
+    lines.extend([f"@{label}", f"\tcall $s3_qbe_fail_{category}()"])
+    if return_type is None:
+        lines.append("\tret")
+    else:
+        lines.append(f"\tret {_failure_return_value(return_type)}")
 
 
 def _emit_i64_add(
-    lines: list[str], function_index: int, return_type: IRType, result: int, left: int, right: int
+    lines: list[str], function_index: int, return_type: IRType | None, result: int, left: int, right: int
 ) -> None:
     stem = f"s3_f{function_index}_r{result}"
     label = _failure_label(function_index, result, "overflow")
@@ -895,7 +1074,7 @@ def _emit_i64_add(
 
 
 def _emit_i64_sub(
-    lines: list[str], function_index: int, return_type: IRType, result: int, left: int, right: int
+    lines: list[str], function_index: int, return_type: IRType | None, result: int, left: int, right: int
 ) -> None:
     stem = f"s3_f{function_index}_r{result}"
     label = _failure_label(function_index, result, "overflow")
@@ -916,7 +1095,7 @@ def _emit_i64_sub(
 
 
 def _emit_i64_mul(
-    lines: list[str], function_index: int, return_type: IRType, result: int, left: int, right: int
+    lines: list[str], function_index: int, return_type: IRType | None, result: int, left: int, right: int
 ) -> None:
     stem = f"s3_f{function_index}_r{result}"
     failure, zero, quotient = (
@@ -949,7 +1128,7 @@ def _emit_i64_mul(
 
 
 def _emit_i64_div(
-    lines: list[str], function_index: int, return_type: IRType, result: int, left: int, right: int
+    lines: list[str], function_index: int, return_type: IRType | None, result: int, left: int, right: int
 ) -> None:
     stem = f"s3_f{function_index}_r{result}"
     zero_label = _failure_label(function_index, result, "division_by_zero")
@@ -982,7 +1161,7 @@ def _emit_i64_div(
 
 
 def _emit_i64_negation(
-    lines: list[str], function_index: int, return_type: IRType, result: int, operand: int
+    lines: list[str], function_index: int, return_type: IRType | None, result: int, operand: int
 ) -> None:
     stem = f"s3_f{function_index}_r{result}"
     label = _failure_label(function_index, result, "overflow")
@@ -1000,7 +1179,7 @@ def _emit_range_guard(
     lines: list[str],
     function_index: int,
     result: int,
-    return_type: IRType,
+    return_type: IRType | None,
     operand: int,
     minimum: int,
     maximum: int,
@@ -1023,7 +1202,7 @@ def _emit_range_guard(
 def _emit_balanced_add(
     lines: list[str],
     function_index: int,
-    return_type: IRType,
+    return_type: IRType | None,
     result: int,
     left: int,
     right: int,

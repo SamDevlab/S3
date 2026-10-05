@@ -473,6 +473,234 @@ fn main() -> i64:
     return failures
 """
 
+QBE_TEXT_PROGRAM = """\
+fn same_i64(actual: i64, expected: i64) -> i64:
+    match actual == expected:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn at_least(actual: i64, minimum: i64) -> i64:
+    match actual >= minimum:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn pass_static(value: string) -> string:
+    return value
+fn pass_text(value: text) -> text:
+    return value
+fn s3_qbe_static_s0() -> i64:
+    return 0
+fn main() -> i64:
+    mut value: text = text_new(1)
+    discard text_reserve(&mut value, 16)
+    discard text_append_static(&mut value, pass_static("café"))
+    mut suffix: text = text_from_static("!")
+    discard text_append(&mut value, &suffix)
+    mut clone: text = pass_text(text_clone(&value))
+    mut joined: text = text_concat(&clone, &suffix)
+    mut prefix: text = text_slice(&joined, 0, 5)
+    needle: text = text_from_static("fé")
+    absent: text = text_from_static("xyz")
+    empty: text = text_from_static("")
+    raw: bytes = bytes_from_text(&joined)
+    mut round_trip: text = text_from_bytes(&raw)
+    mut failures: i64 = 0
+    failures = failures + same_i64(text_len(&value), 6)
+    failures = failures + at_least(text_capacity(&value), 16)
+    failures = failures + same_i64(text_len(&clone), 6)
+    failures = failures + same_i64(text_len(&joined), 7)
+    failures = failures + same_i64(text_len(&prefix), 5)
+    failures = failures + same_i64(text_find(&joined, &needle), 2)
+    failures = failures + same_i64(text_find(&joined, &absent), -1)
+    failures = failures + same_i64(text_len(&empty), 0)
+    failures = failures + same_i64(bytes_len(&raw), 7)
+    failures = failures + same_i64(text_len(&round_trip), 7)
+    return failures
+"""
+
+QBE_TEXT_MAP_PROGRAM = """\
+fn same_i64(actual: i64, expected: i64) -> i64:
+    match actual == expected:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn main() -> i64:
+    mut values: map<text, i64> = map_new<text, i64>(2)
+    key: text = text_from_static("café")
+    equivalent_key: text = text_from_static("café")
+    missing: text = text_from_static("absent")
+    discard map_reserve<text, i64>(&mut values, 3)
+    discard map_put<text, i64>(&mut values, &key, 17)
+    mut copy: map<text, i64> = map_clone<text, i64>(&values)
+    discard map_put<text, i64>(&mut copy, &key, 29)
+    stored_key: text = map_key_at<text, i64>(&values, 0)
+    mut failures: i64 = 0
+    failures = failures + same_i64(map_len<text, i64>(&values), 1)
+    failures = failures + same_i64(map_capacity<text, i64>(&values), 3)
+    failures = failures + same_i64(to_i64(map_contains<text, i64>(&values, &equivalent_key)), -1)
+    failures = failures + same_i64(to_i64(map_contains<text, i64>(&values, &missing)), 0)
+    failures = failures + same_i64(map_get<text, i64>(&values, &equivalent_key), 17)
+    failures = failures + same_i64(map_get<text, i64>(&copy, &key), 29)
+    failures = failures + same_i64(text_len(&stored_key), 5)
+    failures = failures + same_i64(map_value_at<text, i64>(&values, 0), 17)
+    discard map_remove<text, i64>(&mut copy, &key)
+    failures = failures + same_i64(map_len<text, i64>(&copy), 0)
+    failures = failures + same_i64(map_len<text, i64>(&values), 1)
+    return failures
+"""
+
+QBE_TEXT_MAP_MISSING_KEY = """\
+fn main() -> i64:
+    mut values: map<text, i64> = map_new<text, i64>(1)
+    missing: text = text_from_static("absent")
+    return map_get<text, i64>(&values, &missing)
+"""
+
+QBE_MULTI_RESULT_PROGRAM = """\
+record Score:
+    signal: trit
+    count: i64
+    ratio: f64
+fn make_score(value: i64) -> Score:
+    return Score(signal=-1, count=value + 3, ratio=1.25)
+fn forward_score(value: i64) -> Score:
+    return make_score(value)
+fn main() -> i64:
+    discard forward_score(1)
+    score: Score = forward_score(39)
+    mut matched: trit = (score.signal == -1) & (score.count == 42) & (score.ratio == 1.25)
+    match matched:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+"""
+
+QBE_MULTI_RESULT_OVERFLOW = """\
+record Pair:
+    left: i64
+    right: i64
+fn make_pair(value: i64) -> Pair:
+    return Pair(left=value + 1, right=2)
+fn main() -> i64:
+    pair: Pair = make_pair(9223372036854775807)
+    return pair.left
+"""
+
+QBE_NESTED_RECORD_PROGRAM = """\
+record Coordinate:
+    x: i64
+    y: f64
+record Observation:
+    status: trit
+    position: Coordinate
+    code: tryte
+fn make_observation(value: i64) -> Observation:
+    return Observation(status=-1, position=Coordinate(x=value + 2, y=2.5), code=364)
+fn forward_observation(value: i64) -> Observation:
+    return make_observation(value)
+fn main() -> i64:
+    observation: Observation = forward_observation(40)
+    mut matched: trit = (observation.status == -1) & (observation.position.x == 42)
+    matched = matched & (observation.position.y == 2.5) & (observation.code == 364)
+    match matched:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+"""
+
+
+def _pebble_compiler_canary_program() -> str:
+    root = Path(__file__).resolve().parents[1]
+    pebble = (root / "examples/language_maturity/pebble_compiler.s3").read_text(
+        encoding="utf-8"
+    )
+    vm = (root / "examples/language_maturity/bounded_stack_vm.s3").read_text(
+        encoding="utf-8"
+    )
+    main = """\
+fn main() -> i64:
+    mut input: text = text_from_static("a=2; ! a+1;")
+    mut bytecode: i64_vector = i64_vector_new(text_len(&input) * 8 + 8)
+    mut status: trit = compile_pebble(&input, &mut bytecode)
+    match status <=> -1:
+        -1:
+            return 1
+        0:
+            mut result: VmResult = run_vm(&bytecode)
+            match result.valid <=> -1:
+                -1:
+                    return 1
+                0:
+                    return mismatch_i64(result.value, 3)
+                1:
+                    return 1
+        1:
+            return 1
+fn mismatch_i64(actual: i64, expected: i64) -> i64:
+    match actual == expected:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+"""
+    return f"{pebble}\n{vm}\n{main}"
+
+
+def _csv_parser_canary_program() -> str:
+    root = Path(__file__).resolve().parents[1]
+    parser = (
+        root / "examples/language_maturity/csv_integer_parser.s3"
+    ).read_text(encoding="utf-8")
+    main = """\
+fn main() -> i64:
+    mut valid_input: text = text_from_static("14,-5,20")
+    mut valid_result: CsvParse = parse_csv_integers(&valid_input)
+    mut invalid_input: text = text_from_static("14,,20")
+    mut invalid_result: CsvParse = parse_csv_integers(&invalid_input)
+    mut failures: i64 = 0
+    failures = failures + mismatch_trit(valid_result.valid, -1)
+    failures = failures + mismatch_i64(valid_result.total, 29)
+    failures = failures + mismatch_i64(valid_result.count, 3)
+    failures = failures + mismatch_trit(invalid_result.valid, 0)
+    failures = failures + mismatch_i64(invalid_result.total, 0)
+    failures = failures + mismatch_i64(invalid_result.count, 0)
+    return failures
+fn mismatch_i64(actual: i64, expected: i64) -> i64:
+    match actual == expected:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn mismatch_trit(actual: trit, expected: trit) -> i64:
+    match actual <=> expected:
+        -1:
+            return 1
+        0:
+            return 0
+        1:
+            return 1
+"""
+    return f"{parser}\n{main}"
+
 _QBE_BYTES_BUILTINS = (
     "bytes_new",
     "bytes_len",
@@ -484,6 +712,36 @@ _QBE_BYTES_BUILTINS = (
     "bytes_clone",
     "bytes_concat",
     "bytes_slice",
+)
+
+_QBE_TEXT_BUILTINS = (
+    "text_new",
+    "text_from_static",
+    "text_len",
+    "text_capacity",
+    "text_reserve",
+    "text_append",
+    "text_append_static",
+    "text_clone",
+    "text_concat",
+    "text_slice",
+    "text_find",
+    "text_from_bytes",
+    "bytes_from_text",
+)
+
+_QBE_TEXT_MAP_BUILTINS = (
+    "text_i64_map_new",
+    "text_i64_map_len",
+    "text_i64_map_capacity",
+    "text_i64_map_reserve",
+    "text_i64_map_put",
+    "text_i64_map_contains",
+    "text_i64_map_get",
+    "text_i64_map_remove",
+    "text_i64_map_key_at",
+    "text_i64_map_value_at",
+    "text_i64_map_clone",
 )
 
 QBE_BYTES_ERROR_CASES = (
@@ -911,6 +1169,8 @@ def test_qbe_s3_runtime_provider_excludes_workload_functions(optimization) -> No
     assert "__s3_builtin_i64_map_new:" in runtime_assembly
     assert "__s3_builtin_i64_set_new:" in runtime_assembly
     assert "__s3_builtin_bytes_new:" in runtime_assembly
+    assert "__s3_builtin_text_new:" in runtime_assembly
+    assert "__s3_builtin_text_i64_map_new:" in runtime_assembly
     assert "s3_main:" in runtime_assembly
     assert "__s3mod_" not in runtime_assembly
 
@@ -1007,6 +1267,8 @@ def _build_qbe_native(
             "__s3_builtin_i64_vector_slice",
             *[f"__s3_builtin_{builtin}" for builtin in _QBE_I64_MAP_SET_BUILTINS],
             *[f"__s3_builtin_{builtin}" for builtin in _QBE_BYTES_BUILTINS],
+            *[f"__s3_builtin_{builtin}" for builtin in _QBE_TEXT_BUILTINS],
+            *[f"__s3_builtin_{builtin}" for builtin in _QBE_TEXT_MAP_BUILTINS],
         ]
         expose = subprocess.run(
             [
@@ -1594,6 +1856,305 @@ def test_qbe_native_bytes_match_s3_when_linux_toolchain_exists(
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_text_static_and_dynamic_operations_preserve_s3_semantics(
+    optimization,
+) -> None:
+    compilation = compile_source(QBE_TEXT_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+
+    il = translate_verified_ir(compilation.ir)
+    assert translate_verified_ir(compilation.ir) == il
+    assert "b 99, b 97, b 102, b 195, b 169, b 0" in il
+    assert "data $_s3_qbe_static_s0 =" in il
+    assert "b 0 }" in il
+    assert "function l $pass_static(l %r" in il
+    assert "function l $pass_text(l %r" in il
+    for builtin in _QBE_TEXT_BUILTINS:
+        assert f"call $__s3_builtin_{builtin}(" in il
+    assert "_text_slot_" in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_text_operations_match_s3_when_linux_toolchain_exists(
+    optimization, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(QBE_TEXT_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "text-operations",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "text-operations", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_text_map_operations_preserve_s3_semantics(optimization) -> None:
+    compilation = compile_source(QBE_TEXT_MAP_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+
+    il = translate_verified_ir(compilation.ir)
+    for builtin in _QBE_TEXT_MAP_BUILTINS:
+        assert f"call $__s3_builtin_{builtin}(" in il
+    assert "_vector_slot_" in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_text_map_matches_s3_when_linux_toolchain_exists(
+    optimization, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(QBE_TEXT_MAP_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "text-map-operations",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "text-map-operations", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_text_map_missing_key_preserves_bounds_semantics(optimization) -> None:
+    compilation = compile_source(QBE_TEXT_MAP_MISSING_KEY, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert _error_category(lambda: execute_ir(compilation.ir)) == "bounds"
+    assert _error_category(lambda: execute_assembly(compilation.assembly)) == "bounds"
+    assert "call $__s3_builtin_text_i64_map_get(" in translate_verified_ir(
+        compilation.ir
+    )
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_text_map_missing_key_matches_s3(
+    optimization, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(QBE_TEXT_MAP_MISSING_KEY, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "text-map-missing-key",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "text-map-missing-key", tmp_path, cc
+    )
+
+    assert _error_category(lambda: execute_ir(compilation.ir)) == "bounds"
+    assert _error_category(lambda: execute_assembly(compilation.assembly)) == "bounds"
+    assert qbe_native.returncode != 0
+    assert s3_native.returncode != 0
+    assert qbe_native.returncode == s3_native.returncode
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_multi_result_sret_preserves_mixed_cell_semantics(optimization) -> None:
+    compilation = compile_source(QBE_MULTI_RESULT_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    il = translate_verified_ir(compilation.ir)
+    assert "function $make_score(l %s3_sret," in il
+    assert "function $forward_score(l %s3_sret," in il
+    assert il.count("call $forward_score(l %s3_f") == 2
+    assert "call $make_score(l %s3_f" in il
+    assert "storel %r" in il
+    assert "stored %r" in il
+    assert "loadl " in il
+    assert "loadd " in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_multi_result_sret_matches_s3(optimization, tmp_path) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(QBE_MULTI_RESULT_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir, optimization, "multi-result-sret", tmp_path, qbe, cc
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "multi-result-sret", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_multi_result_error_path_uses_void_sret_return(optimization) -> None:
+    compilation = compile_source(QBE_MULTI_RESULT_OVERFLOW, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert _error_category(lambda: execute_ir(compilation.ir)) == "overflow"
+    assert _error_category(lambda: execute_assembly(compilation.assembly)) == "overflow"
+    il = translate_verified_ir(compilation.ir)
+    assert "function $make_pair(l %s3_sret," in il
+    assert "call $s3_qbe_fail_overflow()\n\tret\n" in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_multi_result_error_path_matches_s3(optimization, tmp_path) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(QBE_MULTI_RESULT_OVERFLOW, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir, optimization, "multi-result-overflow", tmp_path, qbe, cc
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "multi-result-overflow", tmp_path, cc
+    )
+
+    assert _error_category(lambda: execute_ir(compilation.ir)) == "overflow"
+    assert _error_category(lambda: execute_assembly(compilation.assembly)) == "overflow"
+    assert qbe_native.returncode == 86
+    assert b"QBE_SEMANTIC_ERROR=overflow" in qbe_native.stderr
+    assert s3_native.returncode != 0
+    assert "runtime error [overflow]" in s3_native.stderr
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_nested_scalar_records_preserve_s3_semantics(optimization) -> None:
+    compilation = compile_source(QBE_NESTED_RECORD_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    il = translate_verified_ir(compilation.ir)
+    assert "function $make_observation(l %s3_sret," in il
+    assert "function $forward_observation(l %s3_sret," in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_nested_scalar_records_match_s3(optimization, tmp_path) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(QBE_NESTED_RECORD_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir, optimization, "nested-record-sret", tmp_path, qbe, cc
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "nested-record-sret", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_pebble_compiler_canary_preserves_s3_semantics(optimization) -> None:
+    compilation = compile_source(
+        _pebble_compiler_canary_program(), optimization=optimization
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    il = translate_verified_ir(compilation.ir)
+    assert "function $parse_pebble_primary(l %s3_sret," in il
+    assert "function $run_vm(l %s3_sret," in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_pebble_compiler_canary_matches_s3(optimization, tmp_path) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(
+        _pebble_compiler_canary_program(), optimization=optimization
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "pebble-compiler-canary",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "pebble-compiler-canary", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_csv_parser_canary_preserves_s3_semantics(optimization) -> None:
+    compilation = compile_source(_csv_parser_canary_program(), optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    il = translate_verified_ir(compilation.ir)
+    assert "function $parse_csv_integers(l %s3_sret," in il
+    assert "function $invalid_csv(l %s3_sret)" in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_csv_parser_canary_matches_s3(optimization, tmp_path) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(_csv_parser_canary_program(), optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "csv-parser-canary",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "csv-parser-canary", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
 @pytest.mark.parametrize("name,source,category", QBE_BYTES_ERROR_CASES)
 def test_qbe_bytes_errors_match_s3_semantic_engines(
     name, source, category, optimization
@@ -2033,14 +2594,6 @@ def test_qbe_oracle_rejects_memory_initialized_on_only_one_branch() -> None:
 @pytest.mark.parametrize(
     "source,reason",
     [
-        (
-            """\
-fn main() -> i64:
-    mut value: text = text_new(1)
-    return text_len(&value)
-""",
-            "unsupported register type text",
-        ),
         (
             """\
 record Pair:
