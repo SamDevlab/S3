@@ -651,13 +651,12 @@ class Emulator(AssemblyVerifier):
         )
         cells[index] = value
 
-    @classmethod
     def _read_reference(
-        cls, frame: Frame, register: int, instruction: AssemblyInstruction
+        self, frame: Frame, register: int, instruction: AssemblyInstruction
     ) -> ReferenceValue:
-        value = cls._read(frame, register, instruction)
+        value = self._read(frame, register, instruction)
         if not isinstance(value, ReferenceValue):
-            raise cls._runtime_error(
+            raise self._runtime_error(
                 frame,
                 instruction,
                 f"register r{register} does not contain a reference",
