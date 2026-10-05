@@ -46,6 +46,8 @@ _OPCODE_CODES = {
     "load": 9,
     "store": 10,
     "branch3": 11,
+    "jump": 12,
+    "compare": 13,
 }
 
 
@@ -148,18 +150,78 @@ def _reference_events(program: object) -> list[int]:
                         0 if immediate is None else immediate,
                     )
                 event(10, function_index, instruction_index, block_index, 0, 0, 0, 0)
-                if opcode == "branch3":
-                    event(
-                        11,
-                        function_index,
-                        instruction_index,
-                        *(block_indices[target] for target in instruction.targets),
-                        0,
-                        0,
-                    )
+                if opcode in {"branch3", "jump"}:
+                    targets = tuple(block_indices[target] for target in instruction.targets)
+                    event(11, function_index, instruction_index, *targets, *(0 for _ in range(5 - len(targets))))
                 instruction_index += 1
         event(5, function_index, 0, 0, 0, 0, 0, 0)
     return events
+
+
+def _nextgen_event_parity_result(source: str) -> int:
+    reference = compile_source(source).ir
+    assert reference is not None
+    expected = _reference_events(reference)
+    expected_pushes = "\n".join(
+        [f"discard vector_push<i64>(&mut expected, {expected[0]})"]
+        + [
+            f"{' ' * 28}discard vector_push<i64>(&mut expected, {value})"
+            for value in expected[1:]
+        ]
+    )
+    wrapper = f'''
+fn main() -> i64:
+    mut source_text: text = text_from_static({json.dumps(source)})
+    mut source_bytes: bytes = bytes_from_text(&source_text)
+    mut tokens: vector<NgToken> = vector_new<NgToken>(1024)
+    mut functions: vector<NgFunction> = vector_new<NgFunction>(64)
+    mut parameters: vector<NgParameter> = vector_new<NgParameter>(256)
+    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(2048)
+    mut actual: vector<i64> = vector_new<i64>({max(len(expected) * 4, len(expected) + 512)})
+    mut expected: vector<i64> = vector_new<i64>({len(expected)})
+    mut index: i64 = 0
+    mut status: i64 = ng_lex(&source_bytes, &mut tokens)
+    match status <=> 0:
+        -1:
+            return -100
+        0:
+            status = ng_parse_program(&source_bytes, &tokens, &mut functions, &mut parameters, &mut nodes)
+            match status <=> 0:
+                -1:
+                    return -1001
+                0:
+                    status = ng_emit_program(&source_bytes, &functions, &parameters, &nodes, &mut actual)
+                    match status <=> 0:
+                        -1:
+                            return status
+                        0:
+                            {expected_pushes}
+                            match vector_len<i64>(&actual) <=> {len(expected)}:
+                                -1:
+                                    return -30000
+                                0:
+                                    index = 0
+                                    while index < {len(expected)}:
+                                        match vector_get<i64>(&actual, index) <=> vector_get<i64>(&expected, index):
+                                            -1:
+                                                return index + 1
+                                            0:
+                                                index = index + 1
+                                            1:
+                                                return index + 1
+                                    return 0
+                                1:
+                                    return -30000
+                        1:
+                            return -1004
+                1:
+                    return -1002
+        1:
+            return -100
+'''
+    compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+    return int(execute_ir(compilation.ir))
 
 
 def test_nextgen_emits_reference_equivalent_typed_ir_for_multiple_functions() -> None:
@@ -259,3 +321,43 @@ fn main() -> i64:
     assert compilation.ir is not None
     result = int(execute_ir(compilation.ir))
     assert result == 0, f"serialized IR differs at flattened cell {result - 1}"
+
+
+def test_nextgen_emits_reference_equivalent_ir_for_branches_workload() -> None:
+    source = (_ROOT / "benchmarks/workloads/branches.s3").read_text(encoding="utf-8")
+    result = _nextgen_event_parity_result(source)
+    assert result == 0, (
+        f"NG/reference IR parity probe returned {result}; "
+        f"positive results encode the first differing cell at {result - 1}"
+    )
+
+
+def test_nextgen_emits_unique_blocks_for_sequential_matches() -> None:
+    source = "\n".join(
+        (
+            "fn choose(value: trit) -> i64:",
+            "    mut result: i64 = 5",
+            "    match value:",
+            "        -1:",
+            "            result = result + 1",
+            "        0:",
+            "            result = result + 2",
+            "        1:",
+            "            result = result + 3",
+            "    match value:",
+            "        -1:",
+            "            result = result * 2",
+            "        0:",
+            "            result = result * 3",
+            "        1:",
+            "            result = result * 4",
+            "    return result",
+            "fn main() -> i64:",
+            "    return 0",
+        )
+    )
+    result = _nextgen_event_parity_result(source)
+    assert result == 0, (
+        f"NG/reference IR parity probe returned {result}; "
+        f"positive results encode the first differing cell at {result - 1}"
+    )

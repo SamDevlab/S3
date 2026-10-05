@@ -107,6 +107,15 @@ def test_nextgen_semantic_pass_checks_exhaustive_terminal_ternary_match() -> Non
     assert _ng_semantic_status(source) == 0
 
 
+def test_nextgen_semantic_accepts_maximum_contextual_tryte_literal() -> None:
+    source = (
+        "fn maximum() -> tryte:\n    return 364\n"
+        "fn main() -> i64:\n    return 0\n"
+    )
+    assert compile_source(source).ir is not None
+    assert _ng_semantic_status(source) == 0
+
+
 @pytest.mark.parametrize(
     ("source", "expected_status"),
     [
@@ -144,6 +153,11 @@ def test_nextgen_semantic_pass_checks_exhaustive_terminal_ternary_match() -> Non
         (
             "fn take(value: i64) -> i64:\n    return value\n"
             "fn main(value: tryte) -> i64:\n    return take(value)\n",
+            -14,
+        ),
+        (
+            "fn take(value: tryte) -> i64:\n    return 1\n"
+            "fn main() -> i64:\n    return take(365)\n",
             -14,
         ),
         (

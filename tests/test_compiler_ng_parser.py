@@ -27,10 +27,10 @@ def _ng_parse_status(source: str) -> int:
 fn main() -> i64:
     mut source_text: text = text_from_static({json.dumps(source)})
     mut source_bytes: bytes = bytes_from_text(&source_text)
-    mut tokens: vector<NgToken> = vector_new<NgToken>(32)
-    mut functions: vector<NgFunction> = vector_new<NgFunction>(8)
-    mut parameters: vector<NgParameter> = vector_new<NgParameter>(16)
-    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(32)
+    mut tokens: vector<NgToken> = vector_new<NgToken>(256)
+    mut functions: vector<NgFunction> = vector_new<NgFunction>(32)
+    mut parameters: vector<NgParameter> = vector_new<NgParameter>(128)
+    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(512)
     mut lex_status: i64 = ng_lex(&source_bytes, &mut tokens)
     match lex_status <=> 0:
         -1:
@@ -224,6 +224,32 @@ def test_nextgen_parser_preserves_ternary_match_arm_order_and_nested_blocks() ->
     assert isinstance(statement, ast.SwitchStatement)
     assert tuple(case.label for case in statement.cases) == (-1, 0, 1)
     assert all(isinstance(case.body.statements[0], ast.ReturnStatement) for case in statement.cases)
+    assert _ng_parse_status(source) == 0
+
+
+def test_nextgen_parser_accepts_compare_expression_as_match_selector() -> None:
+    source = (
+        "fn compare(value: tryte) -> trit:\n"
+        "    return value <=> 0\n"
+    )
+    assert _ng_parse_status(source) == 0
+
+
+def test_nextgen_parser_stops_return_expression_before_next_negative_match_label() -> None:
+    source = (
+        "fn choose(value: tryte) -> tryte:\n"
+        "    match value:\n"
+        "        0:\n"
+        "            return 10\n"
+        "        1:\n"
+        "            return 20\n"
+        "        -1:\n"
+        "            return 30\n"
+    )
+    function = parse(source).functions[0]
+    statement = function.body.statements[0]
+    assert isinstance(statement, ast.SwitchStatement)
+    assert tuple(case.label for case in statement.cases) == (0, 1, -1)
     assert _ng_parse_status(source) == 0
 
 
