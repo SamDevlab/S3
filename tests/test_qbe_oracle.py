@@ -701,6 +701,34 @@ fn main() -> tryte:
     return inspect(parse(0)) + inspect(parse(-1)) + inspect(parse(1))
 """
 
+QBE_SCALAR_REFERENCE_PROGRAM = """\
+fn write_then_read(value: &mut tryte) -> tryte:
+    *value = 7
+    return *value
+fn main() -> tryte:
+    mut local: tryte = 8
+    updated: tryte = write_then_read(&mut local)
+    return updated + local
+"""
+
+QBE_ARRAY_ELEMENT_REFERENCE_PROGRAM = """\
+fn main() -> tryte:
+    mut values: tryte[3] = [10, 20, 30]
+    mut index: i64 = 1
+    element: &mut tryte = &mut values[index]
+    index = 0
+    *element = 42
+    return values[1] - 42
+"""
+
+QBE_ARRAY_ELEMENT_REFERENCE_BOUNDS = """\
+fn main() -> tryte:
+    mut values: tryte[2] = [10, 20]
+    mut index: i64 = 2
+    element: &mut tryte = &mut values[index]
+    return *element
+"""
+
 
 def _pebble_compiler_canary_program() -> str:
     root = Path(__file__).resolve().parents[1]
@@ -2880,6 +2908,65 @@ def test_qbe_oracle_lowers_checked_scalar_memory_and_fixed_arrays() -> None:
     assert "csgel" in text
 
 
+@pytest.mark.parametrize(
+    "name,source,expected",
+    [
+        ("scalar-reference-call", QBE_SCALAR_REFERENCE_PROGRAM, 14),
+        ("array-element-reference", QBE_ARRAY_ELEMENT_REFERENCE_PROGRAM, 0),
+    ],
+)
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_scalar_references_and_array_elements_match_s3(
+    name, source, expected, optimization, tmp_path
+) -> None:
+    compilation = compile_source(source, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == expected
+    assert execute_assembly(compilation.assembly) == expected
+    qbe_il = translate_verified_ir(compilation.ir)
+    assert "storel %r" in qbe_il
+    if name == "scalar-reference-call":
+        assert "loadl %r" in qbe_il
+    else:
+        assert "reference_ptr" in qbe_il
+        assert "s3_qbe_fail_bounds" in qbe_il
+    qbe, cc = _require_qbe_native_tools()
+    qbe_native = _build_qbe_native(
+        compilation.ir, optimization, name, tmp_path, qbe, cc
+    )
+    s3_native = _build_s3_native(compilation, optimization, name, tmp_path, cc)
+
+    assert qbe_native.returncode == expected, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert f"program returned: {expected}" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_array_element_reference_checks_bounds_at_creation(
+    optimization, tmp_path
+) -> None:
+    compilation = compile_source(
+        QBE_ARRAY_ELEMENT_REFERENCE_BOUNDS, optimization=optimization
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert _error_category(lambda: execute_ir(compilation.ir)) == "bounds"
+    assert _error_category(lambda: execute_assembly(compilation.assembly)) == "bounds"
+    qbe_il = translate_verified_ir(compilation.ir)
+    assert "s3_qbe_fail_bounds" in qbe_il
+    qbe, cc = _require_qbe_native_tools()
+    qbe_native = _build_qbe_native(
+        compilation.ir, optimization, "array-reference-bounds", tmp_path, qbe, cc
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "array-reference-bounds", tmp_path, cc
+    )
+
+    assert qbe_native.returncode == 88
+    assert b"QBE_SEMANTIC_ERROR=bounds" in qbe_native.stderr
+    assert s3_native.returncode != 0
+    assert "runtime error [bounds]" in s3_native.stderr
+
+
 def test_qbe_oracle_rejects_uninitialized_memory_loads() -> None:
     module = IRModule(
         (
@@ -2904,6 +2991,131 @@ def test_qbe_oracle_rejects_uninitialized_memory_loads() -> None:
     )
     verify_ir(module)
     with pytest.raises(QBETranslationError, match="may load uninitialized memory"):
+        translate_verified_ir(module)
+
+
+def test_qbe_oracle_rejects_uninitialized_reference_loads() -> None:
+    module = IRModule(
+        (
+            IRFunction(
+                "main",
+                (),
+                IRType.TRYTE,
+                (
+                    IRRegister(
+                        0,
+                        IRType.REFERENCE,
+                        reference_target=IRType.TRYTE,
+                        reference_mutable=True,
+                    ),
+                    IRRegister(1, IRType.TRYTE),
+                ),
+                (
+                    IRBasicBlock(
+                        "entry",
+                        (
+                            IRInstruction(
+                                IROpcode.ADDRESS_OF,
+                                result=0,
+                                memory=0,
+                                reference_target=IRType.TRYTE,
+                                reference_mutable=True,
+                            ),
+                            IRInstruction(
+                                IROpcode.REFERENCE_LOAD,
+                                result=1,
+                                operands=(0,),
+                                reference_target=IRType.TRYTE,
+                            ),
+                            IRInstruction(IROpcode.RETURN, operands=(1,)),
+                        ),
+                    ),
+                ),
+                memory_objects=(IRMemoryObject(0, IRType.TRYTE, 1, True),),
+            ),
+        )
+    )
+    verify_ir(module)
+    with pytest.raises(QBETranslationError, match="may load uninitialized memory"):
+        translate_verified_ir(module)
+
+
+def test_qbe_oracle_requires_reference_store_on_every_predecessor() -> None:
+    module = IRModule(
+        (
+            IRFunction(
+                "read_after_partial_write",
+                (
+                    IRParameter(
+                        "reference",
+                        1,
+                        IRType.REFERENCE,
+                        reference_target=IRType.TRYTE,
+                        reference_mutable=True,
+                    ),
+                ),
+                IRType.TRYTE,
+                (
+                    IRRegister(0, IRType.TRIT),
+                    IRRegister(
+                        1,
+                        IRType.REFERENCE,
+                        reference_target=IRType.TRYTE,
+                        reference_mutable=True,
+                    ),
+                    IRRegister(2, IRType.TRYTE),
+                    IRRegister(3, IRType.TRYTE),
+                ),
+                (
+                    IRBasicBlock(
+                        "entry",
+                        (
+                            IRInstruction(IROpcode.CONST, result=0, immediate=0),
+                            IRInstruction(IROpcode.CONST, result=2, immediate=5),
+                            IRInstruction(
+                                IROpcode.BRANCH3,
+                                operands=(0,),
+                                targets=("write", "skip_zero", "skip_positive"),
+                            ),
+                        ),
+                    ),
+                    IRBasicBlock(
+                        "write",
+                        (
+                            IRInstruction(
+                                IROpcode.REFERENCE_STORE,
+                                operands=(1, 2),
+                                reference_target=IRType.TRYTE,
+                                reference_mutable=True,
+                            ),
+                            IRInstruction(IROpcode.JUMP, targets=("join",)),
+                        ),
+                    ),
+                    IRBasicBlock(
+                        "skip_zero", (IRInstruction(IROpcode.JUMP, targets=("join",)),)
+                    ),
+                    IRBasicBlock(
+                        "skip_positive",
+                        (IRInstruction(IROpcode.JUMP, targets=("join",)),),
+                    ),
+                    IRBasicBlock(
+                        "join",
+                        (
+                            IRInstruction(
+                                IROpcode.REFERENCE_LOAD,
+                                result=3,
+                                operands=(1,),
+                                reference_target=IRType.TRYTE,
+                            ),
+                            IRInstruction(IROpcode.RETURN, operands=(3,)),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+    verify_ir(module)
+    with pytest.raises(QBETranslationError, match="may load uninitialized reference"):
         translate_verified_ir(module)
 
 
@@ -3003,16 +3215,6 @@ fn main() -> i64:
     return read(&pair)
 """,
             "aggregate_field_load",
-        ),
-        (
-            """\
-fn read(value: &i64) -> i64:
-    return 0
-fn main() -> i64:
-    mut value: i64 = 1
-    return read(&value)
-""",
-            "owned container reference shape",
         ),
     ],
 )

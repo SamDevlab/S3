@@ -270,7 +270,7 @@ def _validate_memory_initialization(function: IRFunction) -> None:
     """Reject loads that verified IR permits but S3 would trap at runtime."""
 
     if not any(
-        instruction.opcode is IROpcode.LOAD
+        instruction.opcode in {IROpcode.LOAD, IROpcode.REFERENCE_LOAD}
         for block in function.blocks
         for instruction in block.instructions
     ):
@@ -294,6 +294,52 @@ def _validate_memory_initialization(function: IRFunction) -> None:
         if register in constants:
             return ("constant", constants[register])
         return ("register", register)
+
+    # Track reference aliases conservatively. A known stack cell can reuse the
+    # memory initialization facts; an unknown pointer is initialized only by a
+    # store through that same reference value (or a MOVE alias).
+    reference_origins: dict[int, tuple[str, int, tuple[str, int] | None]] = {
+        parameter.register: ("reference", parameter.register, None)
+        for parameter in function.parameters
+        if parameter.type is IRType.REFERENCE
+    }
+    reference_memory: dict[int, int] = {}
+    for _ in range(max(1, len(function.registers))):
+        origins_changed = False
+        for block in function.blocks:
+            for instruction in block.instructions:
+                if instruction.opcode is IROpcode.ADDRESS_OF and instruction.result is not None:
+                    if instruction.memory is None:
+                        origin = ("reference", instruction.result, None)
+                    else:
+                        if instruction.operands:
+                            key = index_key(instruction.operands[0])
+                        else:
+                            key = ("constant", 0)
+                        memory_length = next(
+                            memory.length
+                            for memory in function.memory_objects
+                            if memory.index == instruction.memory
+                        )
+                        if key[0] == "constant" and 0 <= key[1] < memory_length:
+                            origin = ("memory", instruction.memory, key)
+                        else:
+                            origin = ("reference", instruction.result, None)
+                            reference_memory[instruction.result] = instruction.memory
+                    if reference_origins.get(instruction.result) != origin:
+                        reference_origins[instruction.result] = origin
+                        origins_changed = True
+                elif (
+                    instruction.opcode is IROpcode.MOVE
+                    and instruction.result is not None
+                    and function.registers[instruction.result].type is IRType.REFERENCE
+                ):
+                    origin = reference_origins.get(instruction.operands[0])
+                    if origin is not None and reference_origins.get(instruction.result) != origin:
+                        reference_origins[instruction.result] = origin
+                        origins_changed = True
+        if not origins_changed:
+            break
 
     memory_lengths = {memory.index: memory.length for memory in function.memory_objects}
     top: dict[int, frozenset[tuple[str, int]] | None] = {
@@ -332,30 +378,69 @@ def _validate_memory_initialization(function: IRFunction) -> None:
                 result[memory_index] = frozenset(common)
         return result
 
-    def transfer_stores(
-        block_name: str,
-        state: dict[int, frozenset[tuple[str, int]] | None],
-    ) -> dict[int, frozenset[tuple[str, int]] | None]:
-        result = dict(state)
-        for instruction in blocks[block_name].instructions:
-            if instruction.opcode is not IROpcode.STORE or instruction.memory is None:
-                continue
+    def intersect_references(
+        states: list[frozenset[tuple[str, int]] | None],
+    ) -> frozenset[tuple[str, int]] | None:
+        finite = [state for state in states if state is not None]
+        if not finite:
+            return None
+        common = set(finite[0])
+        for facts in finite[1:]:
+            common.intersection_update(facts)
+        return frozenset(common)
+
+    def record_store(
+        instruction: IRInstruction,
+        memory_state: dict[int, frozenset[tuple[str, int]] | None],
+        reference_state: frozenset[tuple[str, int]] | None,
+    ) -> frozenset[tuple[str, int]] | None:
+        if instruction.opcode is IROpcode.STORE and instruction.memory is not None:
             key = index_key(instruction.operands[0])
             length = memory_lengths[instruction.memory]
             if key[0] == "constant" and not 0 <= key[1] < length:
-                continue
-            facts = result[instruction.memory]
+                return reference_state
+            facts = memory_state[instruction.memory]
             if facts is not None:
-                result[instruction.memory] = facts | {key}
-        return result
+                memory_state[instruction.memory] = facts | {key}
+        elif instruction.opcode is IROpcode.REFERENCE_STORE:
+            origin = reference_origins.get(
+                instruction.operands[0],
+                ("reference", instruction.operands[0], None),
+            )
+            if origin[0] == "memory":
+                memory_index = origin[1]
+                key = origin[2]
+                assert key is not None
+                facts = memory_state[memory_index]
+                if facts is not None:
+                    memory_state[memory_index] = facts | {key}
+            elif reference_state is not None:
+                reference_state = reference_state | {(origin[0], origin[1])}
+        return reference_state
+
+    def transfer_stores(
+        block_name: str,
+        state: dict[int, frozenset[tuple[str, int]] | None],
+        references: frozenset[tuple[str, int]] | None,
+    ) -> tuple[
+        dict[int, frozenset[tuple[str, int]] | None],
+        frozenset[tuple[str, int]] | None,
+    ]:
+        result = dict(state)
+        for instruction in blocks[block_name].instructions:
+            references = record_store(instruction, result, references)
+        return result, references
 
     incoming = {name: dict(top) for name in reachable}
     outgoing = {name: dict(top) for name in reachable}
+    incoming_references = {name: None for name in reachable}
+    outgoing_references = {name: None for name in reachable}
     while True:
         changed = False
         for name in (block.name for block in function.blocks if block.name in reachable):
             if name == entry:
                 new_in = dict(empty)
+                new_reference_in = frozenset()
             else:
                 incoming_states = [
                     outgoing[pred]
@@ -363,40 +448,96 @@ def _validate_memory_initialization(function: IRFunction) -> None:
                     if pred in reachable
                 ]
                 new_in = intersect(incoming_states) if incoming_states else dict(empty)
-            new_out = transfer_stores(name, new_in)
-            if new_in != incoming[name] or new_out != outgoing[name]:
+                incoming_reference_states = [
+                    outgoing_references[pred]
+                    for pred in predecessors[name]
+                    if pred in reachable
+                ]
+                new_reference_in = (
+                    intersect_references(incoming_reference_states)
+                    if incoming_reference_states
+                    else frozenset()
+                )
+            new_out, new_reference_out = transfer_stores(
+                name, new_in, new_reference_in
+            )
+            if (
+                new_in != incoming[name]
+                or new_out != outgoing[name]
+                or new_reference_in != incoming_references[name]
+                or new_reference_out != outgoing_references[name]
+            ):
                 incoming[name] = new_in
                 outgoing[name] = new_out
+                incoming_references[name] = new_reference_in
+                outgoing_references[name] = new_reference_out
                 changed = True
         if not changed:
             break
 
     for name in (block.name for block in function.blocks if block.name in reachable):
         state = dict(incoming[name])
+        reference_state = incoming_references[name]
+
+        def memory_is_fully_initialized(memory_index: int) -> bool:
+            facts = state[memory_index]
+            length = memory_lengths[memory_index]
+            return facts is not None and sum(
+                1
+                for kind, value in facts
+                if kind == "constant" and 0 <= value < length
+            ) == length
+
         for instruction in blocks[name].instructions:
             if instruction.opcode is IROpcode.LOAD:
                 assert instruction.memory is not None
                 key = index_key(instruction.operands[0])
                 facts = state[instruction.memory]
-                length = memory_lengths[instruction.memory]
-                fully_initialized = facts is not None and sum(
-                    1
-                    for kind, value in facts
-                    if kind == "constant" and 0 <= value < length
-                ) == length
+                fully_initialized = memory_is_fully_initialized(instruction.memory)
                 if facts is not None and key not in facts and not fully_initialized:
                     raise QBETranslationError(
                         f"function '{function.name}' may load uninitialized memory "
                         f"m{instruction.memory} in block '{name}'"
                     )
-            elif instruction.opcode is IROpcode.STORE and instruction.memory is not None:
-                key = index_key(instruction.operands[0])
-                length = memory_lengths[instruction.memory]
-                if key[0] == "constant" and not 0 <= key[1] < length:
-                    continue
-                facts = state[instruction.memory]
-                if facts is not None:
-                    state[instruction.memory] = facts | {key}
+            elif instruction.opcode is IROpcode.REFERENCE_LOAD:
+                origin = reference_origins.get(
+                    instruction.operands[0],
+                    ("reference", instruction.operands[0], None),
+                )
+                initialized = False
+                if origin[0] == "memory":
+                    memory_index = origin[1]
+                    key = origin[2]
+                    assert key is not None
+                    facts = state[memory_index]
+                    initialized = (
+                        facts is None
+                        or key in facts
+                        or memory_is_fully_initialized(memory_index)
+                    )
+                    if not initialized:
+                        raise QBETranslationError(
+                            f"function '{function.name}' may load uninitialized memory "
+                            f"m{memory_index} through a reference in block '{name}'"
+                        )
+                else:
+                    reference_key = (origin[0], origin[1])
+                    initialized = (
+                        reference_state is None or reference_key in reference_state
+                    )
+                    memory_index = reference_memory.get(origin[1])
+                    if (
+                        not initialized
+                        and memory_index is not None
+                        and memory_is_fully_initialized(memory_index)
+                    ):
+                        initialized = True
+                    if not initialized:
+                        raise QBETranslationError(
+                            f"function '{function.name}' may load uninitialized reference "
+                            f"r{origin[1]} in block '{name}'"
+                        )
+            reference_state = record_store(instruction, state, reference_state)
 
 
 def _validate_instruction(
@@ -428,13 +569,64 @@ def _validate_instruction(
             _unsupported(function, block_name, instruction, "static string constant shape")
         return
     if op is IROpcode.ADDRESS_OF:
+        if len(instruction.results) != 1 or _result_type(
+            function, instruction
+        ) is not IRType.REFERENCE:
+            _unsupported(function, block_name, instruction, "reference address result")
+        if instruction.memory is not None:
+            memory = _memory_object(function, instruction.memory)
+            reference_target = instruction.reference_target
+            if (
+                memory.element_type not in _QBE_SCALAR_TYPES
+                or reference_target is not memory.element_type
+                or instruction.reference_is_slice
+                or instruction.reference_aggregate is not None
+                or len(operands) > 1
+                or (not operands and memory.length != 1)
+                or (
+                    operands
+                    and registers[operands[0]] not in {IRType.I64, IRType.TRYTE}
+                )
+            ):
+                _unsupported(function, block_name, instruction, "scalar memory reference shape")
+            result_register = function.registers[instruction.results[0]]
+            if result_register.reference_target is not memory.element_type:
+                _unsupported(function, block_name, instruction, "reference target metadata")
+            return
+        if (
+            len(operands) != 1
+            or registers[operands[0]] not in _QBE_REFERENCE_OWNER_NAMES
+        ):
+            _unsupported(function, block_name, instruction, "owned container reference shape")
+        return
+    if op is IROpcode.REFERENCE_LOAD:
         if (
             len(operands) != 1
             or len(instruction.results) != 1
-            or registers[operands[0]] not in _QBE_REFERENCE_OWNER_NAMES
-            or _result_type(function, instruction) is not IRType.REFERENCE
+            or registers[operands[0]] is not IRType.REFERENCE
+            or instruction.reference_target not in _QBE_SCALAR_TYPES
+            or instruction.reference_is_slice
+            or instruction.reference_aggregate is not None
+            or _result_type(function, instruction) is not instruction.reference_target
+            or function.registers[operands[0]].reference_target
+            is not instruction.reference_target
         ):
-            _unsupported(function, block_name, instruction, "owned container reference shape")
+            _unsupported(function, block_name, instruction, "scalar reference load shape")
+        return
+    if op is IROpcode.REFERENCE_STORE:
+        if (
+            len(operands) != 2
+            or instruction.results
+            or registers[operands[0]] is not IRType.REFERENCE
+            or instruction.reference_target not in _QBE_SCALAR_TYPES
+            or not instruction.reference_mutable
+            or instruction.reference_is_slice
+            or instruction.reference_aggregate is not None
+            or registers[operands[1]] is not instruction.reference_target
+            or function.registers[operands[0]].reference_target
+            is not instruction.reference_target
+        ):
+            _unsupported(function, block_name, instruction, "scalar reference store shape")
         return
     if op is IROpcode.INVERT:
         if len(operands) != 1 or _result_type(function, instruction) not in _QBE_SCALAR_TYPES:
@@ -585,6 +777,8 @@ def _translate_function(
         for block in function.blocks
         for instruction in block.instructions
         if instruction.opcode is IROpcode.ADDRESS_OF
+        and instruction.memory is None
+        and instruction.operands
     }
     reference_slots = {
         register: (
@@ -886,8 +1080,46 @@ def _translate_function(
                     )
             elif op is IROpcode.ADDRESS_OF:
                 assert result is not None
+                if instruction.memory is None:
+                    lines.append(
+                        f"\t%r{result} =l copy {reference_slots[args[0]]}"
+                    )
+                else:
+                    memory = _memory_object(function, instruction.memory)
+                    if args:
+                        pointer = _temporary(
+                            function_index, temporary_index, "reference_ptr"
+                        )
+                        temporary_index += 1
+                        _emit_memory_address(
+                            lines,
+                            function_index,
+                            temporary_index,
+                            failure_return_type,
+                            args[0],
+                            memory.length,
+                            memory_pointers[memory.index],
+                            pointer,
+                        )
+                        lines.append(f"\t%r{result} =l copy {pointer}")
+                    else:
+                        lines.append(
+                            f"\t%r{result} =l copy {memory_pointers[memory.index]}"
+                        )
+            elif op is IROpcode.REFERENCE_LOAD:
+                assert result is not None
+                value_type = instruction.reference_target
+                assert value_type is not None
+                qbe_type = _qbe_type(value_type)
                 lines.append(
-                    f"\t%r{result} =l copy {reference_slots[args[0]]}"
+                    f"\t%r{result} ={qbe_type} load{qbe_type} %r{args[0]}"
+                )
+            elif op is IROpcode.REFERENCE_STORE:
+                value_type = instruction.reference_target
+                assert value_type is not None
+                qbe_type = _qbe_type(value_type)
+                lines.append(
+                    f"\tstore{qbe_type} %r{args[1]}, %r{args[0]}"
                 )
             elif op is IROpcode.JUMP:
                 lines.append(f"\tjmp @{block_names[instruction.targets[0]]}")
