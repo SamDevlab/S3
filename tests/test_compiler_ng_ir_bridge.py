@@ -190,8 +190,13 @@ def test_ng_origin_ir_executes_through_linux_x86_64(workload: str, tmp_path: Pat
 
     executable = NativeToolchain.detect().build(native_source, tmp_path / Path(workload).stem)
     completed = subprocess.run([str(executable)], check=False, capture_output=True, text=True, timeout=30)
-    assert completed.returncode == expected, (
-        f"NG-origin native result {completed.returncode} differs from reference {expected}: "
+    assert completed.returncode == 0, (
+        f"NG-origin native executable failed with status {completed.returncode}: "
+        f"stdout={completed.stdout!r} stderr={completed.stderr!r}"
+    )
+    assert completed.stderr == ""
+    assert completed.stdout == f"program returned: {expected}\n", (
+        f"NG-origin native result differs from reference {expected}: "
         f"stdout={completed.stdout!r} stderr={completed.stderr!r}"
     )
 
