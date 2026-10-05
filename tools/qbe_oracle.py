@@ -159,6 +159,7 @@ _QBE_DYNAMIC_CONTAINER_BUILTINS = (
     | _QBE_TEXT_BUILTINS
     | _QBE_TEXT_MAP_BUILTINS
 )
+_QBE_SUPPORTED_DYNAMIC_BUILTINS = _QBE_DYNAMIC_CONTAINER_BUILTINS | {"sqrt"}
 _QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS = {
     builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_I64_VECTOR_BUILTINS
 }
@@ -468,7 +469,7 @@ def _validate_instruction(
         callee = functions.get(callee_name)
         if callee is None:
             signature = DYNAMIC_BUILTIN_SIGNATURES.get(callee_name)
-            if callee_name not in _QBE_DYNAMIC_CONTAINER_BUILTINS or signature is None:
+            if callee_name not in _QBE_SUPPORTED_DYNAMIC_BUILTINS or signature is None:
                 _unsupported(function, block_name, instruction, "external or builtin call")
             parameter_types, result_types = signature
             if tuple(registers[operand] for operand in operands) != parameter_types:

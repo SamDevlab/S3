@@ -26,6 +26,7 @@ from bootstrap.s3.ir_emulator import execute_ir
 from bootstrap.s3.optimizer import OptimizationLevel
 from bootstrap.s3.pipeline import compile_source, compile_sources
 from bootstrap.s3.backends.x86_64.backend import X8664Backend
+from bootstrap.s3.stdlib import standard_library_sources
 from bootstrap.s3.verifier import IRVerificationError, verify_ir
 from tools.qbe_oracle import QBETranslationError, translate_verified_ir
 
@@ -1359,8 +1360,23 @@ def _build_qbe_native(
             f"QBE_F64_VECTOR_ABI_SHIM_FAILURE: {name}: {shim_compile.stderr}"
         )
         link_inputs.append(str(f64_vector_shim_object_path))
+    uses_sqrt = any(
+        instruction.opcode is IROpcode.CALL and instruction.callee == "sqrt"
+        for function in program.functions
+        for block in function.blocks
+        for instruction in block.instructions
+    )
+    libraries = ["-lm"] if uses_sqrt else []
     qbe_link = subprocess.run(
-        [cc, "-no-pie", *link_inputs, str(runtime_path), "-o", str(executable_path)],
+        [
+            cc,
+            "-no-pie",
+            *link_inputs,
+            str(runtime_path),
+            *libraries,
+            "-o",
+            str(executable_path),
+        ],
         check=False,
         capture_output=True,
         text=True,
@@ -1653,6 +1669,74 @@ def test_qbe_large_cross_module_call_chain_differential(
     assert qbe_native.returncode == 1, qbe_native.stderr.decode(errors="replace")
     assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
     assert "program returned: 1" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_executes_scientific_vector_workload_with_sqrt(
+    optimization, tmp_path
+) -> None:
+    sources = standard_library_sources(modules=("s3.v1.science",))
+    sources["main.s3"] = """\
+module main
+from s3.v1.science import F64Result
+from s3.v1.science import dot
+from s3.v1.science import squared_distance
+from s3.v1.science import distance
+fn mismatch(value: trit) -> i64:
+    match value:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn main() -> i64:
+    mut left: f64_vector = f64_vector_new(2)
+    mut right: f64_vector = f64_vector_new(2)
+    discard f64_vector_push(&mut left, 1.0)
+    discard f64_vector_push(&mut left, 3.0)
+    discard f64_vector_push(&mut right, 2.0)
+    discard f64_vector_push(&mut right, 4.0)
+    product: F64Result = dot(&left, &right)
+    square: F64Result = squared_distance(&left, &right)
+    length: F64Result = distance(&left, &right)
+    mut failures: i64 = mismatch(product.status == 0)
+    failures = failures + mismatch(product.value == 14.0)
+    failures = failures + mismatch(square.status == 0)
+    failures = failures + mismatch(square.value == 2.0)
+    failures = failures + mismatch(length.status == 0)
+    failures = failures + mismatch(length.value == sqrt(2.0))
+    failures = failures + mismatch(sqrt(-1.0) != sqrt(-1.0))
+    return failures
+"""
+    compilation = compile_sources(
+        sources,
+        optimization=optimization,
+        entry_module="main",
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_il = translate_verified_ir(compilation.ir)
+    assert "call $sqrt(d " in qbe_il
+    qbe, cc = _require_qbe_native_tools()
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "scientific-vector-sqrt",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+        f64_vector_abi_shim=True,
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "scientific-vector-sqrt", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
