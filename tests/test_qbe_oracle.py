@@ -1297,6 +1297,9 @@ def test_qbe_s3_runtime_provider_excludes_workload_functions(optimization) -> No
     assert "__s3_builtin_bytes_new:" in runtime_assembly
     assert "__s3_builtin_text_new:" in runtime_assembly
     assert "__s3_builtin_text_i64_map_new:" in runtime_assembly
+    assert "__s3_builtin_host_capability_grant:" in runtime_assembly
+    assert "__s3_builtin_resource_open:" in runtime_assembly
+    assert "__s3_builtin_resource_close:" in runtime_assembly
     assert "s3_main:" in runtime_assembly
     assert "__s3mod_" not in runtime_assembly
 
@@ -1400,6 +1403,17 @@ def _build_qbe_native(
             *[f"__s3_builtin_{builtin}" for builtin in _QBE_BYTES_BUILTINS],
             *[f"__s3_builtin_{builtin}" for builtin in _QBE_TEXT_BUILTINS],
             *[f"__s3_builtin_{builtin}" for builtin in _QBE_TEXT_MAP_BUILTINS],
+            *[
+                f"__s3_builtin_{builtin}"
+                for builtin in (
+                    "host_capability_grant",
+                    "resource_open",
+                    "resource_is_open",
+                    "resource_kind",
+                    "resource_invoke",
+                    "resource_close",
+                )
+            ],
         ]
         expose = subprocess.run(
             [
@@ -1532,6 +1546,87 @@ def _require_qbe_native_tools() -> tuple[str, str]:
             pytest.fail("QBE_BUILD_FAILURE: required qbe executable or C compiler is unavailable")
         pytest.skip("QBE and a native C toolchain are required for the QBE execution gate")
     return qbe, cc
+
+
+_HOST_RESOURCE_LIFECYCLE_PROGRAM = """\
+fn main() -> i64:
+    capability: host_capability = host_capability_grant(1)
+    mut handle: resource_handle = resource_open(capability)
+    mut total: i64 = resource_kind(&handle)
+    one: i64 = 1
+    zero: i64 = 0
+    match resource_is_open(&handle):
+        -1:
+            total = total + one
+        0:
+            total = total + zero
+        1:
+            discard resource_invoke(&handle, 1)
+    discard resource_invoke(&handle, 7)
+    discard resource_close(&mut handle)
+    match resource_is_open(&handle):
+        -1:
+            total = total + 10
+        0:
+            total = total + zero
+        1:
+            discard resource_invoke(&handle, 1)
+    return total
+"""
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_translates_host_resource_builtin_contracts(optimization) -> None:
+    compilation = compile_source(
+        _HOST_RESOURCE_LIFECYCLE_PROGRAM,
+        optimization=optimization,
+    )
+    assert compilation.ir is not None
+    qbe_il = translate_verified_ir(compilation.ir)
+
+    for builtin in (
+        "host_capability_grant",
+        "resource_open",
+        "resource_is_open",
+        "resource_kind",
+        "resource_invoke",
+        "resource_close",
+    ):
+        assert f"call $__s3_builtin_{builtin}(" in qbe_il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_executes_scoped_host_resource_lifecycle_natively_when_available(
+    optimization, tmp_path
+) -> None:
+    compilation = compile_source(
+        _HOST_RESOURCE_LIFECYCLE_PROGRAM,
+        optimization=optimization,
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe, cc = _require_qbe_native_tools()
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "host-resource-lifecycle",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation,
+        optimization,
+        "host-resource-lifecycle",
+        tmp_path,
+        cc,
+    )
+
+    assert execute_ir(compilation.ir) == 2
+    assert execute_assembly(compilation.assembly) == 2
+    assert qbe_native.returncode == 2, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 2" in s3_native.stdout
 
 
 def _assert_qbe_cross_target_codegen(

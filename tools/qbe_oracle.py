@@ -159,7 +159,19 @@ _QBE_DYNAMIC_CONTAINER_BUILTINS = (
     | _QBE_TEXT_BUILTINS
     | _QBE_TEXT_MAP_BUILTINS
 )
-_QBE_SUPPORTED_DYNAMIC_BUILTINS = _QBE_DYNAMIC_CONTAINER_BUILTINS | {"sqrt"}
+_QBE_HOST_RESOURCE_BUILTINS = frozenset(
+    {
+        "host_capability_grant",
+        "resource_open",
+        "resource_is_open",
+        "resource_kind",
+        "resource_invoke",
+        "resource_close",
+    }
+)
+_QBE_SUPPORTED_DYNAMIC_BUILTINS = (
+    _QBE_DYNAMIC_CONTAINER_BUILTINS | _QBE_HOST_RESOURCE_BUILTINS | {"sqrt"}
+)
 _QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS = {
     builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_I64_VECTOR_BUILTINS
 }
@@ -183,6 +195,9 @@ _QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
 )
 _QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
     {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_TEXT_MAP_BUILTINS}
+)
+_QBE_DYNAMIC_CONTAINER_RUNTIME_SYMBOLS.update(
+    {builtin: f"__s3_builtin_{builtin}" for builtin in _QBE_HOST_RESOURCE_BUILTINS}
 )
 _I64_MIN = -(1 << 63)
 _I64_MAX = (1 << 63) - 1
