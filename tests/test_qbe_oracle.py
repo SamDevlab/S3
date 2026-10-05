@@ -249,6 +249,58 @@ def _qbe_ordering_program(values: tuple[int, ...], targets: tuple[int, ...]) -> 
     }
 
 
+def _qbe_scale_program(function_count: int, module_count: int) -> dict[str, str]:
+    helper_module_count = module_count - 1
+    helper_count = function_count - 1
+    quotient, remainder = divmod(helper_count, helper_module_count)
+    sources: dict[str, str] = {}
+    previous_export: str | None = None
+    function_index = 0
+
+    for module_index in range(helper_module_count):
+        module_name = f"scale{module_index:02d}"
+        functions_in_module = quotient + int(module_index < remainder)
+        lines = [f"module {module_name}"]
+        if previous_export is not None:
+            lines.append(
+                f"from scale{module_index - 1:02d} import {previous_export}"
+            )
+
+        for local_index in range(functions_in_module):
+            name = f"step_{function_index:03d}"
+            if function_index == 0:
+                expression = "value + 1"
+            else:
+                previous_name = (
+                    f"step_{function_index - 1:03d}"
+                    if local_index
+                    else previous_export
+                )
+                assert previous_name is not None
+                expression = f"{previous_name}(value)"
+            exported = local_index == functions_in_module - 1
+            lines.extend(
+                [
+                    f"{'export ' if exported else ''}fn {name}(value: i64) -> i64:",
+                    f"    return {expression}",
+                ]
+            )
+            function_index += 1
+
+        previous_export = name
+        sources[f"{module_name}.s3"] = "\n".join(lines) + "\n"
+
+    assert previous_export is not None
+    last_module = f"scale{helper_module_count - 1:02d}"
+    sources["main.s3"] = (
+        f"module main\n"
+        f"from {last_module} import {previous_export}\n"
+        f"fn main() -> i64:\n"
+        f"    return {previous_export}(0)\n"
+    )
+    return sources
+
+
 QBE_I64_VECTOR_PROGRAM = """\
 fn mismatch_index(actual: i64, expected: i64) -> i64:
     match actual == expected:
@@ -1542,6 +1594,65 @@ def test_qbe_native_multi_module_differential_when_linux_toolchain_exists(
     assert qbe_native.returncode == 42, qbe_native.stderr.decode(errors="replace")
     assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
     assert "program returned: 42" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+@pytest.mark.parametrize("function_count,module_count", [(250, 10), (500, 20)])
+def test_qbe_large_cross_module_call_chain_differential(
+    function_count, module_count, optimization, tmp_path
+) -> None:
+    sources = _qbe_scale_program(function_count, module_count)
+    compilation = compile_sources(
+        sources,
+        optimization=optimization,
+        entry_module="main",
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert len(sources) == module_count
+    assert len(compilation.ir.functions) == function_count
+
+    ir_result = execute_ir(compilation.ir)
+    assembly_result = execute_assembly(compilation.assembly)
+    qbe_il = translate_verified_ir(compilation.ir)
+    assert ir_result == assembly_result == 1
+    assert sum(
+        line.startswith(("function ", "export function "))
+        for line in qbe_il.splitlines()
+    ) == function_count
+
+    required = os.environ.get("S3_QBE_NATIVE_REQUIRED") == "1"
+    if (
+        platform.system() != "Linux"
+        or platform.machine().lower() not in {"x86_64", "amd64"}
+        or shutil.which("qbe") is None
+        or (shutil.which("gcc") is None and shutil.which("cc") is None)
+    ):
+        if required:
+            pytest.fail("QBE_BUILD_FAILURE: required scale native toolchain is unavailable")
+        return
+
+    qbe = shutil.which("qbe")
+    cc = shutil.which("gcc") or shutil.which("cc")
+    assert qbe is not None and cc is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        f"scale-{function_count}-functions-{module_count}-modules",
+        tmp_path,
+        qbe,
+        cc,
+    )
+    s3_native = _build_s3_native(
+        compilation,
+        optimization,
+        f"scale-{function_count}-functions-{module_count}-modules",
+        tmp_path,
+        cc,
+    )
+
+    assert qbe_native.returncode == 1, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 1" in s3_native.stdout
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
