@@ -676,6 +676,31 @@ fn main() -> i64:
             return 1
 """
 
+QBE_PAYLOAD_ENUM_PROGRAM = """\
+enum Result:
+    Ok(value: tryte)
+    Err(code: tryte)
+    Empty
+fn parse(flag: trit) -> Result:
+    match flag:
+        -1:
+            return Result.Err(code=7)
+        0:
+            return Result.Ok(value=11)
+        1:
+            return Result.Empty
+fn inspect(result: Result) -> tryte:
+    match result:
+        Result.Ok(value):
+            return value
+        Result.Err(code):
+            return 0 - code
+        Result.Empty:
+            return 5
+fn main() -> tryte:
+    return inspect(parse(0)) + inspect(parse(-1)) + inspect(parse(1))
+"""
+
 
 def _pebble_compiler_canary_program() -> str:
     root = Path(__file__).resolve().parents[1]
@@ -2418,6 +2443,37 @@ def test_qbe_native_nested_scalar_records_match_s3(optimization, tmp_path) -> No
     assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
     assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
     assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_payload_enum_return_parameter_and_match(optimization) -> None:
+    compilation = compile_source(QBE_PAYLOAD_ENUM_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 9
+    assert execute_assembly(compilation.assembly) == 9
+    il = translate_verified_ir(compilation.ir)
+    assert "function $parse(l %s3_sret," in il
+    assert "function $inspect(l %s3_sret," not in il
+    assert "function l $inspect(l %r0, l %r1)" in il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_native_payload_enum_matches_s3(optimization, tmp_path) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    compilation = compile_source(QBE_PAYLOAD_ENUM_PROGRAM, optimization=optimization)
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe_native = _build_qbe_native(
+        compilation.ir, optimization, "payload-enum-match", tmp_path, qbe, cc
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "payload-enum-match", tmp_path, cc
+    )
+
+    assert execute_ir(compilation.ir) == 9
+    assert execute_assembly(compilation.assembly) == 9
+    assert qbe_native.returncode == 9, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 9" in s3_native.stdout
 
 
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
