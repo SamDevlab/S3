@@ -1,0 +1,469 @@
+module selfhost.compiler_ng.lexer
+
+export record NgToken:
+    kind: i64
+    start: i64
+    end: i64
+
+fn ng_emit(tokens: &mut vector<NgToken>, kind: i64, start: i64, end: i64) -> i64:
+    discard vector_push<NgToken>(tokens, NgToken(kind=kind, start=start, end=end))
+    return end
+
+fn ng_is_digit(unit: i64) -> trit:
+    match unit <=> 48:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match unit <=> 57:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn ng_is_alpha(unit: i64) -> trit:
+    match unit <=> 65:
+        -1:
+            match unit <=> 97:
+                -1:
+                    return 0
+                0:
+                    return -1
+                1:
+                    match unit <=> 122:
+                        -1:
+                            return -1
+                        0:
+                            return -1
+                        1:
+                            return 0
+        0:
+            return -1
+        1:
+            match unit <=> 90:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    match unit <=> 97:
+                        -1:
+                            return 0
+                        0:
+                            return -1
+                        1:
+                            match unit <=> 122:
+                                -1:
+                                    return -1
+                                0:
+                                    return -1
+                                1:
+                                    return 0
+
+fn ng_is_identifier_start(unit: i64) -> trit:
+    match ng_is_alpha(unit):
+        -1:
+            return -1
+        0:
+            match unit == 95:
+                -1:
+                    return -1
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            return -1
+
+fn ng_is_identifier_continue(unit: i64) -> trit:
+    match ng_is_identifier_start(unit):
+        -1:
+            return -1
+        0:
+            return ng_is_digit(unit)
+        1:
+            return -1
+
+fn ng_is_space(unit: i64) -> trit:
+    match unit == 32:
+        -1:
+            return -1
+        0:
+            match unit == 9:
+                -1:
+                    return -1
+                0:
+                    match unit == 10:
+                        -1:
+                            return -1
+                        0:
+                            match unit == 13:
+                                -1:
+                                    return -1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        1:
+                            return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+fn ng_skip_line_comment(source: &bytes, cursor: i64, length: i64) -> i64:
+    mut next: i64 = cursor
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match next < length:
+            -1:
+                match to_i64(bytes_get(source, next)) == 10:
+                    -1:
+                        scanning = 0
+                    0:
+                        next = next + 1
+                    1:
+                        next = next + 1
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    return next
+
+fn ng_scan_identifier(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>) -> i64:
+    mut next: i64 = cursor + 1
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match next < length:
+            -1:
+                match ng_is_identifier_continue(to_i64(bytes_get(source, next))):
+                    -1:
+                        next = next + 1
+                    0:
+                        scanning = 0
+                    1:
+                        next = next + 1
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    return ng_emit(tokens, 1, cursor, next)
+
+fn ng_scan_integer(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>) -> i64:
+    mut next: i64 = cursor + 1
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match next < length:
+            -1:
+                match ng_is_digit(to_i64(bytes_get(source, next))):
+                    -1:
+                        next = next + 1
+                    0:
+                        scanning = 0
+                    1:
+                        next = next + 1
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    return ng_emit(tokens, 2, cursor, next)
+
+fn ng_scan_string(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>) -> i64:
+    mut next: i64 = cursor + 1
+    mut escaped: i64 = 0
+    mut closed: i64 = 0
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match next < length:
+            -1:
+                match escaped == 1:
+                    -1:
+                        escaped = 0
+                        next = next + 1
+                    0:
+                        match to_i64(bytes_get(source, next)) == 92:
+                            -1:
+                                escaped = 1
+                                next = next + 1
+                            0:
+                                match to_i64(bytes_get(source, next)) == 34:
+                                    -1:
+                                        closed = 1
+                                        next = next + 1
+                                        scanning = 0
+                                    0:
+                                        next = next + 1
+                                    1:
+                                        next = next + 1
+                            1:
+                                next = next + 1
+                    1:
+                        escaped = 0
+                        next = next + 1
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    match closed == 1:
+        -1:
+            return ng_emit(tokens, 3, cursor, next)
+        0:
+            return -1
+        1:
+            return ng_emit(tokens, 3, cursor, next)
+
+fn ng_symbol_kind(source: &bytes, cursor: i64, length: i64) -> i64:
+    mut first: i64 = to_i64(bytes_get(source, cursor))
+    mut second: i64 = 0
+    mut third: i64 = 0
+    mut kind: i64 = 0
+    match cursor + 1 < length:
+        -1:
+            second = to_i64(bytes_get(source, cursor + 1))
+        0:
+            second = 0
+        1:
+            second = 0
+    match cursor + 2 < length:
+        -1:
+            third = to_i64(bytes_get(source, cursor + 2))
+        0:
+            third = 0
+        1:
+            third = 0
+    match first == 60:
+        -1:
+            match second == 61:
+                -1:
+                    match third == 62:
+                        -1:
+                            return 202
+                        0:
+                            kind = 0
+                        1:
+                            kind = 0
+                0:
+                    kind = 0
+                1:
+                    kind = 0
+        0:
+            kind = 0
+        1:
+            kind = 0
+    match first == 45:
+        -1:
+            match second == 62:
+                -1:
+                    return 201
+                0:
+                    kind = 0
+                1:
+                    kind = 0
+        0:
+            kind = 0
+        1:
+            kind = 0
+    match first == 61:
+        -1:
+            match second == 61:
+                -1:
+                    return 203
+                0:
+                    kind = 0
+                1:
+                    kind = 0
+        0:
+            kind = 0
+        1:
+            kind = 0
+    match first == 33:
+        -1:
+            match second == 61:
+                -1:
+                    return 204
+                0:
+                    kind = 0
+                1:
+                    kind = 0
+        0:
+            kind = 0
+        1:
+            kind = 0
+    match first == 60:
+        -1:
+            match second == 61:
+                -1:
+                    return 205
+                0:
+                    kind = 0
+                1:
+                    kind = 0
+        0:
+            kind = 0
+        1:
+            kind = 0
+    match first == 62:
+        -1:
+            match second == 61:
+                -1:
+                    return 206
+                0:
+                    kind = 0
+                1:
+                    kind = 0
+        0:
+            kind = 0
+        1:
+            kind = 0
+    match first == 43:
+        -1:
+            match second == 61:
+                -1:
+                    return 207
+                0:
+                    kind = 0
+                1:
+                    kind = 0
+        0:
+            kind = 0
+        1:
+            kind = 0
+    match first == 42:
+        -1:
+            match second == 61:
+                -1:
+                    return 208
+                0:
+                    kind = 0
+                1:
+                    kind = 0
+        0:
+            kind = 0
+        1:
+            kind = 0
+    match first < 128:
+        -1:
+            return 300 + first
+        0:
+            return -1
+        1:
+            return -1
+
+fn ng_scan_symbol(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>) -> i64:
+    mut kind: i64 = ng_symbol_kind(source, cursor, length)
+    mut width: i64 = 1
+    match kind < 0:
+        -1:
+            return -1
+        0:
+            match kind < 300:
+                -1:
+                    match kind == 202:
+                        -1:
+                            width = 3
+                        0:
+                            width = 2
+                        1:
+                            width = 2
+                0:
+                    width = 1
+                1:
+                    width = 1
+        1:
+            match kind < 300:
+                -1:
+                    match kind == 202:
+                        -1:
+                            width = 3
+                        0:
+                            width = 2
+                        1:
+                            width = 2
+                0:
+                    width = 1
+                1:
+                    width = 1
+    return ng_emit(tokens, kind, cursor, cursor + width)
+
+fn ng_scan_atom(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>) -> i64:
+    mut unit: i64 = to_i64(bytes_get(source, cursor))
+    match ng_is_identifier_start(unit):
+        -1:
+            return ng_scan_identifier(source, cursor, length, tokens)
+        0:
+            match ng_is_digit(unit):
+                -1:
+                    return ng_scan_integer(source, cursor, length, tokens)
+                0:
+                    match unit == 34:
+                        -1:
+                            return ng_scan_string(source, cursor, length, tokens)
+                        0:
+                            return ng_scan_symbol(source, cursor, length, tokens)
+                        1:
+                            return ng_scan_string(source, cursor, length, tokens)
+                1:
+                    return ng_scan_integer(source, cursor, length, tokens)
+        1:
+            return ng_scan_identifier(source, cursor, length, tokens)
+
+fn ng_scan_next(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>) -> i64:
+    mut unit: i64 = to_i64(bytes_get(source, cursor))
+    match ng_is_space(unit):
+        -1:
+            return cursor + 1
+        0:
+            match unit == 35:
+                -1:
+                    return ng_skip_line_comment(source, cursor + 1, length)
+                0:
+                    match unit == 47:
+                        -1:
+                            match cursor + 1 < length:
+                                -1:
+                                    match to_i64(bytes_get(source, cursor + 1)) == 47:
+                                        -1:
+                                            return ng_skip_line_comment(source, cursor + 2, length)
+                                        0:
+                                            return ng_scan_symbol(source, cursor, length, tokens)
+                                        1:
+                                            return ng_scan_symbol(source, cursor, length, tokens)
+                                0:
+                                    return ng_scan_symbol(source, cursor, length, tokens)
+                                1:
+                                    return ng_scan_symbol(source, cursor, length, tokens)
+                        0:
+                            return ng_scan_atom(source, cursor, length, tokens)
+                        1:
+                            return ng_scan_atom(source, cursor, length, tokens)
+                1:
+                    return ng_skip_line_comment(source, cursor + 1, length)
+        1:
+            return cursor + 1
+
+export fn ng_lex(source: &bytes, tokens: &mut vector<NgToken>) -> i64:
+    mut cursor: i64 = 0
+    mut length: i64 = bytes_len(source)
+    mut next: i64 = 0
+    mut failed: i64 = 0
+    while cursor < length:
+        next = ng_scan_next(source, cursor, length, tokens)
+        match next < 0:
+            -1:
+                failed = 1
+                cursor = length
+            0:
+                cursor = next
+            1:
+                cursor = next
+    match failed == 1:
+        -1:
+            return -1
+        0:
+            discard ng_emit(tokens, 0, length, length)
+            return 0
+        1:
+            return -1

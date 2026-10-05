@@ -1,0 +1,267 @@
+module selfhost.compiler_ng.ir
+
+from selfhost.compiler_ng.parser import NgAstNode, NgFunction, NgParameter
+from selfhost.compiler_ng.semantic import ng_check_program, ng_find_function, ng_spans_equal
+
+export record NgIRRegister:
+    type_kind: i64
+
+export record NgIRInstruction:
+    opcode: i64
+    result: i64
+    operand_count: i64
+    operand0: i64
+    operand1: i64
+    immediate: i64
+
+fn ng_ir_event(events: &mut vector<i64>, kind: i64, a: i64, b: i64, c: i64, d: i64, e: i64, f: i64, g: i64) -> i64:
+    discard vector_push<i64>(events, kind)
+    discard vector_push<i64>(events, a)
+    discard vector_push<i64>(events, b)
+    discard vector_push<i64>(events, c)
+    discard vector_push<i64>(events, d)
+    discard vector_push<i64>(events, e)
+    discard vector_push<i64>(events, f)
+    discard vector_push<i64>(events, g)
+    return 0
+
+fn ng_parameter_register(source: &bytes, parameters: &vector<NgParameter>, first_parameter: i64, parameter_count: i64, name_start: i64, name_end: i64) -> i64:
+    mut index: i64 = 0
+    mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
+    while index < parameter_count:
+        parameter = vector_get<NgParameter>(parameters, first_parameter + index)
+        match ng_spans_equal(source, name_start, name_end, parameter.name_start, parameter.name_end):
+            -1:
+                return index
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    return -12
+
+fn ng_integer_value(source: &bytes, start: i64, end: i64) -> i64:
+    mut index: i64 = start
+    mut value: i64 = 0
+    mut digit: i64 = 0
+    while index < end:
+        digit = to_i64(bytes_get(source, index)) - 48
+        match value <=> 922337203685477580:
+            -1:
+                value = value * 10 + digit
+            0:
+                match digit <=> 7:
+                    -1:
+                        value = value * 10 + digit
+                    0:
+                        value = value * 10 + digit
+                    1:
+                        return -16
+            1:
+                return -16
+        index = index + 1
+    return value
+
+fn ng_emit_call_expression(source: &bytes, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, first_parameter: i64, parameter_count: i64, node: NgAstNode, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
+    mut function_index: i64 = ng_find_function(source, functions, node.start, node.operation)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0)
+    mut argument_list: i64 = node.left
+    mut argument_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut argument_register: i64 = -1
+    mut evaluated_arguments: vector<i64> = vector_new<i64>(8)
+    mut argument_index: i64 = 0
+    mut first_argument: i64 = 0
+    mut result_register: i64 = -1
+    match function_index < 0:
+        -1:
+            return -13
+        0:
+            function = vector_get<NgFunction>(functions, function_index)
+        1:
+            return -13
+    while argument_list >= 0:
+        argument_node = vector_get<NgAstNode>(nodes, argument_list)
+        argument_register = ng_emit_expression(source, functions, nodes, parameters, first_parameter, parameter_count, argument_node.left, call_arguments, registers, instructions)
+        match argument_register <=> -1:
+            -1:
+                return argument_register
+            0:
+                return argument_register
+            1:
+                discard vector_push<i64>(&mut evaluated_arguments, argument_register)
+                argument_list = argument_node.right
+    first_argument = vector_len<i64>(&*call_arguments)
+    argument_index = 0
+    while argument_index < vector_len<i64>(&evaluated_arguments):
+        argument_register = vector_get<i64>(&evaluated_arguments, argument_index)
+        discard vector_push<i64>(call_arguments, argument_register)
+        argument_index = argument_index + 1
+    result_register = vector_len<NgIRRegister>(&*registers)
+    discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=function.return_type))
+    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=7, result=result_register, operand_count=vector_len<i64>(&evaluated_arguments), operand0=function_index, operand1=first_argument, immediate=0))
+    return result_register
+
+fn ng_emit_expression(source: &bytes, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, first_parameter: i64, parameter_count: i64, node_id: i64, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    mut register: i64 = 0
+    mut left: i64 = 0
+    mut right: i64 = 0
+    mut opcode: i64 = 0
+    mut value: i64 = 0
+    match node.kind <=> 1:
+        -1:
+            return -20
+        0:
+            value = ng_integer_value(source, node.start, node.end)
+            match value <=> 0:
+                -1:
+                    return value
+                0:
+                    register = vector_len<NgIRRegister>(&*registers)
+                    discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=1))
+                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=1, result=register, operand_count=0, operand0=-1, operand1=-1, immediate=value))
+                    return register
+                1:
+                    register = vector_len<NgIRRegister>(&*registers)
+                    discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=1))
+                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=1, result=register, operand_count=0, operand0=-1, operand1=-1, immediate=value))
+                    return register
+        1:
+            match node.kind <=> 2:
+                -1:
+                    return -20
+                0:
+                    return ng_parameter_register(source, parameters, first_parameter, parameter_count, node.start, node.end)
+                1:
+                    match node.kind <=> 3:
+                        -1:
+                            return -20
+                        0:
+                            return ng_emit_expression(source, functions, nodes, parameters, first_parameter, parameter_count, node.left, call_arguments, registers, instructions)
+                        1:
+                            match node.kind <=> 4:
+                                -1:
+                                    return -20
+                                0:
+                                    left = ng_emit_expression(source, functions, nodes, parameters, first_parameter, parameter_count, node.left, call_arguments, registers, instructions)
+                                    match left <=> -1:
+                                        -1:
+                                            return left
+                                        0:
+                                            return left
+                                        1:
+                                            right = ng_emit_expression(source, functions, nodes, parameters, first_parameter, parameter_count, node.right, call_arguments, registers, instructions)
+                                            match right <=> -1:
+                                                -1:
+                                                    return right
+                                                0:
+                                                    return right
+                                                1:
+                                                    match node.operation == 343:
+                                                        -1:
+                                                            opcode = 2
+                                                        0:
+                                                            match node.operation == 345:
+                                                                -1:
+                                                                    opcode = 3
+                                                                0:
+                                                                    match node.operation == 342:
+                                                                        -1:
+                                                                            opcode = 4
+                                                                        0:
+                                                                            match node.operation == 347:
+                                                                                -1:
+                                                                                    opcode = 5
+                                                                                0:
+                                                                                    return -21
+                                                                                1:
+                                                                                    return -21
+                                                                        1:
+                                                                            return -21
+                                                                1:
+                                                                    return -21
+                                                        1:
+                                                            return -21
+                                                    register = vector_len<NgIRRegister>(&*registers)
+                                                    discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=1))
+                                                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=opcode, result=register, operand_count=2, operand0=left, operand1=right, immediate=0))
+                                                    return register
+                                1:
+                                    match node.kind <=> 5:
+                                        -1:
+                                            return -20
+                                        0:
+                                            return ng_emit_call_expression(source, functions, nodes, parameters, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+                                        1:
+                                            return -20
+
+export fn ng_emit_program(source: &bytes, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &vector<NgAstNode>, events: &mut vector<i64>) -> i64:
+    mut status: i64 = ng_check_program(source, functions, parameters, nodes)
+    mut function_index: i64 = 0
+    mut parameter_index: i64 = 0
+    mut register_index: i64 = 0
+    mut instruction_index: i64 = 0
+    mut call_argument_index: i64 = 0
+    mut call_argument_register: i64 = -1
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0)
+    mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
+    mut register: NgIRRegister = NgIRRegister(type_kind=0)
+    mut instruction: NgIRInstruction = NgIRInstruction(opcode=0, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0)
+    mut registers: vector<NgIRRegister> = vector_new<NgIRRegister>(16)
+    mut instructions: vector<NgIRInstruction> = vector_new<NgIRInstruction>(16)
+    mut call_arguments: vector<i64> = vector_new<i64>(16)
+    mut result_register: i64 = -1
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            status = 1
+        1:
+            return status
+    while function_index < vector_len<NgFunction>(functions):
+        function = vector_get<NgFunction>(functions, function_index)
+        registers = vector_new<NgIRRegister>(16)
+        instructions = vector_new<NgIRInstruction>(16)
+        call_arguments = vector_new<i64>(16)
+        parameter_index = 0
+        while parameter_index < function.parameter_count:
+            parameter = vector_get<NgParameter>(parameters, function.first_parameter + parameter_index)
+            discard vector_push<NgIRRegister>(&mut registers, NgIRRegister(type_kind=parameter.type_kind))
+            parameter_index = parameter_index + 1
+        result_register = ng_emit_expression(source, functions, nodes, parameters, function.first_parameter, function.parameter_count, function.body_node, &mut call_arguments, &mut registers, &mut instructions)
+        match result_register <=> 0:
+            -1:
+                return result_register
+            0:
+                discard vector_push<NgIRInstruction>(&mut instructions, NgIRInstruction(opcode=6, result=-1, operand_count=1, operand0=result_register, operand1=-1, immediate=0))
+            1:
+                discard vector_push<NgIRInstruction>(&mut instructions, NgIRInstruction(opcode=6, result=-1, operand_count=1, operand0=result_register, operand1=-1, immediate=0))
+        discard ng_ir_event(events, 1, function_index, function.return_type, function.parameter_count, 0, 0, 0, 0)
+        parameter_index = 0
+        while parameter_index < function.parameter_count:
+            parameter = vector_get<NgParameter>(parameters, function.first_parameter + parameter_index)
+            discard ng_ir_event(events, 2, function_index, parameter_index, parameter.type_kind, parameter_index, 0, 0, 0)
+            parameter_index = parameter_index + 1
+        register_index = 0
+        while register_index < vector_len<NgIRRegister>(&registers):
+            register = vector_get<NgIRRegister>(&registers, register_index)
+            discard ng_ir_event(events, 3, function_index, register_index, register.type_kind, 0, 0, 0, 0)
+            register_index = register_index + 1
+        instruction_index = 0
+        while instruction_index < vector_len<NgIRInstruction>(&instructions):
+            instruction = vector_get<NgIRInstruction>(&instructions, instruction_index)
+            discard ng_ir_event(events, 4, function_index, instruction.opcode, instruction.result, instruction.operand_count, instruction.operand0, instruction.operand1, instruction.immediate)
+            match instruction.opcode <=> 7:
+                -1:
+                    instruction_index = instruction_index + 1
+                0:
+                    call_argument_index = 0
+                    while call_argument_index < instruction.operand_count:
+                        call_argument_register = vector_get<i64>(&call_arguments, instruction.operand1 + call_argument_index)
+                        discard ng_ir_event(events, 6, function_index, instruction_index, call_argument_index, call_argument_register, 0, 0, 0)
+                        call_argument_index = call_argument_index + 1
+                    instruction_index = instruction_index + 1
+                1:
+                    instruction_index = instruction_index + 1
+        discard ng_ir_event(events, 5, function_index, 0, 0, 0, 0, 0, 0)
+        function_index = function_index + 1
+    return 0
