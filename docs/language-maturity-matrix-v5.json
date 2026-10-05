@@ -1,0 +1,314 @@
+{
+  "schema_version": 5,
+  "campaign": "S3_QBE_SEMANTIC_EXPANSION_REAL_PROGRAM_PORTABILITY_AND_COMPILER_MATURITY_V5",
+  "repository": "SamDevlab/S3",
+  "base": {
+    "start_main": "0876d870fa648e33a6c1b362a4347ad4496c6c4e",
+    "source": "origin/main",
+    "pr_328_state": "MERGED",
+    "pr_328_head": "f381a558d8511cda1ca95c8d10fdc76b36609ec4",
+    "v3_final_head": "4d15802848f2b975d30b54ad3024ba6626780ce6",
+    "v3_final_head_in_start_main": true,
+    "pr_327": {
+      "state": "OPEN",
+      "head": "55f73a31e8f049a1e6d805154355917921bbd53b",
+      "touched": false
+    }
+  },
+  "pull_request": {
+    "number": 329,
+    "branch": "feat/s3-qbe-semantic-expansion-v5",
+    "base": "main",
+    "state": "OPEN_DRAFT",
+    "ready_transition": false,
+    "merged": false
+  },
+  "heads": {
+    "final_tested_source_head": "f50d16c58bfd6cbbd84ecf72df51bde737b4811d",
+    "full_suite_head": "f50d16c58bfd6cbbd84ecf72df51bde737b4811d",
+    "documentation_head": "CONTAINING_COMMIT_OF_THIS_REPORT_AND_MATRIX; exact final head is tracked by PR 329",
+    "source_changed_after_full_suite": false
+  },
+  "qbe": {
+    "source_url": "git://c9x.me/qbe.git",
+    "revision": "c0818978acec60ebb6167fade60fb7012cbf20ca",
+    "revision_changed": false,
+    "vendored": false,
+    "initial_status": "EXPERIMENTAL_ORACLE",
+    "final_classification": "ORACLE_ONLY",
+    "stable_backend_registered": false,
+    "default_backend": false,
+    "stable_cli_target_added": false,
+    "experimental_lowering_tool": "tools/qbe_oracle.py"
+  },
+  "ir_surface": {
+    "current_opcode_count": 28,
+    "qbe_opcode_families_with_supported_shapes": 22,
+    "supported_opcode_families": [
+      "CONST",
+      "CONST_STR",
+      "MOVE",
+      "INVERT",
+      "ADD",
+      "NUMERIC_DIFFERENCE",
+      "MULTIPLY",
+      "DIVIDE",
+      "RELATE",
+      "CONVERT",
+      "MINIMUM",
+      "MAXIMUM",
+      "COMPARE",
+      "CALL",
+      "LOAD",
+      "STORE",
+      "ADDRESS_OF",
+      "REFERENCE_LOAD",
+      "REFERENCE_STORE",
+      "RETURN",
+      "JUMP",
+      "BRANCH3"
+    ],
+    "rejected_opcode_families": [
+      "AGGREGATE_ADDRESS_OF",
+      "AGGREGATE_FIELD_LOAD",
+      "AGGREGATE_FIELD_ADDRESS",
+      "SLICE_LENGTH",
+      "SLICE_LOAD",
+      "SLICE_STORE"
+    ],
+    "ir_value_types": [
+      "trit",
+      "tryte",
+      "i64",
+      "f64",
+      "string",
+      "bytes",
+      "text",
+      "vector",
+      "reference"
+    ],
+    "opcode_count_semantics": "Counts opcode families with at least one explicitly validated supported form, not unrestricted support for every shape."
+  },
+  "capability_matrix": {
+    "checked_i64": {
+      "status": "PASS",
+      "operations": ["add", "sub", "mul", "neg", "div"],
+      "valid_cases_per_optimization": 29,
+      "error_cases_per_optimization": 9,
+      "optimizations": ["O0", "O1"],
+      "errors": ["overflow", "division_by_zero", "bounds"],
+      "differential": "IR == Assembly == S3 x86-64 == QBE x86-64 for tested native result/error contracts"
+    },
+    "trit": {
+      "status": "PASS",
+      "qbe_carrier": "l",
+      "range": [-1, 1],
+      "features": ["constants", "arithmetic", "comparison", "calls", "returns", "branch3", "balanced_min_max", "invalid-operation checks"]
+    },
+    "tryte": {
+      "status": "PASS",
+      "qbe_carrier": "l",
+      "range": [-364, 364],
+      "features": ["constants", "arithmetic", "comparison", "calls", "returns", "i64 conversion", "f64 conversion", "vectors", "balanced_min_max"]
+    },
+    "f64": {
+      "status": "PASS",
+      "qbe_carrier": "d",
+      "features": ["add", "sub", "mul", "div", "neg", "comparison", "calls", "control flow", "sqrt", "NaN and infinity cases", "f64 vectors"]
+    },
+    "fixed_arrays": {
+      "status": "PASS",
+      "features": ["scalar allocation", "index", "load", "store", "bounds checks", "scalar element reference"]
+    },
+    "records": {
+      "status": "PASS_BOUNDED",
+      "features": ["scalar fields", "nested scalar records", "parameter passing", "multi-cell sret"],
+      "nominal_identity_resolved_before_qbe": true
+    },
+    "enums": {
+      "status": "PASS_BOUNDED",
+      "features": ["tag enums", "payload enums", "construction", "match", "payload access", "calls and returns"]
+    },
+    "references": {
+      "status": "PASS_BOUNDED",
+      "features": ["mutable scalar local", "scalar array element", "creation-time bounds", "initialized-load verifier"],
+      "aggregate_and_slice_references": "REJECTED"
+    },
+    "vectors": {
+      "status": "PASS_LISTED_FAMILIES",
+      "element_families": ["i64", "tryte", "f64"],
+      "operations": ["new", "len", "capacity", "reserve", "push", "pop", "get", "set", "clone", "slice"]
+    },
+    "bytes": {
+      "status": "PASS_LISTED_OPERATIONS",
+      "operations": ["new", "len", "capacity", "reserve", "push", "get", "set", "clone", "concat", "slice", "from_text"]
+    },
+    "text": {
+      "status": "PASS_LISTED_OPERATIONS",
+      "operations": ["new", "from_static", "len", "capacity", "reserve", "append", "append_static", "clone", "concat", "slice", "find", "from_bytes"]
+    },
+    "maps": {
+      "status": "PASS_LISTED_FAMILIES",
+      "families": ["i64_to_i64", "text_to_i64"]
+    },
+    "sets": {
+      "status": "PASS_LISTED_FAMILY",
+      "families": ["i64_set"]
+    },
+    "multi_function": "PASS",
+    "multi_module": "PASS",
+    "cross_module_calls": "PASS",
+    "cross_module_nominal_types": "PASS",
+    "recursion": "PASS",
+    "optimizations": ["O0", "O1"]
+  },
+  "dynamic_builtin_signatures": {
+    "ir_registry_count": 91,
+    "qbe_allowlist_count": 85,
+    "unsupported_host_resource_builtins": [
+      "host_capability_grant",
+      "resource_close",
+      "resource_invoke",
+      "resource_is_open",
+      "resource_kind",
+      "resource_open"
+    ],
+    "runtime_model": "QBE native calls use explicit external S3 runtime symbols and the tested ABI adapters; host-resource context is not implemented. Dynamic runtime native qualification is x86-64 only."
+  },
+  "real_workloads": {
+    "passing": 8,
+    "total": 8,
+    "coverage": "8/8 selected named workload families, each exercised at O0 and O1",
+    "four_way_x86_64_parity": "PASS_FOR_TESTED_VALID_RESULTS",
+    "workload_ids": [
+      "sorting_and_binary_search",
+      "csv_integer_parser",
+      "hex_encoding",
+      "bounded_stack_vm",
+      "pebble_compiler",
+      "geometry_kernels",
+      "scientific_vector_kernels",
+      "scientific_statistics_and_edge_cases"
+    ]
+  },
+  "compiler_canary": {
+    "program": "examples/language_maturity/pebble_compiler.s3",
+    "source_bytes": 42886,
+    "top_level_function_declarations": 23,
+    "qbe_o0_o1_execution": "PASS",
+    "ast_nodes": "NOT_MEASURED",
+    "emitted_ir_instruction_count": "NOT_MEASURED",
+    "compile_time": "NOT_MEASURED"
+  },
+  "scale": {
+    "qbe_max_program_source_bytes": 30457,
+    "qbe_max_program_functions": 500,
+    "qbe_max_program_modules": 20,
+    "qbe_scale_cases": [
+      {"functions": 250, "modules": 10, "optimizations": ["O0", "O1"], "native_x86_64": "PASS"},
+      {"functions": 500, "modules": 20, "optimizations": ["O0", "O1"], "native_x86_64": "PASS"}
+    ],
+    "normal_compiler_prior_characterization": {
+      "status": "INHERITED_NOT_REMEASURED",
+      "max_source_bytes": 53319,
+      "max_functions": 100,
+      "max_modules": 3
+    },
+    "normal_compiler_ast_nodes": "NOT_MEASURED_IN_V5",
+    "normal_compiler_ir_blocks": "NOT_MEASURED_IN_V5",
+    "normal_compiler_ir_instructions": "NOT_MEASURED_IN_V5"
+  },
+  "targets": {
+    "x86_64_qbe": {
+      "status": "NATIVE_PASS",
+      "qbe_native_cases": 286,
+      "skipped_cases": 18,
+      "ci_job": "qbe-oracle-linux"
+    },
+    "arm64_qbe": {
+      "status": "NATIVE_PASS_REPRESENTATIVE_CORPUS",
+      "programs": 9,
+      "native_cases": 18,
+      "optimizations": ["O0", "O1"],
+      "host": "GitHub Actions ubuntu-24.04-arm; Linux aarch64; Python 3.13.15",
+      "dynamic_runtime_qualified": false
+    },
+    "riscv64_qbe": {
+      "status": "CODEGEN_ONLY",
+      "native_execution": false
+    },
+    "qbe_revision": "c0818978acec60ebb6167fade60fb7012cbf20ca"
+  },
+  "workload_coverage_evidence": [
+    "tests/test_qbe_oracle.py::test_qbe_native_real_sorting_and_binary_search_differential_when_linux_toolchain_exists",
+    "tests/test_qbe_oracle.py::test_qbe_native_csv_parser_canary_matches_s3",
+    "tests/test_qbe_oracle.py::test_qbe_executes_existing_hex_encoding_workload",
+    "tests/test_qbe_oracle.py::test_qbe_executes_existing_bounded_stack_vm_with_four_way_parity",
+    "tests/test_qbe_oracle.py::test_qbe_native_pebble_compiler_canary_matches_s3",
+    "tests/test_qbe_oracle.py::test_qbe_executes_real_geometry_workload_with_four_way_parity",
+    "tests/test_qbe_oracle.py::test_qbe_executes_scientific_vector_workload_with_sqrt",
+    "tests/test_qbe_oracle.py::test_qbe_executes_scientific_statistics_and_edge_cases"
+  ],
+  "validation": {
+    "focused_windows_arm64_selection": "18 expected skips on Windows host",
+    "compileall": "PASS",
+    "diff_check_before_documentation": "PASS",
+    "windows_full_suite": {
+      "head": "f50d16c58bfd6cbbd84ecf72df51bde737b4811d",
+      "command": "python -m pytest -o addopts= -q",
+      "runs": 1,
+      "started": "2026-10-04T23:11:37.6516142-03:00",
+      "ended": "2026-10-05T00:31:58.3906763-03:00",
+      "elapsed_seconds": 4816.84,
+      "exit": 0,
+      "passed": 4460,
+      "skipped": 534,
+      "failed": 0,
+      "subtests_passed": 572,
+      "transcript": "%TEMP%\\s3-qbe-v5-windows-full-20261004-231137.log"
+    },
+    "natural_ci_on_tested_source_head": {
+      "head": "f50d16c58bfd6cbbd84ecf72df51bde737b4811d",
+      "checks": 15,
+      "passed": 15,
+      "failed": 0,
+      "pending": 0,
+      "status": "PASS"
+    }
+  },
+  "policy": {
+    "default_compiler": "PYTHON",
+    "default_native_backend": "S3_X86_64",
+    "qbe_backend_status": "EXPERIMENTAL_ORACLE",
+    "selfhost_implementation_status": "PAUSED",
+    "selfhost_architecture_research": "ACTIVE",
+    "selfhost_ready_for_reentry": false,
+    "stage1_v4_started": false,
+    "stage1_v4_authorized": false,
+    "pr_327_touched": false,
+    "pr_329_remains_open_draft": true,
+    "merge": false,
+    "ready_transition": false,
+    "tag": false,
+    "release": false,
+    "package_publication": false,
+    "default_backend_promotion": false,
+    "shutdown_scheduled": false
+  },
+  "assessment": {
+    "general_capabilities_added": [
+      "checked scalar numeric lowering with S3 error behavior",
+      "balanced trit/tryte lowering and range semantics",
+      "f64 operations and scientific kernels",
+      "fixed scalar memory and checked scalar references",
+      "scalar/nested records, payload enums, and multi-result ABI",
+      "runtime-backed vectors, bytes, text, maps, and sets",
+      "frontend-resolved multi-module calls and nominal types",
+      "native ARM64 QBE execution qualification"
+    ],
+    "primary_remaining_boundary": "Host-resource runtime/context ABI; six host-resource builtins remain fail-closed and unsupported.",
+    "qbe_recommended_next_step": "Specify host context lifetime, resource ownership, invocation errors, and a cross-backend ABI before considering host-resource lowering; separately consider RISC-V native qualification.",
+    "selfhost_gate_improvements": "General evidence improved for verified IR consumption, aggregate/value representation, module composition, runtime-backed compiler canaries, scale, and an additional native target; Stage1-specific design remains open.",
+    "final_assessment": "V5 materially broadens executable QBE coverage across scalar semantics, aggregates, dynamic runtime families, real workloads, scale, and a representative native ARM64 corpus. QBE remains an experimental oracle only."
+  }
+}
