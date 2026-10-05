@@ -78,6 +78,18 @@ def test_nextgen_semantic_pass_resolves_forward_calls_and_argument_types() -> No
     assert _ng_semantic_status(source) == 0
 
 
+def test_nextgen_semantic_pass_tracks_initialized_mutable_locals() -> None:
+    source = (
+        "fn add_one(value: i64) -> i64:\n"
+        "    mut current: i64 = value\n"
+        "    current = current + 1\n"
+        "    return current\n"
+        "fn main() -> i64:\n    return add_one(41)\n"
+    )
+    assert compile_source(source).ir is not None
+    assert _ng_semantic_status(source) == 0
+
+
 @pytest.mark.parametrize(
     ("source", "expected_status"),
     [
@@ -116,6 +128,33 @@ def test_nextgen_semantic_pass_resolves_forward_calls_and_argument_types() -> No
             "fn take(value: i64) -> i64:\n    return value\n"
             "fn main(value: tryte) -> i64:\n    return take(value)\n",
             -14,
+        ),
+        (
+            "fn main(condition: trit) -> i64:\n"
+            "    mut value: i64 = 1\n"
+            "    value = condition\n"
+            "    return value\n",
+            -14,
+        ),
+        (
+            "fn main() -> i64:\n"
+            "    value: i64 = 1\n"
+            "    value = 2\n"
+            "    return value\n",
+            -16,
+        ),
+        (
+            "fn main() -> i64:\n"
+            "    value: i64 = 1\n"
+            "    value: i64 = 2\n"
+            "    return value\n",
+            -11,
+        ),
+        (
+            "fn main() -> i64:\n"
+            "    return value\n"
+            "    value: i64 = 1\n",
+            -12,
         ),
     ],
 )

@@ -42,6 +42,9 @@ _OPCODE_CODES = {
     "divide": 5,
     "return": 6,
     "call": 7,
+    "move": 8,
+    "load": 9,
+    "store": 10,
 }
 
 
@@ -60,7 +63,6 @@ def _reference_events(program: object) -> list[int]:
     for function_index, function in enumerate(program.functions):
         call_argument_cursor = 0
         assert len(function.blocks) == 1
-        assert not function.memory_objects
         event(
             1,
             function_index,
@@ -93,6 +95,17 @@ def _reference_events(program: object) -> list[int]:
                 0,
                 0,
             )
+        for memory in function.memory_objects:
+            event(
+                7,
+                function_index,
+                memory.index,
+                _TYPE_CODES[memory.element_type],
+                memory.length,
+                int(memory.mutable),
+                0,
+                0,
+            )
         for instruction_index, instruction in enumerate(function.instructions):
             operands = instruction.operands
             immediate = instruction.immediate
@@ -122,6 +135,40 @@ def _reference_events(program: object) -> list[int]:
                     )
                 call_argument_cursor += len(operands)
                 continue
+            if instruction.opcode.value == "load":
+                event(
+                    4,
+                    function_index,
+                    _OPCODE_CODES[instruction.opcode.value],
+                    -1 if instruction.result is None else instruction.result,
+                    len(operands),
+                    operands[0],
+                    instruction.memory,
+                    0,
+                )
+                continue
+            if instruction.opcode.value == "store":
+                event(
+                    4,
+                    function_index,
+                    _OPCODE_CODES[instruction.opcode.value],
+                    -1,
+                    len(operands),
+                    operands[0],
+                    operands[1],
+                    instruction.memory,
+                )
+                event(
+                    8,
+                    function_index,
+                    instruction_index,
+                    int(instruction.initialization),
+                    0,
+                    0,
+                    0,
+                    0,
+                )
+                continue
             event(
                 4,
                 function_index,
@@ -147,6 +194,10 @@ def test_nextgen_emits_reference_equivalent_typed_ir_for_multiple_functions() ->
             "    return 7",
             "fn relay(value: i64) -> i64:",
             "    return sum3(value, constant(), 3)",
+            "fn adjust(value: i64) -> i64:",
+            "    mut current: i64 = value",
+            "    current = current + 1",
+            "    return current",
             "fn pass_trit(value: trit) -> trit:",
             "    return value",
             "fn pass_value(value: tryte) -> tryte:",
@@ -154,7 +205,7 @@ def test_nextgen_emits_reference_equivalent_typed_ir_for_multiple_functions() ->
             "fn pass_f64(value: f64) -> f64:",
             "    return value",
             "fn main() -> i64:",
-            "    return relay(1)",
+            "    return adjust(relay(1))",
         )
     )
     reference = compile_source(source).ir

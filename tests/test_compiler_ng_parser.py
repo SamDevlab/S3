@@ -79,7 +79,9 @@ fn main() -> i64:
                     mut function: NgFunction = vector_get<NgFunction>(&functions, 0)
                     mut first_parameter: NgParameter = vector_get<NgParameter>(&parameters, function.first_parameter)
                     mut second_parameter: NgParameter = vector_get<NgParameter>(&parameters, function.first_parameter + 1)
-                    mut root: NgAstNode = vector_get<NgAstNode>(&nodes, function.body_node)
+                    mut body_link: NgAstNode = vector_get<NgAstNode>(&nodes, function.body_node)
+                    mut return_statement: NgAstNode = vector_get<NgAstNode>(&nodes, body_link.left)
+                    mut root: NgAstNode = vector_get<NgAstNode>(&nodes, return_statement.left)
                     mut left: NgAstNode = vector_get<NgAstNode>(&nodes, root.left)
                     mut right: NgAstNode = vector_get<NgAstNode>(&nodes, root.right)
                     mut right_left: NgAstNode = vector_get<NgAstNode>(&nodes, right.left)
@@ -189,6 +191,21 @@ def test_nextgen_parser_accepts_positional_calls_and_rejects_trailing_commas() -
     with pytest.raises(ParseError):
         parse(invalid)
     assert _ng_parse_status(invalid) < 0
+
+
+def test_nextgen_parser_preserves_local_declaration_assignment_and_return_order() -> None:
+    source = (
+        "fn adjust(value: i64) -> i64:\n"
+        "    mut current: i64 = value\n"
+        "    current = current + 1\n"
+        "    return current\n"
+    )
+    function = parse(source).functions[0]
+    assert isinstance(function.body.statements[0], ast.VariableDeclaration)
+    assert function.body.statements[0].mutable
+    assert isinstance(function.body.statements[1], ast.AssignmentStatement)
+    assert isinstance(function.body.statements[2], ast.ReturnStatement)
+    assert _ng_parse_status(source) == 0
 
 
 def test_nextgen_parser_preserves_explicit_grouping() -> None:

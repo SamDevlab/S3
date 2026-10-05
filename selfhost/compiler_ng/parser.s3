@@ -125,6 +125,227 @@ fn ng_append_node(nodes: &mut vector<NgAstNode>, node: NgAstNode) -> i64:
     discard vector_push<NgAstNode>(nodes, node)
     return node_id
 
+fn ng_token_indent(source: &bytes, token: NgToken) -> i64:
+    mut line_start: i64 = token.start
+    mut column: i64 = 0
+    mut unit: i64 = 0
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match line_start > 0:
+            -1:
+                match to_i64(bytes_get(source, line_start - 1)) == 10:
+                    -1:
+                        scanning = 0
+                    0:
+                        line_start = line_start - 1
+                    1:
+                        line_start = line_start - 1
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    while line_start + column < token.start:
+        unit = to_i64(bytes_get(source, line_start + column))
+        match unit == 32:
+            -1:
+                column = column + 1
+            0:
+                return -1
+            1:
+                column = column + 1
+    return column
+
+fn ng_build_statement_links(statement_ids: &vector<i64>, index: i64, nodes: &mut vector<NgAstNode>) -> i64:
+    mut statement_id: i64 = -1
+    mut statement: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut next: i64 = -1
+    match index < vector_len<i64>(statement_ids):
+        -1:
+            next = ng_build_statement_links(statement_ids, index + 1, nodes)
+            statement_id = vector_get<i64>(statement_ids, index)
+            statement = vector_get<NgAstNode>(&*nodes, statement_id)
+            return ng_append_node(nodes, NgAstNode(kind=11, start=statement.start, end=statement.end, left=statement_id, right=next, operation=0))
+        0:
+            return -1
+        1:
+            return -1
+
+fn ng_parse_declaration(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, name: NgToken, mutable: i64) -> i64:
+    mut type_kind: i64 = 0
+    mut expression: i64 = -1
+    mut token: NgToken = NgToken(kind=0, start=0, end=0)
+    match ng_expect_kind(tokens, cursor, 358):
+        -1:
+            return -1
+        0:
+            discard ng_advance(cursor)
+            type_kind = ng_parse_type(source, tokens, cursor)
+            match type_kind <=> 0:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    token = ng_token_at(tokens, cursor)
+                    match token.kind <=> 361:
+                        -1:
+                            return -1
+                        0:
+                            discard ng_advance(cursor)
+                            expression = ng_parse_expression(source, tokens, cursor, nodes)
+                            match expression <=> -1:
+                                -1:
+                                    return -1
+                                0:
+                                    return -1
+                                1:
+                                    return ng_append_node(nodes, NgAstNode(kind=7, start=name.start, end=name.end, left=expression, right=-1, operation=type_kind + mutable * 100))
+                        1:
+                            return -1
+        1:
+            return -1
+
+fn ng_parse_statement(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>) -> i64:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    mut name: NgToken = NgToken(kind=0, start=0, end=0)
+    mut following: NgToken = NgToken(kind=0, start=0, end=0)
+    mut expression: i64 = -1
+    mut mutable: i64 = 0
+    mut expression_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    match ng_token_spells(source, token, text_from_static("return")):
+        -1:
+            discard ng_advance(cursor)
+            expression = ng_parse_expression(source, tokens, cursor, nodes)
+            match expression <=> -1:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    expression_node = vector_get<NgAstNode>(&*nodes, expression)
+                    return ng_append_node(nodes, NgAstNode(kind=9, start=token.start, end=expression_node.end, left=expression, right=-1, operation=0))
+        0:
+            match ng_token_spells(source, token, text_from_static("mut")):
+                -1:
+                    mutable = 1
+                    discard ng_advance(cursor)
+                    name = ng_token_at(tokens, cursor)
+                    match ng_expect_kind(tokens, cursor, 1):
+                        -1:
+                            return -1
+                        0:
+                            discard ng_advance(cursor)
+                            return ng_parse_declaration(source, tokens, cursor, nodes, name, mutable)
+                        1:
+                            return -1
+                0:
+                    match token.kind <=> 1:
+                        -1:
+                            return -1
+                        0:
+                            name = token
+                            discard ng_advance(cursor)
+                            following = ng_token_at(tokens, cursor)
+                            match following.kind == 358:
+                                -1:
+                                    return ng_parse_declaration(source, tokens, cursor, nodes, name, 0)
+                                0:
+                                    match following.kind == 361:
+                                        -1:
+                                            discard ng_advance(cursor)
+                                            expression = ng_parse_expression(source, tokens, cursor, nodes)
+                                            match expression <=> -1:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    return -1
+                                                1:
+                                                    return ng_append_node(nodes, NgAstNode(kind=8, start=name.start, end=name.end, left=expression, right=-1, operation=361))
+                                        0:
+                                            return -1
+                                        1:
+                                            return -1
+                                1:
+                                    return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+fn ng_parse_block(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, parent_indent: i64) -> i64:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    mut block_indent: i64 = ng_token_indent(source, token)
+    mut token_indent: i64 = 0
+    mut statement_id: i64 = -1
+    mut statement_ids: vector<i64> = vector_new<i64>(8)
+    mut scanning: i64 = 1
+    match block_indent <=> parent_indent:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            while scanning == 1:
+                token = ng_token_at(tokens, cursor)
+                match token.kind > 0:
+                    -1:
+                        token_indent = ng_token_indent(source, token)
+                        match token_indent < 0:
+                            -1:
+                                return -1
+                            0:
+                                token_indent = token_indent
+                            1:
+                                token_indent = token_indent
+                        match token_indent < block_indent:
+                            -1:
+                                scanning = 0
+                            0:
+                                match token_indent < 0:
+                                    -1:
+                                        scanning = 0
+                                    0:
+                                        statement_id = ng_parse_statement(source, tokens, cursor, nodes)
+                                        match statement_id <=> -1:
+                                            -1:
+                                                return -1
+                                            0:
+                                                return -1
+                                            1:
+                                                discard vector_push<i64>(&mut statement_ids, statement_id)
+                                                token = ng_token_at(tokens, cursor)
+                                                match token.kind > 0:
+                                                    -1:
+                                                        token_indent = ng_token_indent(source, token)
+                                                        match token_indent > block_indent:
+                                                            -1:
+                                                                return -1
+                                                            0:
+                                                                scanning = 1
+                                                            1:
+                                                                return -1
+                                                    0:
+                                                        scanning = 0
+                                                    1:
+                                                        scanning = 0
+                                    1:
+                                        scanning = 0
+                            1:
+                                return -1
+                    0:
+                        scanning = 0
+                    1:
+                        scanning = 0
+            match vector_len<i64>(&statement_ids) <=> 0:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return ng_build_statement_links(&statement_ids, 0, nodes)
+
 fn ng_build_argument_nodes(argument_ids: &vector<i64>, index: i64, nodes: &mut vector<NgAstNode>) -> i64:
     mut argument_id: i64 = -1
     mut argument_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -422,6 +643,7 @@ fn ng_parse_function(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vect
     mut return_type: i64 = 0
     mut body_node: i64 = -1
     mut body: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut last_body_token: NgToken = NgToken(kind=0, start=0, end=0)
     match ng_expect_word(source, tokens, cursor, text_from_static("fn")):
         -1:
             return -1
@@ -475,22 +697,17 @@ fn ng_parse_function(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vect
                             return -1
                         0:
                             discard ng_advance(cursor)
-                            match ng_expect_word(source, tokens, cursor, text_from_static("return")):
+                            body_node = ng_parse_block(source, tokens, cursor, nodes, ng_token_indent(source, start))
+                            match body_node <=> -1:
                                 -1:
                                     return -1
                                 0:
-                                    body_node = ng_parse_expression(source, tokens, cursor, nodes)
-                                    match body_node <=> -1:
-                                        -1:
-                                            return -1
-                                        0:
-                                            return -1
-                                        1:
-                                            body = vector_get<NgAstNode>(&*nodes, body_node)
-                                            discard vector_push<NgFunction>(functions, NgFunction(start=start.start, end=body.end, name_start=name.start, name_end=name.end, first_parameter=first_parameter, parameter_count=parameter_count, return_type=return_type, body_node=body_node))
-                                            return 0
-                                1:
                                     return -1
+                                1:
+                                    body = vector_get<NgAstNode>(&*nodes, body_node)
+                                    last_body_token = vector_get<NgToken>(tokens, vector_get<i64>(&*cursor, 0) - 1)
+                                    discard vector_push<NgFunction>(functions, NgFunction(start=start.start, end=last_body_token.end, name_start=name.start, name_end=name.end, first_parameter=first_parameter, parameter_count=parameter_count, return_type=return_type, body_node=body_node))
+                                    return 0
                         1:
                             return -1
         1:
