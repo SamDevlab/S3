@@ -1634,6 +1634,8 @@ class X8664Emitter:
             lines.append(f"    add rsp, {cleanup}")
         if self.register_allocation:
             lines.extend(self._restore_caller_saved(layout, survivor_physicals))
+        if instruction.callee == "tryte_vector_pop":
+            lines.append("    movsx rax, ax")
         lines.extend(self._write_register(layout, instruction.result_registers[0], "rax"))
         return lines
 
@@ -1716,7 +1718,7 @@ class X8664Emitter:
         lines.extend(
             (
                 (
-                    f"    movsx eax, word ptr {load_address}"
+                    f"    movsx rax, word ptr {load_address}"
                     if sign_extend
                     else f"    mov rax, qword ptr {load_address}"
                 ),

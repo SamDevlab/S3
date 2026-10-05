@@ -175,15 +175,15 @@ def test_default_mode_matches_frozen_register_resident_native_assembly_bytes() -
     expected = {
         "linear": (
             50_104,
-            "cdc2a0ba8120b7e7710746c242f61469dff10464b8c4175b5cd12efb1ef60d4c",
+            "e2ae677c1620600d373de69c733e1c428556c2764b2dd78fd133eaabe56c0af9",
         ),
         "loop_call": (
             95_753,
-            "21e813e0e193985ae34077c921bfaaa48491a7057f278824678d311b146e814b",
+            "7d0bd21fbcb14ae4cac0eb47e5ce77263a5ac17bcf39efe2a4d4ece3b4337511",
         ),
         "bounds": (
             68_543,
-            "d9bdefbb9e39ca4113a8be8acd5d750987774744a5796a3ac75117b02ab0eb10",
+            "e514bca2fd2f77cdba6e1387b4c7ed62bc3dcbe607ae8a8733a1aedd2829e199",
         ),
     }
     sources = {

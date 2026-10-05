@@ -4,6 +4,7 @@ import pytest
 
 from bootstrap.s3.ir_emulator import IRExecutionError, execute_ir
 from bootstrap.s3.ir import IROpcode
+from bootstrap.s3.emulator import execute_assembly
 from bootstrap.s3.memory_effects import (
     MemoryEffect,
     MemoryRegion,
@@ -55,6 +56,19 @@ def test_shared_and_mutable_reborrow_preserve_identity() -> None:
     return *s
 """
     assert _execute(source) == 7
+
+
+def test_assembly_emulator_reads_and_writes_through_mutable_reference() -> None:
+    compilation = compile_source(
+        "fn main() -> tryte:\n"
+        "    mut value: tryte = 1\n"
+        "    reference: &mut tryte = &mut value\n"
+        "    *reference = 7\n"
+        "    return *reference\n",
+        "O0",
+    )
+
+    assert execute_assembly(compilation.assembly) == 7
 
 
 def test_shared_record_field_reference_uses_field_storage() -> None:

@@ -273,6 +273,67 @@ jobs:
           S3_QBE_NATIVE_REQUIRED: "1"
         run: python -m pytest -v --tb=short tests/test_qbe_oracle.py
 
+  qbe-oracle-arm64-native:
+    runs-on: ubuntu-24.04-arm
+    env:
+      QBE_SOURCE_URL: git://c9x.me/qbe.git
+      QBE_REVISION: c0818978acec60ebb6167fade60fb7012cbf20ca
+
+    steps:
+      - name: Check out S3
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Record pinned ARM64 QBE build host
+        run: |
+          uname -s
+          uname -m
+          cc --version | head -n 1
+          make --version | head -n 1
+          printf 'QBE_SOURCE_URL=%s\nQBE_REVISION=%s\n' "$QBE_SOURCE_URL" "$QBE_REVISION"
+
+      - name: Build pinned QBE natively outside the repository
+        run: |
+          set -eu
+          source_dir="$RUNNER_TEMP/qbe-source-arm64"
+          bin_dir="$RUNNER_TEMP/qbe-bin-arm64"
+          git init "$source_dir"
+          if ! git -C "$source_dir" fetch --depth=1 --no-tags "$QBE_SOURCE_URL" "$QBE_REVISION"; then
+            echo "QBE_SOURCE_FETCH_FAILURE: $QBE_SOURCE_URL at $QBE_REVISION" >&2
+            exit 1
+          fi
+          git -C "$source_dir" checkout --detach FETCH_HEAD
+          actual_revision="$(git -C "$source_dir" rev-parse HEAD)"
+          test "$actual_revision" = "$QBE_REVISION"
+          printf 'QBE_CHECKED_OUT_HEAD=%s\n' "$actual_revision"
+          if ! make -C "$source_dir" -j2 CC=cc; then
+            echo "QBE_BUILD_FAILURE: make -C $source_dir -j2 CC=cc" >&2
+            exit 1
+          fi
+          test -x "$source_dir/qbe"
+          mkdir -p "$bin_dir"
+          ln -s "$source_dir/qbe" "$bin_dir/qbe"
+          echo "$bin_dir" >> "$GITHUB_PATH"
+          printf 'QBE_BINARY_PATH_TEMPORARY=%s\n' "$source_dir/qbe"
+
+      - name: Install S3 test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run required native ARM64 QBE differential corpus
+        env:
+          S3_QBE_ARM64_NATIVE_REQUIRED: "1"
+        run: >-
+          python -m pytest -v --tb=short tests/test_qbe_oracle.py
+          -k qbe_native_arm64_program_differential
+
   benchmark-smoke:
     runs-on: ubuntu-latest
 

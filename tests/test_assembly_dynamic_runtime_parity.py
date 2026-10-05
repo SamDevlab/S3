@@ -35,6 +35,16 @@ fn main() -> i64:
         9,
     ),
     (
+        "tryte-vector-negative-pop",
+        """\
+fn main() -> i64:
+    mut values: tryte_vector = tryte_vector_new(1)
+    discard tryte_vector_push(&mut values, -321)
+    return to_i64(tryte_vector_pop(&mut values))
+""",
+        -321,
+    ),
+    (
         "f64-vector",
         """\
 fn main() -> i64:

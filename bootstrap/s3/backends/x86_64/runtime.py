@@ -1577,7 +1577,7 @@ __s3_builtin_i64_map_contains:
     call __s3_i64_map_find
     cmp rax,-1
     je .L__s3_i64_map_contains_no
-    mov eax,-1
+    mov rax,-1
     ret
 .L__s3_i64_map_contains_no:
     xor eax,eax
@@ -1774,7 +1774,7 @@ __s3_builtin_text_i64_map_contains:
     call __s3_text_i64_map_find
     cmp rax,-1
     je .L__s3_text_i64_map_contains_no
-    mov eax,-1
+    mov rax,-1
     ret
 .L__s3_text_i64_map_contains_no:
     xor eax,eax
@@ -1932,7 +1932,7 @@ __s3_builtin_i64_set_contains:
     call __s3_i64_set_find
     cmp rax,-1
     je .L__s3_i64_set_contains_no
-    mov eax,-1
+    mov rax,-1
     ret
 .L__s3_i64_set_contains_no:
     xor eax,eax
