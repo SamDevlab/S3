@@ -25,6 +25,7 @@ _NG_SOURCE = "\n".join(
         _module_body("selfhost/compiler_ng/parser.s3"),
         _module_body("selfhost/compiler_ng/semantic.s3"),
         _module_body("selfhost/compiler_ng/ir.s3"),
+        _module_body("selfhost/compiler_ng/modules.s3"),
     )
 )
 

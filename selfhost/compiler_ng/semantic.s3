@@ -175,7 +175,7 @@ fn ng_contextual_expression_type(source: &bytes, functions: &vector<NgFunction>,
 
 export fn ng_find_function(source: &bytes, functions: &vector<NgFunction>, name_start: i64, name_end: i64) -> i64:
     mut index: i64 = 0
-    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
     while index < vector_len<NgFunction>(functions):
         function = vector_get<NgFunction>(functions, index)
         match ng_spans_equal(source, name_start, name_end, function.name_start, function.name_end):
@@ -189,7 +189,7 @@ export fn ng_find_function(source: &bytes, functions: &vector<NgFunction>, name_
 
 fn ng_call_type(source: &bytes, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode) -> i64:
     mut callee_index: i64 = ng_find_function(source, functions, call_node.start, call_node.operation)
-    mut callee: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0)
+    mut callee: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
     mut argument_list: i64 = call_node.left
     mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut argument_type: i64 = 0
@@ -650,8 +650,8 @@ export fn ng_check_program(source: &bytes, functions: &vector<NgFunction>, param
     mut prior_function_index: i64 = 0
     mut parameter_index: i64 = 0
     mut prior_parameter_index: i64 = 0
-    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0)
-    mut prior_function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
+    mut prior_function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
     mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
     mut prior_parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
     mut body_status: i64 = 0

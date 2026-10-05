@@ -29,7 +29,11 @@ from bootstrap.s3.backends.x86_64.backend import X8664Backend
 from bootstrap.s3.stdlib import standard_library_sources
 from bootstrap.s3.verifier import IRVerificationError, verify_ir
 from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
-from tests.test_compiler_ng_ir_bridge import _emit_ng_events
+from tests.test_compiler_ng_ir_bridge import (
+    _REAL_NG_MODULE_SOURCES,
+    _emit_ng_events,
+    _emit_ng_source_set_events,
+)
 from tools.qbe_oracle import QBETranslationError, translate_verified_ir
 
 
@@ -1706,6 +1710,28 @@ def test_qbe_native_executes_s3c_ng_origin_ir_when_linux_toolchain_exists(
         ng_canonical_ir,
         OptimizationLevel.O0,
         f"s3c-ng-{Path(workload).stem}",
+        tmp_path,
+        qbe,
+        cc,
+    )
+    assert qbe_native.returncode == expected, qbe_native.stderr.decode(errors="replace")
+
+
+@pytest.mark.s3_native
+def test_qbe_native_executes_s3c_ng_real_multimodule_ir_when_available(tmp_path) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    reference_ir = compile_sources(_REAL_NG_MODULE_SOURCES, entry_module="app").ir
+    assert reference_ir is not None
+    source, cells = _emit_ng_source_set_events(_REAL_NG_MODULE_SOURCES, entry_module="app")
+    ng_ir = decode_ng_ir_events(source, cells)
+    verify_ir(ng_ir)
+    expected = execute_ir(reference_ir)
+    assert execute_ir(ng_ir) == expected == 16
+
+    qbe_native = _build_qbe_native(
+        ng_ir,
+        OptimizationLevel.O0,
+        "s3c-ng-real-multimodule",
         tmp_path,
         qbe,
         cc,

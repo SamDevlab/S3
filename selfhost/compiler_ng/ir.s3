@@ -120,7 +120,7 @@ fn ng_set_contextual_literal_type(nodes: &vector<NgAstNode>, node_id: i64, expec
 
 fn ng_emit_call_expression(source: &bytes, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, node: NgAstNode, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
     mut function_index: i64 = ng_find_function(source, functions, node.start, node.operation)
-    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
     mut argument_list: i64 = node.left
     mut argument_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
@@ -522,7 +522,7 @@ export fn ng_emit_program(source: &bytes, functions: &vector<NgFunction>, parame
     mut index_register: i64 = -1
     mut event_operand1: i64 = -1
     mut event_immediate: i64 = 0
-    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
     mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
     mut link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut statement: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -675,7 +675,7 @@ export fn ng_emit_program(source: &bytes, functions: &vector<NgFunction>, parame
                 1:
                     discard ng_mark_instruction_block(&mut instructions, statement_first_instruction, current_block)
             link_id = link.right
-        discard ng_ir_event(events, 1, function_index, function.return_type, function.parameter_count, function.name_start, function.name_end, 1, 0)
+        discard ng_ir_event(events, 1, function_index, function.return_type, function.parameter_count, function.name_start, function.name_end, 1, function.exported * 2)
         parameter_index = 0
         while parameter_index < function.parameter_count:
             parameter = vector_get<NgParameter>(parameters, function.first_parameter + parameter_index)

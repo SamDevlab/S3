@@ -20,10 +20,41 @@ export record NgFunction:
     end: i64
     name_start: i64
     name_end: i64
+    local_name_start: i64
+    local_name_end: i64
     first_parameter: i64
     parameter_count: i64
     return_type: i64
     body_node: i64
+    module_index: i64
+    exported: i64
+
+export record NgModule:
+    source_index: i64
+    source_start: i64
+    source_end: i64
+    path_start: i64
+    path_end: i64
+    name_start: i64
+    name_end: i64
+    body_token_index: i64
+    first_function: i64
+    function_count: i64
+    first_import: i64
+    import_count: i64
+
+export record NgImport:
+    module_index: i64
+    target_start: i64
+    target_end: i64
+    symbol_start: i64
+    symbol_end: i64
+    local_start: i64
+    local_end: i64
+
+export record NgSpan:
+    start: i64
+    end: i64
 
 fn ng_token_at(tokens: &vector<NgToken>, cursor: &mut vector<i64>) -> NgToken:
     return vector_get<NgToken>(tokens, vector_get<i64>(&*cursor, 0))
@@ -64,6 +95,14 @@ fn ng_token_spells(source: &bytes, token: NgToken, wanted: text) -> trit:
             return -1
         1:
             return 0
+
+fn ng_token_kind_at(tokens: &vector<NgToken>, cursor: &mut vector<i64>) -> i64:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    return token.kind
+
+fn ng_token_spells_at(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, wanted: text) -> trit:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    return ng_token_spells(source, token, wanted)
 
 fn ng_expect_word(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, wanted: text) -> trit:
     mut token: NgToken = ng_token_at(tokens, cursor)
@@ -873,7 +912,7 @@ fn ng_parse_parameters(source: &bytes, tokens: &vector<NgToken>, cursor: &mut ve
                         return 0
     return 0
 
-fn ng_parse_function(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>, functions: &mut vector<NgFunction>) -> i64:
+fn ng_parse_function(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>, functions: &mut vector<NgFunction>, module_index: i64, exported: i64) -> i64:
     mut start: NgToken = ng_token_at(tokens, cursor)
     mut name: NgToken = NgToken(kind=0, start=0, end=0)
     mut first_parameter: i64 = 0
@@ -944,7 +983,7 @@ fn ng_parse_function(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vect
                                 1:
                                     body = vector_get<NgAstNode>(&*nodes, body_node)
                                     last_body_token = vector_get<NgToken>(tokens, vector_get<i64>(&*cursor, 0) - 1)
-                                    discard vector_push<NgFunction>(functions, NgFunction(start=start.start, end=last_body_token.end, name_start=name.start, name_end=name.end, first_parameter=first_parameter, parameter_count=parameter_count, return_type=return_type, body_node=body_node))
+                                    discard vector_push<NgFunction>(functions, NgFunction(start=start.start, end=last_body_token.end, name_start=name.start, name_end=name.end, local_name_start=name.start, local_name_end=name.end, first_parameter=first_parameter, parameter_count=parameter_count, return_type=return_type, body_node=body_node, module_index=module_index, exported=exported))
                                     return 0
                         1:
                             return -1
@@ -965,7 +1004,7 @@ export fn ng_parse_program(source: &bytes, tokens: &vector<NgToken>, functions: 
             0:
                 scanning = 0
             1:
-                status = ng_parse_function(source, tokens, &mut cursor, parameters, nodes, functions)
+                status = ng_parse_function(source, tokens, &mut cursor, parameters, nodes, functions, 0, 0)
                 match status <=> 0:
                     -1:
                         return -1
@@ -980,3 +1019,405 @@ export fn ng_parse_program(source: &bytes, tokens: &vector<NgToken>, functions: 
             return -1
         1:
             return 0
+
+fn ng_module_identifier_start(value: i64) -> trit:
+    match value == 95:
+        -1:
+            return -1
+        0:
+            match value < 65:
+                -1:
+                    return 0
+                0:
+                    match value < 91:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    match value < 97:
+                        -1:
+                            return 0
+                        0:
+                            match value < 123:
+                                -1:
+                                    return -1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+        1:
+            return 0
+
+fn ng_module_identifier_continue(value: i64) -> trit:
+    match ng_module_identifier_start(value):
+        -1:
+            return -1
+        0:
+            match value < 48:
+                -1:
+                    return 0
+                0:
+                    match value < 58:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return -1
+
+fn ng_append_module_path_part(source: &mut bytes, part_start: i64, part_end: i64, part_count: i64) -> i64:
+    mut character: i64 = 0
+    mut octet: tryte = 0
+    mut part_index: i64 = 0
+    match part_end == part_start:
+        -1:
+            return part_count
+        0:
+            character = to_i64(bytes_get(&*source, part_start))
+        1:
+            return -1
+    match part_end - part_start == 1:
+        -1:
+            match character == 46:
+                -1:
+                    return part_count
+                0:
+                    character = character
+                1:
+                    character = character
+        0:
+            match part_end - part_start == 2:
+                -1:
+                    match character == 46:
+                        -1:
+                            match to_i64(bytes_get(&*source, part_start + 1)) == 46:
+                                -1:
+                                    return -1
+                                0:
+                                    character = character
+                                1:
+                                    character = character
+                        0:
+                            character = character
+                        1:
+                            character = character
+                0:
+                    character = character
+                1:
+                    character = character
+        1:
+            character = character
+    part_index = 0
+    while part_index < part_end - part_start:
+        character = to_i64(bytes_get(&*source, part_start + part_index))
+        match part_index == 0:
+            -1:
+                match ng_module_identifier_start(character):
+                    -1:
+                        character = character
+                    0:
+                        return -1
+                    1:
+                        return -1
+            0:
+                match ng_module_identifier_continue(character):
+                    -1:
+                        character = character
+                    0:
+                        return -1
+                    1:
+                        return -1
+            1:
+                match ng_module_identifier_continue(character):
+                    -1:
+                        character = character
+                    0:
+                        return -1
+                    1:
+                        return -1
+        part_index = part_index + 1
+    match part_count > 0:
+        -1:
+            discard bytes_push(source, 46)
+        0:
+            part_index = 0
+        1:
+            part_index = 0
+    part_index = 0
+    while part_index < part_end - part_start:
+        octet = bytes_get(&*source, part_start + part_index)
+        discard bytes_push(source, octet)
+        part_index = part_index + 1
+    return part_count + 1
+
+fn ng_derive_module_name(source: &mut bytes, path_start: i64, path_end: i64) -> NgSpan:
+    mut path_length: i64 = path_end - path_start
+    mut effective_end: i64 = path_end
+    mut index: i64 = path_start
+    mut segment_start: i64 = path_start
+    mut part_count: i64 = 0
+    mut separator: i64 = 0
+    mut result_start: i64 = bytes_len(&*source)
+    mut part_result: i64 = 0
+    match path_length > 0:
+        -1:
+            return NgSpan(start=-1, end=-1)
+        0:
+            return NgSpan(start=-1, end=-1)
+        1:
+            path_length = path_length
+    match to_i64(bytes_get(&*source, path_start)) == 47:
+        -1:
+            return NgSpan(start=-1, end=-1)
+        0:
+            match to_i64(bytes_get(&*source, path_start)) == 92:
+                -1:
+                    return NgSpan(start=-1, end=-1)
+                0:
+                    separator = 0
+                1:
+                    return NgSpan(start=-1, end=-1)
+        1:
+            return NgSpan(start=-1, end=-1)
+    match path_length >= 3:
+        -1:
+            match to_i64(bytes_get(&*source, path_end - 3)) == 46:
+                -1:
+                    match to_i64(bytes_get(&*source, path_end - 2)) == 115:
+                        -1:
+                            match to_i64(bytes_get(&*source, path_end - 1)) == 51:
+                                -1:
+                                    effective_end = path_end - 3
+                                0:
+                                    effective_end = path_end
+                                1:
+                                    effective_end = path_end
+                        0:
+                            effective_end = path_end
+                        1:
+                            effective_end = path_end
+                0:
+                    effective_end = path_end
+                1:
+                    effective_end = path_end
+        0:
+            effective_end = path_end
+        1:
+            effective_end = path_end
+    index = path_start
+    segment_start = path_start
+    while index <= effective_end:
+        match index == effective_end:
+            -1:
+                separator = 1
+            0:
+                separator = 0
+            1:
+                separator = 0
+        match separator == 0:
+            -1:
+                match to_i64(bytes_get(&*source, index)) == 47:
+                    -1:
+                        separator = 1
+                    0:
+                        match to_i64(bytes_get(&*source, index)) == 92:
+                            -1:
+                                separator = 1
+                            0:
+                                index = index + 1
+                            1:
+                                separator = 1
+                    1:
+                        separator = 1
+            0:
+                separator = separator
+            1:
+                separator = separator
+        match separator == 1:
+            -1:
+                part_result = ng_append_module_path_part(source, segment_start, index, part_count)
+                match part_result < 0:
+                    -1:
+                        return NgSpan(start=-1, end=-1)
+                    0:
+                        part_result = part_result
+                    1:
+                        part_count = part_result
+                segment_start = index + 1
+                separator = 0
+                index = index + 1
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    match part_count > 0:
+        -1:
+            return NgSpan(start=result_start, end=bytes_len(&*source))
+        0:
+            return NgSpan(start=-1, end=-1)
+        1:
+            return NgSpan(start=-1, end=-1)
+fn ng_parse_module_name_span(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>) -> NgSpan:
+    mut first: NgToken = ng_token_at(tokens, cursor)
+    mut last_end: i64 = first.end
+    mut current: NgToken = first
+    match ng_expect_kind(tokens, cursor, 1):
+        -1:
+            return NgSpan(start=-1, end=-1)
+        0:
+            discard ng_advance(cursor)
+        1:
+            return NgSpan(start=-1, end=-1)
+    current = ng_token_at(tokens, cursor)
+    while current.kind == 346:
+        discard ng_advance(cursor)
+        current = ng_token_at(tokens, cursor)
+        match current.kind <=> 1:
+            -1:
+                return NgSpan(start=-1, end=-1)
+            0:
+                last_end = current.end
+                discard ng_advance(cursor)
+                current = ng_token_at(tokens, cursor)
+            1:
+                return NgSpan(start=-1, end=-1)
+    return NgSpan(start=first.start, end=last_end)
+
+fn ng_module_error(module_index: i64, source_start: i64, source_end: i64, path_start: i64, path_end: i64, first_import: i64) -> NgModule:
+    return NgModule(source_index=module_index, source_start=source_start, source_end=source_end, path_start=path_start, path_end=path_end, name_start=-1, name_end=-1, body_token_index=-1, first_function=0, function_count=0, first_import=first_import, import_count=0)
+
+export fn ng_parse_module_header(source: &mut bytes, tokens: &vector<NgToken>, module_index: i64, source_start: i64, source_end: i64, path_start: i64, path_end: i64, imports: &mut vector<NgImport>) -> NgModule:
+    mut cursor: vector<i64> = vector_new<i64>(1)
+    mut current: NgToken = NgToken(kind=0, start=0, end=0)
+    mut module_name: NgSpan = NgSpan(start=-1, end=-1)
+    mut module_name_start: i64 = -1
+    mut module_name_end: i64 = -1
+    mut target: NgSpan = NgSpan(start=-1, end=-1)
+    mut symbol: NgToken = NgToken(kind=0, start=0, end=0)
+    mut alias_token: NgToken = NgToken(kind=0, start=0, end=0)
+    mut local_start: i64 = 0
+    mut local_end: i64 = 0
+    mut first_import: i64 = vector_len<NgImport>(&*imports)
+    mut imported: NgImport = NgImport(module_index=module_index, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
+    mut import_pending: trit = 0
+    discard vector_push<i64>(&mut cursor, 0)
+    current = ng_token_at(tokens, &mut cursor)
+    match ng_token_spells(&*source, current, text_from_static("module")):
+        -1:
+            discard ng_advance(&mut cursor)
+            module_name = ng_parse_module_name_span(&*source, tokens, &mut cursor)
+            match module_name.start < 0:
+                -1:
+                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                0:
+                    module_name_start = module_name.start
+                    module_name_end = module_name.end
+                1:
+                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+        0:
+            module_name = ng_derive_module_name(source, path_start, path_end)
+            match module_name.start < 0:
+                -1:
+                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                0:
+                    module_name_start = module_name.start
+                    module_name_end = module_name.end
+                1:
+                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+        1:
+            return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+    current = ng_token_at(tokens, &mut cursor)
+    import_pending = ng_token_spells(&*source, current, text_from_static("from"))
+    while import_pending == -1:
+        discard ng_advance(&mut cursor)
+        target = ng_parse_module_name_span(&*source, tokens, &mut cursor)
+        match target.start < 0:
+            -1:
+                return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+            0:
+                target = target
+            1:
+                return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+        match ng_expect_word(&*source, tokens, &mut cursor, text_from_static("import")):
+            -1:
+                return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+            0:
+                symbol = ng_token_at(tokens, &mut cursor)
+                match ng_expect_kind(tokens, &mut cursor, 1):
+                    -1:
+                        return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                    0:
+                        discard ng_advance(&mut cursor)
+                    1:
+                        return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                local_start = symbol.start
+                local_end = symbol.end
+                current = ng_token_at(tokens, &mut cursor)
+                match ng_token_spells(&*source, current, text_from_static("as")):
+                    -1:
+                        discard ng_advance(&mut cursor)
+                        alias_token = ng_token_at(tokens, &mut cursor)
+                        local_start = alias_token.start
+                        local_end = alias_token.end
+                        match ng_expect_kind(tokens, &mut cursor, 1):
+                            -1:
+                                return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                            0:
+                                discard ng_advance(&mut cursor)
+                            1:
+                                return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                    0:
+                        local_start = local_start
+                        local_end = local_end
+                    1:
+                        return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                imported = NgImport(module_index=module_index, target_start=target.start, target_end=target.end, symbol_start=symbol.start, symbol_end=symbol.end, local_start=local_start, local_end=local_end)
+                discard vector_push<NgImport>(imports, imported)
+            1:
+                return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+        current = ng_token_at(tokens, &mut cursor)
+        import_pending = ng_token_spells(&*source, current, text_from_static("from"))
+    return NgModule(source_index=module_index, source_start=source_start, source_end=source_end, path_start=path_start, path_end=path_end, name_start=module_name_start, name_end=module_name_end, body_token_index=vector_get<i64>(&cursor, 0), first_function=0, function_count=0, first_import=first_import, import_count=vector_len<NgImport>(&*imports) - first_import)
+
+export fn ng_parse_module_functions(source: &bytes, tokens: &vector<NgToken>, module_item: NgModule, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>, functions: &mut vector<NgFunction>) -> i64:
+    mut cursor: vector<i64> = vector_new<i64>(1)
+    mut current_kind: i64 = 0
+    mut exported: i64 = 0
+    mut status: i64 = 0
+    mut first_function: i64 = vector_len<NgFunction>(&*functions)
+    discard vector_push<i64>(&mut cursor, module_item.body_token_index)
+    current_kind = ng_token_kind_at(tokens, &mut cursor)
+    while current_kind > 0:
+        exported = 0
+        match ng_token_spells_at(source, tokens, &mut cursor, text_from_static("export")):
+            -1:
+                exported = 1
+                discard ng_advance(&mut cursor)
+            0:
+                exported = 0
+            1:
+                return -1
+        status = ng_parse_function(source, tokens, &mut cursor, parameters, nodes, functions, module_item.source_index, exported)
+        match status <=> 0:
+            -1:
+                return status
+            0:
+                current_kind = ng_token_kind_at(tokens, &mut cursor)
+            1:
+                return status
+    match vector_len<NgFunction>(&*functions) - first_function > 0:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            return -1
