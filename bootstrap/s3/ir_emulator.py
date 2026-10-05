@@ -29,7 +29,7 @@ from .dynamic import (
     text_from_bytes,
     text_new,
 )
-from .host_services import SourceResourceRuntime
+from .host_services import HostExecutionContext, SourceResourceRuntime
 from .ternary import add, compare, invert, tritwise_max, tritwise_min, TernaryRangeError, TernaryWidth, validate
 from .verifier import verify_ir
 from .numeric import (
@@ -95,18 +95,32 @@ def _width(type_name: IRType) -> TernaryWidth:
     return TernaryWidth.TRIT if type_name is IRType.TRIT else TernaryWidth.TRYTE
 
 
-def execute_ir(module: IRModule, entry: str = "main", optimization: object = None) -> object:
-    global functions_module, resource_runtime
-    functions_module = module
-    resource_runtime = SourceResourceRuntime()
+def execute_ir(
+    module: IRModule,
+    entry: str = "main",
+    optimization: object = None,
+    *,
+    host_context: HostExecutionContext | None = None,
+) -> object:
     verify_ir(module)
     functions = {function.name: function for function in module.functions}
     if entry not in functions:
         raise IRExecutionError(f"missing entry function '{entry}'")
-    return _execute_function(functions, functions[entry], (), ())
+    context = HostExecutionContext() if host_context is None else host_context
+    if not isinstance(context, HostExecutionContext):
+        raise IRExecutionError("host_context must be a HostExecutionContext")
+    static_strings = {item.id: item.value for item in module.static_strings}
+    return _execute_function(
+        functions,
+        functions[entry],
+        (),
+        (),
+        static_strings,
+        context,
+    )
 
 
-def _execute_function(functions, function, arguments, caller):
+def _execute_function(functions, function, arguments, caller, static_strings, host_context):
     registers = {r.index: _Cell(mutable=True) for r in function.registers}
     memory = {
         obj.index: [_Cell(mutable=obj.mutable) for _ in range(obj.length)]
@@ -125,7 +139,7 @@ def _execute_function(functions, function, arguments, caller):
             frame.registers[instruction.result].value = instruction.immediate
             frame.registers[instruction.result].initialized = True
         elif op is IROpcode.CONST_STR:
-            frame.registers[instruction.result].value = next(s.value for s in functions_module.static_strings if s.id == instruction.static_string)
+            frame.registers[instruction.result].value = static_strings[instruction.static_string]
             frame.registers[instruction.result].initialized = True
         elif op is IROpcode.MOVE:
             src = _read(frame, instruction.operands[0])
@@ -299,10 +313,21 @@ def _execute_function(functions, function, arguments, caller):
             if signature is None:
                 signature = composite_vector_runtime_signature(instruction.callee or "")
             if signature is not None:
-                result = _execute_dynamic_builtin(instruction.callee, args)
+                result = _execute_dynamic_builtin(
+                    instruction.callee,
+                    args,
+                    runtime=host_context.resources,
+                )
             else:
                 callee = functions[instruction.callee]
-                result = _execute_function(functions, callee, args, frame)
+                result = _execute_function(
+                    functions,
+                    callee,
+                    args,
+                    frame,
+                    static_strings,
+                    host_context,
+                )
             if instruction.results:
                 values = result if isinstance(result, tuple) and len(instruction.results) > 1 else (result,)
                 if len(values) != len(instruction.results):
@@ -385,9 +410,9 @@ def _execute_dynamic_builtin(
     name: str,
     args: tuple[object, ...],
     *,
-    runtime: SourceResourceRuntime | None = None,
+    runtime: SourceResourceRuntime,
 ) -> object:
-    resource_context = resource_runtime if runtime is None else runtime
+    resource_context = runtime
     if name == "sqrt":
         return sqrt_f64(args[0])
     if name == "host_capability_grant":
@@ -619,7 +644,3 @@ def _execute_set_builtin(name: str, args: tuple[object, ...]) -> object:
     if operation == "clone":
         return owner.clone()
     raise IRExecutionError(f"unsupported set builtin '{name}'")
-
-
-functions_module = IRModule(())
-resource_runtime = SourceResourceRuntime()

@@ -5,13 +5,16 @@ import pytest
 from bootstrap.s3 import compile_source, run_source
 from bootstrap.s3.backends.x86_64.backend import X8664Backend
 from bootstrap.s3.dynamic import DynamicValue
+from bootstrap.s3.emulator import Emulator
 from bootstrap.s3.host_services import (
+    HostExecutionContext,
     ResourceCapabilityError,
     ResourceClosedError,
     ResourceKind,
     ResourceLimitError,
     ResourceRegistry,
 )
+from bootstrap.s3.ir_emulator import execute_ir
 
 
 class _FakeProvider:
@@ -137,3 +140,22 @@ def test_source_resource_lifecycle_lowers_to_verified_native_fixture() -> None:
     assert "__s3_builtin_host_capability_grant" in native
     assert "__s3_builtin_resource_open" in native
     assert "__s3_builtin_resource_close" in native
+
+
+def test_host_execution_context_is_explicit_and_shared_by_hosted_engines() -> None:
+    compilation = compile_source(SOURCE_RESOURCE_LIFECYCLE)
+    context = HostExecutionContext()
+
+    assert execute_ir(compilation.ir, host_context=context) == 2
+    assert context.resources.active_count == 0
+    assert Emulator().execute(compilation.assembly, host_context=context) == 2
+    assert context.resources.active_count == 0
+
+
+def test_host_execution_contexts_keep_resource_tables_isolated() -> None:
+    first = HostExecutionContext()
+    second = HostExecutionContext()
+    first_handle = first.resources.open(first.resources.grant(1))
+
+    assert first.resources.is_open(first_handle) == -1
+    assert second.resources.is_open(first_handle) == 0
