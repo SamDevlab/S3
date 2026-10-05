@@ -144,6 +144,9 @@ _REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 ORDERING_WORKLOAD_SOURCE = (
     _REPOSITORY_ROOT / "examples/language_maturity/insertion_sort_search.s3"
 ).read_text(encoding="utf-8")
+BOUNDED_VM_WORKLOAD_SOURCE = (
+    _REPOSITORY_ROOT / "examples/language_maturity/bounded_stack_vm.s3"
+).read_text(encoding="utf-8")
 QBE_PROGRAMS = dict(SCALAR_PROGRAMS)
 QBE_PROGRAMS.update(
     {
@@ -1509,6 +1512,32 @@ def _require_qbe_native_tools() -> tuple[str, str]:
     return qbe, cc
 
 
+def _assert_qbe_cross_target_codegen(
+    qbe: str | None,
+    qbe_il: str,
+    workload: str,
+    optimization: OptimizationLevel,
+    tmp_path: Path,
+) -> None:
+    if qbe is None:
+        return
+    il_path = tmp_path / f"{workload}-{optimization.value}.ssa"
+    il_path.write_text(qbe_il, encoding="utf-8")
+    for target in ("arm64", "rv64"):
+        assembly_path = tmp_path / f"{workload}-{optimization.value}-{target}.s"
+        generated = subprocess.run(
+            [qbe, "-t", target, "-o", str(assembly_path), str(il_path)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert generated.returncode == 0, (
+            f"QBE_TARGET_CODEGEN_FAILURE: {workload} {optimization.value} "
+            f"{target}: {generated.stderr}"
+        )
+        assert assembly_path.is_file() and assembly_path.stat().st_size > 0
+
+
 @pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
 @pytest.mark.parametrize("name", tuple(QBE_PROGRAMS))
 def test_qbe_oracle_emits_deterministic_verified_program_il(name: str, optimization) -> None:
@@ -1934,6 +1963,152 @@ fn main() -> i64:
 
     assert execute_ir(compilation.ir) == 0
     assert execute_assembly(compilation.assembly) == 0
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_executes_real_geometry_workload_with_four_way_parity(
+    optimization, tmp_path
+) -> None:
+    sources = standard_library_sources(modules=("s3.v1.geometry",))
+    sources["main.s3"] = """\
+module main
+from s3.v1.geometry import Vec3
+from s3.v1.geometry import GeometryVec3Result
+from s3.v1.geometry import GeometryScalarResult
+from s3.v1.geometry import point_cloud_centroid
+from s3.v1.geometry import point_cloud_radius_of_gyration
+from s3.v1.geometry import triangle_area
+fn mismatch(value: trit) -> i64:
+    match value:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn main() -> i64:
+    mut points: f64_vector = f64_vector_new(6)
+    discard f64_vector_push(&mut points, 1.0)
+    discard f64_vector_push(&mut points, 2.0)
+    discard f64_vector_push(&mut points, 3.0)
+    discard f64_vector_push(&mut points, 3.0)
+    discard f64_vector_push(&mut points, 4.0)
+    discard f64_vector_push(&mut points, 7.0)
+    center: GeometryVec3Result = point_cloud_centroid(&points, 2)
+    gyration: GeometryScalarResult = point_cloud_radius_of_gyration(&points, 2)
+    mut failures: i64 = mismatch(center.status == 0)
+    failures = failures + mismatch(center.value.x == 2.0)
+    failures = failures + mismatch(center.value.y == 3.0)
+    failures = failures + mismatch(center.value.z == 5.0)
+    failures = failures + mismatch(gyration.status == 0)
+    failures = failures + mismatch(gyration.value > 2.44)
+    failures = failures + mismatch(gyration.value < 2.45)
+    failures = failures + mismatch(triangle_area(Vec3(x=0.0, y=0.0, z=0.0), Vec3(x=1.0, y=0.0, z=0.0), Vec3(x=0.0, y=1.0, z=0.0)) == 0.5)
+    return failures
+"""
+    compilation = compile_sources(
+        sources,
+        optimization=optimization,
+        entry_module="main",
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    qbe_il = translate_verified_ir(compilation.ir)
+    qbe_executable = shutil.which("qbe")
+    _assert_qbe_cross_target_codegen(
+        qbe_executable, qbe_il, "geometry", optimization, tmp_path
+    )
+
+    qbe, cc = _require_qbe_native_tools()
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "geometry-workload",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+        f64_vector_abi_shim=True,
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "geometry-workload", tmp_path, cc
+    )
+
+    assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 0" in s3_native.stdout
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_executes_existing_bounded_stack_vm_with_four_way_parity(
+    optimization, tmp_path
+) -> None:
+    sources = {
+        "main.s3": BOUNDED_VM_WORKLOAD_SOURCE
+        + """\
+fn mismatch(value: trit) -> i64:
+    match value:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            return 1
+fn main() -> i64:
+    mut valid_program: i64_vector = i64_vector_new(7)
+    discard i64_vector_push(&mut valid_program, -1)
+    discard i64_vector_push(&mut valid_program, 7)
+    discard i64_vector_push(&mut valid_program, -1)
+    discard i64_vector_push(&mut valid_program, 5)
+    discard i64_vector_push(&mut valid_program, 1)
+    discard i64_vector_push(&mut valid_program, -1)
+    discard i64_vector_push(&mut valid_program, 0)
+    valid: VmResult = run_vm(&valid_program)
+    mut failures: i64 = mismatch(valid.valid == -1)
+    failures = failures + mismatch(valid.value == 12)
+    failures = failures + mismatch(valid.steps == 4)
+    mut invalid_program: i64_vector = i64_vector_new(3)
+    discard i64_vector_push(&mut invalid_program, 1)
+    discard i64_vector_push(&mut invalid_program, -1)
+    discard i64_vector_push(&mut invalid_program, 0)
+    invalid: VmResult = run_vm(&invalid_program)
+    failures = failures + mismatch(invalid.valid == 0)
+    failures = failures + mismatch(invalid.steps == 1)
+    return failures
+"""
+    }
+    compilation = compile_sources(
+        sources,
+        optimization=optimization,
+        entry_module="main",
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    assert execute_ir(compilation.ir) == 0
+    assert execute_assembly(compilation.assembly) == 0
+    qbe_il = translate_verified_ir(compilation.ir)
+    qbe_executable = shutil.which("qbe")
+    _assert_qbe_cross_target_codegen(
+        qbe_executable, qbe_il, "bounded-vm", optimization, tmp_path
+    )
+
+    qbe, cc = _require_qbe_native_tools()
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "bounded-stack-vm",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation, optimization, "bounded-stack-vm", tmp_path, cc
+    )
+
     assert qbe_native.returncode == 0, qbe_native.stderr.decode(errors="replace")
     assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
     assert "program returned: 0" in s3_native.stdout
