@@ -1,6 +1,6 @@
 """Structural decoder for the versioned S3C-NG integer-event interchange.
 
-Versions 1-6 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
+Versions 1-8 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
 Kind 0 declares ``(version, record_width, flags=0, 0, 0, 0, 0)``. Kind 1 is a
 function ``(index, return_type, parameter_count, name_start, name_end,
 result_width, flags)``; kind 2 is a parameter ``(function, ordinal, type,
@@ -17,6 +17,9 @@ V5 adds kind 16 after a CALL's arguments for an explicitly selected scalar
 ``vector_new<T>`` runtime builtin and its element type descriptor ID. V6 retains
 that record and adds kind 17 for scalar ``vector_len<T>`` calls whose argument
 register is explicitly typed as a reference to ``vector<T>``.
+V7 adds opcode 15 for scalar relational operators, with relation ID 0-5 in the instruction immediate.
+V8 adds kind 18 after a CALL's arguments for explicitly selected scalar
+``vector_push<T>``; the record carries the builtin ID and element descriptor ID.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
@@ -43,7 +46,7 @@ from .ir import (
 )
 
 
-NG_IR_FORMAT_VERSION = 6
+NG_IR_FORMAT_VERSION = 8
 NG_IR_RECORD_WIDTH = 8
 
 _V5_VECTOR_NEW_BUILTINS = {
@@ -55,6 +58,11 @@ _V6_VECTOR_LEN_BUILTINS = {
     1: ("i64_vector_len", 1),
     3: ("tryte_vector_len", 3),
     4: ("f64_vector_len", 4),
+}
+_V8_VECTOR_PUSH_BUILTINS = {
+    1: "i64_vector_push",
+    3: "tryte_vector_push",
+    4: "f64_vector_push",
 }
 
 _TYPE_CODES_V1 = {
@@ -96,6 +104,7 @@ _OPCODE_CODES = {
     12: IROpcode.JUMP,
     13: IROpcode.COMPARE,
     14: IROpcode.AGGREGATE_FIELD_LOAD,
+    15: IROpcode.RELATE,
 }
 
 
@@ -154,7 +163,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -394,6 +403,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 opcode = _OPCODE_CODES[opcode_code]
             except KeyError as exc:
                 raise NGIRDecodeError(f"unknown opcode code {opcode_code}") from exc
+            if opcode is IROpcode.RELATE and version < 7:
+                raise NGIRDecodeError("RELATE opcode requires NG IR format V7")
 
             result = None if result_id == -1 else result_id
             callee_index: int | None = None
@@ -413,6 +424,11 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     raise NGIRDecodeError(f"malformed {opcode.value.upper()} record")
                 operands = (operand0, operand1)
                 decoded_immediate = None
+            elif opcode is IROpcode.RELATE:
+                if result is None or operand_count != 2 or immediate not in range(6):
+                    raise NGIRDecodeError("malformed RELATE record")
+                operands = (operand0, operand1)
+                decoded_immediate = immediate
             elif opcode is IROpcode.RETURN:
                 if result is not None or operand_count != 1 or operand1 != -1 or immediate != 0:
                     raise NGIRDecodeError("malformed RETURN record")
@@ -503,6 +519,50 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                         raise NGIRDecodeError("V6 vector_len type metadata disagrees with its registers")
                     callee_index = None
                     callee_builtin = builtin[0]
+                elif version >= 8 and operand0 == -3:
+                    builtin_record = take(18, "V8 generic vector_push CALL target")
+                    _, builtin_owner, builtin_instruction, builtin_id, element_type_id, *reserved = builtin_record
+                    if (builtin_owner, builtin_instruction) != (function_index, instruction_index) or any(reserved):
+                        raise NGIRDecodeError("malformed V8 generic CALL target identity")
+                    if builtin_id != 1:
+                        raise NGIRDecodeError(f"unknown V8 generic CALL builtin ID {builtin_id}")
+                    if immediate != 0:
+                        raise NGIRDecodeError("V8 vector_push CALL instruction contains nonzero reserved immediate")
+                    if operand_count != 2 or len(call_arguments) != 2:
+                        raise NGIRDecodeError("V8 vector_push requires exactly two arguments")
+                    result_type = (
+                        type_descriptors.get(register_type_ids[result])
+                        if result is not None and 0 <= result < len(register_type_ids)
+                        else None
+                    )
+                    reference_register, value_register = call_arguments
+                    if not 0 <= reference_register < len(register_type_ids) or not 0 <= value_register < len(register_type_ids):
+                        raise NGIRDecodeError("V8 vector_push argument register is missing")
+                    reference_type = type_descriptors.get(register_type_ids[reference_register])
+                    vector_type = (
+                        type_descriptors.get(reference_type.target_type)
+                        if reference_type is not None and reference_type.kind == 9
+                        else None
+                    )
+                    element_type = type_descriptors.get(element_type_id)
+                    builtin_name = _V8_VECTOR_PUSH_BUILTINS.get(
+                        element_type.kind if element_type is not None else -1
+                    )
+                    if (
+                        (result is not None and (result_type is None or result_type.kind != 3))
+                        or reference_type is None
+                        or reference_type.kind != 9
+                        or reference_type.mutable != 1
+                        or vector_type is None
+                        or vector_type.kind != 8
+                        or vector_type.element_type != element_type_id
+                        or element_type is None
+                        or register_type_ids[value_register] != element_type_id
+                        or builtin_name is None
+                    ):
+                        raise NGIRDecodeError("V8 vector_push type metadata disagrees with its registers")
+                    callee_index = None
+                    callee_builtin = builtin_name
                 elif operand0 < 0:
                     raise NGIRDecodeError(f"unsupported generic CALL sentinel {operand0} in NG IR V{version}")
                 operands = tuple(call_arguments)

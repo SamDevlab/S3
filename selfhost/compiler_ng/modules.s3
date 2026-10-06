@@ -514,6 +514,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
     mut unit: NgSourceUnit = NgSourceUnit(path=text_from_static(""), contents=bytes_new(1))
     mut path_bytes: bytes = bytes_new(1)
     mut tokens: vector<NgToken> = vector_new<NgToken>(1)
+    mut unit_tokens: vector<NgToken> = vector_new<NgToken>(1)
     mut modules: vector<NgModule> = vector_new<NgModule>(unit_count + 1)
     mut imports: vector<NgImport> = vector_new<NgImport>(1)
     mut functions: vector<NgFunction> = vector_new<NgFunction>(1)
@@ -528,6 +529,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
     mut main_text: text = text_from_static("main")
     mut main_bytes: bytes = bytes_from_text(&main_text)
     mut function_index: i64 = 0
+    mut token_copy_index: i64 = 0
     mut target_module: i64 = -1
     mut entry_function: i64 = -1
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
@@ -565,6 +567,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
     fields = vector_new<NgField>(pool_capacity)
     parameters = vector_new<NgParameter>(pool_capacity)
     nodes = vector_new<NgAstNode>(pool_capacity)
+    tokens = vector_new<NgToken>(total_source_bytes + unit_count + 1)
     source_index = 0
     while source_index < unit_count:
         unit = vector_get<NgSourceUnit>(units, source_index)
@@ -577,17 +580,22 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
         discard ng_append_bytes(source, &path_bytes)
         path_end = bytes_len(&*source)
         discard bytes_push(source, 10)
-        tokens = vector_new<NgToken>(bytes_len(&unit.contents) + 1)
-        status = ng_lex_source_unit(&unit.contents, &mut tokens, source_start)
+        unit_tokens = vector_new<NgToken>(bytes_len(&unit.contents) + 1)
+        status = ng_lex_source_unit(&unit.contents, &mut unit_tokens, source_start)
         match status <=> 0:
             -1:
                 return -1
             0:
-                module_item = ng_parse_module_header(source, &tokens, source_index, source_start, source_end, path_start, path_end, &mut imports)
+                module_item = ng_parse_module_header(source, &unit_tokens, source_index, source_start, source_end, path_start, path_end, &mut imports)
                 match module_item.name_start < 0:
                     -1:
                         return -1
                     0:
+                        module_item.body_token_index = module_item.body_token_index + vector_len<NgToken>(&tokens)
+                        token_copy_index = 0
+                        while token_copy_index < vector_len<NgToken>(&unit_tokens):
+                            discard vector_push<NgToken>(&mut tokens, vector_get<NgToken>(&unit_tokens, token_copy_index))
+                            token_copy_index = token_copy_index + 1
                         discard vector_push<NgModule>(&mut modules, module_item)
                     1:
                         return -1
@@ -630,25 +638,16 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
     while order_index < vector_len<i64>(&order):
         module_index = vector_get<i64>(&order, order_index)
         module_item = vector_get<NgModule>(&modules, module_index)
-        unit = vector_get<NgSourceUnit>(units, module_item.source_index)
-        tokens = vector_new<NgToken>(bytes_len(&unit.contents) + 1)
-        status = ng_lex_source_unit(&unit.contents, &mut tokens, module_item.source_start)
+        module_item.first_function = vector_len<NgFunction>(&functions)
+        status = ng_parse_module_functions(&*source, &tokens, module_item, &mut types, &mut records, &mut fields, &mut parameters, &mut nodes, &mut functions)
         match status <=> 0:
             -1:
-                return -1
+                return status
             0:
-                module_item.first_function = vector_len<NgFunction>(&functions)
-                status = ng_parse_module_functions(&*source, &tokens, module_item, &mut types, &mut records, &mut fields, &mut parameters, &mut nodes, &mut functions)
-                match status <=> 0:
-                    -1:
-                        return status
-                    0:
-                        module_item.function_count = vector_len<NgFunction>(&functions) - module_item.first_function
-                        discard vector_set<NgModule>(&mut modules, module_index, module_item)
-                    1:
-                        return status
+                module_item.function_count = vector_len<NgFunction>(&functions) - module_item.first_function
+                discard vector_set<NgModule>(&mut modules, module_index, module_item)
             1:
-                return -1
+                return status
         order_index = order_index + 1
     status = ng_validate_nominal_types(&*source, &types, &modules, &records)
     match status <=> 0:
@@ -721,7 +720,8 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
                         -1:
                             return status
                         0:
-                            return ng_emit_program(&*source, &types, &records, &fields, &functions, &parameters, &mut nodes, events)
+                            status = ng_emit_program(&*source, &types, &records, &fields, &functions, &parameters, &mut nodes, events)
+                            return status
                         1:
                             return status
                 1:

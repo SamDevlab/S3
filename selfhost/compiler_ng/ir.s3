@@ -1,6 +1,6 @@
 module selfhost.compiler_ng.ir
 
-from selfhost.compiler_ng.parser import NgAstNode, NgField, NgFunction, NgParameter, NgRecord
+from selfhost.compiler_ng.parser import NgAstNode, NgField, NgFunction, NgParameter, NgRecord, ng_relational_operator_code
 from selfhost.compiler_ng.semantic import ng_check_program_typed, ng_find_function, ng_spans_equal
 from selfhost.compiler_ng.types import NgTypeDescriptor
 
@@ -496,6 +496,142 @@ fn ng_emit_vector_len_expression(source: &bytes, types: &vector<NgTypeDescriptor
         1:
             return -13
 
+fn ng_emit_vector_push_expression(source: &bytes, types: &vector<NgTypeDescriptor>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, node: NgAstNode, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
+    mut builtin_id: i64 = ng_ir_vector_new_builtin_id(types, node.right)
+    mut first_argument_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut value_argument_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut reference_register: i64 = -1
+    mut value_register: i64 = -1
+    mut reference_info: NgIRRegister = NgIRRegister(type_kind=0)
+    mut reference_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut vector_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut first_pool_index: i64 = 0
+    mut result_register: i64 = -1
+    match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_push")):
+        -1:
+            match builtin_id > 0:
+                -1:
+                    match node.left >= 0:
+                        -1:
+                            first_argument_node = vector_get<NgAstNode>(nodes, node.left)
+                            match first_argument_node.kind <=> 6:
+                                0:
+                                    match first_argument_node.right >= 0:
+                                        -1:
+                                            value_argument_node = vector_get<NgAstNode>(nodes, first_argument_node.right)
+                                            match value_argument_node.kind <=> 6:
+                                                0:
+                                                    match value_argument_node.right <=> -1:
+                                                        0:
+                                                            reference_register = ng_emit_expression(source, types, functions, nodes, parameters, variables, first_parameter, parameter_count, first_argument_node.left, call_arguments, registers, instructions)
+                                                            match reference_register >= 0:
+                                                                -1:
+                                                                    reference_info = vector_get<NgIRRegister>(&*registers, reference_register)
+                                                                    match reference_info.type_kind > 0:
+                                                                        -1:
+                                                                            match reference_info.type_kind <= vector_len<NgTypeDescriptor>(types):
+                                                                                -1:
+                                                                                    reference_type = vector_get<NgTypeDescriptor>(types, reference_info.type_kind - 1)
+                                                                                    match reference_type.kind <=> 9:
+                                                                                        0:
+                                                                                            match reference_type.mutable <=> 1:
+                                                                                                0:
+                                                                                                    match reference_type.target_type > 0:
+                                                                                                        -1:
+                                                                                                            match reference_type.target_type <= vector_len<NgTypeDescriptor>(types):
+                                                                                                                -1:
+                                                                                                                    vector_type = vector_get<NgTypeDescriptor>(types, reference_type.target_type - 1)
+                                                                                                                    match vector_type.kind <=> 8:
+                                                                                                                        0:
+                                                                                                                            match vector_type.element_type <=> node.right:
+                                                                                                                                0:
+                                                                                                                                    value_register = ng_emit_expression(source, types, functions, nodes, parameters, variables, first_parameter, parameter_count, value_argument_node.left, call_arguments, registers, instructions)
+                                                                                                                                    match value_register >= 0:
+                                                                                                                                        -1:
+                                                                                                                                            discard ng_set_contextual_literal_type(nodes, value_argument_node.left, node.right, registers, value_register)
+                                                                                                                                            reference_info = vector_get<NgIRRegister>(&*registers, value_register)
+                                                                                                                                            match reference_info.type_kind <=> node.right:
+                                                                                                                                                0:
+                                                                                                                                                    first_pool_index = vector_len<i64>(&*call_arguments)
+                                                                                                                                                    discard vector_push<i64>(call_arguments, reference_register)
+                                                                                                                                                    discard vector_push<i64>(call_arguments, value_register)
+                                                                                                                                                    result_register = vector_len<NgIRRegister>(&*registers)
+                                                                                                                                                    discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=3))
+                                                                                                                                                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=7, result=result_register, operand_count=2, operand0=-3, operand1=first_pool_index, immediate=node.right, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
+                                                                                                                                                    return result_register
+                                                                                                                                                -1:
+                                                                                                                                                    return -14
+                                                                                                                                                1:
+                                                                                                                                                    return -14
+                                                                                                                                        0:
+                                                                                                                                            return value_register
+                                                                                                                                        1:
+                                                                                                                                            return value_register
+                                                                                                                                -1:
+                                                                                                                                    return -14
+                                                                                                                                1:
+                                                                                                                                    return -14
+                                                                                                                        -1:
+                                                                                                                            return -14
+                                                                                                                        1:
+                                                                                                                            return -14
+                                                                                                                0:
+                                                                                                                    return -14
+                                                                                                                1:
+                                                                                                                    return -14
+                                                                                                        0:
+                                                                                                            return -14
+                                                                                                        1:
+                                                                                                            return -14
+                                                                                                -1:
+                                                                                                    return -14
+                                                                                                1:
+                                                                                                    return -14
+                                                                                        -1:
+                                                                                            return -14
+                                                                                        1:
+                                                                                            return -14
+                                                                                0:
+                                                                                    return -14
+                                                                                1:
+                                                                                    return -14
+                                                                        0:
+                                                                            return -14
+                                                                        1:
+                                                                            return -14
+                                                                0:
+                                                                    return reference_register
+                                                                1:
+                                                                    return reference_register
+                                                        -1:
+                                                            return -14
+                                                        1:
+                                                            return -14
+                                                -1:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        0:
+                                            return -14
+                                        1:
+                                            return -14
+                                -1:
+                                    return -14
+                                1:
+                                    return -14
+                        0:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return -13
+                1:
+                    return -13
+        0:
+            return -13
+        1:
+            return -13
+
 fn ng_emit_call_expression(source: &bytes, types: &vector<NgTypeDescriptor>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, node: NgAstNode, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
     mut function_index: i64 = ng_find_function(source, functions, node.start, node.operation)
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
@@ -513,7 +649,13 @@ fn ng_emit_call_expression(source: &bytes, types: &vector<NgTypeDescriptor>, fun
                 -1:
                     return ng_emit_vector_len_expression(source, types, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
                 0:
-                    return ng_emit_vector_new_expression(source, types, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+                    match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_push")):
+                        -1:
+                            return ng_emit_vector_push_expression(source, types, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+                        0:
+                            return ng_emit_vector_new_expression(source, types, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+                        1:
+                            return -13
                 1:
                     return -13
         0:
@@ -545,6 +687,34 @@ fn ng_emit_call_expression(source: &bytes, types: &vector<NgTypeDescriptor>, fun
     discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=7, result=result_register, operand_count=vector_len<i64>(&evaluated_arguments), operand0=function_index, operand1=first_argument, immediate=0, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
     return result_register
 
+fn ng_mark_discarded_call_result(nodes: &vector<NgAstNode>, expression_id: i64, instructions: &mut vector<NgIRInstruction>) -> i64:
+    mut expression: NgAstNode = vector_get<NgAstNode>(nodes, expression_id)
+    mut instruction_index: i64 = -1
+    mut instruction: NgIRInstruction = NgIRInstruction(opcode=0, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1)
+    match expression.kind <=> 5:
+        -1:
+            return 0
+        0:
+            instruction_index = vector_len<NgIRInstruction>(&*instructions) - 1
+            match instruction_index >= 0:
+                -1:
+                    instruction = vector_get<NgIRInstruction>(&*instructions, instruction_index)
+                    match instruction.opcode <=> 7:
+                        0:
+                            instruction.result = -1
+                            discard vector_set<NgIRInstruction>(instructions, instruction_index, instruction)
+                            return 0
+                        -1:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return 0
+
 fn ng_emit_expression(source: &bytes, types: &vector<NgTypeDescriptor>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, node_id: i64, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
     mut register: i64 = 0
@@ -552,6 +722,7 @@ fn ng_emit_expression(source: &bytes, types: &vector<NgTypeDescriptor>, function
     mut right: i64 = 0
     mut opcode: i64 = 0
     mut result_type: i64 = 0
+    mut relation_code: i64 = -1
     mut value: i64 = 0
     mut parsed_integer: NgIntegerResult = NgIntegerResult(value=0, valid=0)
     mut variable_index: i64 = -1
@@ -644,36 +815,46 @@ fn ng_emit_expression(source: &bytes, types: &vector<NgTypeDescriptor>, function
                                                             discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=13, result=register, operand_count=2, operand0=left, operand1=right, immediate=0, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
                                                             return register
                                                         1:
-                                                            match node.operation == 343:
+                                                            relation_code = ng_relational_operator_code(node.operation)
+                                                            match relation_code < 0:
                                                                 -1:
-                                                                    opcode = 2
-                                                                0:
-                                                                    match node.operation == 345:
+                                                                    match node.operation == 343:
                                                                         -1:
-                                                                            opcode = 3
+                                                                            opcode = 2
                                                                         0:
-                                                                            match node.operation == 342:
+                                                                            match node.operation == 345:
                                                                                 -1:
-                                                                                    opcode = 4
+                                                                                    opcode = 3
                                                                                 0:
-                                                                                    match node.operation == 347:
+                                                                                    match node.operation == 342:
                                                                                         -1:
-                                                                                            opcode = 5
+                                                                                            opcode = 4
                                                                                         0:
-                                                                                            return -21
+                                                                                            match node.operation == 347:
+                                                                                                -1:
+                                                                                                    opcode = 5
+                                                                                                0:
+                                                                                                    return -21
+                                                                                                1:
+                                                                                                    return -21
                                                                                         1:
                                                                                             return -21
                                                                                 1:
                                                                                     return -21
                                                                         1:
                                                                             return -21
+                                                                    result_type = left_info.type_kind
+                                                                    register = vector_len<NgIRRegister>(&*registers)
+                                                                    discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=result_type))
+                                                                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=opcode, result=register, operand_count=2, operand0=left, operand1=right, immediate=0, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
+                                                                    return register
+                                                                0:
+                                                                    register = vector_len<NgIRRegister>(&*registers)
+                                                                    discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=2))
+                                                                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=15, result=register, operand_count=2, operand0=left, operand1=right, immediate=relation_code, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
+                                                                    return register
                                                                 1:
                                                                     return -21
-                                                            result_type = left_info.type_kind
-                                                            register = vector_len<NgIRRegister>(&*registers)
-                                                            discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=result_type))
-                                                            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=opcode, result=register, operand_count=2, operand0=left, operand1=right, immediate=0, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
-                                                            return register
                                 1:
                                     match node.kind <=> 5:
                                         -1:
@@ -902,6 +1083,167 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, function
             *current_block = join_block
     return 0
 
+fn ng_emit_while(source: &bytes, types: &vector<NgTypeDescriptor>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, function: NgFunction, statement: NgAstNode, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, blocks: &mut vector<NgIRBlock>, current_block: &mut i64) -> i64:
+    mut header_block: i64 = vector_len<NgIRBlock>(&*blocks)
+    mut body_block: i64 = 0
+    mut exit_zero_block: i64 = 0
+    mut exit_positive_block: i64 = 0
+    mut exit_block: i64 = 0
+    mut condition_register: i64 = -1
+    mut first_instruction: i64 = 0
+    mut body_link_id: i64 = statement.right
+    mut body_link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut body_statement: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut variable_index: i64 = -1
+    mut variable: NgIRVariable = NgIRVariable(name_start=0, name_end=0, type_kind=0, mutable=0, register=-1, memory=-1)
+    mut value_register: i64 = -1
+    mut index_register: i64 = -1
+    mut status: i64 = 0
+    match *current_block <=> -1:
+        -1:
+            return -16
+        0:
+            return -16
+        1:
+            body_block = header_block + 1
+            exit_zero_block = header_block + 2
+            exit_positive_block = header_block + 3
+            exit_block = header_block + 4
+    discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=header_block))
+    discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=body_block))
+    discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=exit_zero_block))
+    discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=exit_positive_block))
+    discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=exit_block))
+    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=12, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=header_block, target1=-1, target2=-1))
+    first_instruction = vector_len<NgIRInstruction>(&*instructions)
+    condition_register = ng_emit_expression(source, types, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, statement.left, call_arguments, registers, instructions)
+    match condition_register <=> -1:
+        -1:
+            return condition_register
+        0:
+            return condition_register
+        1:
+            discard ng_mark_instruction_block(instructions, first_instruction, header_block)
+    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=11, result=-1, operand_count=1, operand0=condition_register, operand1=-1, immediate=0, memory=-1, initialization=0, block=header_block, target0=body_block, target1=exit_zero_block, target2=exit_positive_block))
+    *current_block = body_block
+    while body_link_id >= 0:
+        match *current_block <=> -1:
+            -1:
+                return -17
+            0:
+                return -17
+            1:
+                body_link = vector_get<NgAstNode>(nodes, body_link_id)
+                body_statement = vector_get<NgAstNode>(nodes, body_link.left)
+                first_instruction = vector_len<NgIRInstruction>(&*instructions)
+                match body_statement.kind == 8:
+                    -1:
+                        variable_index = ng_ir_variable_index(source, variables, body_statement.start, body_statement.end)
+                        match variable_index >= 0:
+                            -1:
+                                variable = vector_get<NgIRVariable>(variables, variable_index)
+                                match variable.mutable <=> 1:
+                                    -1:
+                                        return -16
+                                    0:
+                                        value_register = ng_emit_expression(source, types, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, body_statement.left, call_arguments, registers, instructions)
+                                        match value_register < 0:
+                                            -1:
+                                                return value_register
+                                            0:
+                                                return value_register
+                                            1:
+                                                discard ng_set_contextual_literal_type(nodes, body_statement.left, variable.type_kind, registers, value_register)
+                                                index_register = vector_len<NgIRRegister>(&*registers)
+                                                discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=3))
+                                                discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=1, result=index_register, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=-1, target1=-1, target2=-1))
+                                                discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=10, result=-1, operand_count=2, operand0=index_register, operand1=value_register, immediate=variable.memory, memory=variable.memory, initialization=0, block=*current_block, target0=-1, target1=-1, target2=-1))
+                                                discard ng_mark_instruction_block(instructions, first_instruction, *current_block)
+                                    1:
+                                        return -16
+                            0:
+                                return -12
+                            1:
+                                return -12
+                    0:
+                        match body_statement.kind == 9:
+                            -1:
+                                match body_link.right <=> -1:
+                                    -1:
+                                        return -17
+                                    0:
+                                        value_register = ng_emit_expression(source, types, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, body_statement.left, call_arguments, registers, instructions)
+                                        match value_register <=> -1:
+                                            -1:
+                                                return value_register
+                                            0:
+                                                return value_register
+                                            1:
+                                                discard ng_set_contextual_literal_type(nodes, body_statement.left, function.return_type, registers, value_register)
+                                                discard ng_mark_instruction_block(instructions, first_instruction, *current_block)
+                                                discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=6, result=-1, operand_count=1, operand0=value_register, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=-1, target1=-1, target2=-1))
+                                                *current_block = -1
+                                    1:
+                                        return -17
+                            0:
+                                match body_statement.kind == 12:
+                                    -1:
+                                        status = ng_emit_match_arms(source, types, functions, nodes, parameters, variables, function, body_statement, call_arguments, registers, instructions, blocks, current_block)
+                                        match status <=> 0:
+                                            -1:
+                                                return status
+                                            0:
+                                                status = status
+                                            1:
+                                                return status
+                                    0:
+                                        match body_statement.kind == 15:
+                                            -1:
+                                                value_register = ng_emit_expression(source, types, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, body_statement.left, call_arguments, registers, instructions)
+                                                match value_register <=> -1:
+                                                    -1:
+                                                        return value_register
+                                                    0:
+                                                        return value_register
+                                                    1:
+                                                        discard ng_mark_discarded_call_result(nodes, body_statement.left, instructions)
+                                                        discard ng_mark_instruction_block(instructions, first_instruction, *current_block)
+                                            0:
+                                                match body_statement.kind == 17:
+                                                    -1:
+                                                        status = ng_emit_while(source, types, functions, nodes, parameters, variables, function, body_statement, call_arguments, registers, instructions, blocks, current_block)
+                                                        match status <=> 0:
+                                                            -1:
+                                                                return status
+                                                            0:
+                                                                status = status
+                                                            1:
+                                                                return status
+                                                    0:
+                                                        return -16
+                                                    1:
+                                                        return -16
+                                            1:
+                                                return -16
+                                    1:
+                                        return -16
+                            1:
+                                return -16
+                    1:
+                        return -16
+                body_link_id = body_link.right
+    match *current_block <=> -1:
+        -1:
+            *current_block = -1
+        0:
+            *current_block = -1
+        1:
+            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=12, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=header_block, target1=-1, target2=-1))
+    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=12, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=exit_zero_block, target0=exit_block, target1=-1, target2=-1))
+    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=12, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=exit_positive_block, target0=exit_block, target1=-1, target2=-1))
+    *current_block = exit_block
+    return 0
+
 export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>, events: &mut vector<i64>) -> i64:
     mut status: i64 = ng_check_program_typed(source, types, records, fields, functions, parameters, nodes)
     mut function_index: i64 = 0
@@ -948,7 +1290,7 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
         -1:
             return status
         0:
-            discard ng_ir_event(events, 0, 6, 8, 0, 0, 0, 0, 0)
+            discard ng_ir_event(events, 0, 8, 8, 0, 0, 0, 0, 0)
             while type_index < vector_len<NgTypeDescriptor>(types):
                 type_descriptor = vector_get<NgTypeDescriptor>(types, type_index)
                 discard ng_ir_event(events, 12, type_index + 1, type_descriptor.kind, type_descriptor.module_start, type_descriptor.module_end, type_descriptor.name_start, type_descriptor.name_end, type_descriptor.element_type)
@@ -994,7 +1336,7 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
                         1:
                             mutable = 0
                     value_register = ng_emit_expression(source, types, functions, &*nodes, parameters, &variables, function.first_parameter, function.parameter_count, statement.left, &mut call_arguments, &mut registers, &mut instructions)
-                    match value_register < 0:
+                    match value_register <=> -1:
                         -1:
                             return value_register
                         0:
@@ -1071,7 +1413,34 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
                                                 1:
                                                     return status
                                         0:
-                                            return -16
+                                            match statement.kind == 15:
+                                                -1:
+                                                    value_register = ng_emit_expression(source, types, functions, &*nodes, parameters, &variables, function.first_parameter, function.parameter_count, statement.left, &mut call_arguments, &mut registers, &mut instructions)
+                                                    match value_register < 0:
+                                                        -1:
+                                                            return value_register
+                                                        0:
+                                                            value_register = value_register
+                                                        1:
+                                                            value_register = value_register
+                                                    discard ng_mark_discarded_call_result(&*nodes, statement.left, &mut instructions)
+                                                0:
+                                                    match statement.kind == 17:
+                                                        -1:
+                                                            status = ng_emit_while(source, types, functions, &*nodes, parameters, &variables, function, statement, &mut call_arguments, &mut registers, &mut instructions, &mut blocks, &mut current_block)
+                                                            match status <=> 0:
+                                                                -1:
+                                                                    return status
+                                                                0:
+                                                                    status = status
+                                                                1:
+                                                                    return status
+                                                        0:
+                                                            return -16
+                                                        1:
+                                                            return -16
+                                                1:
+                                                    return -16
                                         1:
                                             return -16
                                 1:
@@ -1080,13 +1449,19 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
                             return -16
                 1:
                     return -16
-            match statement.kind <=> 12:
+            match statement.kind == 17:
                 -1:
-                    discard ng_mark_instruction_block(&mut instructions, statement_first_instruction, current_block)
-                0:
                     statement_first_instruction = statement_first_instruction
+                0:
+                    match statement.kind <=> 12:
+                        -1:
+                            discard ng_mark_instruction_block(&mut instructions, statement_first_instruction, current_block)
+                        0:
+                            statement_first_instruction = statement_first_instruction
+                        1:
+                            discard ng_mark_instruction_block(&mut instructions, statement_first_instruction, current_block)
                 1:
-                    discard ng_mark_instruction_block(&mut instructions, statement_first_instruction, current_block)
+                    return -16
             link_id = link.right
         discard ng_ir_event(events, 1, function_index, function.return_type, function.parameter_count, function.name_start, function.name_end, 1, function.exported * 2)
         parameter_index = 0
@@ -1127,6 +1502,19 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
                             event_immediate = instruction.memory
                         1:
                             instruction_index = instruction_index
+            match instruction.opcode <=> 7:
+                0:
+                    match instruction.operand0 <=> -3:
+                        0:
+                            event_immediate = 0
+                        -1:
+                            event_immediate = event_immediate
+                        1:
+                            event_immediate = event_immediate
+                -1:
+                    instruction_index = instruction_index
+                1:
+                    instruction_index = instruction_index
             discard ng_ir_event(events, 4, function_index, instruction.opcode, instruction.result, instruction.operand_count, instruction.operand0, event_operand1, event_immediate)
             match instruction.opcode <=> 7:
                 -1:
@@ -1163,6 +1551,13 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
                                     return -14
                                 1:
                                     return -14
+                        -1:
+                            instruction_index = instruction_index
+                        1:
+                            instruction_index = instruction_index
+                    match instruction.operand0 <=> -3:
+                        0:
+                            discard ng_ir_event(events, 18, function_index, instruction_index, 1, instruction.immediate, 0, 0, 0)
                         -1:
                             instruction_index = instruction_index
                         1:

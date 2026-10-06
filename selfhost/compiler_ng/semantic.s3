@@ -1,6 +1,6 @@
 module selfhost.compiler_ng.semantic
 
-from selfhost.compiler_ng.parser import NgAstNode, NgField, NgFunction, NgParameter, NgRecord
+from selfhost.compiler_ng.parser import NgAstNode, NgField, NgFunction, NgParameter, NgRecord, ng_is_relational_operator
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table
 
 export record NgLocal:
@@ -477,6 +477,103 @@ fn ng_generic_vector_len_type(source: &bytes, types: &vector<NgTypeDescriptor>, 
         1:
             return -14
 
+fn ng_generic_vector_push_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64) -> i64:
+    mut first_argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut value_argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut reference_type_id: i64 = -1
+    mut reference_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut value_type_id: i64 = -1
+    match call_node.right > 0:
+        -1:
+            match call_node.right <= vector_len<NgTypeDescriptor>(types):
+                -1:
+                    match call_node.left >= 0:
+                        -1:
+                            first_argument = vector_get<NgAstNode>(nodes, call_node.left)
+                            match first_argument.kind <=> 6:
+                                0:
+                                    match first_argument.right >= 0:
+                                        -1:
+                                            value_argument = vector_get<NgAstNode>(nodes, first_argument.right)
+                                            match value_argument.kind <=> 6:
+                                                0:
+                                                    match value_argument.right <=> -1:
+                                                        0:
+                                                            reference_type_id = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, first_argument.left)
+                                                            match reference_type_id < 0:
+                                                                -1:
+                                                                    return reference_type_id
+                                                                0:
+                                                                    match ng_vector_reference_matches(types, reference_type_id, call_node.right) <=> -1:
+                                                                        0:
+                                                                            reference_type = vector_get<NgTypeDescriptor>(types, reference_type_id - 1)
+                                                                            match reference_type.mutable <=> 1:
+                                                                                0:
+                                                                                    value_type_id = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, value_argument.left, call_node.right)
+                                                                                    match value_type_id < 0:
+                                                                                        -1:
+                                                                                            return value_type_id
+                                                                                        0:
+                                                                                            match value_type_id <=> call_node.right:
+                                                                                                0:
+                                                                                                    match expected_type > 0:
+                                                                                                        -1:
+                                                                                                            match expected_type <=> 3:
+                                                                                                                0:
+                                                                                                                    return 3
+                                                                                                                -1:
+                                                                                                                    return -14
+                                                                                                                1:
+                                                                                                                    return -14
+                                                                                                        0:
+                                                                                                            return 3
+                                                                                                        1:
+                                                                                                            return 3
+                                                                                                -1:
+                                                                                                    return -14
+                                                                                                1:
+                                                                                                    return -14
+                                                                                        1:
+                                                                                            return -14
+                                                                                -1:
+                                                                                    return -14
+                                                                                1:
+                                                                                    return -14
+                                                                        -1:
+                                                                            return -14
+                                                                        1:
+                                                                            return -14
+                                                                1:
+                                                                    return -14
+                                                        -1:
+                                                            return -14
+                                                        1:
+                                                            return -14
+                                                -1:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        0:
+                                            return -14
+                                        1:
+                                            return -14
+                                -1:
+                                    return -14
+                                1:
+                                    return -14
+                        0:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+        0:
+            return -14
+        1:
+            return -14
+
 fn ng_generic_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64) -> i64:
     mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut expected: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
@@ -561,7 +658,13 @@ fn ng_generic_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields
                 1:
                     return -14
         0:
-            return -13
+            match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_push")):
+                -1:
+                    return ng_generic_vector_push_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type)
+                0:
+                    return -13
+                1:
+                    return -13
         1:
             return -13
 
@@ -631,7 +734,13 @@ fn ng_is_numeric_type(type_kind: i64) -> trit:
                 0:
                     return -1
                 1:
-                    return 0
+                    match type_kind <=> 4:
+                        -1:
+                            return 0
+                        0:
+                            return -1
+                        1:
+                            return 0
 
 fn ng_binary_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode) -> i64:
     mut left_type: i64 = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
@@ -655,11 +764,17 @@ fn ng_binary_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, f
                                 0:
                                     return 2
                                 1:
-                                    match ng_supported_numeric_binary(node.operation):
+                                    match ng_is_relational_operator(node.operation):
                                         -1:
-                                            return left_type
+                                            return 2
                                         0:
-                                            return -14
+                                            match ng_supported_numeric_binary(node.operation):
+                                                -1:
+                                                    return left_type
+                                                0:
+                                                    return -14
+                                                1:
+                                                    return -14
                                         1:
                                             return -14
                         1:
@@ -863,16 +978,135 @@ export fn ng_resolve_record_field_nodes(source: &bytes, types: &vector<NgTypeDes
         function_index = function_index + 1
     return 0
 
+fn ng_check_control_body(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, function: NgFunction, body_head: i64) -> i64:
+    mut link_id: i64 = body_head
+    mut link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut statement: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut local_id: i64 = -1
+    mut local_binding: NgLocal = NgLocal(name_start=0, name_end=0, type_kind=0, mutable=0)
+    mut value_type: i64 = 0
+    mut nested_flow: i64 = 0
+    while link_id >= 0:
+        link = vector_get<NgAstNode>(nodes, link_id)
+        match link.kind <=> 11:
+            -1:
+                return -16
+            0:
+                statement = vector_get<NgAstNode>(nodes, link.left)
+                match statement.kind == 8:
+                    -1:
+                        local_id = ng_local_index(source, locals, statement.start, statement.end)
+                        match local_id < 0:
+                            -1:
+                                return -12
+                            0:
+                                local_binding = vector_get<NgLocal>(locals, local_id)
+                                match local_binding.mutable <=> 1:
+                                    -1:
+                                        return -16
+                                    0:
+                                        value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left, local_binding.type_kind)
+                                        match value_type <=> local_binding.type_kind:
+                                            -1:
+                                                return -14
+                                            0:
+                                                value_type = value_type
+                                            1:
+                                                return -14
+                                    1:
+                                        return -16
+                            1:
+                                return -12
+                    0:
+                        match statement.kind == 9:
+                            -1:
+                                value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left, function.return_type)
+                                match value_type <=> function.return_type:
+                                    -1:
+                                        return -15
+                                    0:
+                                        match link.right <=> -1:
+                                            0:
+                                                return 0
+                                            -1:
+                                                return -17
+                                            1:
+                                                return -17
+                                    1:
+                                        return -15
+                            0:
+                                match statement.kind == 12:
+                                    -1:
+                                        nested_flow = ng_check_match_arms(source, types, fields, functions, nodes, parameters, locals, function, statement)
+                                        match nested_flow < 0:
+                                            -1:
+                                                return nested_flow
+                                            0:
+                                                match nested_flow <=> 0:
+                                                    0:
+                                                        match link.right <=> -1:
+                                                            0:
+                                                                return 0
+                                                            -1:
+                                                                return -17
+                                                            1:
+                                                                return -17
+                                                    -1:
+                                                        link_id = link.right
+                                                    1:
+                                                        link_id = link.right
+                                            1:
+                                                link_id = link.right
+                                    0:
+                                        match statement.kind == 15:
+                                            -1:
+                                                value_type = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left)
+                                                match value_type < 0:
+                                                    -1:
+                                                        return value_type
+                                                    0:
+                                                        value_type = value_type
+                                                    1:
+                                                        value_type = value_type
+                                            0:
+                                                match statement.kind == 17:
+                                                    -1:
+                                                        value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left, 2)
+                                                        match value_type <=> 2:
+                                                            -1:
+                                                                return -14
+                                                            0:
+                                                                nested_flow = ng_check_control_body(source, types, fields, functions, nodes, parameters, locals, function, statement.right)
+                                                                match nested_flow < 0:
+                                                                    -1:
+                                                                        return nested_flow
+                                                                    0:
+                                                                        nested_flow = nested_flow
+                                                                    1:
+                                                                        nested_flow = nested_flow
+                                                            1:
+                                                                return -14
+                                                    0:
+                                                        return -16
+                                                    1:
+                                                        return -16
+                                            1:
+                                                return -16
+                                    1:
+                                        return -16
+                            1:
+                                return -16
+                    1:
+                        return -16
+            1:
+                return -16
+        link_id = link.right
+    return 1
+
 fn ng_check_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, function: NgFunction, statement: NgAstNode) -> i64:
     mut selector_type: i64 = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left)
     mut arm_id: i64 = statement.right
     mut arm: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
-    mut body_link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
-    mut body_statement: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
-    mut return_type: i64 = 0
-    mut local_id: i64 = -1
-    mut local_binding: NgLocal = NgLocal(name_start=0, name_end=0, type_kind=0, mutable=0)
-    mut body_link_id: i64 = -1
     mut body_returned: i64 = 0
     mut has_fallthrough: i64 = 0
     mut seen_negative: i64 = 0
@@ -952,72 +1186,20 @@ fn ng_check_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields:
                                         seen_positive = 1
                                     1:
                                         return -18
-                body_link_id = arm.left
-                body_returned = 0
-                while body_link_id >= 0:
-                    body_link = vector_get<NgAstNode>(nodes, body_link_id)
-                    match body_link.kind <=> 11:
-                        -1:
-                            return -16
-                        0:
-                            body_statement = vector_get<NgAstNode>(nodes, body_link.left)
-                            match body_statement.kind == 8:
-                                -1:
-                                    local_id = ng_local_index(source, locals, body_statement.start, body_statement.end)
-                                    match local_id < 0:
-                                        -1:
-                                            return -12
-                                        0:
-                                            local_binding = vector_get<NgLocal>(locals, local_id)
-                                            match local_binding.mutable <=> 1:
-                                                -1:
-                                                    return -16
-                                                0:
-                                                    return_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, body_statement.left, local_binding.type_kind)
-                                                    match return_type <=> local_binding.type_kind:
-                                                        -1:
-                                                            return -14
-                                                        0:
-                                                            body_returned = body_returned
-                                                        1:
-                                                            return -14
-                                                1:
-                                                    return -16
-                                        1:
-                                            return -12
-                                0:
-                                    match body_statement.kind == 9:
-                                        -1:
-                                            return_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, body_statement.left, function.return_type)
-                                            match return_type <=> function.return_type:
-                                                -1:
-                                                    return -15
-                                                0:
-                                                    match body_link.right <=> -1:
-                                                        -1:
-                                                            return -17
-                                                        0:
-                                                            body_returned = 1
-                                                        1:
-                                                            return -17
-                                                1:
-                                                    return -15
-                                        0:
-                                            return -16
-                                        1:
-                                            return -16
-                                1:
-                                    return -16
-                        1:
-                            return -16
-                    body_link_id = body_link.right
-                match body_returned <=> 0:
+                body_returned = ng_check_control_body(source, types, fields, functions, nodes, parameters, locals, function, arm.left)
+                match body_returned < 0:
                     -1:
-                        return -16
+                        return body_returned
                     0:
-                        has_fallthrough = 1
+                        match body_returned <=> 0:
+                            -1:
+                                return -16
+                            0:
+                                body_returned = body_returned
+                            1:
+                                has_fallthrough = 1
                     1:
-                        body_returned = body_returned
+                        return -16
             1:
                 return -16
         arm_id = arm.right
@@ -1163,7 +1345,40 @@ fn ng_check_function_body(source: &bytes, types: &vector<NgTypeDescriptor>, fiel
                                                     1:
                                                         link_id = link.right
                                             0:
-                                                return -16
+                                                match statement.kind == 15:
+                                                    -1:
+                                                        value_type = ng_expression_type(source, types, fields, functions, nodes, parameters, &locals, function.first_parameter, function.parameter_count, statement.left)
+                                                        match value_type < 0:
+                                                            -1:
+                                                                return value_type
+                                                            0:
+                                                                value_type = value_type
+                                                            1:
+                                                                value_type = value_type
+                                                    0:
+                                                        match statement.kind == 17:
+                                                            -1:
+                                                                value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, &locals, function.first_parameter, function.parameter_count, statement.left, 2)
+                                                                match value_type <=> 2:
+                                                                    -1:
+                                                                        return -14
+                                                                    0:
+                                                                        value_type = ng_check_control_body(source, types, fields, functions, nodes, parameters, &locals, function, statement.right)
+                                                                        match value_type < 0:
+                                                                            -1:
+                                                                                return value_type
+                                                                            0:
+                                                                                link_id = link.right
+                                                                            1:
+                                                                                link_id = link.right
+                                                                    1:
+                                                                        return -14
+                                                            0:
+                                                                return -16
+                                                            1:
+                                                                return -16
+                                                    1:
+                                                        return -16
                                             1:
                                                 return -16
                                     1:

@@ -53,6 +53,7 @@ _OPCODE_CODES = {
     "branch3": 11,
     "jump": 12,
     "compare": 13,
+    "relate": 15,
 }
 
 
@@ -85,7 +86,7 @@ def _reference_events(program: object, source: str) -> list[int]:
         assert len(fields) == 7
         events.extend((kind, *fields))
 
-    event(0, 6, 8, 0, 0, 0, 0, 0)
+    event(0, 8, 8, 0, 0, 0, 0, 0)
     for type_id in range(1, 7):
         event(12, type_id, type_id, -1, -1, -1, -1, -1)
         event(13, type_id, -1, 0, 0, 0, 0, 0)
@@ -371,6 +372,38 @@ def test_nextgen_emits_reference_equivalent_ir_for_signed_i64_boundaries() -> No
         "fn maximum() -> i64:\n    return 9223372036854775807\n"
         "fn main() -> i64:\n    return minimum() + maximum()\n"
     )
+    assert _nextgen_event_parity_result(source) == 0
+
+
+def test_nextgen_discarded_call_emits_side_effecting_call_without_result_use() -> None:
+    source = "\n".join(
+        (
+            "fn effect(value: i64) -> i64:",
+            "    return value",
+            "fn main() -> i64:",
+            "    discard effect(7)",
+            "    return 0",
+        )
+    )
+    assert _nextgen_event_parity_result(source) == 0
+
+
+def test_nextgen_f64_relational_ir_matches_reference_relation_codes() -> None:
+    source = "\n".join(
+        line
+        for name, operator in (
+            ("equal", "=="),
+            ("not_equal", "!="),
+            ("less", "<"),
+            ("less_equal", "<="),
+            ("greater", ">"),
+            ("greater_equal", ">="),
+        )
+        for line in (
+            f"fn {name}(left: f64, right: f64) -> trit:",
+            f"    return left {operator} right",
+        )
+    ) + "\nfn main() -> i64:\n    return 0\n"
     assert _nextgen_event_parity_result(source) == 0
 
 

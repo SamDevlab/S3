@@ -115,6 +115,47 @@ def test_nextgen_parser_accepts_generic_call_type_arguments() -> None:
     assert probe[-5:] == [5, 1, source.index("vector_new") + len("vector_new"), 1, -1]
 
 
+def test_nextgen_parser_preserves_named_record_constructor_arguments() -> None:
+    source = (
+        "fn make(value: i64) -> i64:\n"
+        "    return Token(kind=value, start=0, end=1)\n"
+    )
+    assert _ng_parse_status(source) == 0
+
+
+def test_nextgen_parser_rejects_named_argument_without_value() -> None:
+    source = "fn make() -> i64:\n    return Token(kind=)\n"
+    assert _ng_parse_status(source) == -1
+
+
+def test_nextgen_parser_accepts_discarded_call_expression() -> None:
+    source = (
+        "fn effect(value: i64) -> i64:\n"
+        "    return value\n"
+        "fn run(value: i64) -> i64:\n"
+        "    discard effect(value)\n"
+        "    return value\n"
+    )
+    assert _ng_parse_status(source) == 0
+
+
+def test_nextgen_parser_accepts_while_with_nested_match_block() -> None:
+    source = (
+        "fn scan() -> i64:\n"
+        "    mut scanning: i64 = 1\n"
+        "    while scanning == 1:\n"
+        "        match scanning:\n"
+        "            -1:\n"
+        "                scanning = 0\n"
+        "            0:\n"
+        "                scanning = 0\n"
+        "            1:\n"
+        "                scanning = 0\n"
+        "    return scanning\n"
+    )
+    assert _ng_parse_status(source) == 0
+
+
 def _ng_module_type_probe() -> list[int]:
     source = (
         "module app\n"
@@ -231,6 +272,7 @@ fn main() -> vector<i64>:
     discard vector_push<i64>(&mut result, parse_status)
     discard vector_push<i64>(&mut result, vector_len<NgRecord>(&records))
     discard vector_push<i64>(&mut result, vector_len<NgField>(&fields))
+    discard vector_push<i64>(&mut result, vector_len<NgFunction>(&functions))
     match parse_status <=> 0:
         -1:
             return result
@@ -385,22 +427,35 @@ def test_nextgen_parser_resolves_forward_record_references_and_allows_type_only_
         "record Second:\n"
         "    value: i64\n"
     )
-    assert _ng_module_record_probe(source) == [0, 0, 0, 2, 2, 0]
+    assert _ng_module_record_probe(source) == [0, 0, 0, 2, 2, 0, 0]
+
+
+def test_nextgen_parser_accepts_exported_record_before_top_level_function() -> None:
+    source = (
+        "module app\n"
+        "export record Token:\n"
+        "    kind: i64\n"
+        "    start: i64\n"
+        "    end: i64\n"
+        "fn make() -> i64:\n"
+        "    return 0\n"
+    )
+    assert _ng_module_record_probe(source) == [0, 0, 0, 1, 3, 1, 0]
 
 
 def test_nextgen_parser_rejects_unknown_nominal_field_types() -> None:
     source = "module app\nrecord First:\n    missing: Unknown\n"
-    assert _ng_module_record_probe(source) == [0, 0, 0, 1, 1, -5]
+    assert _ng_module_record_probe(source) == [0, 0, 0, 1, 1, 0, -5]
 
 
 def test_nextgen_parser_rejects_duplicate_record_declarations() -> None:
     source = "module app\nrecord Token:\n    value: i64\nrecord Token:\n    other: i64\n"
-    assert _ng_module_record_probe(source) == [0, 0, -3, 1, 1]
+    assert _ng_module_record_probe(source) == [0, 0, -3, 1, 1, 0]
 
 
 def test_nextgen_parser_rejects_duplicate_record_fields() -> None:
     source = "module app\nrecord Token:\n    value: i64\n    value: trit\n"
-    assert _ng_module_record_probe(source) == [0, 0, -4, 0, 1]
+    assert _ng_module_record_probe(source) == [0, 0, -4, 0, 1, 0]
 
 
 def test_nextgen_parser_keeps_multiple_function_boundaries_and_parameter_spans() -> None:
@@ -467,6 +522,30 @@ def test_nextgen_parser_accepts_compare_expression_as_match_selector() -> None:
         "    return value <=> 0\n"
     )
     assert _ng_parse_status(source) == 0
+
+
+def test_nextgen_parser_accepts_equality_expression_as_match_selector() -> None:
+    source = (
+        "fn is_separator(unit: i64) -> trit:\n"
+        "    match unit == 95:\n"
+        "        -1:\n"
+        "            return -1\n"
+        "        0:\n"
+        "            return 0\n"
+        "        1:\n"
+        "            return 0\n"
+    )
+    assert _ng_parse_status(source) == 0
+
+
+def test_nextgen_parser_accepts_general_relational_operators() -> None:
+    operators = ("==", "!=", "<", "<=", ">", ">=")
+    for index, operator in enumerate(operators):
+        source = (
+            f"fn relation_{index}(left: i64, right: i64) -> trit:\n"
+            f"    return left {operator} right\n"
+        )
+        assert _ng_parse_status(source) == 0, operator
 
 
 def test_nextgen_parser_accepts_signed_integer_literal_expression() -> None:

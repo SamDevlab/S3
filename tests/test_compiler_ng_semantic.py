@@ -140,6 +140,58 @@ def test_nextgen_semantic_pass_resolves_forward_calls_and_argument_types() -> No
     assert _ng_semantic_status(source) == 0
 
 
+def test_nextgen_semantic_pass_checks_discarded_call_expression() -> None:
+    source = (
+        "fn effect(value: i64) -> i64:\n"
+        "    return value\n"
+        "fn run(value: i64) -> i64:\n"
+        "    discard effect(value)\n"
+        "    return value\n"
+    )
+    assert _ng_semantic_status(source) == 0
+
+
+def test_nextgen_semantics_types_relational_operators_as_trit() -> None:
+    source = (
+        "fn comparisons(left: i64, right: i64) -> i64:\n"
+        "    equal: trit = left == right\n"
+        "    not_equal: trit = left != right\n"
+        "    less: trit = left < right\n"
+        "    less_equal: trit = left <= right\n"
+        "    greater: trit = left > right\n"
+        "    greater_equal: trit = left >= right\n"
+        "    return 0\n"
+    )
+    assert _ng_semantic_status(source) == 0
+
+
+def test_nextgen_semantics_checks_while_with_nested_match_and_keeps_loop_fallthrough() -> None:
+    source = (
+        "fn main() -> i64:\n"
+        "    mut index: i64 = 0\n"
+        "    while index < 3:\n"
+        "        match index <=> 1:\n"
+        "            -1:\n"
+        "                index = index + 1\n"
+        "            0:\n"
+        "                index = index + 1\n"
+        "            1:\n"
+        "                index = index + 1\n"
+        "    return index\n"
+    )
+    assert _ng_semantic_status(source) == 0
+
+
+def test_nextgen_semantics_does_not_propagate_loop_body_return_to_function() -> None:
+    source = (
+        "fn main() -> i64:\n"
+        "    while 1 < 0:\n"
+        "        return 5\n"
+        "    return 0\n"
+    )
+    assert _ng_semantic_status(source) == 0
+
+
 def test_nextgen_semantic_checks_generic_vector_new_against_contextual_type() -> None:
     valid = (
         "module app\n"
@@ -177,6 +229,20 @@ def test_nextgen_semantic_checks_generic_vector_new_against_contextual_type() ->
     assert compile_source(valid).ir is not None
     assert compile_source(valid_record).ir is not None
     assert _ng_module_semantic_statuses([valid, valid_record, wrong_result_type, wrong_capacity_type, dynamic_element]) == [0, 0, -14, -14, -14]
+
+
+def test_nextgen_semantic_checks_generic_vector_push_element_and_mutability() -> None:
+    immutable_container = (
+        "module app\n"
+        "fn append(values: &vector<i64>) -> tryte:\n"
+        "    return vector_push<i64>(values, 7)\n"
+    )
+    mismatched_element = (
+        "module app\n"
+        "fn append(values: &mut vector<i64>) -> tryte:\n"
+        "    return vector_push<tryte>(values, 7)\n"
+    )
+    assert _ng_module_semantic_statuses([immutable_container, mismatched_element]) == [-14, -14]
 
 
 def test_nextgen_semantics_compare_complete_nominal_vector_and_reference_descriptors() -> None:
