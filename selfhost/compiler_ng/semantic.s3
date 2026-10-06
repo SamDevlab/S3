@@ -332,10 +332,162 @@ export fn ng_find_function(source: &bytes, functions: &vector<NgFunction>, name_
                 index = index + 1
     return -13
 
+fn ng_vector_reference_matches(types: &vector<NgTypeDescriptor>, reference_type_id: i64, element_type_id: i64) -> trit:
+    mut reference_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut vector_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut element_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    match reference_type_id > 0:
+        -1:
+            match reference_type_id <= vector_len<NgTypeDescriptor>(types):
+                -1:
+                    reference_type = vector_get<NgTypeDescriptor>(types, reference_type_id - 1)
+                    match reference_type.kind <=> 9:
+                        0:
+                            match reference_type.target_type > 0:
+                                -1:
+                                    match reference_type.target_type <= vector_len<NgTypeDescriptor>(types):
+                                        -1:
+                                            vector_type = vector_get<NgTypeDescriptor>(types, reference_type.target_type - 1)
+                                            match vector_type.kind <=> 8:
+                                                0:
+                                                    match vector_type.element_type <=> element_type_id:
+                                                        0:
+                                                            match element_type_id > 0:
+                                                                -1:
+                                                                    match element_type_id <= vector_len<NgTypeDescriptor>(types):
+                                                                        -1:
+                                                                            element_type = vector_get<NgTypeDescriptor>(types, element_type_id - 1)
+                                                                            match element_type.kind <=> 1:
+                                                                                0:
+                                                                                    return -1
+                                                                                -1:
+                                                                                    return 0
+                                                                                1:
+                                                                                    match element_type.kind <=> 3:
+                                                                                        0:
+                                                                                            return -1
+                                                                                        -1:
+                                                                                            return 0
+                                                                                        1:
+                                                                                            match element_type.kind <=> 4:
+                                                                                                0:
+                                                                                                    return -1
+                                                                                                -1:
+                                                                                                    return 0
+                                                                                                1:
+                                                                                                    return 0
+                                                                        0:
+                                                                            return 0
+                                                                        1:
+                                                                            return 0
+                                                                0:
+                                                                    return 0
+                                                                1:
+                                                                    return 0
+                                                        -1:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                -1:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        0:
+                                            return 0
+                                        1:
+                                            return 0
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        -1:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn ng_expected_i64_compatible(expected_type: i64) -> trit:
+    match expected_type < 0:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match expected_type <=> 1:
+                0:
+                    return -1
+                -1:
+                    return 0
+                1:
+                    return 0
+
+fn ng_generic_vector_len_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64) -> i64:
+    mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut argument_type: i64 = -1
+    match call_node.right > 0:
+        -1:
+            match call_node.right <= vector_len<NgTypeDescriptor>(types):
+                -1:
+                    match call_node.left >= 0:
+                        -1:
+                            argument = vector_get<NgAstNode>(nodes, call_node.left)
+                            match argument.kind <=> 6:
+                                0:
+                                    match argument.right <=> -1:
+                                        0:
+                                            argument_type = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, argument.left)
+                                            match ng_vector_reference_matches(types, argument_type, call_node.right) <=> -1:
+                                                0:
+                                                    match ng_expected_i64_compatible(expected_type) <=> -1:
+                                                        0:
+                                                            return 1
+                                                        -1:
+                                                            return -14
+                                                        1:
+                                                            return -14
+                                                -1:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        -1:
+                                            return -14
+                                        1:
+                                            return -14
+                                -1:
+                                    return -14
+                                1:
+                                    return -14
+                        0:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+        0:
+            return -14
+        1:
+            return -14
+
 fn ng_generic_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64) -> i64:
     mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut expected: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut argument_type: i64 = 0
+    match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_len")):
+        -1:
+            return ng_generic_vector_len_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type)
+        0:
+            argument_type = argument_type
+        1:
+            return -13
     match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_new")):
         -1:
             match call_node.right > 0:

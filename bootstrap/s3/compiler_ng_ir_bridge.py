@@ -1,6 +1,6 @@
 """Structural decoder for the versioned S3C-NG integer-event interchange.
 
-Versions 1-5 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
+Versions 1-6 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
 Kind 0 declares ``(version, record_width, flags=0, 0, 0, 0, 0)``. Kind 1 is a
 function ``(index, return_type, parameter_count, name_start, name_end,
 result_width, flags)``; kind 2 is a parameter ``(function, ordinal, type,
@@ -14,7 +14,9 @@ exported. Block ID 0 is the canonical entry block. V1 accepts scalar type codes
 records (kinds 12-14) and uses descriptor IDs in type fields. V4 adds aggregate
 field loads (opcode 14) followed by kind 15 carrying the field-name span end.
 V5 adds kind 16 after a CALL's arguments for an explicitly selected scalar
-``vector_new<T>`` runtime builtin and its element type descriptor ID.
+``vector_new<T>`` runtime builtin and its element type descriptor ID. V6 retains
+that record and adds kind 17 for scalar ``vector_len<T>`` calls whose argument
+register is explicitly typed as a reference to ``vector<T>``.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
@@ -41,13 +43,18 @@ from .ir import (
 )
 
 
-NG_IR_FORMAT_VERSION = 5
+NG_IR_FORMAT_VERSION = 6
 NG_IR_RECORD_WIDTH = 8
 
 _V5_VECTOR_NEW_BUILTINS = {
     1: ("i64_vector_new", 1),
     2: ("tryte_vector_new", 3),
     3: ("f64_vector_new", 4),
+}
+_V6_VECTOR_LEN_BUILTINS = {
+    1: ("i64_vector_len", 1),
+    3: ("tryte_vector_len", 3),
+    4: ("f64_vector_len", 4),
 }
 
 _TYPE_CODES_V1 = {
@@ -147,7 +154,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -458,6 +465,46 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                         raise NGIRDecodeError("V5 vector_new type metadata disagrees with its registers")
                     callee_index = None
                     callee_builtin = builtin_name
+                elif version >= 6 and operand0 == -2:
+                    builtin_record = take(17, "V6 generic vector_len CALL target")
+                    _, builtin_owner, builtin_instruction, builtin_id, element_type_id, *reserved = builtin_record
+                    if (builtin_owner, builtin_instruction) != (function_index, instruction_index) or any(reserved):
+                        raise NGIRDecodeError("malformed V6 generic vector_len CALL target identity")
+                    if builtin_id != 1:
+                        raise NGIRDecodeError(f"unknown V6 generic CALL builtin ID {builtin_id}")
+                    if result is None or not 0 <= result < len(register_type_ids):
+                        raise NGIRDecodeError("V6 vector_len result register is missing")
+                    if operand_count != 1 or len(call_arguments) != 1:
+                        raise NGIRDecodeError("V6 vector_len requires exactly one reference argument")
+                    result_type = type_descriptors.get(register_type_ids[result])
+                    reference_register = call_arguments[0]
+                    if not 0 <= reference_register < len(register_type_ids):
+                        raise NGIRDecodeError("V6 vector_len reference register is missing")
+                    reference_type = type_descriptors.get(register_type_ids[reference_register])
+                    vector_type = (
+                        type_descriptors.get(reference_type.target_type)
+                        if reference_type is not None and reference_type.kind == 9
+                        else None
+                    )
+                    element_type = type_descriptors.get(element_type_id)
+                    builtin = _V6_VECTOR_LEN_BUILTINS.get(
+                        element_type.kind if element_type is not None else -1
+                    )
+                    if (
+                        result_type is None
+                        or result_type.kind != 1
+                        or reference_type is None
+                        or reference_type.kind != 9
+                        or vector_type is None
+                        or vector_type.kind != 8
+                        or vector_type.element_type != element_type_id
+                        or builtin is None
+                    ):
+                        raise NGIRDecodeError("V6 vector_len type metadata disagrees with its registers")
+                    callee_index = None
+                    callee_builtin = builtin[0]
+                elif operand0 < 0:
+                    raise NGIRDecodeError(f"unsupported generic CALL sentinel {operand0} in NG IR V{version}")
                 operands = tuple(call_arguments)
                 decoded_immediate = None
             elif opcode is IROpcode.MOVE:

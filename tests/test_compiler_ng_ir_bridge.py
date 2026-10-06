@@ -16,10 +16,16 @@ from bootstrap.s3.compiler_ng_ir_bridge import (
 from bootstrap.s3.backends.x86_64 import generate_native_assembly
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.backends.x86_64 import NativeToolchain
-from bootstrap.s3.dynamic import DynamicCompositeVector, DynamicVector
+from bootstrap.s3.dynamic import (
+    DynamicCompositeVector,
+    DynamicVector,
+    f64_vector_new,
+    i64_vector_new,
+    tryte_vector_new,
+)
 from bootstrap.s3.emulator import Emulator
 from bootstrap.s3.ir import IRModule, IRType
-from bootstrap.s3.ir_emulator import execute_ir
+from bootstrap.s3.ir_emulator import ReferenceValue, execute_ir
 from bootstrap.s3 import ir_emulator
 from bootstrap.s3.host_services import HostExecutionContext
 from bootstrap.s3.pipeline import compile_source, compile_sources
@@ -452,7 +458,7 @@ def test_branches_ng_output_decodes_verifies_executes_and_matches_reference() ->
     assert execute_ir(reference_ir) == execute_ir(ng_canonical_ir)
 
 
-def test_ng_ir_v5_preserves_bytes_text_and_decodes_v2() -> None:
+def test_ng_ir_v6_preserves_bytes_text_and_decodes_v2() -> None:
     source = (
         "fn echo_bytes(value: bytes) -> bytes:\n    return value\n"
         "fn echo_text(value: text) -> text:\n    return value\n"
@@ -461,7 +467,7 @@ def test_ng_ir_v5_preserves_bytes_text_and_decodes_v2() -> None:
     reference_ir = compile_source(source).ir
     assert reference_ir is not None
     events = _emit_ng_events(source)
-    assert _event_records(events)[0] == [0, 5, 8, 0, 0, 0, 0, 0]
+    assert _event_records(events)[0] == [0, 6, 8, 0, 0, 0, 0, 0]
     ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
 
     verify_ir(ng_ir)
@@ -484,7 +490,7 @@ def test_ng_ir_v5_preserves_bytes_text_and_decodes_v2() -> None:
     assert v2_ir.functions[0].return_type is IRType.TEXT
 
 
-def test_ng_ir_v5_preserves_vector_and_reference_signature_categories() -> None:
+def test_ng_ir_v6_preserves_vector_and_reference_signature_categories() -> None:
     source = (
         "fn identity(value: vector<i64>) -> vector<i64>:\n    return value\n"
         "fn borrow(value: &mut bytes) -> tryte:\n    return 0\n"
@@ -494,7 +500,7 @@ def test_ng_ir_v5_preserves_vector_and_reference_signature_categories() -> None:
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 5, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 6, 8, 0, 0, 0, 0, 0]
     assert any(record[0] == 12 and record[2] == 8 for record in records)
     assert any(record[0] == 12 and record[2] == 9 for record in records)
 
@@ -503,7 +509,7 @@ def test_ng_ir_v5_preserves_vector_and_reference_signature_categories() -> None:
     assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
 
 
-def test_ng_ir_v5_resolves_aggregate_calls_by_complete_ng_type_identity() -> None:
+def test_ng_ir_v6_resolves_aggregate_calls_by_complete_ng_type_identity() -> None:
     sources = {
         "app.s3": (
             "module app\n"
@@ -590,7 +596,7 @@ def test_ng_ir_v5_resolves_aggregate_calls_by_complete_ng_type_identity() -> Non
     ("element_type", "builtin_name"),
     (("i64", "i64_vector_new"), ("tryte", "tryte_vector_new"), ("f64", "f64_vector_new")),
 )
-def test_ng_ir_v5_generic_vector_new_is_explicit_and_executable(element_type: str, builtin_name: str) -> None:
+def test_ng_ir_v6_generic_vector_new_is_explicit_and_executable(element_type: str, builtin_name: str) -> None:
     source = (
         f"fn main() -> vector<{element_type}>:\n"
         f"    return vector_new<{element_type}>(3)\n"
@@ -599,7 +605,7 @@ def test_ng_ir_v5_generic_vector_new_is_explicit_and_executable(element_type: st
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 5, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 6, 8, 0, 0, 0, 0, 0]
     builtin_record = next(record for record in records if record[0] == 16)
     call_instructions = [record for record in records if record[0] == 4]
     call_instruction_index = next(index for index, record in enumerate(call_instructions) if record[2] == 7)
@@ -625,7 +631,7 @@ def test_ng_ir_v5_generic_vector_new_is_explicit_and_executable(element_type: st
     ) == builtin_name
 
 
-def test_ng_ir_v5_generic_vector_new_rejects_malformed_builtin_metadata() -> None:
+def test_ng_ir_v6_generic_vector_new_rejects_malformed_builtin_metadata() -> None:
     source = "fn main() -> vector<i64>:\n    return vector_new<i64>(3)\n"
     records = _event_records(_emit_ng_events(source))
     builtin_record = next(record for record in records if record[0] == 16)
@@ -640,13 +646,99 @@ def test_ng_ir_v5_generic_vector_new_rejects_malformed_builtin_metadata() -> Non
         decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
 
 
-def test_ng_ir_v5_decoder_keeps_v4_stream_compatibility() -> None:
+def test_ng_ir_v6_decoder_keeps_v4_stream_compatibility() -> None:
     source = "fn main() -> i64:\n    return 0\n"
     records = _event_records(_emit_ng_events(source))
     records[0][1] = 4
     decoded = decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
     verify_ir(decoded)
     assert execute_ir(decoded) == 0
+
+
+@pytest.mark.parametrize(
+    ("element_type", "builtin_name", "element_type_id", "vector_factory", "value"),
+    (
+        ("i64", "i64_vector_len", 1, i64_vector_new, 17),
+        ("tryte", "tryte_vector_len", 3, tryte_vector_new, -17),
+        ("f64", "f64_vector_len", 4, f64_vector_new, 1.25),
+    ),
+)
+def test_ng_ir_v6_generic_vector_len_is_explicit_and_executable(
+    element_type: str,
+    builtin_name: str,
+    element_type_id: int,
+    vector_factory,
+    value: int | float,
+) -> None:
+    source = (
+        f"fn vector_size(values: &vector<{element_type}>) -> i64:\n"
+        f"    return vector_len<{element_type}>(values)\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+    records = _event_records(_emit_ng_events(source))
+    assert records[0] == [0, 6, 8, 0, 0, 0, 0, 0]
+    builtin_record = next(record for record in records if record[0] == 17)
+    assert builtin_record[1:5] == [0, 0, 1, element_type_id]
+
+    ng_ir = decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+    function = ng_ir.functions[0]
+    assert [
+        instruction.callee
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode.value == "call"
+    ] == [builtin_name]
+
+    vector = vector_factory(4)
+    vector.push(value)
+    vector.push(value)
+    owner_cell = ir_emulator._Cell(value=vector, initialized=True)
+    reference = ReferenceValue(owner_cell, 0, False)
+    functions = {item.name: item for item in ng_ir.functions}
+    assert ir_emulator._execute_function(
+        functions,
+        function,
+        (reference,),
+        (),
+        {},
+        HostExecutionContext(),
+    ) == 2
+
+
+def test_ng_ir_v6_vector_len_rejects_malformed_reference_metadata() -> None:
+    source = (
+        "fn vector_size(values: &vector<i64>) -> i64:\n"
+        "    return vector_len<i64>(values)\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+    records = _event_records(_emit_ng_events(source))
+    builtin_record = next(record for record in records if record[0] == 17)
+    builtin_record[3] = 99
+    with pytest.raises(NGIRDecodeError, match="unknown V6 generic CALL builtin ID"):
+        decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
+
+    records = _event_records(_emit_ng_events(source))
+    builtin_record = next(record for record in records if record[0] == 17)
+    builtin_record[4] = 3
+    with pytest.raises(NGIRDecodeError, match="type metadata disagrees"):
+        decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
+
+
+def test_ng_ir_v6_decoder_keeps_v5_vector_new_stream_compatibility() -> None:
+    source = "fn main() -> vector<i64>:\n    return vector_new<i64>(3)\n"
+    records = _event_records(_emit_ng_events(source))
+    records[0][1] = 5
+    decoded = decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
+    verify_ir(decoded)
+    result = execute_ir(decoded)
+    assert isinstance(result, DynamicVector)
+    assert result.capacity == 3
 
 
 def test_ng_source_set_rejects_aggregate_call_with_wrong_vector_element() -> None:
