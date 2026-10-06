@@ -16,7 +16,7 @@ from bootstrap.s3.compiler_ng_ir_bridge import (
 from bootstrap.s3.backends.x86_64 import generate_native_assembly
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.backends.x86_64 import NativeToolchain
-from bootstrap.s3.dynamic import DynamicVector
+from bootstrap.s3.dynamic import DynamicCompositeVector, DynamicVector
 from bootstrap.s3.emulator import Emulator
 from bootstrap.s3.ir import IRModule, IRType
 from bootstrap.s3.ir_emulator import execute_ir
@@ -513,10 +513,18 @@ def test_ng_ir_v4_resolves_aggregate_calls_by_complete_ng_type_identity() -> Non
             "    return 7\n"
             "fn relay_tokens(value: vector<TokenLike>) -> i64:\n"
             "    return keep_tokens(value)\n"
+            "fn preserve_token_vector(value: vector<TokenLike>) -> vector<TokenLike>:\n"
+            "    return value\n"
+            "fn relay_token_vector(value: vector<TokenLike>) -> vector<TokenLike>:\n"
+            "    return preserve_token_vector(value)\n"
             "fn keep_token(value: &TokenLike) -> i64:\n"
             "    return 11\n"
             "fn relay_token(value: &TokenLike) -> i64:\n"
             "    return keep_token(value)\n"
+            "fn relay_read_id(value: &TokenLike) -> i64:\n"
+            "    return read_id(value)\n"
+            "fn read_id(value: &TokenLike) -> i64:\n"
+            "    return value.id\n"
             "fn keep_mut_tokens(value: &mut vector<TokenLike>) -> i64:\n"
             "    return 13\n"
             "fn relay_mut_tokens(value: &mut vector<TokenLike>) -> i64:\n"
@@ -550,6 +558,48 @@ def test_ng_ir_v4_resolves_aggregate_calls_by_complete_ng_type_identity() -> Non
     ]
     assert any(parameter.reference_aggregate == "TokenLike" for parameter in ref_parameters)
     assert any(parameter.reference_mutable for parameter in ref_parameters)
+
+    functions = {function.name: function for function in ng_ir.functions}
+    vector = DynamicCompositeVector("TokenLike", ("i64",), 1)
+    vector.push((73,))
+    relay_scalar = next(
+        function for function in ng_ir.functions if function.name.endswith("relay_tokens")
+    )
+    assert ir_emulator._execute_function(
+        functions,
+        relay_scalar,
+        (vector,),
+        (),
+        {},
+        HostExecutionContext(),
+    ) == 7
+
+    relay_vector = next(
+        function for function in ng_ir.functions if function.name.endswith("relay_token_vector")
+    )
+    returned_vector = ir_emulator._execute_function(
+        functions,
+        relay_vector,
+        (vector,),
+        (),
+        {},
+        HostExecutionContext(),
+    )
+    assert returned_vector is vector
+
+    field_cell = ir_emulator._Cell(value=73, initialized=True)
+    aggregate = ir_emulator.AggregateReferenceValue("TokenLike", ((("id",), field_cell),), False)
+    relay_field = next(
+        function for function in ng_ir.functions if function.name.endswith("relay_read_id")
+    )
+    assert ir_emulator._execute_function(
+        functions,
+        relay_field,
+        (aggregate,),
+        (),
+        {},
+        HostExecutionContext(),
+    ) == 73
 
 
 def test_ng_source_set_rejects_aggregate_call_with_wrong_vector_element() -> None:
