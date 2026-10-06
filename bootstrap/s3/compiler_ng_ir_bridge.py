@@ -1,6 +1,6 @@
 """Structural decoder for the versioned S3C-NG integer-event interchange.
 
-Versions 1 and 2 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
+Versions 1-3 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
 Kind 0 declares ``(version, record_width, flags=0, 0, 0, 0, 0)``. Kind 1 is a
 function ``(index, return_type, parameter_count, name_start, name_end,
 result_width, flags)``; kind 2 is a parameter ``(function, ordinal, type,
@@ -10,7 +10,10 @@ memory objects, and ordered block IDs. Kind 4 is an instruction; kinds 6, 8,
 and control-flow targets. Kind 5 closes a function. Names use absolute UTF-8
 byte spans into the original source. Function flag bits 0/1 mean external and
 exported. Block ID 0 is the canonical entry block. V1 accepts scalar type codes
-1-4; V2 adds bytes and text as codes 5 and 6 without changing V1 semantics.
+1-4; V2 adds bytes and text as codes 5 and 6. V3 adds ordered type-descriptor
+records (kinds 12-14) and uses descriptor IDs in type fields. The decoder only
+validates descriptor structure and maps runtime-representable categories; it
+does not resolve source-level names or perform semantic analysis.
 Unsupported types, opcodes, fields, or record order fail closed. The stream
 carries no source locations or static strings, so those are intentionally
 absent from reconstructed IR.
@@ -34,7 +37,7 @@ from .ir import (
 )
 
 
-NG_IR_FORMAT_VERSION = 2
+NG_IR_FORMAT_VERSION = 3
 NG_IR_RECORD_WIDTH = 8
 
 _TYPE_CODES_V1 = {
@@ -50,6 +53,16 @@ _TYPE_CODES_BY_VERSION = {
         5: IRType.BYTES,
         6: IRType.TEXT,
     },
+}
+_TYPE_KINDS_V3 = {
+    1: IRType.I64,
+    2: IRType.TRIT,
+    3: IRType.TRYTE,
+    4: IRType.F64,
+    5: IRType.BYTES,
+    6: IRType.TEXT,
+    8: IRType.VECTOR,
+    9: IRType.REFERENCE,
 }
 _OPCODE_CODES = {
     1: IROpcode.CONST,
@@ -85,6 +98,21 @@ class _InstructionRecord:
     callee_index: int | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class _TypeDescriptorRecord:
+    id: int
+    kind: int
+    module_start: int
+    module_end: int
+    name_start: int
+    name_end: int
+    element_type: int
+    target_type: int
+    mutable: int
+    first_field: int
+    field_count: int
+
+
 def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     """Deserialize NG records without inferring or repairing program semantics."""
 
@@ -105,12 +133,12 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in _TYPE_CODES_BY_VERSION
+        or version not in {*_TYPE_CODES_BY_VERSION, 3}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
         raise NGIRDecodeError("unsupported or malformed NG IR format header")
-    type_codes = _TYPE_CODES_BY_VERSION[version]
+    type_codes = _TYPE_CODES_BY_VERSION.get(version, {})
 
     cursor = 1
     raw_functions: list[dict[str, object]] = []
@@ -124,11 +152,24 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
         cursor += 1
         return record
 
+    type_descriptors: dict[int, _TypeDescriptorRecord] = {}
+    descriptor_fields: list[tuple[int, int, int, int, int]] = []
+
     def type_for(code: int, context: str) -> IRType:
+        if version < 3:
+            try:
+                return type_codes[code]
+            except KeyError as exc:
+                raise NGIRDecodeError(f"unknown type code {code} in {context}") from exc
+        descriptor = type_descriptors.get(code)
+        if descriptor is None:
+            raise NGIRDecodeError(f"unknown type descriptor {code} in {context}")
         try:
-            return type_codes[code]
+            return _TYPE_KINDS_V3[descriptor.kind]
         except KeyError as exc:
-            raise NGIRDecodeError(f"unknown type code {code} in {context}") from exc
+            raise NGIRDecodeError(
+                f"nominal type descriptor {code} must be lowered to field cells before {context}"
+            ) from exc
 
     def source_name(start: int, end: int, context: str) -> str:
         if start < 0 or end <= start or end > len(source):
@@ -140,6 +181,112 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
         if not value:
             raise NGIRDecodeError(f"empty source name in {context}")
         return value
+
+    def reference_metadata(type_id: int, context: str) -> tuple[IRType | None, bool, str | None]:
+        if version < 3:
+            return None, False, None
+        type_for(type_id, context)
+        descriptor = type_descriptors[type_id]
+        if descriptor.kind != 9:
+            return None, False, None
+        target = type_descriptors[descriptor.target_type]
+        if target.kind == 7:
+            aggregate = source_name(target.name_start, target.name_end, f"reference target of {context}")
+            return None, bool(descriptor.mutable), aggregate
+        if target.kind == 9:
+            raise NGIRDecodeError(f"nested reference target is not representable in {context}")
+        return type_for(target.id, f"reference target of {context}"), bool(descriptor.mutable), None
+
+    if version == 3:
+        while cursor < len(records) and records[cursor][0] == 12:
+            item = take(12, "type descriptor")
+            _, type_id, kind, module_start, module_end, name_start, name_end, element_type = item
+            detail = take(13, f"details of type descriptor {type_id}")
+            _, detail_id, target_type, mutable, first_field, field_count, reserved0, reserved1 = detail
+            if type_id != len(type_descriptors) + 1 or detail_id != type_id:
+                raise NGIRDecodeError("type descriptor IDs must be contiguous and ordered")
+            if kind not in range(1, 10) or any((reserved0, reserved1)):
+                raise NGIRDecodeError(f"malformed type descriptor {type_id}")
+            type_descriptors[type_id] = _TypeDescriptorRecord(
+                type_id, kind, module_start, module_end, name_start, name_end,
+                element_type, target_type, mutable, first_field, field_count,
+            )
+        while cursor < len(records) and records[cursor][0] == 14:
+            item = take(14, "record field descriptor")
+            _, owner_type, order, name_start, name_end, field_type, reserved0, reserved1 = item
+            if any((reserved0, reserved1)):
+                raise NGIRDecodeError("record field descriptor has nonzero reserved fields")
+            descriptor_fields.append((owner_type, order, name_start, name_end, field_type))
+        if not type_descriptors:
+            raise NGIRDecodeError("V3 stream is missing its type descriptor table")
+        for builtin_id in range(1, 7):
+            descriptor = type_descriptors.get(builtin_id)
+            if descriptor is None or descriptor.kind != builtin_id:
+                raise NGIRDecodeError("V3 builtin type descriptors must preserve IDs 1-6")
+        for type_id, descriptor in type_descriptors.items():
+            if descriptor.kind <= 6:
+                if (
+                    descriptor.module_start, descriptor.module_end,
+                    descriptor.name_start, descriptor.name_end,
+                    descriptor.element_type, descriptor.target_type,
+                    descriptor.mutable, descriptor.first_field, descriptor.field_count,
+                ) != (-1, -1, -1, -1, -1, -1, 0, 0, 0):
+                    raise NGIRDecodeError(f"malformed builtin type descriptor {type_id}")
+            elif descriptor.kind == 7:
+                if (
+                    descriptor.module_start < 0 or descriptor.module_end <= descriptor.module_start
+                    or descriptor.name_start < 0 or descriptor.name_end <= descriptor.name_start
+                    or descriptor.element_type != -1 or descriptor.target_type != -1
+                    or descriptor.mutable != 0 or descriptor.first_field < 0 or descriptor.field_count < 0
+                ):
+                    raise NGIRDecodeError(f"malformed nominal type descriptor {type_id}")
+                source_name(descriptor.module_start, descriptor.module_end, f"module of nominal type {type_id}")
+                source_name(descriptor.name_start, descriptor.name_end, f"nominal type {type_id}")
+            elif descriptor.kind == 8:
+                if (
+                    descriptor.element_type <= 0 or descriptor.element_type >= type_id
+                    or descriptor.element_type not in type_descriptors
+                    or descriptor.target_type != -1 or descriptor.mutable != 0
+                    or descriptor.first_field != 0 or descriptor.field_count != 0
+                    or (
+                        descriptor.module_start, descriptor.module_end,
+                        descriptor.name_start, descriptor.name_end,
+                    ) != (-1, -1, -1, -1)
+                ):
+                    raise NGIRDecodeError(f"malformed vector type descriptor {type_id}")
+            else:
+                if (
+                    descriptor.target_type <= 0 or descriptor.target_type >= type_id
+                    or descriptor.target_type not in type_descriptors
+                    or descriptor.element_type != -1 or descriptor.mutable not in (0, 1)
+                    or descriptor.first_field != 0 or descriptor.field_count != 0
+                    or (
+                        descriptor.module_start, descriptor.module_end,
+                        descriptor.name_start, descriptor.name_end,
+                    ) != (-1, -1, -1, -1)
+                ):
+                    raise NGIRDecodeError(f"malformed reference type descriptor {type_id}")
+        field_orders: dict[int, int] = {}
+        field_positions: dict[int, list[int]] = {}
+        for field_index, (owner_type, order, name_start, name_end, field_type) in enumerate(descriptor_fields):
+            owner = type_descriptors.get(owner_type)
+            if owner is None or owner.kind != 7 or field_type not in type_descriptors:
+                raise NGIRDecodeError(f"record field {field_index} references an invalid type descriptor")
+            source_name(name_start, name_end, f"record field {field_index}")
+            expected_order = field_orders.get(owner_type, 0)
+            if order != expected_order:
+                raise NGIRDecodeError(f"record fields for type {owner_type} are not ordered")
+            field_orders[owner_type] = expected_order + 1
+            field_positions.setdefault(owner_type, []).append(field_index)
+        for type_id, descriptor in type_descriptors.items():
+            if descriptor.kind == 7:
+                positions = field_positions.get(type_id, [])
+                if len(positions) != descriptor.field_count:
+                    raise NGIRDecodeError(f"record field count disagrees for nominal type {type_id}")
+                if positions and positions != list(range(descriptor.first_field, descriptor.first_field + descriptor.field_count)):
+                    raise NGIRDecodeError(f"record first-field index disagrees for nominal type {type_id}")
+                if not positions and not 0 <= descriptor.first_field <= len(descriptor_fields):
+                    raise NGIRDecodeError(f"empty record first-field index is invalid for nominal type {type_id}")
 
     while cursor < len(records):
         header_record = take(1, "function header")
@@ -161,11 +308,17 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             _, owner, ordinal, type_code, register, parameter_start, parameter_end, reserved = item
             if owner != function_index or ordinal != parameter_index or reserved != 0:
                 raise NGIRDecodeError("malformed parameter identity or reserved fields")
+            reference_target, reference_mutable, reference_aggregate = reference_metadata(
+                type_code, f"parameter {parameter_index} of {function_name}"
+            )
             parameters.append(
                 IRParameter(
                     source_name(parameter_start, parameter_end, f"parameter {parameter_index} of {function_name}"),
                     register,
                     type_for(type_code, f"parameter {parameter_index} of {function_name}"),
+                    reference_target=reference_target,
+                    reference_mutable=reference_mutable,
+                    reference_aggregate=reference_aggregate,
                 )
             )
 
@@ -175,7 +328,18 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             _, owner, register_index, type_code, reserved0, reserved1, reserved2, reserved3 = item
             if owner != function_index or register_index != len(registers) or any((reserved0, reserved1, reserved2, reserved3)):
                 raise NGIRDecodeError("register identities must be contiguous with zero reserved fields")
-            registers.append(IRRegister(register_index, type_for(type_code, f"register {register_index} of {function_name}")))
+            reference_target, reference_mutable, reference_aggregate = reference_metadata(
+                type_code, f"register {register_index} of {function_name}"
+            )
+            registers.append(
+                IRRegister(
+                    register_index,
+                    type_for(type_code, f"register {register_index} of {function_name}"),
+                    reference_target=reference_target,
+                    reference_mutable=reference_mutable,
+                    reference_aggregate=reference_aggregate,
+                )
+            )
 
         memories: list[IRMemoryObject] = []
         while cursor < len(records) and records[cursor][0] == 7:

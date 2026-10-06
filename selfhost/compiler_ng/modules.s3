@@ -721,7 +721,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
                         -1:
                             return status
                         0:
-                            return ng_emit_program(&*source, &functions, &parameters, &nodes, events)
+                            return ng_emit_program(&*source, &types, &records, &fields, &functions, &parameters, &nodes, events)
                         1:
                             return status
                 1:

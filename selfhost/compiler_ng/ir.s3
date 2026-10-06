@@ -1,7 +1,8 @@
 module selfhost.compiler_ng.ir
 
-from selfhost.compiler_ng.parser import NgAstNode, NgFunction, NgParameter
+from selfhost.compiler_ng.parser import NgAstNode, NgField, NgFunction, NgParameter, NgRecord
 from selfhost.compiler_ng.semantic import ng_check_program, ng_find_function, ng_spans_equal
+from selfhost.compiler_ng.types import NgTypeDescriptor
 
 export record NgIRMemory:
     type_kind: i64
@@ -556,7 +557,7 @@ fn ng_emit_match_arms(source: &bytes, functions: &vector<NgFunction>, nodes: &ve
             *current_block = join_block
     return 0
 
-export fn ng_emit_program(source: &bytes, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &vector<NgAstNode>, events: &mut vector<i64>) -> i64:
+export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &vector<NgAstNode>, events: &mut vector<i64>) -> i64:
     mut status: i64 = ng_check_program(source, functions, parameters, nodes)
     mut function_index: i64 = 0
     mut parameter_index: i64 = 0
@@ -593,11 +594,26 @@ export fn ng_emit_program(source: &bytes, functions: &vector<NgFunction>, parame
     mut result_register: i64 = -1
     mut current_block: i64 = 0
     mut statement_first_instruction: i64 = 0
+    mut type_index: i64 = 0
+    mut type_descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut field_index: i64 = 0
+    mut field: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
+    mut record_item: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
     match status <=> 0:
         -1:
             return status
         0:
-            discard ng_ir_event(events, 0, 2, 8, 0, 0, 0, 0, 0)
+            discard ng_ir_event(events, 0, 3, 8, 0, 0, 0, 0, 0)
+            while type_index < vector_len<NgTypeDescriptor>(types):
+                type_descriptor = vector_get<NgTypeDescriptor>(types, type_index)
+                discard ng_ir_event(events, 12, type_index + 1, type_descriptor.kind, type_descriptor.module_start, type_descriptor.module_end, type_descriptor.name_start, type_descriptor.name_end, type_descriptor.element_type)
+                discard ng_ir_event(events, 13, type_index + 1, type_descriptor.target_type, type_descriptor.mutable, type_descriptor.first_field, type_descriptor.field_count, 0, 0)
+                type_index = type_index + 1
+            while field_index < vector_len<NgField>(fields):
+                field = vector_get<NgField>(fields, field_index)
+                record_item = vector_get<NgRecord>(records, field.record_index)
+                discard ng_ir_event(events, 14, record_item.type_id, field.order, field.name_start, field.name_end, field.type_id, 0, 0)
+                field_index = field_index + 1
         1:
             return status
     while function_index < vector_len<NgFunction>(functions):

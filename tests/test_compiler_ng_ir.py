@@ -36,6 +36,8 @@ _TYPE_CODES = {
     IRType.TRIT: 2,
     IRType.TRYTE: 3,
     IRType.F64: 4,
+    IRType.BYTES: 5,
+    IRType.TEXT: 6,
 }
 _OPCODE_CODES = {
     "const": 1,
@@ -83,7 +85,10 @@ def _reference_events(program: object, source: str) -> list[int]:
         assert len(fields) == 7
         events.extend((kind, *fields))
 
-    event(0, 2, 8, 0, 0, 0, 0, 0)
+    event(0, 3, 8, 0, 0, 0, 0, 0)
+    for type_id in range(1, 7):
+        event(12, type_id, type_id, -1, -1, -1, -1, -1)
+        event(13, type_id, -1, 0, 0, 0, 0, 0)
     for function_index, function in enumerate(program.functions):
         call_argument_cursor = 0
         block_indices = {block.name: index for index, block in enumerate(function.blocks)}
@@ -203,23 +208,27 @@ fn main() -> i64:
     mut source_text: text = text_from_static({json.dumps(source)})
     mut source_bytes: bytes = bytes_from_text(&source_text)
     mut tokens: vector<NgToken> = vector_new<NgToken>(1024)
+    mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(16)
+    mut records: vector<NgRecord> = vector_new<NgRecord>(1)
+    mut fields: vector<NgField> = vector_new<NgField>(1)
     mut functions: vector<NgFunction> = vector_new<NgFunction>(64)
     mut parameters: vector<NgParameter> = vector_new<NgParameter>(256)
     mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(2048)
     mut actual: vector<i64> = vector_new<i64>({max(len(expected) * 4, len(expected) + 512)})
     mut expected: vector<i64> = vector_new<i64>({len(expected)})
     mut index: i64 = 0
+    discard ng_initialize_type_table(&mut types)
     mut status: i64 = ng_lex(&source_bytes, &mut tokens)
     match status <=> 0:
         -1:
             return -100
         0:
-            status = ng_parse_program(&source_bytes, &tokens, &mut functions, &mut parameters, &mut nodes)
+            status = ng_parse_program_typed(&source_bytes, &tokens, &mut types, -1, -1, &mut functions, &mut parameters, &mut nodes)
             match status <=> 0:
                 -1:
                     return -1001
                 0:
-                    status = ng_emit_program(&source_bytes, &functions, &parameters, &nodes, &mut actual)
+                    status = ng_emit_program(&source_bytes, &types, &records, &fields, &functions, &parameters, &nodes, &mut actual)
                     match status <=> 0:
                         -1:
                             return status
@@ -301,23 +310,27 @@ fn main() -> i64:
     mut source_text: text = text_from_static({json.dumps(source)})
     mut source_bytes: bytes = bytes_from_text(&source_text)
     mut tokens: vector<NgToken> = vector_new<NgToken>(256)
+    mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(16)
+    mut records: vector<NgRecord> = vector_new<NgRecord>(1)
+    mut fields: vector<NgField> = vector_new<NgField>(1)
     mut functions: vector<NgFunction> = vector_new<NgFunction>(32)
     mut parameters: vector<NgParameter> = vector_new<NgParameter>(64)
     mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(256)
     mut actual: vector<i64> = vector_new<i64>({len(expected)})
     mut expected: vector<i64> = vector_new<i64>({len(expected)})
     mut index: i64 = 0
+    discard ng_initialize_type_table(&mut types)
     mut status: i64 = ng_lex(&source_bytes, &mut tokens)
     match status <=> 0:
         -1:
             return -100
         0:
-            status = ng_parse_program(&source_bytes, &tokens, &mut functions, &mut parameters, &mut nodes)
+            status = ng_parse_program_typed(&source_bytes, &tokens, &mut types, -1, -1, &mut functions, &mut parameters, &mut nodes)
             match status <=> 0:
                 -1:
                     return -101
                 0:
-                    status = ng_emit_program(&source_bytes, &functions, &parameters, &nodes, &mut actual)
+                    status = ng_emit_program(&source_bytes, &types, &records, &fields, &functions, &parameters, &nodes, &mut actual)
                     match status <=> 0:
                         -1:
                             return status
