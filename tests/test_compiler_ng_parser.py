@@ -57,6 +57,64 @@ fn main() -> i64:
     return int(execute_ir(compilation.ir))
 
 
+def _ng_generic_call_probe(source: str) -> list[int]:
+    wrapper = f"""
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static({json.dumps(source)})
+    mut source_bytes: bytes = bytes_from_text(&source_text)
+    mut tokens: vector<NgToken> = vector_new<NgToken>(64)
+    mut functions: vector<NgFunction> = vector_new<NgFunction>(4)
+    mut parameters: vector<NgParameter> = vector_new<NgParameter>(8)
+    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(32)
+    mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(16)
+    mut result: vector<i64> = vector_new<i64>(64)
+    mut lex_status: i64 = ng_lex(&source_bytes, &mut tokens)
+    mut init_status: i64 = ng_initialize_type_table(&mut types)
+    mut parse_status: i64 = ng_parse_program_typed(&source_bytes, &tokens, &mut types, -1, -1, &mut functions, &mut parameters, &mut nodes)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
+    mut link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut statement: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut call: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    discard vector_push<i64>(&mut result, lex_status)
+    discard vector_push<i64>(&mut result, init_status)
+    discard vector_push<i64>(&mut result, parse_status)
+    discard vector_push<i64>(&mut result, vector_len<NgTypeDescriptor>(&types))
+    discard vector_push<i64>(&mut result, vector_len<NgAstNode>(&nodes))
+    match parse_status <=> 0:
+        -1:
+            return result
+        0:
+            function = vector_get<NgFunction>(&functions, 0)
+            link = vector_get<NgAstNode>(&nodes, function.body_node)
+            statement = vector_get<NgAstNode>(&nodes, link.left)
+            call = vector_get<NgAstNode>(&nodes, statement.left)
+            discard vector_push<i64>(&mut result, call.kind)
+            discard vector_push<i64>(&mut result, call.right)
+            discard vector_push<i64>(&mut result, call.operation)
+            descriptor = vector_get<NgTypeDescriptor>(&types, call.right - 1)
+            discard vector_push<i64>(&mut result, descriptor.kind)
+            discard vector_push<i64>(&mut result, descriptor.element_type)
+            return result
+        1:
+            return result
+"""
+    compilation = compile_source(_COMPILER_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+    output = execute_ir(compilation.ir)
+    assert hasattr(output, "element_type")
+    return [int(value) for value in output]
+
+
+def test_nextgen_parser_accepts_generic_call_type_arguments() -> None:
+    source = "fn main() -> i64:\n    return vector_new<i64>(1)\n"
+    probe = _ng_generic_call_probe(source)
+    assert probe[:3] == [0, 0, 0]
+    assert probe[-7] == 6
+    assert probe[-6] > 0
+    assert probe[-5:] == [5, 1, source.index("vector_new") + len("vector_new"), 1, -1]
+
+
 def _ng_module_type_probe() -> list[int]:
     source = (
         "module app\n"

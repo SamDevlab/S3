@@ -105,12 +105,12 @@ fn ng_module_semantic_status(input_source: text) -> i64:
         -1:
             return status
         0:
-            return ng_check_program(&source_bytes, &functions, &parameters, &nodes)
+            return ng_check_program_typed(&source_bytes, &types, &records, &fields, &functions, &parameters, &mut nodes)
         1:
             return status
 
 fn main() -> vector<i64>:
-    mut result: vector<i64> = vector_new<i64>(4)
+    mut result: vector<i64> = vector_new<i64>(16)
 """
     for source in sources:
         wrapper += f'    discard vector_push<i64>(&mut result, ng_module_semantic_status(text_from_static({json.dumps(source)})))\n'
@@ -138,6 +138,45 @@ def test_nextgen_semantic_pass_resolves_forward_calls_and_argument_types() -> No
     )
     assert compile_source(source).ir is not None
     assert _ng_semantic_status(source) == 0
+
+
+def test_nextgen_semantic_checks_generic_vector_new_against_contextual_type() -> None:
+    valid = (
+        "module app\n"
+        "fn build(capacity: i64) -> vector<i64>:\n"
+        "    return vector_new<i64>(capacity)\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+    valid_record = (
+        "module app\n"
+        "record Token:\n"
+        "    kind: i64\n"
+        "    start: i64\n"
+        "    end: i64\n"
+        "fn build(capacity: i64) -> vector<Token>:\n"
+        "    return vector_new<Token>(capacity)\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+    wrong_result_type = (
+        "module app\n"
+        "fn build() -> vector<tryte>:\n"
+        "    return vector_new<i64>(1)\n"
+    )
+    wrong_capacity_type = (
+        "module app\n"
+        "fn build(capacity: trit) -> vector<i64>:\n"
+        "    return vector_new<i64>(capacity)\n"
+    )
+    dynamic_element = (
+        "module app\n"
+        "fn build() -> vector<bytes>:\n"
+        "    return vector_new<bytes>(1)\n"
+    )
+    assert compile_source(valid).ir is not None
+    assert compile_source(valid_record).ir is not None
+    assert _ng_module_semantic_statuses([valid, valid_record, wrong_result_type, wrong_capacity_type, dynamic_element]) == [0, 0, -14, -14, -14]
 
 
 def test_nextgen_semantics_compare_complete_nominal_vector_and_reference_descriptors() -> None:
