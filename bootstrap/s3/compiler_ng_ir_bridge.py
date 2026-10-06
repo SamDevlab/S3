@@ -1,6 +1,6 @@
 """Structural decoder for the versioned S3C-NG integer-event interchange.
 
-Versions 1-4 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
+Versions 1-5 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
 Kind 0 declares ``(version, record_width, flags=0, 0, 0, 0, 0)``. Kind 1 is a
 function ``(index, return_type, parameter_count, name_start, name_end,
 result_width, flags)``; kind 2 is a parameter ``(function, ordinal, type,
@@ -13,6 +13,8 @@ exported. Block ID 0 is the canonical entry block. V1 accepts scalar type codes
 1-4; V2 adds bytes and text as codes 5 and 6. V3 adds ordered type-descriptor
 records (kinds 12-14) and uses descriptor IDs in type fields. V4 adds aggregate
 field loads (opcode 14) followed by kind 15 carrying the field-name span end.
+V5 adds kind 16 after a CALL's arguments for an explicitly selected scalar
+``vector_new<T>`` runtime builtin and its element type descriptor ID.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
@@ -39,8 +41,14 @@ from .ir import (
 )
 
 
-NG_IR_FORMAT_VERSION = 4
+NG_IR_FORMAT_VERSION = 5
 NG_IR_RECORD_WIDTH = 8
+
+_V5_VECTOR_NEW_BUILTINS = {
+    1: ("i64_vector_new", 1),
+    2: ("tryte_vector_new", 3),
+    3: ("f64_vector_new", 4),
+}
 
 _TYPE_CODES_V1 = {
     1: IRType.I64,
@@ -99,6 +107,7 @@ class _InstructionRecord:
     block: int
     targets: tuple[int, ...]
     callee_index: int | None = None
+    callee_builtin: str | None = None
     reference_aggregate: str | None = None
     aggregate_field_path: tuple[str, ...] = ()
 
@@ -138,7 +147,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -381,6 +390,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
 
             result = None if result_id == -1 else result_id
             callee_index: int | None = None
+            callee_builtin: str | None = None
             memory_id: int | None = None
             init = False
             targets: tuple[int, ...] = ()
@@ -417,6 +427,37 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 call_pool_length += len(call_arguments)
                 if operand1 + operand_count > call_pool_length:
                     raise NGIRDecodeError("CALL argument range is outside the serialized pool")
+                if version >= 5 and operand0 == -1:
+                    builtin_record = take(16, "V5 generic CALL target")
+                    _, builtin_owner, builtin_instruction, builtin_id, element_type_id, *reserved = builtin_record
+                    if (builtin_owner, builtin_instruction) != (function_index, instruction_index) or any(reserved):
+                        raise NGIRDecodeError("malformed V5 generic CALL target identity")
+                    builtin = _V5_VECTOR_NEW_BUILTINS.get(builtin_id)
+                    if builtin is None:
+                        raise NGIRDecodeError(f"unknown V5 generic CALL builtin ID {builtin_id}")
+                    builtin_name, required_element_kind = builtin
+                    if result is None or not 0 <= result < len(register_type_ids):
+                        raise NGIRDecodeError("V5 vector_new result register is missing")
+                    if operand_count != 1 or len(call_arguments) != 1:
+                        raise NGIRDecodeError("V5 vector_new requires exactly one capacity argument")
+                    vector_type = type_descriptors.get(register_type_ids[result])
+                    element_type = type_descriptors.get(element_type_id)
+                    capacity_register = call_arguments[0]
+                    if not 0 <= capacity_register < len(register_type_ids):
+                        raise NGIRDecodeError("V5 vector_new capacity register is missing")
+                    capacity_type = type_descriptors.get(register_type_ids[capacity_register])
+                    if (
+                        vector_type is None
+                        or vector_type.kind != 8
+                        or vector_type.element_type != element_type_id
+                        or element_type is None
+                        or element_type.kind != required_element_kind
+                        or capacity_type is None
+                        or capacity_type.kind != 1
+                    ):
+                        raise NGIRDecodeError("V5 vector_new type metadata disagrees with its registers")
+                    callee_index = None
+                    callee_builtin = builtin_name
                 operands = tuple(call_arguments)
                 decoded_immediate = None
             elif opcode is IROpcode.MOVE:
@@ -505,17 +546,18 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
 
             instruction_records.append(
                 _InstructionRecord(
-                    opcode,
-                    result,
-                    operands,
-                    decoded_immediate,
-                    memory_id,
-                    init,
-                    block_id,
-                    targets,
-                    callee_index,
-                    reference_aggregate,
-                    aggregate_field_path,
+                    opcode=opcode,
+                    result=result,
+                    operands=operands,
+                    immediate=decoded_immediate,
+                    memory=memory_id,
+                    initialization=init,
+                    block=block_id,
+                    targets=targets,
+                    callee_index=callee_index,
+                    callee_builtin=callee_builtin,
+                    reference_aggregate=reference_aggregate,
+                    aggregate_field_path=aggregate_field_path,
                 )
             )
 
@@ -572,7 +614,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
         }
         by_block: dict[int, list[IRInstruction]] = {block_id: [] for block_id in block_ids}
         for record in raw["instructions"]:
-            callee = None
+            callee = record.callee_builtin
             if record.callee_index is not None:
                 if not 0 <= record.callee_index < len(function_names):
                     raise NGIRDecodeError(f"CALL references invalid function index {record.callee_index} in {name}")

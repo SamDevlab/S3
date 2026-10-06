@@ -452,7 +452,7 @@ def test_branches_ng_output_decodes_verifies_executes_and_matches_reference() ->
     assert execute_ir(reference_ir) == execute_ir(ng_canonical_ir)
 
 
-def test_ng_ir_v4_preserves_bytes_text_and_decodes_v2() -> None:
+def test_ng_ir_v5_preserves_bytes_text_and_decodes_v2() -> None:
     source = (
         "fn echo_bytes(value: bytes) -> bytes:\n    return value\n"
         "fn echo_text(value: text) -> text:\n    return value\n"
@@ -461,7 +461,7 @@ def test_ng_ir_v4_preserves_bytes_text_and_decodes_v2() -> None:
     reference_ir = compile_source(source).ir
     assert reference_ir is not None
     events = _emit_ng_events(source)
-    assert _event_records(events)[0] == [0, 4, 8, 0, 0, 0, 0, 0]
+    assert _event_records(events)[0] == [0, 5, 8, 0, 0, 0, 0, 0]
     ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
 
     verify_ir(ng_ir)
@@ -484,7 +484,7 @@ def test_ng_ir_v4_preserves_bytes_text_and_decodes_v2() -> None:
     assert v2_ir.functions[0].return_type is IRType.TEXT
 
 
-def test_ng_ir_v4_preserves_vector_and_reference_signature_categories() -> None:
+def test_ng_ir_v5_preserves_vector_and_reference_signature_categories() -> None:
     source = (
         "fn identity(value: vector<i64>) -> vector<i64>:\n    return value\n"
         "fn borrow(value: &mut bytes) -> tryte:\n    return 0\n"
@@ -494,7 +494,7 @@ def test_ng_ir_v4_preserves_vector_and_reference_signature_categories() -> None:
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 4, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 5, 8, 0, 0, 0, 0, 0]
     assert any(record[0] == 12 and record[2] == 8 for record in records)
     assert any(record[0] == 12 and record[2] == 9 for record in records)
 
@@ -503,7 +503,7 @@ def test_ng_ir_v4_preserves_vector_and_reference_signature_categories() -> None:
     assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
 
 
-def test_ng_ir_v4_resolves_aggregate_calls_by_complete_ng_type_identity() -> None:
+def test_ng_ir_v5_resolves_aggregate_calls_by_complete_ng_type_identity() -> None:
     sources = {
         "app.s3": (
             "module app\n"
@@ -566,24 +566,13 @@ def test_ng_ir_v4_resolves_aggregate_calls_by_complete_ng_type_identity() -> Non
         function for function in ng_ir.functions if function.name.endswith("relay_tokens")
     )
     assert ir_emulator._execute_function(
-        functions,
-        relay_scalar,
-        (vector,),
-        (),
-        {},
-        HostExecutionContext(),
+        functions, relay_scalar, (vector,), (), {}, HostExecutionContext()
     ) == 7
-
     relay_vector = next(
         function for function in ng_ir.functions if function.name.endswith("relay_token_vector")
     )
     returned_vector = ir_emulator._execute_function(
-        functions,
-        relay_vector,
-        (vector,),
-        (),
-        {},
-        HostExecutionContext(),
+        functions, relay_vector, (vector,), (), {}, HostExecutionContext()
     )
     assert returned_vector is vector
 
@@ -593,13 +582,71 @@ def test_ng_ir_v4_resolves_aggregate_calls_by_complete_ng_type_identity() -> Non
         function for function in ng_ir.functions if function.name.endswith("relay_read_id")
     )
     assert ir_emulator._execute_function(
-        functions,
-        relay_field,
-        (aggregate,),
-        (),
-        {},
-        HostExecutionContext(),
+        functions, relay_field, (aggregate,), (), {}, HostExecutionContext()
     ) == 73
+
+
+@pytest.mark.parametrize(
+    ("element_type", "builtin_name"),
+    (("i64", "i64_vector_new"), ("tryte", "tryte_vector_new"), ("f64", "f64_vector_new")),
+)
+def test_ng_ir_v5_generic_vector_new_is_explicit_and_executable(element_type: str, builtin_name: str) -> None:
+    source = (
+        f"fn main() -> vector<{element_type}>:\n"
+        f"    return vector_new<{element_type}>(3)\n"
+    )
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+    events = _emit_ng_events(source)
+    records = _event_records(events)
+    assert records[0] == [0, 5, 8, 0, 0, 0, 0, 0]
+    builtin_record = next(record for record in records if record[0] == 16)
+    call_instructions = [record for record in records if record[0] == 4]
+    call_instruction_index = next(index for index, record in enumerate(call_instructions) if record[2] == 7)
+    assert builtin_record[1:5] == [
+        0,
+        call_instruction_index,
+        {"i64": 1, "tryte": 2, "f64": 3}[element_type],
+        {"i64": 1, "tryte": 3, "f64": 4}[element_type],
+    ]
+
+    ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+    result = execute_ir(ng_ir)
+    assert isinstance(result, DynamicVector)
+    assert result.element_type == element_type
+    assert result.capacity == 3
+    assert next(
+        instruction.callee
+        for function in ng_ir.functions
+        for instruction in function.instructions
+        if instruction.opcode.value == "call"
+    ) == builtin_name
+
+
+def test_ng_ir_v5_generic_vector_new_rejects_malformed_builtin_metadata() -> None:
+    source = "fn main() -> vector<i64>:\n    return vector_new<i64>(3)\n"
+    records = _event_records(_emit_ng_events(source))
+    builtin_record = next(record for record in records if record[0] == 16)
+    builtin_record[3] = 99
+    with pytest.raises(NGIRDecodeError, match="unknown V5 generic CALL builtin ID"):
+        decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
+
+    records = _event_records(_emit_ng_events(source))
+    builtin_record = next(record for record in records if record[0] == 16)
+    builtin_record[4] = 3
+    with pytest.raises(NGIRDecodeError, match="type metadata disagrees"):
+        decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
+
+
+def test_ng_ir_v5_decoder_keeps_v4_stream_compatibility() -> None:
+    source = "fn main() -> i64:\n    return 0\n"
+    records = _event_records(_emit_ng_events(source))
+    records[0][1] = 4
+    decoded = decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
+    verify_ir(decoded)
+    assert execute_ir(decoded) == 0
 
 
 def test_ng_source_set_rejects_aggregate_call_with_wrong_vector_element() -> None:
