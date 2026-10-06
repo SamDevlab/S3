@@ -503,6 +503,74 @@ def test_ng_ir_v3_preserves_vector_and_reference_signature_categories() -> None:
     assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
 
 
+def test_ng_ir_v3_resolves_aggregate_calls_by_complete_ng_type_identity() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "record TokenLike:\n"
+            "    id: i64\n"
+            "fn keep_tokens(value: vector<TokenLike>) -> i64:\n"
+            "    return 7\n"
+            "fn relay_tokens(value: vector<TokenLike>) -> i64:\n"
+            "    return keep_tokens(value)\n"
+            "fn keep_token(value: &TokenLike) -> i64:\n"
+            "    return 11\n"
+            "fn relay_token(value: &TokenLike) -> i64:\n"
+            "    return keep_token(value)\n"
+            "fn keep_mut_tokens(value: &mut vector<TokenLike>) -> i64:\n"
+            "    return 13\n"
+            "fn relay_mut_tokens(value: &mut vector<TokenLike>) -> i64:\n"
+            "    return keep_mut_tokens(value)\n"
+            "fn main() -> i64:\n"
+            "    return 0\n"
+        ),
+    }
+    reference_ir = compile_sources(sources, entry_module="app").ir
+    assert reference_ir is not None
+    source, events = _emit_ng_source_set_events(sources, entry_module="app")
+    ng_ir = decode_ng_ir_events(source, events)
+
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 0
+    call_names = {
+        instruction.callee
+        for function in ng_ir.functions
+        for instruction in function.instructions
+        if instruction.opcode.value == "call"
+    }
+    assert any(name and name.endswith("keep_tokens") for name in call_names)
+    assert any(name and name.endswith("keep_token") for name in call_names)
+    assert any(name and name.endswith("keep_mut_tokens") for name in call_names)
+    ref_parameters = [
+        parameter
+        for function in ng_ir.functions
+        for parameter in function.parameters
+        if parameter.type is IRType.REFERENCE
+    ]
+    assert any(parameter.reference_aggregate == "TokenLike" for parameter in ref_parameters)
+    assert any(parameter.reference_mutable for parameter in ref_parameters)
+
+
+def test_ng_source_set_rejects_aggregate_call_with_wrong_vector_element() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "record TokenLike:\n"
+            "    id: i64\n"
+            "fn keep_numbers(value: vector<i64>) -> vector<i64>:\n"
+            "    return value\n"
+            "fn wrong_element(value: vector<TokenLike>) -> vector<i64>:\n"
+            "    return keep_numbers(value)\n"
+            "fn main() -> i64:\n"
+            "    return 0\n"
+        ),
+    }
+    status, _, events = _run_ng_source_set_events(sources, entry_module="app")
+    assert status < 0
+    assert events == []
+
+
 def test_ng_ir_v3_transports_record_fields_without_semantic_resolution() -> None:
     sources = {
         "app.s3": (
