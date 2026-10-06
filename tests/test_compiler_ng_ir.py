@@ -23,6 +23,7 @@ _NG_SOURCE = "\n".join(
     (
         _module_body("selfhost/compiler_ng/character_classes.s3"),
         _module_body("selfhost/compiler_ng/lexer.s3"),
+        _module_body("selfhost/compiler_ng/types.s3"),
         _module_body("selfhost/compiler_ng/parser.s3"),
         _module_body("selfhost/compiler_ng/semantic.s3"),
         _module_body("selfhost/compiler_ng/ir.s3"),

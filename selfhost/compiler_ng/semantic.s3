@@ -565,9 +565,9 @@ fn ng_check_function_body(source: &bytes, functions: &vector<NgFunction>, nodes:
                     -1:
                         declared_type = statement.operation
                         mutable = 0
-                        match declared_type >= 100:
+                        match declared_type < 0:
                             -1:
-                                declared_type = declared_type - 100
+                                declared_type = 0 - declared_type
                                 mutable = 1
                             0:
                                 mutable = 0

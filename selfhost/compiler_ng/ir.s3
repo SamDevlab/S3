@@ -624,9 +624,9 @@ export fn ng_emit_program(source: &bytes, functions: &vector<NgFunction>, parame
                 -1:
                     statement_type = statement.operation
                     mutable = 0
-                    match statement_type >= 100:
+                    match statement_type < 0:
                         -1:
-                            statement_type = statement_type - 100
+                            statement_type = 0 - statement_type
                             mutable = 1
                         0:
                             mutable = 0

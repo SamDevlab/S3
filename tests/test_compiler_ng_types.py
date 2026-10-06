@@ -93,7 +93,13 @@ fn main() -> vector<i64>:
     discard vector_push<i64>(&mut result, vector_len<NgTypeDescriptor>(&types))
     return result
 '''
-    compiler_source = _module_body("selfhost/compiler_ng/types.s3")
+    compiler_source = "\n".join(
+        (
+            _module_body("selfhost/compiler_ng/character_classes.s3"),
+            _module_body("selfhost/compiler_ng/lexer.s3"),
+            _module_body("selfhost/compiler_ng/types.s3"),
+        )
+    )
     compilation = compile_source(compiler_source + "\n" + wrapper)
     assert compilation.ir is not None
     output = execute_ir(compilation.ir)

@@ -28,6 +28,7 @@ _COMPILER_SOURCE = "\n".join(
     for path in (
         "selfhost/compiler_ng/character_classes.s3",
         "selfhost/compiler_ng/lexer.s3",
+        "selfhost/compiler_ng/types.s3",
         "selfhost/compiler_ng/parser.s3",
     )
 )
@@ -54,6 +55,140 @@ fn main() -> i64:
     compilation = compile_source(_COMPILER_SOURCE + "\n" + wrapper)
     assert compilation.ir is not None
     return int(execute_ir(compilation.ir))
+
+
+def _ng_module_type_probe() -> list[int]:
+    source = (
+        "module app\n"
+        "record Token:\n"
+        "    value: i64\n"
+        "fn pass(item: &mut vector<Token>, raw: &bytes) -> Token:\n"
+        "    mut copy: &mut vector<Token> = item\n"
+        "    return raw\n"
+    )
+    wrapper = f"""
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static({json.dumps(source)})
+    mut source_bytes: bytes = bytes_from_text(&source_text)
+    mut source_length: i64 = bytes_len(&source_bytes)
+    mut tokens: vector<NgToken> = vector_new<NgToken>(64)
+    mut imports: vector<NgImport> = vector_new<NgImport>(4)
+    mut records: vector<NgRecord> = vector_new<NgRecord>(4)
+    mut fields: vector<NgField> = vector_new<NgField>(8)
+    mut functions: vector<NgFunction> = vector_new<NgFunction>(4)
+    mut parameters: vector<NgParameter> = vector_new<NgParameter>(8)
+    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(32)
+    mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(16)
+    mut result: vector<i64> = vector_new<i64>(32)
+    mut lex_status: i64 = ng_lex(&source_bytes, &mut tokens)
+    mut init_status: i64 = ng_initialize_type_table(&mut types)
+    mut module_item: NgModule = ng_parse_module_header(&mut source_bytes, &tokens, 0, 0, source_length, 0, 0, &mut imports)
+    mut parse_status: i64 = ng_parse_module_functions(&source_bytes, &tokens, module_item, &mut types, &mut records, &mut fields, &mut parameters, &mut nodes, &mut functions)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
+    mut first_parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
+    mut second_parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
+    mut nominal: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut vector_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut mutable_reference: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut bytes_reference: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut record_item: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
+    mut field_item: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
+    mut body_link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut local_declaration: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    discard vector_push<i64>(&mut result, lex_status)
+    discard vector_push<i64>(&mut result, init_status)
+    discard vector_push<i64>(&mut result, module_item.name_end - module_item.name_start)
+    discard vector_push<i64>(&mut result, parse_status)
+    discard vector_push<i64>(&mut result, vector_len<NgRecord>(&records))
+    discard vector_push<i64>(&mut result, vector_len<NgField>(&fields))
+    match parse_status <=> 0:
+        -1:
+            return result
+        0:
+            function = vector_get<NgFunction>(&functions, 0)
+            first_parameter = vector_get<NgParameter>(&parameters, function.first_parameter)
+            second_parameter = vector_get<NgParameter>(&parameters, function.first_parameter + 1)
+            nominal = vector_get<NgTypeDescriptor>(&types, 6)
+            vector_type = vector_get<NgTypeDescriptor>(&types, 7)
+            mutable_reference = vector_get<NgTypeDescriptor>(&types, 8)
+            bytes_reference = vector_get<NgTypeDescriptor>(&types, 9)
+            record_item = vector_get<NgRecord>(&records, 0)
+            field_item = vector_get<NgField>(&fields, 0)
+            body_link = vector_get<NgAstNode>(&nodes, function.body_node)
+            local_declaration = vector_get<NgAstNode>(&nodes, body_link.left)
+        1:
+            return result
+    discard vector_push<i64>(&mut result, function.return_type)
+    discard vector_push<i64>(&mut result, first_parameter.type_kind)
+    discard vector_push<i64>(&mut result, second_parameter.type_kind)
+    discard vector_push<i64>(&mut result, nominal.kind)
+    discard vector_push<i64>(&mut result, nominal.module_end - nominal.module_start)
+    discard vector_push<i64>(&mut result, nominal.name_end - nominal.name_start)
+    discard vector_push<i64>(&mut result, vector_type.kind)
+    discard vector_push<i64>(&mut result, vector_type.element_type)
+    discard vector_push<i64>(&mut result, mutable_reference.kind)
+    discard vector_push<i64>(&mut result, mutable_reference.target_type)
+    discard vector_push<i64>(&mut result, mutable_reference.mutable)
+    discard vector_push<i64>(&mut result, bytes_reference.kind)
+    discard vector_push<i64>(&mut result, bytes_reference.target_type)
+    discard vector_push<i64>(&mut result, bytes_reference.mutable)
+    discard vector_push<i64>(&mut result, local_declaration.operation)
+    discard vector_push<i64>(&mut result, record_item.type_id)
+    discard vector_push<i64>(&mut result, record_item.field_count)
+    discard vector_push<i64>(&mut result, field_item.type_id)
+    discard vector_push<i64>(&mut result, field_item.order)
+    discard vector_push<i64>(&mut result, nominal.field_count)
+    return result
+"""
+    compilation = compile_source(_COMPILER_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+    output = execute_ir(compilation.ir)
+    assert hasattr(output, "element_type")
+    return [int(value) for value in output]
+
+
+def _ng_module_record_probe(source: str) -> list[int]:
+    wrapper = f"""
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static({json.dumps(source)})
+    mut source_bytes: bytes = bytes_from_text(&source_text)
+    mut source_length: i64 = bytes_len(&source_bytes)
+    mut tokens: vector<NgToken> = vector_new<NgToken>(source_length + 1)
+    mut imports: vector<NgImport> = vector_new<NgImport>(source_length + 1)
+    mut modules: vector<NgModule> = vector_new<NgModule>(2)
+    mut records: vector<NgRecord> = vector_new<NgRecord>(source_length + 1)
+    mut fields: vector<NgField> = vector_new<NgField>(source_length + 1)
+    mut functions: vector<NgFunction> = vector_new<NgFunction>(source_length + 1)
+    mut parameters: vector<NgParameter> = vector_new<NgParameter>(source_length + 1)
+    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(source_length + 1)
+    mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(source_length + 8)
+    mut result: vector<i64> = vector_new<i64>(8)
+    mut lex_status: i64 = ng_lex(&source_bytes, &mut tokens)
+    mut init_status: i64 = ng_initialize_type_table(&mut types)
+    mut module_item: NgModule = ng_parse_module_header(&mut source_bytes, &tokens, 0, 0, source_length, 0, 0, &mut imports)
+    mut parse_status: i64 = ng_parse_module_functions(&source_bytes, &tokens, module_item, &mut types, &mut records, &mut fields, &mut parameters, &mut nodes, &mut functions)
+    mut validate_status: i64 = -99
+    discard vector_push<i64>(&mut result, lex_status)
+    discard vector_push<i64>(&mut result, init_status)
+    discard vector_push<i64>(&mut result, parse_status)
+    discard vector_push<i64>(&mut result, vector_len<NgRecord>(&records))
+    discard vector_push<i64>(&mut result, vector_len<NgField>(&fields))
+    match parse_status <=> 0:
+        -1:
+            return result
+        0:
+            discard vector_push<NgModule>(&mut modules, module_item)
+            validate_status = ng_validate_nominal_types(&source_bytes, &types, &modules, &records)
+            discard vector_push<i64>(&mut result, validate_status)
+            return result
+        1:
+            return result
+"""
+    compilation = compile_source(_COMPILER_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+    output = execute_ir(compilation.ir)
+    assert hasattr(output, "element_type")
+    return [int(value) for value in output]
 
 
 def test_nextgen_parser_matches_python_precedence_and_builds_indexed_ast() -> None:
@@ -178,6 +313,36 @@ fn main() -> i64:
     compilation = compile_source(_COMPILER_SOURCE + "\n" + wrapper)
     assert compilation.ir is not None
     assert execute_ir(compilation.ir) == 0
+
+
+def test_nextgen_parser_interns_module_nominal_vector_and_reference_types() -> None:
+    assert _ng_module_type_probe() == [0, 0, 3, 0, 1, 1, 7, 9, 10, 7, 3, 5, 8, 7, 9, 8, 1, 9, 5, 0, -9, 7, 1, 1, 0, 1]
+
+
+def test_nextgen_parser_resolves_forward_record_references_and_allows_type_only_modules() -> None:
+    source = (
+        "module app\n"
+        "record First:\n"
+        "    next: Second\n"
+        "record Second:\n"
+        "    value: i64\n"
+    )
+    assert _ng_module_record_probe(source) == [0, 0, 0, 2, 2, 0]
+
+
+def test_nextgen_parser_rejects_unknown_nominal_field_types() -> None:
+    source = "module app\nrecord First:\n    missing: Unknown\n"
+    assert _ng_module_record_probe(source) == [0, 0, 0, 1, 1, -5]
+
+
+def test_nextgen_parser_rejects_duplicate_record_declarations() -> None:
+    source = "module app\nrecord Token:\n    value: i64\nrecord Token:\n    other: i64\n"
+    assert _ng_module_record_probe(source) == [0, 0, -3, 1, 1]
+
+
+def test_nextgen_parser_rejects_duplicate_record_fields() -> None:
+    source = "module app\nrecord Token:\n    value: i64\n    value: trit\n"
+    assert _ng_module_record_probe(source) == [0, 0, -4, 0, 1]
 
 
 def test_nextgen_parser_keeps_multiple_function_boundaries_and_parameter_spans() -> None:

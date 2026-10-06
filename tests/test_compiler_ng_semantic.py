@@ -25,6 +25,7 @@ _NG_SOURCE = "\n".join(
     (
         _module_body("selfhost/compiler_ng/character_classes.s3"),
         _module_body("selfhost/compiler_ng/lexer.s3"),
+        _module_body("selfhost/compiler_ng/types.s3"),
         _module_body("selfhost/compiler_ng/parser.s3"),
         _module_body("selfhost/compiler_ng/semantic.s3"),
     )
@@ -61,6 +62,66 @@ fn main() -> i64:
     return int(execute_ir(compilation.ir))
 
 
+def _ng_module_semantic_statuses(sources: list[str]) -> list[int]:
+    wrapper = """
+fn ng_module_semantic_status(input_source: text) -> i64:
+    mut source_bytes: bytes = bytes_from_text(&input_source)
+    mut source_length: i64 = bytes_len(&source_bytes)
+    mut tokens: vector<NgToken> = vector_new<NgToken>(source_length + 1)
+    mut imports: vector<NgImport> = vector_new<NgImport>(source_length + 1)
+    mut modules: vector<NgModule> = vector_new<NgModule>(2)
+    mut records: vector<NgRecord> = vector_new<NgRecord>(source_length + 1)
+    mut fields: vector<NgField> = vector_new<NgField>(source_length + 1)
+    mut functions: vector<NgFunction> = vector_new<NgFunction>(source_length + 1)
+    mut parameters: vector<NgParameter> = vector_new<NgParameter>(source_length + 1)
+    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(source_length + 1)
+    mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(source_length + 8)
+    mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
+    mut status: i64 = ng_lex(&source_bytes, &mut tokens)
+    match status <=> 0:
+        -1:
+            return -100
+        0:
+            status = ng_initialize_type_table(&mut types)
+        1:
+            return -100
+    match status <=> 0:
+        -1:
+            return -100
+        0:
+            module_item = ng_parse_module_header(&mut source_bytes, &tokens, 0, 0, source_length, 0, 0, &mut imports)
+            status = ng_parse_module_functions(&source_bytes, &tokens, module_item, &mut types, &mut records, &mut fields, &mut parameters, &mut nodes, &mut functions)
+        1:
+            return -100
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            discard vector_push<NgModule>(&mut modules, module_item)
+            status = ng_validate_nominal_types(&source_bytes, &types, &modules, &records)
+        1:
+            return status
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            return ng_check_program(&source_bytes, &functions, &parameters, &nodes)
+        1:
+            return status
+
+fn main() -> vector<i64>:
+    mut result: vector<i64> = vector_new<i64>(4)
+"""
+    for source in sources:
+        wrapper += f'    discard vector_push<i64>(&mut result, ng_module_semantic_status(text_from_static({json.dumps(source)})))\n'
+    wrapper += "    return result\n"
+    compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+    output = execute_ir(compilation.ir)
+    assert hasattr(output, "element_type")
+    return [int(value) for value in output]
+
+
 def test_nextgen_semantic_pass_accepts_resolved_typed_parameters_and_arithmetic() -> None:
     source = (
         "fn add(left: i64, right: i64) -> i64:\n    return left + right * 2\n"
@@ -77,6 +138,33 @@ def test_nextgen_semantic_pass_resolves_forward_calls_and_argument_types() -> No
     )
     assert compile_source(source).ir is not None
     assert _ng_semantic_status(source) == 0
+
+
+def test_nextgen_semantics_compare_complete_nominal_vector_and_reference_descriptors() -> None:
+    valid = (
+        "module app\n"
+        "record Token:\n    value: i64\n"
+        "fn consume(item: &mut vector<Token>) -> i64:\n    return 1\n"
+        "fn relay(item: &mut vector<Token>) -> i64:\n    return consume(item)\n"
+        "fn pass_items(items: vector<Token>) -> vector<Token>:\n    return items\n"
+        "fn relay_items(items: vector<Token>) -> vector<Token>:\n    return pass_items(items)\n"
+        "fn pass_data(data: &bytes) -> &bytes:\n    return data\n"
+        "fn relay_data(data: &bytes) -> &bytes:\n    return pass_data(data)\n"
+    )
+    wrong_nominal = (
+        "module app\n"
+        "record Token:\n    value: i64\n"
+        "record Other:\n    value: i64\n"
+        "fn consume(item: Token) -> i64:\n    return 1\n"
+        "fn relay(item: Other) -> i64:\n    return consume(item)\n"
+    )
+    wrong_mutability = (
+        "module app\n"
+        "record Token:\n    value: i64\n"
+        "fn consume(item: &mut vector<Token>) -> i64:\n    return 1\n"
+        "fn relay(item: &vector<Token>) -> i64:\n    return consume(item)\n"
+    )
+    assert _ng_module_semantic_statuses([valid, wrong_nominal, wrong_mutability]) == [0, -14, -14]
 
 
 def test_nextgen_semantic_pass_tracks_initialized_mutable_locals() -> None:

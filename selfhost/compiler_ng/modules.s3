@@ -1,7 +1,8 @@
 module selfhost.compiler_ng.modules
 
 from selfhost.compiler_ng.lexer import NgToken, ng_lex
-from selfhost.compiler_ng.parser import NgFunction, NgImport, NgModule, NgSpan, NgAstNode, NgParameter, ng_parse_module_header, ng_parse_module_functions
+from selfhost.compiler_ng.parser import NgFunction, NgImport, NgModule, NgSpan, NgAstNode, NgParameter, NgRecord, NgField, ng_parse_module_header, ng_parse_module_functions, ng_validate_nominal_types
+from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table
 from selfhost.compiler_ng.semantic import ng_check_program
 from selfhost.compiler_ng.ir import ng_emit_program
 
@@ -516,8 +517,11 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
     mut modules: vector<NgModule> = vector_new<NgModule>(unit_count + 1)
     mut imports: vector<NgImport> = vector_new<NgImport>(1)
     mut functions: vector<NgFunction> = vector_new<NgFunction>(1)
+    mut records: vector<NgRecord> = vector_new<NgRecord>(1)
+    mut fields: vector<NgField> = vector_new<NgField>(1)
     mut parameters: vector<NgParameter> = vector_new<NgParameter>(1)
     mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(1)
+    mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(16)
     mut order: vector<i64> = vector_new<i64>(unit_count + 1)
     mut status: i64 = 0
     mut entry_bytes: bytes = bytes_from_text(&entry_module)
@@ -547,8 +551,18 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
         total_source_bytes = total_source_bytes + bytes_len(&unit.contents)
         source_index = source_index + 1
     pool_capacity = total_source_bytes + 1
+    status = ng_initialize_type_table(&mut types)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            status = status
+        1:
+            return status
     imports = vector_new<NgImport>(pool_capacity)
     functions = vector_new<NgFunction>(pool_capacity)
+    records = vector_new<NgRecord>(pool_capacity)
+    fields = vector_new<NgField>(pool_capacity)
     parameters = vector_new<NgParameter>(pool_capacity)
     nodes = vector_new<NgAstNode>(pool_capacity)
     source_index = 0
@@ -624,7 +638,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
                 return -1
             0:
                 module_item.first_function = vector_len<NgFunction>(&functions)
-                status = ng_parse_module_functions(&*source, &tokens, module_item, &mut parameters, &mut nodes, &mut functions)
+                status = ng_parse_module_functions(&*source, &tokens, module_item, &mut types, &mut records, &mut fields, &mut parameters, &mut nodes, &mut functions)
                 match status <=> 0:
                     -1:
                         return -1
@@ -636,6 +650,14 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
             1:
                 return -1
         order_index = order_index + 1
+    status = ng_validate_nominal_types(&*source, &types, &modules, &records)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            status = status
+        1:
+            return status
     status = ng_validate_functions(&*source, &modules, &functions)
     match status <=> 0:
         -1:
