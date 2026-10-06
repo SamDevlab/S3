@@ -1,6 +1,6 @@
 """Structural decoder for the versioned S3C-NG integer-event interchange.
 
-Versions 1-3 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
+Versions 1-4 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
 Kind 0 declares ``(version, record_width, flags=0, 0, 0, 0, 0)``. Kind 1 is a
 function ``(index, return_type, parameter_count, name_start, name_end,
 result_width, flags)``; kind 2 is a parameter ``(function, ordinal, type,
@@ -11,7 +11,9 @@ and control-flow targets. Kind 5 closes a function. Names use absolute UTF-8
 byte spans into the original source. Function flag bits 0/1 mean external and
 exported. Block ID 0 is the canonical entry block. V1 accepts scalar type codes
 1-4; V2 adds bytes and text as codes 5 and 6. V3 adds ordered type-descriptor
-records (kinds 12-14) and uses descriptor IDs in type fields. The decoder only
+records (kinds 12-14) and uses descriptor IDs in type fields. V4 adds aggregate
+field loads (opcode 14) followed by kind 15 carrying the field-name span end.
+The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
 Unsupported types, opcodes, fields, or record order fail closed. The stream
@@ -37,7 +39,7 @@ from .ir import (
 )
 
 
-NG_IR_FORMAT_VERSION = 3
+NG_IR_FORMAT_VERSION = 4
 NG_IR_RECORD_WIDTH = 8
 
 _TYPE_CODES_V1 = {
@@ -78,6 +80,7 @@ _OPCODE_CODES = {
     11: IROpcode.BRANCH3,
     12: IROpcode.JUMP,
     13: IROpcode.COMPARE,
+    14: IROpcode.AGGREGATE_FIELD_LOAD,
 }
 
 
@@ -96,6 +99,8 @@ class _InstructionRecord:
     block: int
     targets: tuple[int, ...]
     callee_index: int | None = None
+    reference_aggregate: str | None = None
+    aggregate_field_path: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,7 +138,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -197,7 +202,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             raise NGIRDecodeError(f"nested reference target is not representable in {context}")
         return type_for(target.id, f"reference target of {context}"), bool(descriptor.mutable), None
 
-    if version == 3:
+    if version >= 3:
         while cursor < len(records) and records[cursor][0] == 12:
             item = take(12, "type descriptor")
             _, type_id, kind, module_start, module_end, name_start, name_end, element_type = item
@@ -323,6 +328,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             )
 
         registers: list[IRRegister] = []
+        register_type_ids: list[int] = []
         while cursor < len(records) and records[cursor][0] == 3:
             item = take(3, f"register of {function_name}")
             _, owner, register_index, type_code, reserved0, reserved1, reserved2, reserved3 = item
@@ -340,6 +346,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     reference_aggregate=reference_aggregate,
                 )
             )
+            register_type_ids.append(type_code)
 
         memories: list[IRMemoryObject] = []
         while cursor < len(records) and records[cursor][0] == 7:
@@ -377,6 +384,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             memory_id: int | None = None
             init = False
             targets: tuple[int, ...] = ()
+            reference_aggregate: str | None = None
+            aggregate_field_path: tuple[str, ...] = ()
             if opcode is IROpcode.CONST:
                 if result is None or operand_count != 0 or operand0 != -1 or operand1 != -1:
                     raise NGIRDecodeError("malformed CONST record")
@@ -437,6 +446,36 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     raise NGIRDecodeError("malformed JUMP record")
                 operands = ()
                 decoded_immediate = None
+            elif opcode is IROpcode.AGGREGATE_FIELD_LOAD:
+                if version < 4:
+                    raise NGIRDecodeError("AGGREGATE_FIELD_LOAD requires NG IR V4")
+                if result is None or operand_count != 1 or operand0 < 0 or operand1 <= 0 or immediate < 0:
+                    raise NGIRDecodeError("malformed AGGREGATE_FIELD_LOAD record")
+                if operand0 >= len(register_type_ids):
+                    raise NGIRDecodeError("AGGREGATE_FIELD_LOAD references a missing aggregate register")
+                owner_descriptor = type_descriptors.get(operand1)
+                if owner_descriptor is None or owner_descriptor.kind != 7:
+                    raise NGIRDecodeError("AGGREGATE_FIELD_LOAD owner must be a nominal type descriptor")
+                reference_descriptor = type_descriptors.get(register_type_ids[operand0])
+                if (
+                    reference_descriptor is None
+                    or reference_descriptor.kind != 9
+                    or reference_descriptor.target_type != operand1
+                ):
+                    raise NGIRDecodeError("AGGREGATE_FIELD_LOAD operand must reference its declared owner type")
+                field_end_record = take(15, "AGGREGATE_FIELD_LOAD field-name span")
+                _, field_owner, field_instruction, field_end, *reserved = field_end_record
+                if (field_owner, field_instruction) != (function_index, instruction_index) or any(reserved):
+                    raise NGIRDecodeError("malformed AGGREGATE_FIELD_LOAD field-name span record")
+                field_name = source_name(immediate, field_end, "AGGREGATE_FIELD_LOAD field name")
+                reference_aggregate = source_name(
+                    owner_descriptor.name_start,
+                    owner_descriptor.name_end,
+                    "AGGREGATE_FIELD_LOAD owner",
+                )
+                aggregate_field_path = (field_name,)
+                operands = (operand0,)
+                decoded_immediate = None
             else:  # The explicit table above is deliberately exhaustive.
                 raise NGIRDecodeError(f"unsupported opcode {opcode.value}")
 
@@ -465,7 +504,19 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     targets = (target0,)
 
             instruction_records.append(
-                _InstructionRecord(opcode, result, operands, decoded_immediate, memory_id, init, block_id, targets, callee_index)
+                _InstructionRecord(
+                    opcode,
+                    result,
+                    operands,
+                    decoded_immediate,
+                    memory_id,
+                    init,
+                    block_id,
+                    targets,
+                    callee_index,
+                    reference_aggregate,
+                    aggregate_field_path,
+                )
             )
 
         end_record = take(5, f"end of function {function_name}")
@@ -536,6 +587,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     targets=tuple(block_names[target] for target in record.targets),
                     memory=record.memory,
                     initialization=record.initialization,
+                    reference_aggregate=record.reference_aggregate,
+                    aggregate_field_path=record.aggregate_field_path,
                 )
             )
         return_type = raw["return_type"]

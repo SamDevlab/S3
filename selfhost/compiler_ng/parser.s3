@@ -705,6 +705,51 @@ fn ng_parse_primary(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vecto
         1:
             return ng_parse_group(source, tokens, cursor, nodes)
 
+fn ng_parse_postfix_field(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, expression_id: i64) -> i64:
+    mut current_id: i64 = expression_id
+    mut current: NgAstNode = vector_get<NgAstNode>(&*nodes, current_id)
+    mut token: NgToken = NgToken(kind=0, start=0, end=0)
+    mut field: NgToken = NgToken(kind=0, start=0, end=0)
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match vector_get<i64>(&*cursor, 0) < vector_len<NgToken>(tokens):
+            -1:
+                token = ng_token_at(tokens, cursor)
+                match token.kind <=> 346:
+                    -1:
+                        scanning = 0
+                    0:
+                        match ng_expression_operator_same_line(source, &*nodes, current_id, token):
+                            -1:
+                                discard ng_advance(cursor)
+                                match vector_get<i64>(&*cursor, 0) < vector_len<NgToken>(tokens):
+                                    -1:
+                                        field = ng_token_at(tokens, cursor)
+                                        match field.kind <=> 1:
+                                            -1:
+                                                return -1
+                                            0:
+                                                current = vector_get<NgAstNode>(&*nodes, current_id)
+                                                current_id = ng_append_node(nodes, NgAstNode(kind=14, start=current.start, end=field.end, left=current_id, right=-1, operation=field.start))
+                                                discard ng_advance(cursor)
+                                            1:
+                                                return -1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+                            0:
+                                scanning = 0
+                            1:
+                                scanning = 0
+                    1:
+                        scanning = 0
+            0:
+                scanning = 0
+            1:
+                return -1
+    return current_id
+
 fn ng_append_binary_node(nodes: &mut vector<NgAstNode>, left_id: i64, right_id: i64, operator_token: NgToken) -> i64:
     mut left_node: NgAstNode = vector_get<NgAstNode>(&*nodes, left_id)
     mut right_node: NgAstNode = vector_get<NgAstNode>(&*nodes, right_id)
@@ -733,6 +778,14 @@ fn ng_parse_term_step(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vec
         0:
             return -1
         1:
+            right_id = ng_parse_postfix_field(source, tokens, cursor, nodes, right_id)
+            match right_id <=> -1:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    right_id = right_id
             return ng_append_binary_node(nodes, left_id, right_id, operator_token)
 
 fn ng_parse_term(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>) -> i64:
@@ -746,6 +799,14 @@ fn ng_parse_term(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i
         0:
             return -1
         1:
+            left_id = ng_parse_postfix_field(source, tokens, cursor, nodes, left_id)
+            match left_id <=> -1:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    left_id = left_id
             while scanning == 1:
                 operator_token = ng_token_at(tokens, cursor)
                 match ng_expression_operator_same_line(source, &*nodes, left_id, operator_token):

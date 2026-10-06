@@ -85,7 +85,7 @@ def _reference_events(program: object, source: str) -> list[int]:
         assert len(fields) == 7
         events.extend((kind, *fields))
 
-    event(0, 3, 8, 0, 0, 0, 0, 0)
+    event(0, 4, 8, 0, 0, 0, 0, 0)
     for type_id in range(1, 7):
         event(12, type_id, type_id, -1, -1, -1, -1, -1)
         event(13, type_id, -1, 0, 0, 0, 0, 0)
@@ -228,7 +228,7 @@ fn main() -> i64:
                 -1:
                     return -1001
                 0:
-                    status = ng_emit_program(&source_bytes, &types, &records, &fields, &functions, &parameters, &nodes, &mut actual)
+                    status = ng_emit_program(&source_bytes, &types, &records, &fields, &functions, &parameters, &mut nodes, &mut actual)
                     match status <=> 0:
                         -1:
                             return status
@@ -330,7 +330,7 @@ fn main() -> i64:
                 -1:
                     return -101
                 0:
-                    status = ng_emit_program(&source_bytes, &types, &records, &fields, &functions, &parameters, &nodes, &mut actual)
+                    status = ng_emit_program(&source_bytes, &types, &records, &fields, &functions, &parameters, &mut nodes, &mut actual)
                     match status <=> 0:
                         -1:
                             return status

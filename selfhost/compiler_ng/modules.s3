@@ -3,7 +3,7 @@ module selfhost.compiler_ng.modules
 from selfhost.compiler_ng.lexer import NgToken, ng_lex
 from selfhost.compiler_ng.parser import NgFunction, NgImport, NgModule, NgSpan, NgAstNode, NgParameter, NgRecord, NgField, ng_parse_module_header, ng_parse_module_functions, ng_validate_nominal_types
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table
-from selfhost.compiler_ng.semantic import ng_check_program
+from selfhost.compiler_ng.semantic import ng_check_program_typed
 from selfhost.compiler_ng.ir import ng_emit_program
 
 export record NgSourceUnit:
@@ -641,7 +641,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
                 status = ng_parse_module_functions(&*source, &tokens, module_item, &mut types, &mut records, &mut fields, &mut parameters, &mut nodes, &mut functions)
                 match status <=> 0:
                     -1:
-                        return -1
+                        return status
                     0:
                         module_item.function_count = vector_len<NgFunction>(&functions) - module_item.first_function
                         discard vector_set<NgModule>(&mut modules, module_index, module_item)
@@ -716,12 +716,12 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
                 -1:
                     return status
                 0:
-                    status = ng_check_program(&*source, &functions, &parameters, &nodes)
+                    status = ng_check_program_typed(&*source, &types, &records, &fields, &functions, &parameters, &mut nodes)
                     match status <=> 0:
                         -1:
                             return status
                         0:
-                            return ng_emit_program(&*source, &types, &records, &fields, &functions, &parameters, &nodes, events)
+                            return ng_emit_program(&*source, &types, &records, &fields, &functions, &parameters, &mut nodes, events)
                         1:
                             return status
                 1:

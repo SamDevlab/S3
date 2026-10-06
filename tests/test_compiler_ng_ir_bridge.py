@@ -281,7 +281,7 @@ fn main() -> vector<i64>:
                     discard vector_push<i64>(&mut events, status)
                     return events
                 0:
-                    status = ng_emit_program(&source_bytes, &types, &records, &fields, &functions, &parameters, &nodes, &mut events)
+                    status = ng_emit_program(&source_bytes, &types, &records, &fields, &functions, &parameters, &mut nodes, &mut events)
                     match status <=> 0:
                         -1:
                             discard vector_push<i64>(&mut events, status)
@@ -452,7 +452,7 @@ def test_branches_ng_output_decodes_verifies_executes_and_matches_reference() ->
     assert execute_ir(reference_ir) == execute_ir(ng_canonical_ir)
 
 
-def test_ng_ir_v3_preserves_bytes_text_and_decodes_v2() -> None:
+def test_ng_ir_v4_preserves_bytes_text_and_decodes_v2() -> None:
     source = (
         "fn echo_bytes(value: bytes) -> bytes:\n    return value\n"
         "fn echo_text(value: text) -> text:\n    return value\n"
@@ -461,7 +461,7 @@ def test_ng_ir_v3_preserves_bytes_text_and_decodes_v2() -> None:
     reference_ir = compile_source(source).ir
     assert reference_ir is not None
     events = _emit_ng_events(source)
-    assert _event_records(events)[0] == [0, 3, 8, 0, 0, 0, 0, 0]
+    assert _event_records(events)[0] == [0, 4, 8, 0, 0, 0, 0, 0]
     ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
 
     verify_ir(ng_ir)
@@ -484,7 +484,7 @@ def test_ng_ir_v3_preserves_bytes_text_and_decodes_v2() -> None:
     assert v2_ir.functions[0].return_type is IRType.TEXT
 
 
-def test_ng_ir_v3_preserves_vector_and_reference_signature_categories() -> None:
+def test_ng_ir_v4_preserves_vector_and_reference_signature_categories() -> None:
     source = (
         "fn identity(value: vector<i64>) -> vector<i64>:\n    return value\n"
         "fn borrow(value: &mut bytes) -> tryte:\n    return 0\n"
@@ -494,7 +494,7 @@ def test_ng_ir_v3_preserves_vector_and_reference_signature_categories() -> None:
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 3, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 4, 8, 0, 0, 0, 0, 0]
     assert any(record[0] == 12 and record[2] == 8 for record in records)
     assert any(record[0] == 12 and record[2] == 9 for record in records)
 
@@ -503,7 +503,7 @@ def test_ng_ir_v3_preserves_vector_and_reference_signature_categories() -> None:
     assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
 
 
-def test_ng_ir_v3_resolves_aggregate_calls_by_complete_ng_type_identity() -> None:
+def test_ng_ir_v4_resolves_aggregate_calls_by_complete_ng_type_identity() -> None:
     sources = {
         "app.s3": (
             "module app\n"
@@ -571,7 +571,7 @@ def test_ng_source_set_rejects_aggregate_call_with_wrong_vector_element() -> Non
     assert events == []
 
 
-def test_ng_ir_v3_transports_record_fields_without_semantic_resolution() -> None:
+def test_ng_ir_v4_transports_record_fields_without_semantic_resolution() -> None:
     sources = {
         "app.s3": (
             "module app\n"
@@ -597,7 +597,72 @@ def test_ng_ir_v3_transports_record_fields_without_semantic_resolution() -> None
     assert execute_ir(ng_ir) == execute_ir(reference_ir) == 0
 
 
-def test_ng_ir_v3_fails_closed_for_unlowered_nominal_value() -> None:
+def test_ng_ir_v4_lowers_and_executes_aggregate_reference_field_load() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "record TokenLike:\n"
+            "    id: i64\n"
+            "fn read_id(value: &TokenLike) -> i64:\n"
+            "    return value.id\n"
+            "fn main() -> i64:\n"
+            "    return 0\n"
+        ),
+    }
+    reference_ir = compile_sources(sources, entry_module="app").ir
+    assert reference_ir is not None
+    source, events = _emit_ng_source_set_events(sources, entry_module="app")
+    rows = _event_records(events)
+    field_load = next(row for row in rows if row[0] == 4 and row[2] == 14)
+    field_load_index = rows.index(field_load)
+    field_span = rows[field_load_index + 1]
+    assert field_span[0] == 15
+    assert source[field_load[7]:field_span[3]].decode("utf-8") == "id"
+
+    ng_ir = decode_ng_ir_events(source, events)
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+    read_id = next(function for function in ng_ir.functions if function.name.endswith("read_id"))
+    instruction = next(
+        instruction
+        for instruction in read_id.instructions
+        if instruction.opcode.value == "aggregate_field_load"
+    )
+    assert instruction.reference_aggregate == "TokenLike"
+    assert instruction.aggregate_field_path == ("id",)
+
+    field_cell = ir_emulator._Cell(value=73, initialized=True)
+    aggregate = ir_emulator.AggregateReferenceValue("TokenLike", ((("id",), field_cell),), False)
+    functions = {function.name: function for function in ng_ir.functions}
+    result = ir_emulator._execute_function(
+        functions,
+        read_id,
+        (aggregate,),
+        (),
+        {},
+        HostExecutionContext(),
+    )
+    assert result == 73
+
+
+def test_ng_source_set_rejects_unknown_aggregate_reference_field() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "record TokenLike:\n"
+            "    id: i64\n"
+            "fn read_missing(value: &TokenLike) -> i64:\n"
+            "    return value.missing\n"
+            "fn main() -> i64:\n"
+            "    return 0\n"
+        ),
+    }
+    status, _, events = _run_ng_source_set_events(sources, entry_module="app")
+    assert status < 0
+    assert events == []
+
+
+def test_ng_ir_v4_fails_closed_for_unlowered_nominal_value() -> None:
     sources = {
         "app.s3": (
             "module app\n"
@@ -614,7 +679,7 @@ def test_ng_ir_v3_fails_closed_for_unlowered_nominal_value() -> None:
         decode_ng_ir_events(source, events)
 
 
-def test_ng_ir_v3_rejects_malformed_composite_descriptors() -> None:
+def test_ng_ir_v4_rejects_malformed_composite_descriptors() -> None:
     source_text = (
         "fn identity(value: vector<i64>) -> vector<i64>:\n    return value\n"
         "fn borrow(value: &mut bytes) -> tryte:\n    return 0\n"
@@ -1049,6 +1114,8 @@ def test_ng_ir_bridge_rejects_invalid_call_function_and_argument_ranges() -> Non
 def test_ng_ir_bridge_rejects_unknown_schema_and_partial_records() -> None:
     source = b"fn main() -> i64:\n    return 0\n"
     with pytest.raises(NGIRDecodeError, match="format header"):
+        decode_ng_ir_events(source, [0, 99, 8, 0, 0, 0, 0, 0])
+    with pytest.raises(NGIRDecodeError, match="type descriptor table"):
         decode_ng_ir_events(source, [0, 4, 8, 0, 0, 0, 0, 0])
     with pytest.raises(NGIRDecodeError, match="partial record"):
         decode_ng_ir_events(source, [0, 1])

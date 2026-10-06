@@ -1,6 +1,7 @@
 module selfhost.compiler_ng.semantic
 
-from selfhost.compiler_ng.parser import NgAstNode, NgFunction, NgParameter
+from selfhost.compiler_ng.parser import NgAstNode, NgField, NgFunction, NgParameter, NgRecord
+from selfhost.compiler_ng.types import NgTypeDescriptor
 
 export record NgLocal:
     name_start: i64
@@ -362,7 +363,161 @@ fn ng_expression_type(source: &bytes, functions: &vector<NgFunction>, nodes: &ve
                                         0:
                                             return ng_call_type(source, functions, nodes, parameters, locals, first_parameter, parameter_count, node)
                                         1:
-                                            return -11
+                                            match node.kind <=> 14:
+                                                -1:
+                                                    return -11
+                                                0:
+                                                    match node.right > 0:
+                                                        -1:
+                                                            return node.right
+                                                        0:
+                                                            return -14
+                                                        1:
+                                                            return -14
+                                                1:
+                                                    return -11
+
+fn ng_resolve_record_field_node(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, function: NgFunction, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>, node_index: i64) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
+    mut target: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut owner: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut record_item: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
+    mut field: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
+    mut target_type_id: i64 = -1
+    mut owner_type_id: i64 = -1
+    mut record_index: i64 = 0
+    mut field_index: i64 = 0
+    match node.right > 0:
+        -1:
+            return 0
+        0:
+            target = vector_get<NgAstNode>(&*nodes, node.left)
+            match target.kind <=> 2:
+                -1:
+                    return -14
+                0:
+                    target_type_id = ng_parameter_type(source, parameters, function.first_parameter, function.parameter_count, target.start, target.end)
+                1:
+                    match target.kind <=> 14:
+                        -1:
+                            return -14
+                        0:
+                            target_type_id = target.right
+                        1:
+                            return -14
+            match target_type_id > 0:
+                -1:
+                    match target_type_id <= vector_len<NgTypeDescriptor>(types):
+                        -1:
+                            descriptor = vector_get<NgTypeDescriptor>(types, target_type_id - 1)
+                        0:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+            match descriptor.kind <=> 9:
+                -1:
+                    return -14
+                0:
+                    owner_type_id = descriptor.target_type
+                1:
+                    return -14
+            match owner_type_id > 0:
+                -1:
+                    match owner_type_id <= vector_len<NgTypeDescriptor>(types):
+                        -1:
+                            owner = vector_get<NgTypeDescriptor>(types, owner_type_id - 1)
+                        0:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+            match owner.kind <=> 7:
+                -1:
+                    return -14
+                0:
+                    record_index = 0
+                    while record_index < vector_len<NgRecord>(records):
+                        record_item = vector_get<NgRecord>(records, record_index)
+                        match record_item.type_id <=> owner_type_id:
+                            -1:
+                                record_index = record_index + 1
+                            0:
+                                field_index = record_item.first_field
+                                while field_index < record_item.first_field + record_item.field_count:
+                                    field = vector_get<NgField>(fields, field_index)
+                                    match ng_spans_equal(source, field.name_start, field.name_end, node.operation, node.end):
+                                        -1:
+                                            node.start = node.operation
+                                            node.operation = owner_type_id
+                                            node.right = field.type_id
+                                            discard vector_set<NgAstNode>(&mut *nodes, node_index, node)
+                                            return 0
+                                        0:
+                                            field_index = field_index + 1
+                                        1:
+                                            field_index = field_index + 1
+                                return -15
+                            1:
+                                record_index = record_index + 1
+                    return -14
+                1:
+                    return -14
+        1:
+            return -14
+
+export fn ng_resolve_record_field_nodes(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>) -> i64:
+    mut function_index: i64 = 0
+    mut node_index: i64 = 0
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
+    mut node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut status: i64 = 0
+    while function_index < vector_len<NgFunction>(functions):
+        function = vector_get<NgFunction>(functions, function_index)
+        node_index = 0
+        while node_index < vector_len<NgAstNode>(&*nodes):
+            node = vector_get<NgAstNode>(&*nodes, node_index)
+            match node.kind <=> 14:
+                -1:
+                    node_index = node_index + 1
+                0:
+                    match node.right < 0:
+                        -1:
+                            match node.start >= function.start:
+                                -1:
+                                    match node.end <= function.end:
+                                        -1:
+                                            status = ng_resolve_record_field_node(source, types, records, fields, function, parameters, nodes, node_index)
+                                            match status <=> 0:
+                                                -1:
+                                                    return status
+                                                0:
+                                                    node_index = node_index + 1
+                                                1:
+                                                    return status
+                                        0:
+                                            node_index = node_index + 1
+                                        1:
+                                            node_index = node_index + 1
+                                0:
+                                    node_index = node_index + 1
+                                1:
+                                    node_index = node_index + 1
+                        0:
+                            node_index = node_index + 1
+                        1:
+                            node_index = node_index + 1
+                1:
+                    node_index = node_index + 1
+        function_index = function_index + 1
+    return 0
 
 fn ng_check_match_arms(source: &bytes, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, function: NgFunction, statement: NgAstNode) -> i64:
     mut selector_type: i64 = ng_expression_type(source, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left)
@@ -684,7 +839,7 @@ fn ng_check_function_body(source: &bytes, functions: &vector<NgFunction>, nodes:
         1:
             return -15
 
-export fn ng_check_program(source: &bytes, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &vector<NgAstNode>) -> i64:
+fn ng_check_program_core(source: &bytes, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &vector<NgAstNode>) -> i64:
     mut function_index: i64 = 0
     mut prior_function_index: i64 = 0
     mut parameter_index: i64 = 0
@@ -729,3 +884,16 @@ export fn ng_check_program(source: &bytes, functions: &vector<NgFunction>, param
             1:
                 return body_status
     return 0
+
+export fn ng_check_program(source: &bytes, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &vector<NgAstNode>) -> i64:
+    return ng_check_program_core(source, functions, parameters, nodes)
+
+export fn ng_check_program_typed(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>) -> i64:
+    mut status: i64 = ng_resolve_record_field_nodes(source, types, records, fields, functions, parameters, nodes)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            return ng_check_program_core(source, functions, parameters, &*nodes)
+        1:
+            return status
