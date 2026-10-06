@@ -1,6 +1,6 @@
 """Structural decoder for the versioned S3C-NG integer-event interchange.
 
-Version 1 is a flat sequence of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
+Versions 1 and 2 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
 Kind 0 declares ``(version, record_width, flags=0, 0, 0, 0, 0)``. Kind 1 is a
 function ``(index, return_type, parameter_count, name_start, name_end,
 result_width, flags)``; kind 2 is a parameter ``(function, ordinal, type,
@@ -9,9 +9,11 @@ memory objects, and ordered block IDs. Kind 4 is an instruction; kinds 6, 8,
 10, and 11 attach call arguments, store-initialization flags, block ownership,
 and control-flow targets. Kind 5 closes a function. Names use absolute UTF-8
 byte spans into the original source. Function flag bits 0/1 mean external and
-exported. Block ID 0 is the canonical entry block. Unsupported types, opcodes,
-fields, or record order fail closed. The stream carries no source locations or
-static strings, so those are intentionally absent from reconstructed IR.
+exported. Block ID 0 is the canonical entry block. V1 accepts scalar type codes
+1-4; V2 adds bytes and text as codes 5 and 6 without changing V1 semantics.
+Unsupported types, opcodes, fields, or record order fail closed. The stream
+carries no source locations or static strings, so those are intentionally
+absent from reconstructed IR.
 """
 
 from __future__ import annotations
@@ -32,14 +34,22 @@ from .ir import (
 )
 
 
-NG_IR_FORMAT_VERSION = 1
+NG_IR_FORMAT_VERSION = 2
 NG_IR_RECORD_WIDTH = 8
 
-_TYPE_CODES = {
+_TYPE_CODES_V1 = {
     1: IRType.I64,
     2: IRType.TRIT,
     3: IRType.TRYTE,
     4: IRType.F64,
+}
+_TYPE_CODES_BY_VERSION = {
+    1: _TYPE_CODES_V1,
+    2: {
+        **_TYPE_CODES_V1,
+        5: IRType.BYTES,
+        6: IRType.TEXT,
+    },
 }
 _OPCODE_CODES = {
     1: IROpcode.CONST,
@@ -92,8 +102,15 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
         raise NGIRDecodeError("event stream is empty")
 
     header = records[0]
-    if header != (0, NG_IR_FORMAT_VERSION, NG_IR_RECORD_WIDTH, 0, 0, 0, 0, 0):
+    version = header[1]
+    if (
+        header[0] != 0
+        or version not in _TYPE_CODES_BY_VERSION
+        or header[2] != NG_IR_RECORD_WIDTH
+        or any(header[3:])
+    ):
         raise NGIRDecodeError("unsupported or malformed NG IR format header")
+    type_codes = _TYPE_CODES_BY_VERSION[version]
 
     cursor = 1
     raw_functions: list[dict[str, object]] = []
@@ -109,7 +126,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
 
     def type_for(code: int, context: str) -> IRType:
         try:
-            return _TYPE_CODES[code]
+            return type_codes[code]
         except KeyError as exc:
             raise NGIRDecodeError(f"unknown type code {code} in {context}") from exc
 

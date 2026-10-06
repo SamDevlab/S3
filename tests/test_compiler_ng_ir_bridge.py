@@ -448,6 +448,28 @@ def test_branches_ng_output_decodes_verifies_executes_and_matches_reference() ->
     assert execute_ir(reference_ir) == execute_ir(ng_canonical_ir)
 
 
+def test_ng_ir_v2_preserves_bytes_and_text_signature_types() -> None:
+    source = (
+        "fn echo_bytes(value: bytes) -> bytes:\n    return value\n"
+        "fn echo_text(value: text) -> text:\n    return value\n"
+        "fn main() -> i64:\n    return 0\n"
+    )
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+    events = _emit_ng_events(source)
+    assert _event_records(events)[0] == [0, 2, 8, 0, 0, 0, 0, 0]
+    ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
+
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+
+    legacy_events = _event_records(_emit_ng_events("fn main() -> i64:\n    return 0\n"))
+    legacy_events[0][1] = 1
+    legacy_events[1][2] = 5
+    with pytest.raises(NGIRDecodeError, match="unknown type code 5"):
+        decode_ng_ir_events(b"fn main() -> i64:\n    return 0\n", _flatten(legacy_events))
+
+
 def test_branches_ng_origin_ir_flows_through_existing_backends() -> None:
     source = (_ROOT / "benchmarks/workloads/branches.s3").read_text(encoding="utf-8")
     reference_ir = compile_source(source).ir
@@ -860,6 +882,6 @@ def test_ng_ir_bridge_rejects_invalid_call_function_and_argument_ranges() -> Non
 def test_ng_ir_bridge_rejects_unknown_schema_and_partial_records() -> None:
     source = b"fn main() -> i64:\n    return 0\n"
     with pytest.raises(NGIRDecodeError, match="format header"):
-        decode_ng_ir_events(source, [0, 2, 8, 0, 0, 0, 0, 0])
+        decode_ng_ir_events(source, [0, 3, 8, 0, 0, 0, 0, 0])
     with pytest.raises(NGIRDecodeError, match="partial record"):
         decode_ng_ir_events(source, [0, 1])

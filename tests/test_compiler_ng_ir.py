@@ -83,7 +83,7 @@ def _reference_events(program: object, source: str) -> list[int]:
         assert len(fields) == 7
         events.extend((kind, *fields))
 
-    event(0, 1, 8, 0, 0, 0, 0, 0)
+    event(0, 2, 8, 0, 0, 0, 0, 0)
     for function_index, function in enumerate(program.functions):
         call_argument_cursor = 0
         block_indices = {block.name: index for index, block in enumerate(function.blocks)}

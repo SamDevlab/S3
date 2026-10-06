@@ -597,7 +597,7 @@ export fn ng_emit_program(source: &bytes, functions: &vector<NgFunction>, parame
         -1:
             return status
         0:
-            discard ng_ir_event(events, 0, 1, 8, 0, 0, 0, 0, 0)
+            discard ng_ir_event(events, 0, 2, 8, 0, 0, 0, 0, 0)
         1:
             return status
     while function_index < vector_len<NgFunction>(functions):
