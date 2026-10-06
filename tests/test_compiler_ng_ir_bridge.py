@@ -1001,6 +1001,27 @@ def test_ng_ir_v4_lowers_and_executes_aggregate_reference_field_load() -> None:
     assert result == 73
 
 
+def test_ng_source_set_lowers_record_constructor_field_projection() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "record Pair:\n"
+            "    left: i64\n"
+            "    right: i64\n"
+            "fn main() -> i64:\n"
+            "    return Pair(right=23, left=19).right\n"
+        ),
+    }
+    reference_ir = compile_sources(sources, entry_module="app").ir
+    assert reference_ir is not None
+    source, events = _emit_ng_source_set_events(sources, entry_module="app")
+    ng_ir = decode_ng_ir_events(source, events)
+
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 23
+
+
 def test_ng_source_set_rejects_unknown_aggregate_reference_field() -> None:
     sources = {
         "app.s3": (

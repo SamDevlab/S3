@@ -452,3 +452,39 @@ def test_nextgen_semantics_rejects_invalid_symbols_and_types_like_reference(
     with pytest.raises(SemanticError):
         compile_source(source)
     assert _ng_semantic_status(source) == expected_status
+
+
+@pytest.mark.parametrize(
+    ("initializer", "expected_status"),
+    [
+        ("Pair(left=1, right=-1).left", 0),
+        ("Pair(left=1).left", -14),
+        ("Pair(left=1, left=2, right=-1).left", -14),
+        ("Pair(missing=1, right=-1).left", -14),
+        ("Pair(left=1, right=2).left", -14),
+    ],
+)
+def test_nextgen_record_constructor_checks_named_fields_and_types(
+    initializer: str,
+    expected_status: int,
+) -> None:
+    source = (
+        "module app\n"
+        "record Pair:\n"
+        "    left: i64\n"
+        "    right: trit\n"
+        "fn main() -> i64:\n"
+        f"    return {initializer}\n"
+    )
+    assert _ng_module_semantic_statuses([source]) == [expected_status]
+
+
+def test_nextgen_field_resolution_does_not_confuse_generic_argument_with_constructor() -> None:
+    source = (
+        "module app\n"
+        "record Token:\n"
+        "    kind: i64\n"
+        "fn main() -> i64:\n"
+        "    return vector_new<Token>(1).kind\n"
+    )
+    assert _ng_module_semantic_statuses([source]) == [-14]

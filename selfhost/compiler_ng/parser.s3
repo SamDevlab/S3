@@ -790,6 +790,32 @@ fn ng_is_generic_call_ahead(tokens: &vector<NgToken>, cursor: &vector<i64>) -> t
                         index = index + 1
     return 0
 
+fn ng_local_nominal_type_id(source: &bytes, types: &vector<NgTypeDescriptor>, module_start: i64, module_end: i64, name: NgToken) -> i64:
+    mut index: i64 = 6
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    while index < vector_len<NgTypeDescriptor>(types):
+        descriptor = vector_get<NgTypeDescriptor>(types, index)
+        match descriptor.kind <=> 7:
+            0:
+                match ng_parser_spans_equal(source, descriptor.module_start, descriptor.module_end, module_start, module_end):
+                    -1:
+                        match ng_parser_spans_equal(source, descriptor.name_start, descriptor.name_end, name.start, name.end):
+                            -1:
+                                return index + 1
+                            0:
+                                index = index + 1
+                            1:
+                                index = index + 1
+                    0:
+                        index = index + 1
+                    1:
+                        index = index + 1
+            -1:
+                index = index + 1
+            1:
+                index = index + 1
+    return -1
+
 fn ng_parse_identifier_or_call(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, name: NgToken) -> i64:
     mut following: NgToken = NgToken(kind=0, start=0, end=0)
     mut generic_type_id: i64 = -1
@@ -799,7 +825,14 @@ fn ng_parse_identifier_or_call(source: &bytes, tokens: &vector<NgToken>, cursor:
         -1:
             match following.kind <=> 340:
                 0:
-                    return ng_parse_call(source, tokens, cursor, nodes, types, module_start, module_end, name, -1)
+                    generic_type_id = ng_local_nominal_type_id(source, &*types, module_start, module_end, name)
+                    match generic_type_id > 0:
+                        -1:
+                            return ng_parse_call(source, tokens, cursor, nodes, types, module_start, module_end, name, generic_type_id)
+                        0:
+                            return ng_parse_call(source, tokens, cursor, nodes, types, module_start, module_end, name, -1)
+                        1:
+                            return ng_parse_call(source, tokens, cursor, nodes, types, module_start, module_end, name, -1)
                 -1:
                     return ng_append_node(nodes, NgAstNode(kind=2, start=name.start, end=name.end, left=-1, right=-1, operation=0))
                 1:
