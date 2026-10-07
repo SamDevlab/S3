@@ -71,7 +71,7 @@ fn main() -> vector<i64>:
     mut lex_status: i64 = ng_lex(&source_bytes, &mut tokens)
     mut init_status: i64 = ng_initialize_type_table(&mut types)
     mut parse_status: i64 = ng_parse_program_typed(&source_bytes, &tokens, &mut types, -1, -1, &mut functions, &mut parameters, &mut nodes)
-    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0)
     mut link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut statement: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut call: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -115,6 +115,36 @@ def test_nextgen_parser_accepts_generic_call_type_arguments() -> None:
     assert probe[-5:] == [5, 1, source.index("vector_new") + len("vector_new"), 1, -1]
 
 
+def test_nextgen_parser_accepts_unary_expression_after_call_argument_separator() -> None:
+    source = (
+        "fn make(first: i64, second: i64) -> i64:\n"
+        "    return first\n"
+        "fn append(values: &mut vector<i64>) -> i64:\n"
+        "    discard vector_push<i64>(values, make(1, -1))\n"
+        "    return 0\n"
+    )
+    parse(source)
+    assert _ng_parse_status(source) == 0
+
+
+def test_generic_call_lookahead_stops_at_relational_operator_syntax() -> None:
+    source = (
+        "fn main() -> i64:\n"
+        "    mut left: i64 = 1\n"
+        "    mut right: i64 = 2\n"
+        "    mut values: vector<i64> = vector_new<i64>(1)\n"
+        "    match left < right:\n"
+        "        -1:\n"
+        "            return 0\n"
+        "        0:\n"
+        "            return vector_len<i64>(&values)\n"
+        "        1:\n"
+        "            return 0\n"
+    )
+
+    assert _ng_parse_status(source) == 0
+
+
 def test_nextgen_parser_preserves_named_record_constructor_arguments() -> None:
     source = (
         "fn make(value: i64) -> i64:\n"
@@ -156,6 +186,16 @@ def test_nextgen_parser_accepts_while_with_nested_match_block() -> None:
     assert _ng_parse_status(source) == 0
 
 
+def test_nextgen_parser_accepts_dereference_and_reference_reborrow() -> None:
+    source = (
+        "fn read(value: &i64) -> i64:\n"
+        "    return *value\n"
+        "fn through_mutable(value: &mut i64) -> i64:\n"
+        "    return read(&*value)\n"
+    )
+    assert _ng_parse_status(source) == 0
+
+
 def _ng_module_type_probe() -> list[int]:
     source = (
         "module app\n"
@@ -183,7 +223,7 @@ fn main() -> vector<i64>:
     mut init_status: i64 = ng_initialize_type_table(&mut types)
     mut module_item: NgModule = ng_parse_module_header(&mut source_bytes, &tokens, 0, 0, source_length, 0, 0, &mut imports)
     mut parse_status: i64 = ng_parse_module_functions(&source_bytes, &tokens, module_item, &mut types, &mut records, &mut fields, &mut parameters, &mut nodes, &mut functions)
-    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, body_node=0, module_index=0, exported=0)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0)
     mut first_parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
     mut second_parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
     mut nominal: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
@@ -289,6 +329,88 @@ fn main() -> vector<i64>:
     output = execute_ir(compilation.ir)
     assert hasattr(output, "element_type")
     return [int(value) for value in output]
+
+
+def _ng_module_import_probe(source: str) -> list[int]:
+    wrapper = f"""
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static({json.dumps(source)})
+    mut source_bytes: bytes = bytes_from_text(&source_text)
+    mut source_length: i64 = bytes_len(&source_bytes)
+    mut tokens: vector<NgToken> = vector_new<NgToken>(source_length + 1)
+    mut imports: vector<NgImport> = vector_new<NgImport>(source_length + 1)
+    mut result: vector<i64> = vector_new<i64>(32)
+    mut lex_status: i64 = ng_lex(&source_bytes, &mut tokens)
+    mut module_item: NgModule = ng_parse_module_header(&mut source_bytes, &tokens, 0, 0, source_length, 0, 0, &mut imports)
+    mut body: NgToken = NgToken(kind=0, start=0, end=0)
+    mut imported: NgImport = NgImport(module_index=0, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
+    discard vector_push<i64>(&mut result, lex_status)
+    discard vector_push<i64>(&mut result, module_item.name_start)
+    discard vector_push<i64>(&mut result, module_item.import_count)
+    discard vector_push<i64>(&mut result, module_item.body_token_index)
+    match module_item.name_start >= 0:
+        -1:
+            body = vector_get<NgToken>(&tokens, module_item.body_token_index)
+            discard vector_push<i64>(&mut result, body.start)
+            imported = vector_get<NgImport>(&imports, module_item.first_import)
+            discard vector_push<i64>(&mut result, imported.symbol_start)
+            discard vector_push<i64>(&mut result, imported.symbol_end)
+            discard vector_push<i64>(&mut result, imported.local_start)
+            discard vector_push<i64>(&mut result, imported.local_end)
+            imported = vector_get<NgImport>(&imports, module_item.first_import + 1)
+            discard vector_push<i64>(&mut result, imported.symbol_start)
+            discard vector_push<i64>(&mut result, imported.symbol_end)
+            discard vector_push<i64>(&mut result, imported.local_start)
+            discard vector_push<i64>(&mut result, imported.local_end)
+            return result
+        0:
+            return result
+        1:
+            return result
+"""
+    compilation = compile_source(_COMPILER_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+    output = execute_ir(compilation.ir)
+    assert hasattr(output, "element_type")
+    return [int(value) for value in output]
+
+
+def test_nextgen_module_header_parses_comma_separated_imports() -> None:
+    source = (
+        "module app\n"
+        "from lib.types import First as LocalFirst, Second\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+    result = _ng_module_import_probe(source)
+
+    assert result[:4] == [0, 7, 2, 12]
+    assert source[result[4] :].startswith("fn main")
+    assert source[result[5] : result[6]] == "First"
+    assert source[result[7] : result[8]] == "LocalFirst"
+    assert source[result[9] : result[10]] == "Second"
+    assert source[result[11] : result[12]] == "Second"
+
+
+def test_nextgen_module_header_rejects_trailing_import_comma() -> None:
+    result = _ng_module_import_probe(
+        "module app\nfrom lib.types import First,\nfn main() -> i64:\n    return 0\n"
+    )
+
+    assert result[0] == 0
+    assert result[1] == -1
+
+
+def test_nextgen_parser_accepts_break_inside_while() -> None:
+    source = "fn main() -> i64:\n    while 1:\n        break\n    return 0\n"
+
+    assert _ng_parse_status(source) == 0
+
+
+def test_nextgen_parser_accepts_field_assignment_target() -> None:
+    source = "fn main() -> i64:\n    mut value: i64 = 0\n    value.field = 1\n    return value\n"
+
+    assert _ng_parse_status(source) == 0
 
 
 def test_nextgen_parser_matches_python_precedence_and_builds_indexed_ast() -> None:

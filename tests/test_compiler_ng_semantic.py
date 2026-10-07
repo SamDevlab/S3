@@ -140,6 +140,24 @@ def test_nextgen_semantic_pass_resolves_forward_calls_and_argument_types() -> No
     assert _ng_semantic_status(source) == 0
 
 
+def test_nextgen_semantic_scopes_break_to_the_enclosing_loop() -> None:
+    valid_source = (
+        "fn loop(value: trit) -> i64:\n"
+        "    while value:\n"
+        "        break\n"
+        "    return 0\n"
+        "fn main() -> i64:\n"
+        "    return loop(0)\n"
+    )
+    invalid_source = "fn main() -> i64:\n    break\n    return 0\n"
+
+    assert compile_source(valid_source).ir is not None
+    assert _ng_semantic_status(valid_source) == 0
+    with pytest.raises(SemanticError, match="break outside loop"):
+        compile_source(invalid_source)
+    assert _ng_semantic_status(invalid_source) == -16
+
+
 def test_nextgen_semantic_pass_checks_discarded_call_expression() -> None:
     source = (
         "fn effect(value: i64) -> i64:\n"
@@ -162,6 +180,25 @@ def test_nextgen_semantics_types_relational_operators_as_trit() -> None:
         "    greater_equal: trit = left >= right\n"
         "    return 0\n"
     )
+    assert _ng_semantic_status(source) == 0
+
+
+def test_nextgen_semantics_supports_three_way_comparison_of_trit_results() -> None:
+    source = (
+        "fn current_state() -> trit:\n"
+        "    return -1\n"
+        "fn classify() -> i64:\n"
+        "    match current_state() <=> 0:\n"
+        "        -1:\n"
+        "            return -1\n"
+        "        0:\n"
+        "            return 0\n"
+        "        1:\n"
+        "            return 1\n"
+        "fn main() -> i64:\n"
+        "    return classify()\n"
+    )
+    assert compile_source(source).ir is not None
     assert _ng_semantic_status(source) == 0
 
 
@@ -243,6 +280,97 @@ def test_nextgen_semantic_checks_generic_vector_push_element_and_mutability() ->
         "    return vector_push<tryte>(values, 7)\n"
     )
     assert _ng_module_semantic_statuses([immutable_container, mismatched_element]) == [-14, -14]
+
+
+def test_nextgen_semantic_checks_generic_vector_get_and_set_descriptors() -> None:
+    valid = (
+        "module app\n"
+        "record Token:\n    value: i64\n"
+        "fn read(items: &vector<Token>, index: i64) -> Token:\n"
+        "    return vector_get<Token>(items, index)\n"
+        "fn read_mut(items: &mut vector<Token>, index: i64) -> Token:\n"
+        "    return vector_get<Token>(items, index)\n"
+        "fn write(items: &mut vector<Token>, index: i64, item: Token) -> tryte:\n"
+        "    return vector_set<Token>(items, index, item)\n"
+    )
+    wrong_get_element = (
+        "module app\n"
+        "record Token:\n    value: i64\n"
+        "record Other:\n    value: i64\n"
+        "fn read(items: &vector<Token>, index: i64) -> Other:\n"
+        "    return vector_get<Other>(items, index)\n"
+    )
+    wrong_get_index = (
+        "module app\n"
+        "fn read(items: &vector<i64>, index: trit) -> i64:\n"
+        "    return vector_get<i64>(items, index)\n"
+    )
+    wrong_get_arity = (
+        "module app\n"
+        "fn read(items: &vector<i64>) -> i64:\n"
+        "    return vector_get<i64>(items)\n"
+    )
+    wrong_get_result = (
+        "module app\n"
+        "record Token:\n    value: i64\n"
+        "fn read(items: &vector<Token>, index: i64) -> tryte:\n"
+        "    return vector_get<Token>(items, index)\n"
+    )
+    immutable_set = (
+        "module app\n"
+        "fn write(items: &vector<i64>, index: i64, item: i64) -> tryte:\n"
+        "    return vector_set<i64>(items, index, item)\n"
+    )
+    wrong_set_value = (
+        "module app\n"
+        "record Token:\n    value: i64\n"
+        "record Other:\n    value: i64\n"
+        "fn write(items: &mut vector<Token>, index: i64, item: Other) -> tryte:\n"
+        "    return vector_set<Token>(items, index, item)\n"
+    )
+    wrong_set_result = (
+        "module app\n"
+        "fn write(items: &mut vector<i64>, index: i64, item: i64) -> i64:\n"
+        "    return vector_set<i64>(items, index, item)\n"
+    )
+
+    assert _ng_module_semantic_statuses(
+        [valid, wrong_get_element, wrong_get_index, wrong_get_arity, wrong_get_result,
+         immutable_set, wrong_set_value, wrong_set_result]
+    ) == [0, -14, -14, -14, -14, -14, -14, -14]
+
+
+def test_nextgen_semantic_types_bytes_from_text_shared_reference() -> None:
+    valid = (
+        "module app\n"
+        "fn materialize(value: &text) -> bytes:\n"
+        "    return bytes_from_text(value)\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+    wrong_target = (
+        "module app\n"
+        "fn materialize(value: &bytes) -> bytes:\n"
+        "    return bytes_from_text(value)\n"
+    )
+    missing_reference = (
+        "module app\n"
+        "fn materialize(value: text) -> bytes:\n"
+        "    return bytes_from_text(value)\n"
+    )
+    wrong_arity = (
+        "module app\n"
+        "fn materialize() -> bytes:\n"
+        "    return bytes_from_text()\n"
+    )
+
+    assert compile_source(valid).ir is not None
+    assert _ng_module_semantic_statuses([valid, wrong_target, missing_reference, wrong_arity]) == [
+        0,
+        -14,
+        -14,
+        -14,
+    ]
 
 
 def test_nextgen_semantics_compare_complete_nominal_vector_and_reference_descriptors() -> None:
@@ -488,3 +616,29 @@ def test_nextgen_field_resolution_does_not_confuse_generic_argument_with_constru
         "    return vector_new<Token>(1).kind\n"
     )
     assert _ng_module_semantic_statuses([source]) == [-14]
+
+
+@pytest.mark.parametrize(
+    ("declaration", "assignment", "expected_status"),
+    [
+        ("mut pair", "pair.left = 23", 0),
+        ("mut pair", "pair.left = pair.right", -14),
+        ("pair", "pair.left = 23", -16),
+    ],
+)
+def test_nextgen_semantics_checks_record_field_assignment(
+    declaration: str,
+    assignment: str,
+    expected_status: int,
+) -> None:
+    source = (
+        "module app\n"
+        "record Pair:\n"
+        "    left: i64\n"
+        "    right: trit\n"
+        "fn main() -> i64:\n"
+        f"    {declaration}: Pair = Pair(left=19, right=1)\n"
+        f"    {assignment}\n"
+        "    return pair.left\n"
+    )
+    assert _ng_module_semantic_statuses([source]) == [expected_status]

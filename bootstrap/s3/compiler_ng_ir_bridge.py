@@ -1,6 +1,6 @@
 """Structural decoder for the versioned S3C-NG integer-event interchange.
 
-Versions 1-8 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
+Versions 1-11 are flat sequences of signed-i64 records ``(kind, a, b, c, d, e, f, g)``.
 Kind 0 declares ``(version, record_width, flags=0, 0, 0, 0, 0)``. Kind 1 is a
 function ``(index, return_type, parameter_count, name_start, name_end,
 result_width, flags)``; kind 2 is a parameter ``(function, ordinal, type,
@@ -20,12 +20,26 @@ register is explicitly typed as a reference to ``vector<T>``.
 V7 adds opcode 15 for scalar relational operators, with relation ID 0-5 in the instruction immediate.
 V8 adds kind 18 after a CALL's arguments for explicitly selected scalar
 ``vector_push<T>``; the record carries the builtin ID and element descriptor ID.
+V9 adds kind 19/20 metadata for record-element vector builtins. V10 adds opcode
+16 for address-of a register or a memory cell; the result's reference descriptor
+is the authoritative target and mutability contract.
+V11 adds opcode 17 for typed numeric conversion and kind 21 after CALL arguments
+for a dynamic builtin target identified by an explicit source-name span. V12 adds
+opcode 18 for typed reference loads. V13 adds type kind 10 for static strings and
+opcode 19, whose quoted-source span is decoded into the canonical static-string
+table in source order. V14 adds explicit result-cell layouts. V15 represents
+record parameters as NG-emitted scalar value cells and carries each field path
+explicitly in leaf-to-root record order with root-based segment ordinals; the
+decoder formats those paths into canonical parameter names but does not resolve
+fields or types.
+V16 adds kind 23 after CALL arguments for typed scalar ``vector_get<T>`` and
+``vector_set<T>`` targets.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
-Unsupported types, opcodes, fields, or record order fail closed. The stream
-carries no source locations or static strings, so those are intentionally
-absent from reconstructed IR.
+Unsupported types, opcodes, fields, or record order fail closed. Earlier streams
+carry no static-string data; V13 reconstructs only strings explicitly referenced
+by CONST_STR instructions.
 """
 
 from __future__ import annotations
@@ -42,11 +56,14 @@ from .ir import (
     IROpcode,
     IRParameter,
     IRRegister,
+    IRStaticString,
     IRType,
 )
+from .static_text import StaticTextDecodeError, decode_static_text
+from .vector_types import composite_vector_runtime_name_from_key
 
 
-NG_IR_FORMAT_VERSION = 8
+NG_IR_FORMAT_VERSION = 16
 NG_IR_RECORD_WIDTH = 8
 
 _V5_VECTOR_NEW_BUILTINS = {
@@ -63,6 +80,11 @@ _V8_VECTOR_PUSH_BUILTINS = {
     1: "i64_vector_push",
     3: "tryte_vector_push",
     4: "f64_vector_push",
+}
+_V16_VECTOR_ACCESS_BUILTINS = {
+    1: {1: "i64_vector_get", 2: "i64_vector_set"},
+    3: {1: "tryte_vector_get", 2: "tryte_vector_set"},
+    4: {1: "f64_vector_get", 2: "f64_vector_set"},
 }
 
 _TYPE_CODES_V1 = {
@@ -88,6 +110,7 @@ _TYPE_KINDS_V3 = {
     6: IRType.TEXT,
     8: IRType.VECTOR,
     9: IRType.REFERENCE,
+    10: IRType.STRING,
 }
 _OPCODE_CODES = {
     1: IROpcode.CONST,
@@ -105,6 +128,10 @@ _OPCODE_CODES = {
     13: IROpcode.COMPARE,
     14: IROpcode.AGGREGATE_FIELD_LOAD,
     15: IROpcode.RELATE,
+    16: IROpcode.ADDRESS_OF,
+    17: IROpcode.CONVERT,
+    18: IROpcode.REFERENCE_LOAD,
+    19: IROpcode.CONST_STR,
 }
 
 
@@ -126,6 +153,12 @@ class _InstructionRecord:
     callee_builtin: str | None = None
     reference_aggregate: str | None = None
     aggregate_field_path: tuple[str, ...] = ()
+    reference_target: IRType | None = None
+    reference_mutable: bool = False
+    reference_is_slice: bool = False
+    static_string_value: str | None = None
+    static_string_offset: int | None = None
+    results: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,7 +196,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -212,6 +245,68 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             raise NGIRDecodeError(f"empty source name in {context}")
         return value
 
+    def decode_string_literal(start: int, end: int) -> str:
+        if start < 0 or end <= start or end > len(source):
+            raise NGIRDecodeError("CONST_STR has an invalid source span")
+        raw = source[start:end]
+        if len(raw) < 2 or raw[0] != 34 or raw[-1] != 34:
+            raise NGIRDecodeError("CONST_STR source span is not a quoted string literal")
+        escaped = False
+        for unit in raw[1:-1]:
+            if unit == 34 and not escaped:
+                raise NGIRDecodeError("CONST_STR source span contains an unescaped quote")
+            if unit == 92 and not escaped:
+                escaped = True
+            else:
+                escaped = False
+        try:
+            return decode_static_text(raw[1:-1].decode("utf-8"))
+        except (UnicodeDecodeError, StaticTextDecodeError) as exc:
+            raise NGIRDecodeError("CONST_STR literal is not valid static text") from exc
+
+    def module_at_source_offset(offset: int) -> str | None:
+        marker = source.rfind(b"\nmodule ", 0, offset)
+        line_start = marker + 1 if marker >= 0 else (0 if source.startswith(b"module ") else -1)
+        if line_start < 0:
+            return None
+        line_end = source.find(b"\n", line_start)
+        if line_end < 0:
+            line_end = len(source)
+        parts = source[line_start:line_end].split()
+        if len(parts) != 2 or parts[0] != b"module":
+            return None
+        try:
+            return parts[1].decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise NGIRDecodeError("entry module declaration is not UTF-8") from exc
+
+    main_headers = [
+        item
+        for item in records
+        if item[0] == 1
+        and 0 <= item[4] < item[5] <= len(source)
+        and source[item[4] : item[5]] == b"main"
+    ]
+    entry_module = (
+        module_at_source_offset(main_headers[0][4]) if len(main_headers) == 1 else None
+    )
+
+    def nominal_runtime_key(type_id: int, context: str) -> str:
+        descriptor = type_descriptors.get(type_id)
+        if descriptor is None or descriptor.kind != 7:
+            raise NGIRDecodeError(f"{context} requires a nominal type descriptor")
+        module_name = source_name(
+            descriptor.module_start, descriptor.module_end, f"module of {context}"
+        )
+        type_name = source_name(
+            descriptor.name_start, descriptor.name_end, f"name of {context}"
+        )
+        if entry_module is None:
+            raise NGIRDecodeError("cannot resolve nominal runtime identity without the entry module")
+        if module_name == entry_module:
+            return type_name
+        return f"__s3mod_{module_name.replace('.', '_')}__type_{type_name}"
+
     def reference_metadata(type_id: int, context: str) -> tuple[IRType | None, bool, str | None]:
         if version < 3:
             return None, False, None
@@ -235,8 +330,10 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             _, detail_id, target_type, mutable, first_field, field_count, reserved0, reserved1 = detail
             if type_id != len(type_descriptors) + 1 or detail_id != type_id:
                 raise NGIRDecodeError("type descriptor IDs must be contiguous and ordered")
-            if kind not in range(1, 10) or any((reserved0, reserved1)):
+            if kind not in range(1, 11) or any((reserved0, reserved1)):
                 raise NGIRDecodeError(f"malformed type descriptor {type_id}")
+            if kind == 10 and version < 13:
+                raise NGIRDecodeError("STRING type descriptor requires NG IR V13")
             type_descriptors[type_id] = _TypeDescriptorRecord(
                 type_id, kind, module_start, module_end, name_start, name_end,
                 element_type, target_type, mutable, first_field, field_count,
@@ -284,7 +381,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     ) != (-1, -1, -1, -1)
                 ):
                     raise NGIRDecodeError(f"malformed vector type descriptor {type_id}")
-            else:
+            elif descriptor.kind == 9:
                 if (
                     descriptor.target_type <= 0 or descriptor.target_type >= type_id
                     or descriptor.target_type not in type_descriptors
@@ -296,6 +393,17 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     ) != (-1, -1, -1, -1)
                 ):
                     raise NGIRDecodeError(f"malformed reference type descriptor {type_id}")
+            else:
+                if (
+                    version < 13
+                    or (
+                        descriptor.module_start, descriptor.module_end,
+                        descriptor.name_start, descriptor.name_end,
+                        descriptor.element_type, descriptor.target_type,
+                        descriptor.mutable, descriptor.first_field, descriptor.field_count,
+                    ) != (-1, -1, -1, -1, -1, -1, 0, 0, 0)
+                ):
+                    raise NGIRDecodeError(f"malformed string type descriptor {type_id}")
         field_orders: dict[int, int] = {}
         field_positions: dict[int, list[int]] = {}
         for field_index, (owner_type, order, name_start, name_end, field_type) in enumerate(descriptor_fields):
@@ -318,6 +426,23 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 if not positions and not 0 <= descriptor.first_field <= len(descriptor_fields):
                     raise NGIRDecodeError(f"empty record first-field index is invalid for nominal type {type_id}")
 
+    def declared_value_cell_type_ids(type_id: int, active: frozenset[int] = frozenset()) -> tuple[int, ...]:
+        descriptor = type_descriptors.get(type_id)
+        if descriptor is None:
+            raise NGIRDecodeError(f"function result references unknown type descriptor {type_id}")
+        if descriptor.kind != 7:
+            return (type_id,)
+        if type_id in active:
+            raise NGIRDecodeError(f"recursive record result layout at type descriptor {type_id}")
+        active = active | {type_id}
+        result: list[int] = []
+        for owner_type, _order, _name_start, _name_end, field_type in descriptor_fields:
+            if owner_type == type_id:
+                result.extend(declared_value_cell_type_ids(field_type, active))
+        if not result:
+            raise NGIRDecodeError(f"record result type descriptor {type_id} has no value cells")
+        return tuple(result)
+
     while cursor < len(records):
         header_record = take(1, "function header")
         _, function_index, return_type_code, parameter_count, name_start, name_end, result_width, flags = header_record
@@ -325,25 +450,74 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             raise NGIRDecodeError("function indexes must be contiguous and ordered")
         if parameter_count < 0:
             raise NGIRDecodeError("negative function parameter count")
-        if result_width != 1:
-            raise NGIRDecodeError("this interchange version supports exactly one function result")
         if flags & ~0b11:
             raise NGIRDecodeError("unknown function flag bits")
         function_name = source_name(name_start, name_end, f"function {function_index}")
-        return_type = type_for(return_type_code, f"function {function_name} return")
+        if version >= 14:
+            if result_width <= 0:
+                raise NGIRDecodeError("V14 function result width must be positive")
+            if return_type_code not in type_descriptors:
+                raise NGIRDecodeError(f"function {function_name} declares an unknown result type")
+            result_type_ids: list[int] = []
+            for result_ordinal in range(result_width):
+                result_type_record = take(22, f"result cell {result_ordinal} of {function_name}")
+                _, owner, ordinal, type_id, reserved0, reserved1, reserved2, reserved3 = result_type_record
+                if owner != function_index or ordinal != result_ordinal or any((reserved0, reserved1, reserved2, reserved3)):
+                    raise NGIRDecodeError("malformed V14 function result-cell identity")
+                if type_id not in type_descriptors:
+                    raise NGIRDecodeError(f"function {function_name} result cell has an unknown type")
+                result_type_ids.append(type_id)
+            if tuple(result_type_ids) != declared_value_cell_type_ids(return_type_code):
+                raise NGIRDecodeError(f"function {function_name} result cells disagree with its declared value layout")
+            result_types = tuple(
+                type_for(type_id, f"function {function_name} result cell {ordinal}")
+                for ordinal, type_id in enumerate(result_type_ids)
+            )
+            return_type = result_types[0]
+        else:
+            if result_width != 1:
+                raise NGIRDecodeError("this interchange version supports exactly one function result")
+            result_type_ids = [return_type_code]
+            return_type = type_for(return_type_code, f"function {function_name} return")
+            result_types = (return_type,)
 
         parameters: list[IRParameter] = []
         for parameter_index in range(parameter_count):
             item = take(2, f"parameter {parameter_index} of {function_name}")
-            _, owner, ordinal, type_code, register, parameter_start, parameter_end, reserved = item
-            if owner != function_index or ordinal != parameter_index or reserved != 0:
-                raise NGIRDecodeError("malformed parameter identity or reserved fields")
+            _, owner, ordinal, type_code, register, parameter_start, parameter_end, metadata = item
+            if owner != function_index or ordinal != parameter_index:
+                raise NGIRDecodeError("malformed parameter identity")
+            parameter_name = source_name(parameter_start, parameter_end, f"parameter {parameter_index} of {function_name}")
+            if version >= 15:
+                path_depth = metadata
+                if path_depth < 0:
+                    raise NGIRDecodeError("negative V15 parameter field-path depth")
+                path_segments: list[str | None] = [None] * path_depth
+                for path_ordinal in range(path_depth):
+                    path_record = take(23, f"field-path segment {path_ordinal} of parameter {parameter_index}")
+                    _, path_owner, path_cell, segment_ordinal, segment_start, segment_end, reserved0, reserved1 = path_record
+                    if (
+                        path_owner != function_index
+                        or path_cell != parameter_index
+                        or segment_ordinal != path_depth - path_ordinal - 1
+                        or reserved0 != 0
+                        or reserved1 != 0
+                    ):
+                        raise NGIRDecodeError("malformed V15 parameter field-path identity")
+                    path_segments[segment_ordinal] = source_name(segment_start, segment_end, f"parameter {parameter_index} field path")
+                if any(segment is None for segment in path_segments):
+                    raise NGIRDecodeError("incomplete V15 parameter field path")
+                parameter_name += "".join("__" + str(segment) for segment in path_segments)
+                if register != parameter_index:
+                    raise NGIRDecodeError("V15 parameter registers must occupy the leading contiguous register range")
+            elif metadata != 0:
+                raise NGIRDecodeError("malformed parameter reserved field")
             reference_target, reference_mutable, reference_aggregate = reference_metadata(
                 type_code, f"parameter {parameter_index} of {function_name}"
             )
             parameters.append(
                 IRParameter(
-                    source_name(parameter_start, parameter_end, f"parameter {parameter_index} of {function_name}"),
+                    parameter_name,
                     register,
                     type_for(type_code, f"parameter {parameter_index} of {function_name}"),
                     reference_target=reference_target,
@@ -414,7 +588,30 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             targets: tuple[int, ...] = ()
             reference_aggregate: str | None = None
             aggregate_field_path: tuple[str, ...] = ()
-            if opcode is IROpcode.CONST:
+            reference_target: IRType | None = None
+            reference_mutable = False
+            reference_is_slice = False
+            static_string_value: str | None = None
+            static_string_offset: int | None = None
+            instruction_results: tuple[int, ...] = ()
+            if opcode is IROpcode.CONST_STR:
+                if version < 13:
+                    raise NGIRDecodeError("CONST_STR opcode requires NG IR V13")
+                if (
+                    result is None
+                    or not 0 <= result < len(register_type_ids)
+                    or operand_count != 0
+                    or immediate != 0
+                ):
+                    raise NGIRDecodeError("malformed CONST_STR record")
+                descriptor = type_descriptors.get(register_type_ids[result])
+                if descriptor is None or descriptor.kind != 10:
+                    raise NGIRDecodeError("CONST_STR result must use the STRING type descriptor")
+                static_string_value = decode_string_literal(operand0, operand1)
+                static_string_offset = operand0
+                operands: tuple[int, ...] = ()
+                decoded_immediate: int | None = None
+            elif opcode is IROpcode.CONST:
                 if result is None or operand_count != 0 or operand0 != -1 or operand1 != -1:
                     raise NGIRDecodeError("malformed CONST record")
                 operands: tuple[int, ...] = ()
@@ -430,12 +627,34 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 operands = (operand0, operand1)
                 decoded_immediate = immediate
             elif opcode is IROpcode.RETURN:
-                if result is not None or operand_count != 1 or operand1 != -1 or immediate != 0:
+                if result is not None or operand1 != -1 or immediate != 0:
                     raise NGIRDecodeError("malformed RETURN record")
-                operands = (operand0,)
+                if version >= 14:
+                    if operand_count != len(result_type_ids) or operand_count <= 0 or operand0 < 0:
+                        raise NGIRDecodeError("V14 RETURN width disagrees with its function signature")
+                    if operand0 + operand_count > len(register_type_ids):
+                        raise NGIRDecodeError("V14 RETURN result range is outside the register table")
+                    operands = tuple(range(operand0, operand0 + operand_count))
+                    if tuple(register_type_ids[index] for index in operands) != tuple(result_type_ids):
+                        raise NGIRDecodeError("V14 RETURN registers disagree with function result-cell types")
+                else:
+                    if operand_count != 1:
+                        raise NGIRDecodeError("malformed RETURN record")
+                    operands = (operand0,)
                 decoded_immediate = None
             elif opcode is IROpcode.CALL:
-                if operand_count < 0 or operand1 < 0 or immediate != 0:
+                if (
+                    operand_count < 0
+                    or operand1 < 0
+                    or (
+                        immediate != 0
+                        and not (
+                            version >= 11 and operand0 == -7
+                            or version >= 14 and operand0 >= 0
+                            or version >= 16 and operand0 in {-8, -9}
+                        )
+                    )
+                ):
                     raise NGIRDecodeError("malformed CALL record")
                 callee_index = operand0
                 if operand1 != call_pool_length:
@@ -563,8 +782,290 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                         raise NGIRDecodeError("V8 vector_push type metadata disagrees with its registers")
                     callee_index = None
                     callee_builtin = builtin_name
+                elif version >= 9 and (
+                    operand0 in {-4, -5, -6}
+                    or version >= 16
+                    and operand0 in {-8, -9}
+                    and cursor < len(records)
+                    and records[cursor][0] == 19
+                ):
+                    target = take(19, "V9 composite vector CALL target")
+                    _, target_owner, target_instruction, builtin_id, element_type_id, key_start, key_end, field_count = target
+                    if (target_owner, target_instruction) != (function_index, instruction_index):
+                        raise NGIRDecodeError("malformed V9 composite vector target identity")
+                    expected_builtin_id = {-4: 1, -5: 2, -6: 3, -8: 4, -9: 5}[operand0]
+                    if builtin_id != expected_builtin_id:
+                        raise NGIRDecodeError("malformed V9 composite vector operation metadata")
+                    if operand0 in {-4, -5, -6} and immediate != 0:
+                        raise NGIRDecodeError("malformed V9 composite vector operation metadata")
+                    element_type = type_descriptors.get(element_type_id)
+                    if (
+                        element_type is None
+                        or element_type.kind != 7
+                        or field_count <= 0
+                        or key_start != element_type.name_start
+                        or key_end != element_type.name_end
+                    ):
+                        raise NGIRDecodeError("V9 composite vector target disagrees with its nominal descriptor")
+                    nominal_fields = [
+                        item for item in descriptor_fields if item[0] == element_type_id
+                    ]
+                    if len(nominal_fields) != field_count:
+                        raise NGIRDecodeError("V9 composite vector field count disagrees with its descriptor")
+                    field_type_ids: list[int] = []
+                    for ordinal in range(field_count):
+                        field_record = take(20, f"V9 composite vector field {ordinal}")
+                        _, field_owner, field_instruction, field_ordinal, field_type_id, *reserved = field_record
+                        if (
+                            (field_owner, field_instruction) != (function_index, instruction_index)
+                            or field_ordinal != ordinal
+                            or any(reserved)
+                            or nominal_fields[ordinal][1] != ordinal
+                            or nominal_fields[ordinal][4] != field_type_id
+                        ):
+                            raise NGIRDecodeError("malformed V9 composite vector field metadata")
+                        field_type = type_descriptors.get(field_type_id)
+                        if field_type is None or field_type.kind not in {1, 2, 3, 4}:
+                            raise NGIRDecodeError("V9 composite vector uses an unsupported field type")
+                        field_type_ids.append(field_type_id)
+
+                    operation = {-4: "new", -5: "len", -6: "push", -8: "get", -9: "set"}[operand0]
+                    field_codes = tuple(
+                        type_for(field_type_id, "V9 composite vector field").value
+                        for field_type_id in field_type_ids
+                    )
+                    callee_index = None
+                    callee_builtin = composite_vector_runtime_name_from_key(
+                        nominal_runtime_key(element_type_id, "V9 composite vector type key"),
+                        field_codes,
+                        operation,
+                    )
+                    if operand0 == -4:
+                        if result is None or result >= len(register_type_ids) or operand_count != 1 or len(call_arguments) != 1:
+                            raise NGIRDecodeError("V9 vector_new requires one capacity argument and a result")
+                        result_descriptor = type_descriptors.get(register_type_ids[result])
+                        capacity_register = call_arguments[0]
+                        capacity_descriptor = (
+                            type_descriptors.get(register_type_ids[capacity_register])
+                            if 0 <= capacity_register < len(register_type_ids)
+                            else None
+                        )
+                        if (
+                            result_descriptor is None
+                            or result_descriptor.kind != 8
+                            or result_descriptor.element_type != element_type_id
+                            or capacity_descriptor is None
+                            or capacity_descriptor.kind != 1
+                        ):
+                            raise NGIRDecodeError("V9 vector_new metadata disagrees with its registers")
+                    elif operand0 == -5:
+                        reference_register = call_arguments[0] if len(call_arguments) == 1 else -1
+                        result_descriptor = (
+                            type_descriptors.get(register_type_ids[result])
+                            if result is not None and 0 <= result < len(register_type_ids)
+                            else None
+                        )
+                        reference_descriptor = (
+                            type_descriptors.get(register_type_ids[reference_register])
+                            if 0 <= reference_register < len(register_type_ids)
+                            else None
+                        )
+                        vector_descriptor = (
+                            type_descriptors.get(reference_descriptor.target_type)
+                            if reference_descriptor is not None and reference_descriptor.kind == 9
+                            else None
+                        )
+                        if (
+                            result_descriptor is None
+                            or result_descriptor.kind != 1
+                            or reference_descriptor is None
+                            or reference_descriptor.kind != 9
+                            or vector_descriptor is None
+                            or vector_descriptor.kind != 8
+                            or vector_descriptor.element_type != element_type_id
+                        ):
+                            raise NGIRDecodeError("V9 vector_len metadata disagrees with its registers")
+                    elif operand0 == -8:
+                        if immediate != field_count or operand_count != 2 or result is None:
+                            raise NGIRDecodeError("V16 composite vector_get result width disagrees with its record")
+                        if result + field_count > len(register_type_ids):
+                            raise NGIRDecodeError("V16 composite vector_get result range is outside the register table")
+                        reference_register, index_register = call_arguments
+                        if (
+                            not 0 <= reference_register < len(register_type_ids)
+                            or not 0 <= index_register < len(register_type_ids)
+                        ):
+                            raise NGIRDecodeError("V16 composite vector_get references a missing argument register")
+                        reference_descriptor = type_descriptors.get(register_type_ids[reference_register])
+                        vector_descriptor = (
+                            type_descriptors.get(reference_descriptor.target_type)
+                            if reference_descriptor is not None and reference_descriptor.kind == 9
+                            else None
+                        )
+                        index_descriptor = type_descriptors.get(register_type_ids[index_register])
+                        if (
+                            reference_descriptor is None
+                            or reference_descriptor.kind != 9
+                            or vector_descriptor is None
+                            or vector_descriptor.kind != 8
+                            or vector_descriptor.element_type != element_type_id
+                            or index_descriptor is None
+                            or index_descriptor.kind != 1
+                        ):
+                            raise NGIRDecodeError("V16 composite vector_get metadata disagrees with its arguments")
+                        if tuple(register_type_ids[result : result + field_count]) != tuple(field_type_ids):
+                            raise NGIRDecodeError("V16 composite vector_get result cells disagree with its record layout")
+                        instruction_results = tuple(range(result, result + field_count))
+                    elif operand0 == -9:
+                        if immediate != 1 or operand_count != field_count + 2 or result is None:
+                            raise NGIRDecodeError("V16 composite vector_set arguments disagree with its record layout")
+                        reference_register, index_register = call_arguments[:2]
+                        if (
+                            not 0 <= reference_register < len(register_type_ids)
+                            or not 0 <= index_register < len(register_type_ids)
+                        ):
+                            raise NGIRDecodeError("V16 composite vector_set references a missing argument register")
+                        reference_descriptor = type_descriptors.get(register_type_ids[reference_register])
+                        vector_descriptor = (
+                            type_descriptors.get(reference_descriptor.target_type)
+                            if reference_descriptor is not None and reference_descriptor.kind == 9
+                            else None
+                        )
+                        index_descriptor = type_descriptors.get(register_type_ids[index_register])
+                        result_descriptor = (
+                            type_descriptors.get(register_type_ids[result])
+                            if 0 <= result < len(register_type_ids)
+                            else None
+                        )
+                        if (
+                            reference_descriptor is None
+                            or reference_descriptor.kind != 9
+                            or reference_descriptor.mutable != 1
+                            or vector_descriptor is None
+                            or vector_descriptor.kind != 8
+                            or vector_descriptor.element_type != element_type_id
+                            or index_descriptor is None
+                            or index_descriptor.kind != 1
+                            or result_descriptor is None
+                            or result_descriptor.kind != 3
+                        ):
+                            raise NGIRDecodeError("V16 composite vector_set metadata disagrees with its arguments")
+                        for register, field_type_id in zip(call_arguments[2:], field_type_ids, strict=True):
+                            if not 0 <= register < len(register_type_ids) or register_type_ids[register] != field_type_id:
+                                raise NGIRDecodeError("V16 composite vector_set value cells disagree with its record layout")
+                    else:
+                        if operand_count != field_count + 1 or len(call_arguments) != operand_count:
+                            raise NGIRDecodeError("V9 vector_push argument count disagrees with its record layout")
+                        reference_register = call_arguments[0]
+                        reference_descriptor = (
+                            type_descriptors.get(register_type_ids[reference_register])
+                            if 0 <= reference_register < len(register_type_ids)
+                            else None
+                        )
+                        vector_descriptor = (
+                            type_descriptors.get(reference_descriptor.target_type)
+                            if reference_descriptor is not None and reference_descriptor.kind == 9
+                            else None
+                        )
+                        result_descriptor = (
+                            type_descriptors.get(register_type_ids[result])
+                            if result is not None and 0 <= result < len(register_type_ids)
+                            else None
+                        )
+                        if (
+                            reference_descriptor is None
+                            or reference_descriptor.kind != 9
+                            or reference_descriptor.mutable != 1
+                            or vector_descriptor is None
+                            or vector_descriptor.kind != 8
+                            or vector_descriptor.element_type != element_type_id
+                            or (result is not None and (result_descriptor is None or result_descriptor.kind != 3))
+                        ):
+                            raise NGIRDecodeError("V9 vector_push metadata disagrees with its registers")
+                        for register, field_type_id in zip(call_arguments[1:], field_type_ids, strict=True):
+                            if not 0 <= register < len(register_type_ids) or register_type_ids[register] != field_type_id:
+                                raise NGIRDecodeError("V9 vector_push value cells disagree with the record layout")
+                elif version >= 16 and operand0 in {-8, -9}:
+                    target = take(23, "V16 generic vector access CALL target")
+                    _, target_owner, target_instruction, operation_id, element_type_id, *reserved = target
+                    expected_operation_id = {-8: 1, -9: 2}[operand0]
+                    if (
+                        (target_owner, target_instruction) != (function_index, instruction_index)
+                        or operation_id != expected_operation_id
+                        or any(reserved)
+                        or immediate != 1
+                    ):
+                        raise NGIRDecodeError("malformed V16 generic vector access target identity")
+                    element_type = type_descriptors.get(element_type_id)
+                    builtin_names = _V16_VECTOR_ACCESS_BUILTINS.get(
+                        element_type.kind if element_type is not None else -1
+                    )
+                    builtin_name = builtin_names.get(operation_id) if builtin_names is not None else None
+                    expected_argument_count = 2 if operand0 == -8 else 3
+                    if (
+                        result is None
+                        or not 0 <= result < len(register_type_ids)
+                        or operand_count != expected_argument_count
+                        or len(call_arguments) != expected_argument_count
+                        or element_type is None
+                        or builtin_name is None
+                    ):
+                        raise NGIRDecodeError("V16 vector access has unsupported types or argument count")
+                    reference_register, index_register = call_arguments[:2]
+                    if (
+                        not 0 <= reference_register < len(register_type_ids)
+                        or not 0 <= index_register < len(register_type_ids)
+                    ):
+                        raise NGIRDecodeError("V16 vector access references a missing argument register")
+                    reference_type = type_descriptors.get(register_type_ids[reference_register])
+                    vector_type = (
+                        type_descriptors.get(reference_type.target_type)
+                        if reference_type is not None and reference_type.kind == 9
+                        else None
+                    )
+                    index_type = type_descriptors.get(register_type_ids[index_register])
+                    result_type = type_descriptors.get(register_type_ids[result])
+                    if (
+                        reference_type is None
+                        or reference_type.kind != 9
+                        or (operand0 == -9 and reference_type.mutable != 1)
+                        or vector_type is None
+                        or vector_type.kind != 8
+                        or vector_type.element_type != element_type_id
+                        or index_type is None
+                        or index_type.kind != 1
+                    ):
+                        raise NGIRDecodeError("V16 vector access reference or index metadata disagrees with its registers")
+                    if operand0 == -8:
+                        if result_type is None or register_type_ids[result] != element_type_id:
+                            raise NGIRDecodeError("V16 vector_get result type disagrees with its element type")
+                    else:
+                        value_register = call_arguments[2]
+                        if (
+                            not 0 <= value_register < len(register_type_ids)
+                            or register_type_ids[value_register] != element_type_id
+                            or result_type is None
+                            or result_type.kind != 3
+                        ):
+                            raise NGIRDecodeError("V16 vector_set value or result type disagrees with its signature")
+                    callee_index = None
+                    callee_builtin = builtin_name
+                elif version >= 11 and operand0 == -7:
+                    target = take(21, "V11 dynamic CALL target")
+                    _, target_owner, target_instruction, name_start, name_end, *reserved = target
+                    if (target_owner, target_instruction) != (function_index, instruction_index) or any(reserved) or immediate != 0:
+                        raise NGIRDecodeError("malformed V11 dynamic CALL target identity")
+                    callee_builtin = source_name(name_start, name_end, "V11 dynamic CALL target")
+                    callee_index = None
                 elif operand0 < 0:
                     raise NGIRDecodeError(f"unsupported generic CALL sentinel {operand0} in NG IR V{version}")
+                if version >= 14 and callee_index is not None:
+                    result_count = immediate
+                    if result is None or result_count <= 0 or result + result_count > len(register_type_ids):
+                        raise NGIRDecodeError("V14 CALL result range is missing or outside the register table")
+                    instruction_results = tuple(range(result, result + result_count))
+                elif result is not None and not instruction_results:
+                    instruction_results = (result,)
                 operands = tuple(call_arguments)
                 decoded_immediate = None
             elif opcode is IROpcode.MOVE:
@@ -583,6 +1084,78 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     raise NGIRDecodeError("malformed STORE record")
                 operands = (operand0, operand1)
                 memory_id = immediate
+                decoded_immediate = None
+            elif opcode is IROpcode.ADDRESS_OF:
+                if version < 10:
+                    raise NGIRDecodeError("ADDRESS_OF opcode requires NG IR V10")
+                if result is None or not 0 <= result < len(register_type_ids) or immediate != 0:
+                    raise NGIRDecodeError("malformed ADDRESS_OF result or immediate")
+                reference_target, reference_mutable, reference_aggregate = reference_metadata(
+                    register_type_ids[result], f"ADDRESS_OF result in {function_name}"
+                )
+                if reference_target is None or reference_aggregate is not None:
+                    raise NGIRDecodeError("ADDRESS_OF requires a scalar or vector reference result")
+                if operand_count == 0:
+                    if operand0 != -1 or operand1 < 0:
+                        raise NGIRDecodeError("memory ADDRESS_OF must identify one memory object")
+                    memory_id = operand1
+                    operands = ()
+                    if memory_id >= len(memories) or memories[memory_id].element_type is not reference_target:
+                        raise NGIRDecodeError("ADDRESS_OF memory type disagrees with its reference target")
+                elif operand_count == 1:
+                    if operand1 != -1 or not 0 <= operand0 < len(register_type_ids):
+                        raise NGIRDecodeError("register ADDRESS_OF must identify one existing register")
+                    operands = (operand0,)
+                    if registers[operand0].type is not reference_target:
+                        raise NGIRDecodeError("ADDRESS_OF register type disagrees with its reference target")
+                else:
+                    raise NGIRDecodeError("ADDRESS_OF accepts one register or one memory object")
+                decoded_immediate = None
+            elif opcode is IROpcode.CONVERT:
+                if version < 11:
+                    raise NGIRDecodeError("CONVERT opcode requires NG IR V11")
+                if (
+                    result is None
+                    or not 0 <= result < len(register_type_ids)
+                    or operand_count != 1
+                    or operand1 != -1
+                    or immediate != 0
+                    or not 0 <= operand0 < len(register_type_ids)
+                ):
+                    raise NGIRDecodeError("malformed CONVERT record")
+                source_type = type_for(register_type_ids[operand0], "CONVERT source")
+                result_type = type_for(register_type_ids[result], "CONVERT result")
+                if (source_type, result_type) not in {
+                    (IRType.TRIT, IRType.I64),
+                    (IRType.TRYTE, IRType.I64),
+                    (IRType.TRIT, IRType.F64),
+                    (IRType.TRYTE, IRType.F64),
+                    (IRType.I64, IRType.F64),
+                    (IRType.I64, IRType.TRYTE),
+                }:
+                    raise NGIRDecodeError("CONVERT source/result type metadata is invalid")
+                operands = (operand0,)
+                decoded_immediate = None
+            elif opcode is IROpcode.REFERENCE_LOAD:
+                if version < 12:
+                    raise NGIRDecodeError("REFERENCE_LOAD opcode requires NG IR V12")
+                if (
+                    result is None
+                    or not 0 <= result < len(register_type_ids)
+                    or operand_count != 1
+                    or operand1 != -1
+                    or immediate != 0
+                    or not 0 <= operand0 < len(register_type_ids)
+                ):
+                    raise NGIRDecodeError("malformed REFERENCE_LOAD record")
+                reference_descriptor = type_descriptors.get(register_type_ids[operand0])
+                if reference_descriptor is None or reference_descriptor.kind != 9:
+                    raise NGIRDecodeError("REFERENCE_LOAD operand must use a reference type descriptor")
+                result_type_id = register_type_ids[result]
+                if reference_descriptor.target_type != result_type_id:
+                    raise NGIRDecodeError("REFERENCE_LOAD result type disagrees with its reference target")
+                reference_target = type_for(result_type_id, "REFERENCE_LOAD target")
+                operands = (operand0,)
                 decoded_immediate = None
             elif opcode is IROpcode.BRANCH3:
                 if result is not None or operand_count != 1 or operand1 != -1 or immediate != 0:
@@ -665,6 +1238,12 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     callee_builtin=callee_builtin,
                     reference_aggregate=reference_aggregate,
                     aggregate_field_path=aggregate_field_path,
+                    reference_target=reference_target,
+                    reference_mutable=reference_mutable,
+                    reference_is_slice=reference_is_slice,
+                    static_string_value=static_string_value,
+                    static_string_offset=static_string_offset,
+                    results=instruction_results,
                 )
             )
 
@@ -684,6 +1263,9 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             for register in (*instruction.operands, *((instruction.result,) if instruction.result is not None else ())):
                 if register < 0 or register >= len(registers):
                     raise NGIRDecodeError(f"instruction references missing register {register} in {function_name}")
+            for register in instruction.results:
+                if register < 0 or register >= len(registers):
+                    raise NGIRDecodeError(f"instruction references missing result register {register} in {function_name}")
             if instruction.memory is not None and not 0 <= instruction.memory < len(memories):
                 raise NGIRDecodeError(f"instruction references missing memory {instruction.memory} in {function_name}")
             if any(target not in block_set for target in instruction.targets):
@@ -693,6 +1275,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             {
                 "name": function_name,
                 "return_type": return_type,
+                "result_types": result_types,
+                "result_type_ids": tuple(result_type_ids),
                 "parameters": tuple(parameters),
                 "registers": tuple(registers),
                 "memories": tuple(memories),
@@ -711,6 +1295,39 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     if len(set(function_names)) != len(function_names):
         raise NGIRDecodeError("duplicate function identity")
 
+    for function in raw_functions:
+        registers = function["registers"]
+        for instruction in function["instructions"]:
+            if instruction.opcode is not IROpcode.CALL or instruction.callee_index is None:
+                continue
+            if not 0 <= instruction.callee_index < len(raw_functions):
+                raise NGIRDecodeError(
+                    f"CALL references invalid function index {instruction.callee_index} in {function['name']}"
+                )
+            callee = raw_functions[instruction.callee_index]
+            actual_types = tuple(registers[index].type for index in instruction.results)
+            if actual_types != tuple(callee["result_types"]):
+                raise NGIRDecodeError(f"CALL result cells disagree with callee signature in {function['name']}")
+
+    ordered_static_values = sorted(
+        (
+            (record.static_string_offset, record.static_string_value)
+            for raw in raw_functions
+            for record in raw["instructions"]
+            if record.static_string_value is not None
+        ),
+        key=lambda item: item[0],
+    )
+    static_ids: dict[str, str] = {}
+    static_strings: list[IRStaticString] = []
+    for offset, value in ordered_static_values:
+        if offset is None or value is None:
+            raise NGIRDecodeError("incomplete CONST_STR source metadata")
+        if value not in static_ids:
+            identifier = f"s{len(static_strings)}"
+            static_ids[value] = identifier
+            static_strings.append(IRStaticString(identifier, value))
+
     functions: list[IRFunction] = []
     for function_index, raw in enumerate(raw_functions):
         name = str(raw["name"])
@@ -726,18 +1343,32 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 if not 0 <= record.callee_index < len(function_names):
                     raise NGIRDecodeError(f"CALL references invalid function index {record.callee_index} in {name}")
                 callee = function_names[record.callee_index]
+            composite_vector_call = (
+                record.opcode is IROpcode.CALL
+                and record.callee_builtin is not None
+                and record.callee_builtin.startswith("__s3_composite_vector__")
+            )
             by_block[record.block].append(
                 IRInstruction(
                     opcode=record.opcode,
-                    result=record.result,
+                    result=(None if record.opcode is IROpcode.CALL and record.results else record.result),
                     operands=record.operands,
                     immediate=record.immediate,
                     callee=callee,
                     targets=tuple(block_names[target] for target in record.targets),
                     memory=record.memory,
                     initialization=record.initialization,
+                    results=record.results,
+                    reference_target=record.reference_target,
+                    reference_mutable=record.reference_mutable,
+                    reference_is_slice=record.reference_is_slice,
                     reference_aggregate=record.reference_aggregate,
                     aggregate_field_path=record.aggregate_field_path,
+                    static_string=(
+                        static_ids[record.static_string_value]
+                        if record.static_string_value is not None
+                        else None
+                    ),
                 )
             )
         return_type = raw["return_type"]
@@ -752,9 +1383,9 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     for block_id in block_ids
                 ),
                 memory_objects=raw["memories"],
-                result_types=(return_type,),
+                result_types=raw["result_types"],
                 external=raw["external"],
                 exported=raw["exported"],
             )
         )
-    return IRModule(tuple(functions))
+    return IRModule(tuple(functions), tuple(static_strings))

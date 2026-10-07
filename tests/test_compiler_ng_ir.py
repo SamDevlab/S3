@@ -86,7 +86,7 @@ def _reference_events(program: object, source: str) -> list[int]:
         assert len(fields) == 7
         events.extend((kind, *fields))
 
-    event(0, 8, 8, 0, 0, 0, 0, 0)
+    event(0, 16, 8, 0, 0, 0, 0, 0)
     for type_id in range(1, 7):
         event(12, type_id, type_id, -1, -1, -1, -1, -1)
         event(13, type_id, -1, 0, 0, 0, 0, 0)
@@ -107,6 +107,8 @@ def _reference_events(program: object, source: str) -> list[int]:
             function.result_width,
             int(function.external) | (int(function.exported) << 1),
         )
+        for result_ordinal, result_type in enumerate(function.result_types):
+            event(22, function_index, result_ordinal, _TYPE_CODES[result_type], 0, 0, 0, 0)
         for parameter_index, parameter in enumerate(function.parameters):
             assert parameter.location is not None
             parameter_name_start, parameter_name_end = _source_name_span(
@@ -153,17 +155,21 @@ def _reference_events(program: object, source: str) -> list[int]:
                 immediate = instruction.immediate
                 assert immediate is None or isinstance(immediate, int)
                 opcode = instruction.opcode.value
+                result_register = instruction.result
+                if opcode == "call" and result_register is None and instruction.results:
+                    assert len(instruction.results) == 1, "NG event format currently supports one call result"
+                    result_register = instruction.results[0]
                 if opcode == "call":
                     assert instruction.callee in function_indices
                     event(
                         4,
                         function_index,
                         _OPCODE_CODES[opcode],
-                        -1 if instruction.result is None else instruction.result,
+                        -1 if result_register is None else result_register,
                         len(operands),
                         function_indices[instruction.callee],
                         call_argument_cursor,
-                        0,
+                        len(instruction.results),
                     )
                     for argument_index, argument_register in enumerate(operands):
                         event(6, function_index, instruction_index, argument_index, argument_register, 0, 0, 0)
@@ -345,11 +351,11 @@ fn main() -> i64:
                                     while index < {len(expected)}:
                                         match vector_get<i64>(&actual, index) <=> vector_get<i64>(&expected, index):
                                             -1:
-                                                return vector_get<i64>(&actual, index) * 10000 + vector_get<i64>(&expected, index)
+                                                return index + 1
                                             0:
                                                 index = index + 1
                                             1:
-                                                return vector_get<i64>(&actual, index) * 10000 + vector_get<i64>(&expected, index)
+                                                return index + 1
                                     return 0
                                 1:
                                     return -103
