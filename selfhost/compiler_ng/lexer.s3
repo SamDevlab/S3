@@ -38,6 +38,39 @@ export fn ng_spans_equal(source: &bytes, left_start: i64, left_end: i64, right_s
     mut span_length: i64 = left_end - left_start
     mut last_left: i64 = left_end - 1
     mut last_right: i64 = right_end - 1
+    mut source_length: i64 = 0
+    match left_start <=> right_start:
+        0:
+            match left_end <=> right_end:
+                0:
+                    match span_length > 0:
+                        -1:
+                            source_length = bytes_len(source)
+                            match left_start >= 0:
+                                -1:
+                                    match left_end <= source_length:
+                                        -1:
+                                            return -1
+                                        0:
+                                            source_length = source_length
+                                        1:
+                                            source_length = source_length
+                                0:
+                                    source_length = source_length
+                                1:
+                                    source_length = source_length
+                        0:
+                            source_length = source_length
+                        1:
+                            source_length = source_length
+                -1:
+                    source_length = source_length
+                1:
+                    source_length = source_length
+        -1:
+            source_length = source_length
+        1:
+            source_length = source_length
     match left_end - left_start <=> right_end - right_start:
         -1:
             return 0

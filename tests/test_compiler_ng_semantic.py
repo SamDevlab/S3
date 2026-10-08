@@ -65,19 +65,20 @@ fn main() -> i64:
 def test_nextgen_span_equality_keeps_exact_check_after_fingerprint_filter() -> None:
     wrapper = """
 fn main() -> vector<i64>:
-    mut source_text: text = text_from_static("parser pester pasper paszxr")
+    mut source_text: text = text_from_static("parser pester pasper paszxr parser")
     mut source_bytes: bytes = bytes_from_text(&source_text)
-    mut result: vector<i64> = vector_new<i64>(4)
+    mut result: vector<i64> = vector_new<i64>(5)
     discard vector_push<i64>(&mut result, to_i64(ng_spans_equal(&source_bytes, 0, 6, 7, 13)))
     discard vector_push<i64>(&mut result, to_i64(ng_spans_equal(&source_bytes, 0, 6, 14, 20)))
     discard vector_push<i64>(&mut result, to_i64(ng_spans_equal(&source_bytes, 0, 6, 21, 27)))
     discard vector_push<i64>(&mut result, to_i64(ng_spans_equal(&source_bytes, 0, 6, 0, 6)))
+    discard vector_push<i64>(&mut result, to_i64(ng_spans_equal(&source_bytes, 0, 6, 28, 34)))
     return result
 """
     compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
     assert compilation.ir is not None
 
-    assert [int(value) for value in execute_ir(compilation.ir)] == [0, 0, 0, -1]
+    assert [int(value) for value in execute_ir(compilation.ir)] == [0, 0, 0, -1, -1]
 
 
 def _ng_module_semantic_statuses(sources: list[str]) -> list[int]:
