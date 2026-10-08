@@ -1033,10 +1033,13 @@ def _translate_function(
                         )
                     )
                     call = f"call ${callee_name}({call_arguments})"
-                    if result is None:
+                    call_result = (
+                        instruction.results[0] if instruction.results else None
+                    )
+                    if call_result is None:
                         lines.append(f"\t{call}")
                     else:
-                        result_type = _register_type(function, result)
+                        result_type = _register_type(function, call_result)
                         if callee is None and result_type is IRType.TRIT:
                             raw_result = _temporary(
                                 function_index, temporary_index, "dynamic_trit_result"
@@ -1045,7 +1048,7 @@ def _translate_function(
                             lines.extend(
                                 [
                                     f"\t{raw_result} =w {call}",
-                                    f"\t%r{result} =l extsw {raw_result}",
+                                    f"\t%r{call_result} =l extsw {raw_result}",
                                 ]
                             )
                         elif callee is None and instruction.callee in {
@@ -1059,12 +1062,12 @@ def _translate_function(
                             lines.extend(
                                 [
                                     f"\t{raw_result} =l {call}",
-                                    f"\t%r{result} =l extsh {raw_result}",
+                                    f"\t%r{call_result} =l extsh {raw_result}",
                                 ]
                             )
                         else:
                             lines.append(
-                                f"\t%r{result} ={_qbe_type(result_type)} {call}"
+                                f"\t%r{call_result} ={_qbe_type(result_type)} {call}"
                             )
             elif op in {IROpcode.LOAD, IROpcode.STORE}:
                 memory = _memory_object(function, instruction.memory)

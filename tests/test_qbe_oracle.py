@@ -5,6 +5,7 @@ from functools import lru_cache
 import os
 import platform
 from pathlib import Path
+import re
 import shutil
 import subprocess
 
@@ -1688,6 +1689,47 @@ def test_qbe_real_s3_examples_match_explicit_results(name, expected, optimizatio
     assert execute_ir(compilation.ir) == expected
     assert execute_assembly(compilation.assembly) == expected
     assert translate_verified_ir(compilation.ir)
+
+
+@pytest.mark.parametrize("workload", ("branches.s3", "calls.s3"))
+def _assert_qbe_assigns_ng_scalar_call_results(module) -> None:
+    qbe = translate_verified_ir(module)
+    functions = {function.name: function for function in module.functions}
+    scalar_calls = [
+        (instruction.callee, instruction.results[0])
+        for function in module.functions
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.CALL
+        and instruction.callee in functions
+        and functions[instruction.callee].result_width == 1
+        and len(instruction.results) == 1
+    ]
+
+    assert scalar_calls
+    for callee, result_register in scalar_calls:
+        assert re.search(
+            rf"^\s*%r{result_register} =\w call \${re.escape(callee)}\(",
+            qbe,
+            re.MULTILINE,
+        ), f"scalar result r{result_register} from {callee} was not assigned"
+
+
+@pytest.mark.parametrize("workload", ("branches.s3", "calls.s3"))
+def test_qbe_translates_s3c_ng_scalar_call_result_cells(workload: str) -> None:
+    source = (
+        Path(__file__).parents[1] / "benchmarks/workloads" / workload
+    ).read_text(encoding="utf-8")
+    module = decode_ng_ir_events(source.encode("utf-8"), _emit_ng_events(source))
+    _assert_qbe_assigns_ng_scalar_call_results(module)
+
+
+def test_qbe_translates_s3c_ng_multimodule_scalar_call_result_cells() -> None:
+    source, cells = _emit_ng_source_set_events(
+        _REAL_NG_MODULE_SOURCES, entry_module="app"
+    )
+    module = decode_ng_ir_events(source, cells)
+    _assert_qbe_assigns_ng_scalar_call_results(module)
 
 
 @pytest.mark.s3_native
