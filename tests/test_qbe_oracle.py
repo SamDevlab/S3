@@ -1732,6 +1732,32 @@ def test_qbe_translates_s3c_ng_multimodule_scalar_call_result_cells() -> None:
     _assert_qbe_assigns_ng_scalar_call_results(module)
 
 
+def test_qbe_translates_s3c_ng_dynamic_scalar_call_result_cell() -> None:
+    source = """\
+fn main() -> i64:
+    mut values: vector<i64> = vector_new<i64>(1)
+    discard vector_push<i64>(&mut values, 7)
+    return vector_len<i64>(&values)
+"""
+    module = decode_ng_ir_events(source.encode("utf-8"), _emit_ng_events(source))
+    qbe = translate_verified_ir(module)
+    instruction = next(
+        instruction
+        for function in module.functions
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.CALL
+        and instruction.callee == "i64_vector_len"
+    )
+
+    assert len(instruction.results) == 1
+    assert re.search(
+        rf"^\s*%r{instruction.results[0]} =l call \$__s3_builtin_i64_vector_len\(",
+        qbe,
+        re.MULTILINE,
+    )
+
+
 @pytest.mark.s3_native
 @pytest.mark.parametrize("workload", ("branches.s3", "calls.s3"))
 def test_qbe_native_executes_s3c_ng_origin_ir_when_linux_toolchain_exists(
