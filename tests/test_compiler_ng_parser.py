@@ -575,6 +575,17 @@ def test_nextgen_parser_rejects_duplicate_record_declarations() -> None:
     assert _ng_module_record_probe(source) == [0, 0, -3, 1, 1, 0]
 
 
+def test_nextgen_parser_keeps_near_matching_record_names_distinct() -> None:
+    source = (
+        "module app\n"
+        "record parser:\n    value: i64\n"
+        "record pester:\n    value: i64\n"
+        "record pasper:\n    value: i64\n"
+    )
+
+    assert _ng_module_record_probe(source) == [0, 0, 0, 3, 3, 0, 0]
+
+
 def test_nextgen_parser_rejects_duplicate_record_fields() -> None:
     source = "module app\nrecord Token:\n    value: i64\n    value: trit\n"
     assert _ng_module_record_probe(source) == [0, 0, -4, 0, 1, 0]

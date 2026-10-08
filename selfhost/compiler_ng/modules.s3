@@ -1,6 +1,6 @@
 module selfhost.compiler_ng.modules
 
-from selfhost.compiler_ng.lexer import NgToken, ng_lex, ng_span_fingerprint
+from selfhost.compiler_ng.lexer import NgToken, ng_lex, ng_span_fingerprint, ng_spans_equal
 from selfhost.compiler_ng.parser import NgFunction, NgImport, NgModule, NgSpan, NgAstNode, NgParameter, NgRecord, NgField, ng_parse_module_header, ng_parse_module_functions, ng_validate_nominal_types
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table
 from selfhost.compiler_ng.semantic import ng_named_spans_equal, ng_resolve_record_field_nodes, ng_resolve_address_nodes

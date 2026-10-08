@@ -281,6 +281,29 @@ fn main() -> vector<i64>:
     assert actual == expected
 
 
+def test_nextgen_span_fingerprint_samples_interior_bytes() -> None:
+    wrapper = """
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static("parser pester pasper paszxr")
+    mut source_bytes: bytes = bytes_from_text(&source_text)
+    mut result: vector<i64> = vector_new<i64>(4)
+    discard vector_push<i64>(&mut result, ng_span_fingerprint(&source_bytes, 0, 6))
+    discard vector_push<i64>(&mut result, ng_span_fingerprint(&source_bytes, 7, 13))
+    discard vector_push<i64>(&mut result, ng_span_fingerprint(&source_bytes, 14, 20))
+    discard vector_push<i64>(&mut result, ng_span_fingerprint(&source_bytes, 21, 27))
+    return result
+"""
+    compilation = compile_source(_LEXER_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+    first, second, same_samples, different_penultimate = map(
+        int, execute_ir(compilation.ir)
+    )
+
+    assert first != second
+    assert first == same_samples
+    assert first != different_penultimate
+
+
 def test_nextgen_runtime_lexer_fails_closed_on_unterminated_string() -> None:
     source = "fn broken() -> i64: return \"unterminated"
     assert _nextgen_rejects(source)

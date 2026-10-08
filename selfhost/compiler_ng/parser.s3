@@ -1,6 +1,6 @@
 module selfhost.compiler_ng.parser
 
-from selfhost.compiler_ng.lexer import NgToken, ng_span_fingerprint
+from selfhost.compiler_ng.lexer import NgToken, ng_span_fingerprint, ng_spans_equal
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table, ng_intern_nominal_type, ng_intern_string_type, ng_parse_type_descriptor
 
 export record NgAstNode:
@@ -148,55 +148,6 @@ fn ng_append_node(nodes: &mut vector<NgAstNode>, node: NgAstNode) -> i64:
 
 fn ng_token_indent(source: &bytes, token: NgToken) -> i64:
     return token.indent
-
-fn ng_parser_spans_equal(source: &bytes, left_start: i64, left_end: i64, right_start: i64, right_end: i64) -> trit:
-    mut left: i64 = left_start
-    mut right: i64 = right_start
-    mut span_length: i64 = left_end - left_start
-    mut last_left: i64 = left_end - 1
-    mut last_right: i64 = right_end - 1
-    match left_end - left_start <=> right_end - right_start:
-        -1:
-            return 0
-        0:
-            match span_length > 0:
-                -1:
-                    match to_i64(bytes_get(source, left_start)) <=> to_i64(bytes_get(source, right_start)):
-                        -1:
-                            return 0
-                        0:
-                            match span_length <=> 1:
-                                -1:
-                                    return -1
-                                0:
-                                    return -1
-                                1:
-                                    match to_i64(bytes_get(source, last_left)) <=> to_i64(bytes_get(source, last_right)):
-                                        -1:
-                                            return 0
-                                        0:
-                                            left = left_start + 1
-                                            right = right_start + 1
-                                            while left < last_left:
-                                                match to_i64(bytes_get(source, left)) <=> to_i64(bytes_get(source, right)):
-                                                    -1:
-                                                        return 0
-                                                    0:
-                                                        left = left + 1
-                                                        right = right + 1
-                                                    1:
-                                                        return 0
-                                            return -1
-                                        1:
-                                            return 0
-                        1:
-                            return 0
-                0:
-                    return -1
-                1:
-                    return -1
-        1:
-            return 0
 
 fn ng_build_statement_links(statement_ids: &vector<i64>, index: i64, nodes: &mut vector<NgAstNode>) -> i64:
     mut statement_id: i64 = -1
@@ -876,9 +827,9 @@ fn ng_local_nominal_type_id(source: &bytes, types: &vector<NgTypeDescriptor>, mo
         descriptor = vector_get<NgTypeDescriptor>(types, index)
         match descriptor.kind <=> 7:
             0:
-                match ng_parser_spans_equal(source, descriptor.module_start, descriptor.module_end, module_start, module_end):
+                match ng_spans_equal(source, descriptor.module_start, descriptor.module_end, module_start, module_end):
                     -1:
-                        match ng_parser_spans_equal(source, descriptor.name_start, descriptor.name_end, name.start, name.end):
+                        match ng_spans_equal(source, descriptor.name_start, descriptor.name_end, name.start, name.end):
                             -1:
                                 return index + 1
                             0:
@@ -2030,7 +1981,7 @@ fn ng_parse_record_declaration(source: &bytes, tokens: &vector<NgToken>, cursor:
         prior_record = vector_get<NgRecord>(&*records, index)
         match prior_record.module_index <=> module_item.source_index:
             0:
-                match ng_parser_spans_equal(source, prior_record.name_start, prior_record.name_end, name.start, name.end):
+                match ng_spans_equal(source, prior_record.name_start, prior_record.name_end, name.start, name.end):
                     -1:
                         return -3
                     0:
@@ -2095,7 +2046,7 @@ fn ng_parse_record_declaration(source: &bytes, tokens: &vector<NgToken>, cursor:
                         index = first_field
                         while index < vector_len<NgField>(&*fields):
                             prior_field = vector_get<NgField>(&*fields, index)
-                            match ng_parser_spans_equal(source, prior_field.name_start, prior_field.name_end, field_token.start, field_token.end):
+                            match ng_spans_equal(source, prior_field.name_start, prior_field.name_end, field_token.start, field_token.end):
                                 -1:
                                     return -4
                                 0:
@@ -2142,9 +2093,9 @@ export fn ng_validate_nominal_types(source: &bytes, types: &vector<NgTypeDescrip
                 while record_index < vector_len<NgRecord>(records):
                     record_item = vector_get<NgRecord>(records, record_index)
                     module_item = vector_get<NgModule>(modules, record_item.module_index)
-                    match ng_parser_spans_equal(source, descriptor.module_start, descriptor.module_end, module_item.name_start, module_item.name_end):
+                    match ng_spans_equal(source, descriptor.module_start, descriptor.module_end, module_item.name_start, module_item.name_end):
                         -1:
-                            match ng_parser_spans_equal(source, descriptor.name_start, descriptor.name_end, record_item.name_start, record_item.name_end):
+                            match ng_spans_equal(source, descriptor.name_start, descriptor.name_end, record_item.name_start, record_item.name_end):
                                 -1:
                                     found = 1
                                     record_index = record_index + 1

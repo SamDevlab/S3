@@ -2001,6 +2001,27 @@ def test_ng_source_set_grows_type_table_for_generic_references() -> None:
     assert execute_ir(ng_ir) == execute_ir(reference) == 0
 
 
+def test_ng_ir_variable_lookup_keeps_near_matching_local_names_distinct() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "fn main() -> i64:\n"
+            "    parser: i64 = 1\n"
+            "    pasper: i64 = 2\n"
+            "    return parser * 10 + pasper\n"
+        )
+    }
+    reference = compile_sources(sources, entry_module="app").ir
+    assert reference is not None
+
+    source, cells = _emit_ng_source_set_events(sources, entry_module="app")
+    ng_ir = decode_ng_ir_events(source, cells)
+    verify_ir(ng_ir)
+
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
+    assert execute_ir(ng_ir) == execute_ir(reference) == 12
+
+
 def _character_class_self_module_sources() -> dict[str, str]:
     character_module = (_ROOT / "selfhost/compiler_ng/character_classes.s3").read_text(
         encoding="utf-8"

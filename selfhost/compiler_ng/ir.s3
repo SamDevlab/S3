@@ -77,11 +77,17 @@ fn ng_ir_variable_index(source: &bytes, variables: &vector<NgIRVariable>, name_s
         variable = vector_get<NgIRVariable>(variables, index)
         match variable.parent_index < 0:
             -1:
-                match ng_spans_equal(source, name_start, name_end, variable.name_start, variable.name_end):
+                match name_end - name_start <=> variable.name_end - variable.name_start:
                     -1:
-                        return index
-                    0:
                         index = index
+                    0:
+                        match ng_spans_equal(source, name_start, name_end, variable.name_start, variable.name_end):
+                            -1:
+                                return index
+                            0:
+                                index = index
+                            1:
+                                index = index
                     1:
                         index = index
             0:
@@ -2849,11 +2855,17 @@ fn ng_ir_constructor_field_value(nodes: &vector<NgAstNode>, source: &bytes, cons
                 named_argument = vector_get<NgAstNode>(nodes, argument_link.left)
                 match named_argument.kind <=> 16:
                     0:
-                        match ng_spans_equal(source, field.name_start, field.name_end, named_argument.start, named_argument.end):
+                        match field.name_end - field.name_start <=> named_argument.end - named_argument.start:
                             -1:
-                                return named_argument.left
-                            0:
                                 argument_id = argument_link.right
+                            0:
+                                match ng_spans_equal(source, field.name_start, field.name_end, named_argument.start, named_argument.end):
+                                    -1:
+                                        return named_argument.left
+                                    0:
+                                        argument_id = argument_link.right
+                                    1:
+                                        argument_id = argument_link.right
                             1:
                                 argument_id = argument_link.right
                     -1:
