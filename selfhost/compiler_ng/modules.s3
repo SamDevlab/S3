@@ -116,26 +116,35 @@ fn ng_find_module_by_name(source: &bytes, modules: &vector<NgModule>, name_start
                 index = index + 1
     return -1
 
-fn ng_find_function_in_module(source: &bytes, functions: &vector<NgFunction>, module_index: i64, name_start: i64, name_end: i64) -> i64:
-    mut index: i64 = 0
+fn ng_find_function_in_module(source: &bytes, modules: &vector<NgModule>, functions: &vector<NgFunction>, module_index: i64, name_start: i64, name_end: i64) -> i64:
+    mut index: i64 = -1
     mut fingerprint: i64 = ng_span_fingerprint(source, name_start, name_end)
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
-    while index < vector_len<NgFunction>(functions):
-        function = vector_get<NgFunction>(functions, index)
-        match function.module_index <=> module_index:
-            0:
-                match ng_named_spans_equal(source, name_start, name_end, fingerprint, function.local_name_start, function.local_name_end, function.local_name_fingerprint):
-                    -1:
-                        return index
-                    0:
-                        index = index + 1
-                    1:
-                        index = index + 1
-            -1:
-                index = index + 1
-            1:
-                index = index + 1
-    return -1
+    mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
+    match module_index < 0:
+        -1:
+            return -1
+        0:
+            match module_index < vector_len<NgModule>(modules):
+                -1:
+                    module_item = vector_get<NgModule>(modules, module_index)
+                    index = module_item.first_function
+                    while index < module_item.first_function + module_item.function_count:
+                        function = vector_get<NgFunction>(functions, index)
+                        match ng_named_spans_equal(source, name_start, name_end, fingerprint, function.local_name_start, function.local_name_end, function.local_name_fingerprint):
+                            -1:
+                                return index
+                            0:
+                                index = index + 1
+                            1:
+                                index = index + 1
+                    return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
 
 fn ng_find_record_in_module(source: &bytes, records: &vector<NgRecord>, module_index: i64, name_start: i64, name_end: i64) -> i64:
     mut index: i64 = 0
@@ -411,7 +420,7 @@ fn ng_rewrite_imported_nominal_types(source: &bytes, modules: &vector<NgModule>,
                                         return -3
                                     0:
                                         record_index = ng_find_record_in_module(source, records, target_index, imported.symbol_start, imported.symbol_end)
-                                        function_index = ng_find_function_in_module(source, functions, target_index, imported.symbol_start, imported.symbol_end)
+                                        function_index = ng_find_function_in_module(source, modules, functions, target_index, imported.symbol_start, imported.symbol_end)
                                         match record_index < 0:
                                             -1:
                                                 return -5
@@ -498,7 +507,7 @@ fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vec
                 target_index = target_index
             1:
                 target_index = target_index
-        function_index = ng_find_function_in_module(source, functions, target_index, imported.symbol_start, imported.symbol_end)
+        function_index = ng_find_function_in_module(source, modules, functions, target_index, imported.symbol_start, imported.symbol_end)
         record_index = ng_find_record_in_module(source, records, target_index, imported.symbol_start, imported.symbol_end)
         match function_index < 0:
             -1:
@@ -570,7 +579,7 @@ fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vec
             0:
                 match ng_spans_equal(source, imported.local_start, imported.local_end, imported.symbol_start, imported.symbol_end):
                     -1:
-                        local_function = ng_find_function_in_module(source, functions, imported.module_index, imported.local_start, imported.local_end)
+                        local_function = ng_find_function_in_module(source, modules, functions, imported.module_index, imported.local_start, imported.local_end)
                         local_record = ng_find_record_in_module(source, records, imported.module_index, imported.local_start, imported.local_end)
                         match local_function < 0:
                             -1:
@@ -590,7 +599,7 @@ fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vec
                     1:
                         return -8
             -1:
-                local_function = ng_find_function_in_module(source, functions, imported.module_index, imported.local_start, imported.local_end)
+                local_function = ng_find_function_in_module(source, modules, functions, imported.module_index, imported.local_start, imported.local_end)
                 match local_function < 0:
                     -1:
                         local_function = local_function
@@ -676,7 +685,7 @@ fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vec
     mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
     mut target_name_start: i64 = 0
     mut target_name_end: i64 = 0
-    function_index = ng_find_function_in_module(source, functions, caller.module_index, node.start, node.operation)
+    function_index = ng_find_function_in_module(source, modules, functions, caller.module_index, node.start, node.operation)
     match function_index < 0:
         -1:
             match ng_resolve_record_constructor_call(source, modules, imports, records, caller, &mut *nodes, node_index) <=> 0:
@@ -690,7 +699,7 @@ fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vec
                         0:
                             imported = vector_get<NgImport>(imports, import_index)
                             target_module = ng_find_import_target(source, modules, imports, import_index)
-                            function_index = ng_find_function_in_module(source, functions, target_module, imported.symbol_start, imported.symbol_end)
+                            function_index = ng_find_function_in_module(source, modules, functions, target_module, imported.symbol_start, imported.symbol_end)
                             match function_index < 0:
                                 -1:
                                     return -4
