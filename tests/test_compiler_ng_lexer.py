@@ -234,6 +234,38 @@ fn main() -> vector<i64>:
     assert actual == expected
 
 
+def test_nextgen_character_class_table_matches_all_byte_values() -> None:
+    wrapper = """
+fn main() -> vector<i64>:
+    mut classes: vector<i64> = vector_new<i64>(256)
+    mut result: vector<i64> = vector_new<i64>(256)
+    mut unit: i64 = 0
+    discard ng_build_character_class_table(&mut classes)
+    while unit < 256:
+        discard vector_push<i64>(&mut result, vector_get<i64>(&classes, unit))
+        unit = unit + 1
+    return result
+"""
+    compilation = compile_source(_LEXER_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+    actual = [int(value) for value in execute_ir(compilation.ir)]
+    expected = []
+    for unit in range(256):
+        is_digit = 48 <= unit <= 57
+        is_alpha = 65 <= unit <= 90 or 97 <= unit <= 122
+        if is_digit:
+            expected.append(1)
+        elif is_alpha:
+            expected.append(2)
+        elif unit == 95:
+            expected.append(3)
+        elif unit in {9, 10, 13, 32}:
+            expected.append(4)
+        else:
+            expected.append(5)
+    assert actual == expected
+
+
 def test_nextgen_runtime_lexer_fails_closed_on_unterminated_string() -> None:
     source = "fn broken() -> i64: return \"unterminated"
     assert _nextgen_rejects(source)

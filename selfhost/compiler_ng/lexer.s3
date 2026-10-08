@@ -204,6 +204,40 @@ fn ng_is_space(unit: i64) -> trit:
         1:
             return 0
 
+fn ng_character_class(unit: i64) -> i64:
+    match ng_is_digit(unit):
+        -1:
+            return 1
+        0:
+            match ng_is_alpha(unit):
+                -1:
+                    return 2
+                0:
+                    match unit == 95:
+                        -1:
+                            return 3
+                        0:
+                            match ng_is_space(unit):
+                                -1:
+                                    return 4
+                                0:
+                                    return 5
+                                1:
+                                    return 5
+                        1:
+                            return 5
+                1:
+                    return 2
+        1:
+            return 1
+
+fn ng_build_character_class_table(classes: &mut vector<i64>) -> i64:
+    mut unit: i64 = 0
+    while unit < 256:
+        discard vector_push<i64>(&mut *classes, ng_character_class(unit))
+        unit = unit + 1
+    return 0
+
 fn ng_skip_line_comment(source: &bytes, cursor: i64, length: i64) -> i64:
     mut next: i64 = cursor
     mut scanning: i64 = 1
@@ -223,13 +257,15 @@ fn ng_skip_line_comment(source: &bytes, cursor: i64, length: i64) -> i64:
                 scanning = 0
     return next
 
-fn ng_scan_identifier(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>) -> i64:
+fn ng_scan_identifier(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>) -> i64:
     mut next: i64 = cursor + 1
     mut scanning: i64 = 1
+    mut character_class: i64 = 0
     while scanning == 1:
         match next < length:
             -1:
-                match ng_is_identifier_continue(to_i64(bytes_get(source, next))):
+                character_class = vector_get<i64>(classes, to_i64(bytes_get(source, next)))
+                match character_class < 4:
                     -1:
                         next = next + 1
                     0:
@@ -242,19 +278,21 @@ fn ng_scan_identifier(source: &bytes, cursor: i64, length: i64, tokens: &mut vec
                 scanning = 0
     return ng_emit(tokens, 1, cursor, next)
 
-fn ng_scan_integer(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>) -> i64:
+fn ng_scan_integer(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>) -> i64:
     mut next: i64 = cursor + 1
     mut scanning: i64 = 1
+    mut character_class: i64 = 0
     while scanning == 1:
         match next < length:
             -1:
-                match ng_is_digit(to_i64(bytes_get(source, next))):
+                character_class = vector_get<i64>(classes, to_i64(bytes_get(source, next)))
+                match character_class <=> 1:
                     -1:
-                        next = next + 1
-                    0:
                         scanning = 0
-                    1:
+                    0:
                         next = next + 1
+                    1:
+                        scanning = 0
             0:
                 scanning = 0
             1:
@@ -459,29 +497,36 @@ fn ng_scan_symbol(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<
                     width = 1
     return ng_emit(tokens, kind, cursor, cursor + width)
 
-fn ng_scan_atom(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>) -> i64:
+fn ng_scan_atom(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>) -> i64:
     mut unit: i64 = to_i64(bytes_get(source, cursor))
-    match ng_is_identifier_start(unit):
+    mut character_class: i64 = vector_get<i64>(classes, unit)
+    match character_class < 4:
         -1:
-            return ng_scan_identifier(source, cursor, length, tokens)
-        0:
-            match ng_is_digit(unit):
+            match character_class <=> 1:
                 -1:
-                    return ng_scan_integer(source, cursor, length, tokens)
+                    return ng_scan_symbol(source, cursor, length, tokens)
                 0:
-                    match unit == 34:
-                        -1:
-                            return ng_scan_string(source, cursor, length, tokens)
-                        0:
-                            return ng_scan_symbol(source, cursor, length, tokens)
-                        1:
-                            return ng_scan_string(source, cursor, length, tokens)
+                    return ng_scan_integer(source, cursor, length, classes, tokens)
                 1:
-                    return ng_scan_integer(source, cursor, length, tokens)
+                    return ng_scan_identifier(source, cursor, length, classes, tokens)
+        0:
+            match unit == 34:
+                -1:
+                    return ng_scan_string(source, cursor, length, tokens)
+                0:
+                    return ng_scan_symbol(source, cursor, length, tokens)
+                1:
+                    return ng_scan_string(source, cursor, length, tokens)
         1:
-            return ng_scan_identifier(source, cursor, length, tokens)
+            match unit == 34:
+                -1:
+                    return ng_scan_string(source, cursor, length, tokens)
+                0:
+                    return ng_scan_symbol(source, cursor, length, tokens)
+                1:
+                    return ng_scan_string(source, cursor, length, tokens)
 
-fn ng_scan_next(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>, state: &mut vector<i64>) -> i64:
+fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>, state: &mut vector<i64>) -> i64:
     mut next: i64 = cursor
     mut unit: i64 = 0
     mut skipping_space: i64 = 1
@@ -492,7 +537,7 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<Ng
         match next < length:
             -1:
                 unit = to_i64(bytes_get(source, next))
-                match ng_is_space(unit):
+                match vector_get<i64>(classes, unit) == 4:
                     -1:
                         match unit <=> 10:
                             -1:
@@ -561,9 +606,9 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<Ng
                         1:
                             next = ng_scan_symbol(source, cursor, length, tokens)
                 0:
-                    next = ng_scan_atom(source, cursor, length, tokens)
+                                    next = ng_scan_atom(source, cursor, length, classes, tokens)
                 1:
-                    next = ng_scan_atom(source, cursor, length, tokens)
+                    next = ng_scan_atom(source, cursor, length, classes, tokens)
         1:
             discard vector_set<i64>(&mut *state, 1, 0)
             return ng_skip_line_comment(source, cursor + 1, length)
@@ -576,11 +621,13 @@ export fn ng_lex(source: &bytes, tokens: &mut vector<NgToken>) -> i64:
     mut next: i64 = 0
     mut prior_count: i64 = 0
     mut indent_state: vector<i64> = vector_new<i64>(2)
+    mut character_classes: vector<i64> = vector_new<i64>(256)
     mut failed: i64 = 0
+    discard ng_build_character_class_table(&mut character_classes)
     discard vector_push<i64>(&mut indent_state, 0)
     discard vector_push<i64>(&mut indent_state, 1)
     while cursor < length:
-        next = ng_scan_next(source, cursor, length, tokens, &mut indent_state)
+        next = ng_scan_next(source, cursor, length, &character_classes, tokens, &mut indent_state)
         match next < 0:
             -1:
                 failed = 1
