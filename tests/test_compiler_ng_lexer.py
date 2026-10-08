@@ -77,6 +77,28 @@ def _nextgen_conformance_result(source: str, expected: tuple[tuple[int, int, int
         expected_vectors.append(
             f"    mut {label}: vector<i64> = vector_new<i64>({len(values)})\n{pushes}"
         )
+    indents = []
+    for _, start, _ in expected:
+        line_start = source.rfind("\n", 0, start) + 1
+        line_end = source.find("\n", line_start)
+        if line_end < 0:
+            line_end = len(source)
+        indent = 0
+        for character in source[line_start:line_end]:
+            if character == " ":
+                indent += 1
+            elif character == "\t":
+                indent = -1
+                break
+            else:
+                break
+        indents.append(indent)
+    indent_pushes = "\n".join(
+        f"    discard vector_push<i64>(&mut expected_indents, {value})" for value in indents
+    )
+    expected_vectors.append(
+        f"    mut expected_indents: vector<i64> = vector_new<i64>({len(indents)})\n{indent_pushes}"
+    )
     wrapper = f"""
 fn main() -> i64:
     mut source_text: text = text_from_static({json.dumps(source)})
@@ -86,6 +108,7 @@ fn main() -> i64:
 {expected_vectors[0]}
 {expected_vectors[1]}
 {expected_vectors[2]}
+{expected_vectors[3]}
     match status <=> 0:
         -1:
             return -1000
@@ -102,25 +125,32 @@ fn main() -> i64:
                 mut token: NgToken = vector_get<NgToken>(&tokens, index)
                 match token.kind <=> vector_get<i64>(&expected_kinds, index):
                     -1:
-                        return index + 1
+                        return 1000 + index
                     0:
                         index = index
                     1:
-                        return index + 1
+                        return 1000 + index
                 match token.start <=> vector_get<i64>(&expected_starts, index):
                     -1:
-                        return index + 1
+                        return 2000 + index
                     0:
                         index = index
                     1:
-                        return index + 1
+                        return 2000 + index
                 match token.end <=> vector_get<i64>(&expected_ends, index):
                     -1:
-                        return index + 1
+                        return 3000 + index
+                    0:
+                        status = status
+                    1:
+                        return 3000 + index
+                match token.indent <=> vector_get<i64>(&expected_indents, index):
+                    -1:
+                        return 4000 + index
                     0:
                         index = index + 1
                     1:
-                        return index + 1
+                        return 4000 + index
             return 0
         1:
             return -1000
@@ -160,6 +190,48 @@ fn main() -> i64:
 )
 def test_nextgen_runtime_lexer_matches_reference_subset(source: str) -> None:
     assert _nextgen_conformance_result(source, _python_tokens(source)) == 0
+
+
+def test_nextgen_runtime_lexer_matches_all_multi_byte_symbols() -> None:
+    source = "-> <=> == != <= >= += *= ( ) [ ] { } , : ; + - * / < = >"
+
+    assert _nextgen_conformance_result(source, _python_tokens(source)) == 0
+
+
+def test_nextgen_runtime_lexer_records_line_indentation_once() -> None:
+    source = "alpha\n    beta + gamma\n    // comment\n  omega"
+
+    assert _nextgen_conformance_result(source, _python_tokens(source)) == 0
+
+
+def test_nextgen_ascii_classifiers_match_reference_ranges() -> None:
+    wrapper = """
+fn main() -> vector<i64>:
+    mut result: vector<i64> = vector_new<i64>(512)
+    mut unit: i64 = 0
+    while unit < 128:
+        discard vector_push<i64>(&mut result, to_i64(ng_is_alpha(unit)))
+        discard vector_push<i64>(&mut result, to_i64(ng_is_space(unit)))
+        discard vector_push<i64>(&mut result, to_i64(ng_is_identifier_start(unit)))
+        discard vector_push<i64>(&mut result, to_i64(ng_is_identifier_continue(unit)))
+        unit = unit + 1
+    return result
+"""
+    compilation = compile_source(_LEXER_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+    actual = [int(value) for value in execute_ir(compilation.ir)]
+    expected = []
+    for unit in range(128):
+        is_alpha = 65 <= unit <= 90 or 97 <= unit <= 122
+        expected.extend(
+            (
+                -1 if is_alpha else 0,
+                -1 if unit in {9, 10, 13, 32} else 0,
+                -1 if is_alpha or unit == 95 else 0,
+                -1 if is_alpha or unit == 95 or 48 <= unit <= 57 else 0,
+            )
+        )
+    assert actual == expected
 
 
 def test_nextgen_runtime_lexer_fails_closed_on_unterminated_string() -> None:

@@ -1,6 +1,6 @@
 module selfhost.compiler_ng.parser
 
-from selfhost.compiler_ng.lexer import NgToken
+from selfhost.compiler_ng.lexer import NgToken, ng_span_fingerprint
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table, ng_intern_nominal_type, ng_intern_string_type, ng_parse_type_descriptor
 
 export record NgAstNode:
@@ -46,6 +46,8 @@ export record NgFunction:
     body_node: i64
     module_index: i64
     exported: i64
+    name_fingerprint: i64
+    local_name_fingerprint: i64
 
 export record NgModule:
     source_index: i64
@@ -145,58 +147,54 @@ fn ng_append_node(nodes: &mut vector<NgAstNode>, node: NgAstNode) -> i64:
     return node_id
 
 fn ng_token_indent(source: &bytes, token: NgToken) -> i64:
-    mut line_start: i64 = token.start
-    mut column: i64 = 0
-    mut unit: i64 = 0
-    mut scanning: i64 = 1
-    while scanning == 1:
-        match line_start > 0:
-            -1:
-                match to_i64(bytes_get(source, line_start - 1)) == 10:
-                    -1:
-                        scanning = 0
-                    0:
-                        line_start = line_start - 1
-                    1:
-                        line_start = line_start - 1
-            0:
-                scanning = 0
-            1:
-                scanning = 0
-    while line_start + column < token.start:
-        unit = to_i64(bytes_get(source, line_start + column))
-        match unit == 32:
-            -1:
-                column = column + 1
-            0:
-                match unit == 9:
-                    -1:
-                        return -1
-                    0:
-                        return column
-                    1:
-                        return -1
-            1:
-                column = column + 1
-    return column
+    return token.indent
 
 fn ng_parser_spans_equal(source: &bytes, left_start: i64, left_end: i64, right_start: i64, right_end: i64) -> trit:
     mut left: i64 = left_start
     mut right: i64 = right_start
+    mut span_length: i64 = left_end - left_start
+    mut last_left: i64 = left_end - 1
+    mut last_right: i64 = right_end - 1
     match left_end - left_start <=> right_end - right_start:
         -1:
             return 0
         0:
-            while left < left_end:
-                match to_i64(bytes_get(source, left)) <=> to_i64(bytes_get(source, right)):
-                    -1:
-                        return 0
-                    0:
-                        left = left + 1
-                        right = right + 1
-                    1:
-                        return 0
-            return -1
+            match span_length > 0:
+                -1:
+                    match to_i64(bytes_get(source, left_start)) <=> to_i64(bytes_get(source, right_start)):
+                        -1:
+                            return 0
+                        0:
+                            match span_length <=> 1:
+                                -1:
+                                    return -1
+                                0:
+                                    return -1
+                                1:
+                                    match to_i64(bytes_get(source, last_left)) <=> to_i64(bytes_get(source, last_right)):
+                                        -1:
+                                            return 0
+                                        0:
+                                            left = left_start + 1
+                                            right = right_start + 1
+                                            while left < last_left:
+                                                match to_i64(bytes_get(source, left)) <=> to_i64(bytes_get(source, right)):
+                                                    -1:
+                                                        return 0
+                                                    0:
+                                                        left = left + 1
+                                                        right = right + 1
+                                                    1:
+                                                        return 0
+                                            return -1
+                                        1:
+                                            return 0
+                        1:
+                            return 0
+                0:
+                    return -1
+                1:
+                    return -1
         1:
             return 0
 
@@ -218,7 +216,7 @@ fn ng_build_statement_links(statement_ids: &vector<i64>, index: i64, nodes: &mut
 fn ng_parse_declaration(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, name: NgToken, mutable: i64, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
     mut type_kind: i64 = 0
     mut expression: i64 = -1
-    mut token: NgToken = NgToken(kind=0, start=0, end=0)
+    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     match ng_expect_kind(tokens, cursor, 358):
         -1:
             return -1
@@ -252,15 +250,15 @@ fn ng_parse_declaration(source: &bytes, tokens: &vector<NgToken>, cursor: &mut v
 
 fn ng_parse_statement(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
     mut token: NgToken = ng_token_at(tokens, cursor)
-    mut name: NgToken = NgToken(kind=0, start=0, end=0)
-    mut following: NgToken = NgToken(kind=0, start=0, end=0)
+    mut name: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut following: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut expression: i64 = -1
     mut body: i64 = -1
     mut mutable: i64 = 0
     mut expression_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut target_node_id: i64 = -1
     mut target_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
-    mut field: NgToken = NgToken(kind=0, start=0, end=0)
+    mut field: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut scanning_target: i64 = 0
     match ng_token_spells(source, token, text_from_static("discard")):
         -1:
@@ -502,7 +500,7 @@ fn ng_build_match_arm_links(arm_ids: &vector<i64>, index: i64, nodes: &mut vecto
 
 fn ng_parse_match_arm(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, arm_indent: i64, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
     mut label_token: NgToken = ng_token_at(tokens, cursor)
-    mut digit_token: NgToken = NgToken(kind=0, start=0, end=0)
+    mut digit_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut label_start: i64 = label_token.start
     mut label_value: i64 = 0
     mut digit: i64 = 0
@@ -593,7 +591,7 @@ fn ng_parse_match_statement(source: &bytes, tokens: &vector<NgToken>, cursor: &m
     mut arm_count: i64 = 0
     mut scanning: i64 = 1
     mut arm_ids: vector<i64> = vector_new<i64>(3)
-    mut token: NgToken = NgToken(kind=0, start=0, end=0)
+    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut last_arm: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     discard ng_advance(cursor)
     selector = ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
@@ -674,7 +672,7 @@ fn ng_build_argument_nodes(argument_ids: &vector<i64>, index: i64, nodes: &mut v
 
 fn ng_parse_call_argument(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
     mut name: NgToken = ng_token_at(tokens, cursor)
-    mut equals: NgToken = NgToken(kind=0, start=0, end=0)
+    mut equals: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut cursor_index: i64 = vector_get<i64>(&*cursor, 0)
     mut value_id: i64 = -1
     match name.kind <=> 1:
@@ -709,7 +707,7 @@ fn ng_parse_call_argument(source: &bytes, tokens: &vector<NgToken>, cursor: &mut
 
 fn ng_parse_group(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
     mut opening: NgToken = ng_token_at(tokens, cursor)
-    mut closing: NgToken = NgToken(kind=0, start=0, end=0)
+    mut closing: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut nested: i64 = -1
     match ng_expect_kind(tokens, cursor, 340):
         -1:
@@ -739,8 +737,8 @@ fn ng_parse_call(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i
     mut argument_ids: vector<i64> = vector_new<i64>(vector_len<NgToken>(tokens))
     mut argument_id: i64 = -1
     mut argument_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
-    mut token: NgToken = NgToken(kind=0, start=0, end=0)
-    mut closing: NgToken = NgToken(kind=0, start=0, end=0)
+    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut closing: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut scanning: i64 = 1
     mut list_head: i64 = -1
     discard ng_advance(cursor)
@@ -791,7 +789,7 @@ fn ng_parse_call(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i
 
 fn ng_is_type_descriptor_ahead(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>) -> trit:
     mut token: NgToken = ng_token_at(tokens, cursor)
-    mut following: NgToken = NgToken(kind=0, start=0, end=0)
+    mut following: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     match token.kind <=> 338:
         0:
             discard ng_advance(cursor)
@@ -846,7 +844,7 @@ fn ng_is_type_descriptor_ahead(source: &bytes, tokens: &vector<NgToken>, cursor:
 
 fn ng_is_generic_call_ahead(source: &bytes, tokens: &vector<NgToken>, cursor: &vector<i64>) -> trit:
     mut lookahead: vector<i64> = vector_new<i64>(1)
-    mut following: NgToken = NgToken(kind=0, start=0, end=0)
+    mut following: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     discard vector_push<i64>(&mut lookahead, vector_get<i64>(cursor, 0) + 1)
     match ng_is_type_descriptor_ahead(source, tokens, &mut lookahead):
         -1:
@@ -898,7 +896,7 @@ fn ng_local_nominal_type_id(source: &bytes, types: &vector<NgTypeDescriptor>, mo
     return -1
 
 fn ng_parse_identifier_or_call(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, name: NgToken) -> i64:
-    mut following: NgToken = NgToken(kind=0, start=0, end=0)
+    mut following: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut generic_type_id: i64 = -1
     discard ng_advance(cursor)
     following = ng_token_at(tokens, cursor)
@@ -952,7 +950,7 @@ fn ng_parse_identifier_or_call(source: &bytes, tokens: &vector<NgToken>, cursor:
             return ng_append_node(nodes, NgAstNode(kind=2, start=name.start, end=name.end, left=-1, right=-1, operation=0))
 
 fn ng_parse_address_of(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, operator: NgToken) -> i64:
-    mut token: NgToken = NgToken(kind=0, start=0, end=0)
+    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut operand_id: i64 = -1
     mut operand: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut mutable: i64 = 0
@@ -1073,8 +1071,8 @@ fn ng_parse_primary(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vecto
 fn ng_parse_postfix_field(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, expression_id: i64) -> i64:
     mut current_id: i64 = expression_id
     mut current: NgAstNode = vector_get<NgAstNode>(&*nodes, current_id)
-    mut token: NgToken = NgToken(kind=0, start=0, end=0)
-    mut field: NgToken = NgToken(kind=0, start=0, end=0)
+    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut field: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut scanning: i64 = 1
     while scanning == 1:
         match vector_get<i64>(&*cursor, 0) < vector_len<NgToken>(tokens):
@@ -1155,7 +1153,7 @@ fn ng_parse_term_step(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vec
 
 fn ng_parse_term(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
     mut left_id: i64 = ng_parse_primary(source, tokens, cursor, nodes, types, module_start, module_end)
-    mut operator_token: NgToken = NgToken(kind=0, start=0, end=0)
+    mut operator_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut next_left: i64 = -1
     mut scanning: i64 = 1
     match left_id <=> -1:
@@ -1223,7 +1221,7 @@ fn ng_parse_expression_step(source: &bytes, tokens: &vector<NgToken>, cursor: &m
 
 fn ng_parse_additive_expression(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
     mut left_id: i64 = ng_parse_term(source, tokens, cursor, nodes, types, module_start, module_end)
-    mut operator_token: NgToken = NgToken(kind=0, start=0, end=0)
+    mut operator_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut next_left: i64 = -1
     mut scanning: i64 = 1
     match left_id <=> -1:
@@ -1447,14 +1445,14 @@ fn ng_parse_parameters(source: &bytes, tokens: &vector<NgToken>, cursor: &mut ve
 
 fn ng_parse_function(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>, functions: &mut vector<NgFunction>, module_index: i64, exported: i64, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
     mut start: NgToken = ng_token_at(tokens, cursor)
-    mut name: NgToken = NgToken(kind=0, start=0, end=0)
+    mut name: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut first_parameter: i64 = 0
     mut parameter_count: i64 = 0
     mut return_type: i64 = 0
     mut first_node: i64 = 0
     mut body_node: i64 = -1
     mut body: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
-    mut last_body_token: NgToken = NgToken(kind=0, start=0, end=0)
+    mut last_body_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     match ng_expect_word(source, tokens, cursor, text_from_static("fn")):
         -1:
             return -1
@@ -1514,7 +1512,7 @@ fn ng_parse_function(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vect
                                 1:
                                     body = vector_get<NgAstNode>(&*nodes, body_node)
                                     last_body_token = vector_get<NgToken>(tokens, vector_get<i64>(&*cursor, 0) - 1)
-                                    discard vector_push<NgFunction>(functions, NgFunction(start=start.start, end=last_body_token.end, name_start=name.start, name_end=name.end, local_name_start=name.start, local_name_end=name.end, first_parameter=first_parameter, parameter_count=parameter_count, return_type=return_type, first_node=first_node, body_node=body_node, module_index=module_index, exported=exported))
+                                    discard vector_push<NgFunction>(functions, NgFunction(start=start.start, end=last_body_token.end, name_start=name.start, name_end=name.end, local_name_start=name.start, local_name_end=name.end, first_parameter=first_parameter, parameter_count=parameter_count, return_type=return_type, first_node=first_node, body_node=body_node, module_index=module_index, exported=exported, name_fingerprint=ng_span_fingerprint(source, name.start, name.end), local_name_fingerprint=ng_span_fingerprint(source, name.start, name.end)))
                                     return 0
                         1:
                             return -1
@@ -1537,7 +1535,7 @@ export fn ng_parse_program(source: &bytes, tokens: &vector<NgToken>, functions: 
 
 export fn ng_parse_program_typed(source: &bytes, tokens: &vector<NgToken>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, functions: &mut vector<NgFunction>, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>) -> i64:
     mut cursor: vector<i64> = vector_new<i64>(1)
-    mut current: NgToken = NgToken(kind=0, start=0, end=0)
+    mut current: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut status: i64 = 0
     mut scanning: i64 = 1
     discard vector_push<i64>(&mut cursor, 0)
@@ -1883,13 +1881,13 @@ fn ng_import_continuation_valid(source: &bytes, separator_end: i64, next_start: 
 
 export fn ng_parse_module_header(source: &mut bytes, tokens: &vector<NgToken>, module_index: i64, source_start: i64, source_end: i64, path_start: i64, path_end: i64, imports: &mut vector<NgImport>) -> NgModule:
     mut cursor: vector<i64> = vector_new<i64>(1)
-    mut current: NgToken = NgToken(kind=0, start=0, end=0)
+    mut current: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut module_name: NgSpan = NgSpan(start=-1, end=-1)
     mut module_name_start: i64 = -1
     mut module_name_end: i64 = -1
     mut target: NgSpan = NgSpan(start=-1, end=-1)
-    mut symbol: NgToken = NgToken(kind=0, start=0, end=0)
-    mut alias_token: NgToken = NgToken(kind=0, start=0, end=0)
+    mut symbol: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut alias_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut local_start: i64 = 0
     mut local_end: i64 = 0
     mut first_import: i64 = vector_len<NgImport>(&*imports)
@@ -1998,9 +1996,9 @@ export fn ng_parse_module_header(source: &mut bytes, tokens: &vector<NgToken>, m
 
 fn ng_parse_record_declaration(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, module_item: NgModule, types: &mut vector<NgTypeDescriptor>, records: &mut vector<NgRecord>, fields: &mut vector<NgField>, exported: i64) -> i64:
     mut record_token: NgToken = ng_token_at(tokens, cursor)
-    mut name: NgToken = NgToken(kind=0, start=0, end=0)
-    mut field_token: NgToken = NgToken(kind=0, start=0, end=0)
-    mut current: NgToken = NgToken(kind=0, start=0, end=0)
+    mut name: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut field_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut current: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut prior_record: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
     mut prior_field: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
     mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
@@ -2173,7 +2171,7 @@ export fn ng_validate_nominal_types(source: &bytes, types: &vector<NgTypeDescrip
 
 export fn ng_parse_module_functions(source: &bytes, tokens: &vector<NgToken>, module_item: NgModule, types: &mut vector<NgTypeDescriptor>, records: &mut vector<NgRecord>, fields: &mut vector<NgField>, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>, functions: &mut vector<NgFunction>) -> i64:
     mut cursor: vector<i64> = vector_new<i64>(1)
-    mut current: NgToken = NgToken(kind=0, start=0, end=0)
+    mut current: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut current_kind: i64 = 0
     mut exported: i64 = 0
     mut status: i64 = 0

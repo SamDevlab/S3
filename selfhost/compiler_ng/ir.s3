@@ -2197,7 +2197,7 @@ fn ng_emit_vector_set_scalar_expression(source: &bytes, types: &vector<NgTypeDes
 
 fn ng_emit_call_expression(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, node: NgAstNode, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
     mut function_index: i64 = ng_find_function(source, functions, node.start, node.operation)
-    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     mut argument_list: i64 = node.left
     mut argument_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
@@ -2945,7 +2945,7 @@ fn ng_ir_emit_value_cells(source: &bytes, types: &vector<NgTypeDescriptor>, fiel
     mut node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut field: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
     mut function_index: i64 = -1
-    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     mut field_index: i64 = 0
     mut value_node_id: i64 = -1
     mut variable_index: i64 = -1
@@ -4070,7 +4070,7 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
     mut index_register: i64 = -1
     mut event_operand1: i64 = -1
     mut event_immediate: i64 = 0
-    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
     mut link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut statement: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -4145,7 +4145,7 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
         memories = vector_new<NgIRMemory>(node_capacity + 1)
         blocks = vector_new<NgIRBlock>(node_capacity + 5)
         discard vector_push<NgIRBlock>(&mut blocks, NgIRBlock(index=0))
-        variables = vector_new<NgIRVariable>(node_capacity + 1)
+        variables = vector_new<NgIRVariable>(node_capacity + function.parameter_count + 1)
         instructions = vector_new<NgIRInstruction>(node_capacity * 4 + 16)
         call_arguments = vector_new<i64>(node_capacity + 1)
         result_registers = vector_new<i64>(node_capacity * 4 + 16)

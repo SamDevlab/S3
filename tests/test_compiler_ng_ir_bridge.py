@@ -93,6 +93,7 @@ def _execute_ir_with_step_budget(
     steps = 0
     calls: Counter[str] = Counter()
     call_edges: Counter[tuple[str, str]] = Counter()
+    line_counts: Counter[str] = Counter()
     previous_trace = sys.gettrace()
 
     def trace(frame, event, _argument):
@@ -108,9 +109,18 @@ def _execute_ir_with_step_budget(
                         call_edges[(caller.name, function.name)] += 1
             if event == "line":
                 steps += 1
+                if function is not None:
+                    line_counts[function.name] += 1
                 if steps > max_steps:
-                    execution = frame.f_locals["frame"]
-                    function = frame.f_locals["function"]
+                    execution = frame.f_locals.get("frame")
+                    function = frame.f_locals.get("function")
+                    if execution is None or function is None:
+                        return trace
+                    if any(
+                        not execution.registers[parameter.register].initialized
+                        for parameter in function.parameters
+                    ):
+                        return trace
                     arguments = []
                     for parameter in function.parameters:
                         cell = execution.registers[parameter.register]
@@ -177,6 +187,7 @@ def _execute_ir_with_step_budget(
                         f"IR execution exceeded {max_steps} steps in "
                         f"{function.name}:{execution.block}[{execution.index}]; "
                         f"arguments={arguments}; registers={registers}; "
+                        f"hot_functions={line_counts.most_common(12)}; "
                         f"calls={calls.most_common(12)}; "
                         f"call_edges={call_edges.most_common(12)}; "
                         f"caller={caller_state}"
@@ -201,9 +212,12 @@ def _execute_ir_with_step_budget(
             s3_stack = []
             while traceback is not None:
                 if traceback.tb_frame.f_code is target_code:
+                    stack_execution = traceback.tb_frame.f_locals.get("frame")
+                    stack_function = traceback.tb_frame.f_locals.get("function")
+                    if stack_execution is None or stack_function is None:
+                        traceback = traceback.tb_next
+                        continue
                     last_s3_frame = traceback.tb_frame
-                    stack_execution = traceback.tb_frame.f_locals["frame"]
-                    stack_function = traceback.tb_frame.f_locals["function"]
                     stack_arguments = []
                     for parameter in stack_function.parameters:
                         cell = stack_execution.registers[parameter.register]
@@ -484,6 +498,17 @@ def _event_records(cells: list[int]) -> list[list[int]]:
     return [cells[index : index + 8] for index in range(0, len(cells), 8)]
 
 
+def _legacy_event_records(records: list[list[int]], version: int) -> list[list[int]]:
+    legacy = [
+        record.copy()
+        for record in records
+        if not (version < 14 and record[0] == 22)
+        and not (version < 15 and record[0] == 23)
+    ]
+    legacy[0][1] = version
+    return legacy
+
+
 def _flatten(records: list[list[int]]) -> list[int]:
     return [cell for record in records for cell in record]
 
@@ -509,7 +534,7 @@ def test_ng_ir_v7_preserves_bytes_text_and_decodes_v2() -> None:
     reference_ir = compile_source(source).ir
     assert reference_ir is not None
     events = _emit_ng_events(source)
-    assert _event_records(events)[0] == [0, 15, 8, 0, 0, 0, 0, 0]
+    assert _event_records(events)[0] == [0, 16, 8, 0, 0, 0, 0, 0]
     ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
 
     verify_ir(ng_ir)
@@ -707,7 +732,7 @@ def test_ng_ir_v7_relational_opcode_executes_and_is_not_valid_in_v6() -> None:
         assert actual == expected_from_reference == expected
     assert execute_ir(decoded) == 0
 
-    records[0][1] = 6
+    records = _legacy_event_records(records, 6)
     with pytest.raises(NGIRDecodeError, match="RELATE opcode requires NG IR format V7"):
         decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
 
@@ -993,8 +1018,7 @@ def test_ng_ir_v7_generic_vector_new_rejects_malformed_builtin_metadata() -> Non
 
 def test_ng_ir_v7_decoder_keeps_v4_stream_compatibility() -> None:
     source = "fn main() -> i64:\n    return 0\n"
-    records = _event_records(_emit_ng_events(source))
-    records[0][1] = 4
+    records = _legacy_event_records(_event_records(_emit_ng_events(source)), 4)
     decoded = decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
     verify_ir(decoded)
     assert execute_ir(decoded) == 0
@@ -1325,8 +1349,7 @@ def test_ng_ir_v8_vector_push_rejects_malformed_metadata() -> None:
 
 def test_ng_ir_v7_decoder_keeps_v5_vector_new_stream_compatibility() -> None:
     source = "fn main() -> vector<i64>:\n    return vector_new<i64>(3)\n"
-    records = _event_records(_emit_ng_events(source))
-    records[0][1] = 5
+    records = _legacy_event_records(_event_records(_emit_ng_events(source)), 5)
     decoded = decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
     verify_ir(decoded)
     result = execute_ir(decoded)
@@ -2434,6 +2457,32 @@ def test_ng_ir_v11_lowers_bytes_from_text_dynamic_builtin() -> None:
     assert execute_ir(ng_ir) == execute_ir(reference_ir) == 2
 
 
+def test_ng_ir_v11_lowers_bytes_concat_dynamic_builtin() -> None:
+    source = "\n".join(
+        (
+            "fn main() -> i64:",
+            "    mut left: bytes = bytes_new(2)",
+            "    discard bytes_push(&mut left, 65)",
+            "    discard bytes_push(&mut left, 66)",
+            "    mut right: bytes = bytes_new(2)",
+            "    discard bytes_push(&mut right, 67)",
+            "    discard bytes_push(&mut right, 68)",
+            "    mut joined: bytes = bytes_concat(&left, &right)",
+            "    mut original_capacity: i64 = bytes_capacity(&joined)",
+            "    discard bytes_reserve(&mut joined, original_capacity + 4)",
+            "    return to_i64(bytes_get(&joined, 2)) + bytes_capacity(&joined)",
+        )
+    )
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+    cells = _emit_ng_events(source)
+    ng_ir = decode_ng_ir_events(source.encode("utf-8"), cells)
+    verify_ir(ng_ir)
+
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 75
+
+
 def test_ng_source_set_rejects_bytes_builtin_argument_type_mismatch() -> None:
     sources = {
         "app.s3": (
@@ -2480,8 +2529,8 @@ def test_ng_ir_bridge_rejects_structural_corruption(corruption: str, message: st
     elif corruption == "missing-target":
         next(record for record in records if record[0] == 11)[3] = 999
     elif corruption == "missing-register":
-        return_record = next(record for record in records if record[0] == 4 and record[2] == 6)
-        return_record[5] = 999
+        store_record = next(record for record in records if record[0] == 4 and record[2] == 10)
+        store_record[5] = 999
     elif corruption == "missing-memory":
         store_record = next(record for record in records if record[0] == 4 and record[2] == 10)
         store_record[7] = 999
