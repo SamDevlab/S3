@@ -3539,6 +3539,9 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
     mut join_block: i64 = 0
     mut arm_id: i64 = -1
     mut matching_arm_id: i64 = -1
+    mut negative_arm_id: i64 = -1
+    mut neutral_arm_id: i64 = -1
+    mut positive_arm_id: i64 = -1
     mut arm_label: i64 = 0
     mut arm: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut body_link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -3560,24 +3563,73 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
             selector_register = selector_register
         1:
             selector_register = selector_register
+    arm_id = statement.right
+    while arm_id >= 0:
+        arm = vector_get<NgAstNode>(nodes, arm_id)
+        match arm.operation <=> -1:
+            -1:
+                arm_id = arm.right
+            0:
+                match negative_arm_id < 0:
+                    -1:
+                        negative_arm_id = arm_id
+                    0:
+                        negative_arm_id = negative_arm_id
+                    1:
+                        negative_arm_id = negative_arm_id
+            1:
+                match arm.operation <=> 0:
+                    -1:
+                        arm_id = arm.right
+                    0:
+                        match neutral_arm_id < 0:
+                            -1:
+                                neutral_arm_id = arm_id
+                            0:
+                                neutral_arm_id = neutral_arm_id
+                            1:
+                                neutral_arm_id = neutral_arm_id
+                    1:
+                        match arm.operation <=> 1:
+                            -1:
+                                arm_id = arm.right
+                            0:
+                                match positive_arm_id < 0:
+                                    -1:
+                                        positive_arm_id = arm_id
+                                    0:
+                                        positive_arm_id = positive_arm_id
+                                    1:
+                                        positive_arm_id = positive_arm_id
+                            1:
+                                arm_id = arm.right
+        arm_id = arm.right
     first_arm_block = vector_len<NgIRBlock>(&*blocks)
     join_block = first_arm_block + 3
     block_index = first_arm_block
     while block_index < join_block:
         discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=block_index))
         arm_label = block_index - first_arm_block - 1
-        arm_id = statement.right
         matching_arm_id = -1
-        while arm_id >= 0:
-            arm = vector_get<NgAstNode>(nodes, arm_id)
-            match arm.operation <=> arm_label:
-                -1:
-                    arm_id = arm.right
-                0:
-                    matching_arm_id = arm_id
-                    arm_id = -1
-                1:
-                    arm_id = arm.right
+        match arm_label <=> -1:
+            -1:
+                return -16
+            0:
+                matching_arm_id = negative_arm_id
+            1:
+                match arm_label <=> 0:
+                    -1:
+                        return -16
+                    0:
+                        matching_arm_id = neutral_arm_id
+                    1:
+                        match arm_label <=> 1:
+                            -1:
+                                return -16
+                            0:
+                                matching_arm_id = positive_arm_id
+                            1:
+                                return -16
         match matching_arm_id < 0:
             -1:
                 return -16
@@ -3612,18 +3664,26 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
     block_index = first_arm_block
     while block_index < join_block:
         arm_label = block_index - first_arm_block - 1
-        arm_id = statement.right
         matching_arm_id = -1
-        while arm_id >= 0:
-            arm = vector_get<NgAstNode>(nodes, arm_id)
-            match arm.operation <=> arm_label:
-                -1:
-                    arm_id = arm.right
-                0:
-                    matching_arm_id = arm_id
-                    arm_id = -1
-                1:
-                    arm_id = arm.right
+        match arm_label <=> -1:
+            -1:
+                return -16
+            0:
+                matching_arm_id = negative_arm_id
+            1:
+                match arm_label <=> 0:
+                    -1:
+                        return -16
+                    0:
+                        matching_arm_id = neutral_arm_id
+                    1:
+                        match arm_label <=> 1:
+                            -1:
+                                return -16
+                            0:
+                                matching_arm_id = positive_arm_id
+                            1:
+                                return -16
         match matching_arm_id < 0:
             -1:
                 return -16
