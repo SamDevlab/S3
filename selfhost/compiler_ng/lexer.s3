@@ -90,40 +90,8 @@ fn ng_advance_line_indent(source: &bytes, start: i64, end: i64, state: &mut vect
     discard vector_set<i64>(&mut *state, 1, prefix_open)
     return 0
 
-fn ng_record_token_indent(source: &bytes, tokens: &mut vector<NgToken>, prior_count: i64, start: i64, end: i64, state: &mut vector<i64>) -> i64:
-    mut token_count: i64 = vector_len<NgToken>(&*tokens)
-    mut token_index: i64 = -1
-    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
-    mut prefix_open: i64 = vector_get<i64>(&*state, 1)
-    match token_count > prior_count:
-        -1:
-            token_index = token_count - 1
-            token = vector_get<NgToken>(&*tokens, token_index)
-            token.indent = vector_get<i64>(&*state, 0)
-            discard vector_set<NgToken>(&mut *tokens, token_index, token)
-            match token.kind > 0:
-                -1:
-                    match token.kind <=> 3:
-                        -1:
-                            prefix_open = 0
-                            discard vector_set<i64>(&mut *state, 1, prefix_open)
-                        0:
-                            discard ng_advance_line_indent(source, token.start, token.end, state)
-                        1:
-                            prefix_open = 0
-                            discard vector_set<i64>(&mut *state, 1, prefix_open)
-                0:
-                    token_count = token_count
-                1:
-                    token_count = token_count
-        0:
-            discard ng_advance_line_indent(source, start, end, state)
-        1:
-            discard ng_advance_line_indent(source, start, end, state)
-    return 0
-
-fn ng_emit(tokens: &mut vector<NgToken>, kind: i64, start: i64, end: i64) -> i64:
-    discard vector_push<NgToken>(tokens, NgToken(kind=kind, start=start, end=end, indent=0))
+fn ng_emit(tokens: &mut vector<NgToken>, kind: i64, start: i64, end: i64, indent: i64) -> i64:
+    discard vector_push<NgToken>(tokens, NgToken(kind=kind, start=start, end=end, indent=indent))
     return end
 
 fn ng_is_alpha(unit: i64) -> trit:
@@ -257,7 +225,7 @@ fn ng_skip_line_comment(source: &bytes, cursor: i64, length: i64) -> i64:
                 scanning = 0
     return next
 
-fn ng_scan_identifier(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>) -> i64:
+fn ng_scan_identifier(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>, indent: i64) -> i64:
     mut next: i64 = cursor + 1
     mut scanning: i64 = 1
     mut character_class: i64 = 0
@@ -276,9 +244,9 @@ fn ng_scan_identifier(source: &bytes, cursor: i64, length: i64, classes: &vector
                 scanning = 0
             1:
                 scanning = 0
-    return ng_emit(tokens, 1, cursor, next)
+    return ng_emit(tokens, 1, cursor, next, indent)
 
-fn ng_scan_integer(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>) -> i64:
+fn ng_scan_integer(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>, indent: i64) -> i64:
     mut next: i64 = cursor + 1
     mut scanning: i64 = 1
     mut character_class: i64 = 0
@@ -297,9 +265,9 @@ fn ng_scan_integer(source: &bytes, cursor: i64, length: i64, classes: &vector<i6
                 scanning = 0
             1:
                 scanning = 0
-    return ng_emit(tokens, 2, cursor, next)
+    return ng_emit(tokens, 2, cursor, next, indent)
 
-fn ng_scan_string(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>) -> i64:
+fn ng_scan_string(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>, indent: i64) -> i64:
     mut next: i64 = cursor + 1
     mut escaped: i64 = 0
     mut closed: i64 = 0
@@ -337,11 +305,11 @@ fn ng_scan_string(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<
                 scanning = 0
     match closed == 1:
         -1:
-            return ng_emit(tokens, 3, cursor, next)
+            return ng_emit(tokens, 3, cursor, next, indent)
         0:
             return -1
         1:
-            return ng_emit(tokens, 3, cursor, next)
+            return ng_emit(tokens, 3, cursor, next, indent)
 
 fn ng_symbol_kind(source: &bytes, cursor: i64, length: i64) -> i64:
     mut first: i64 = to_i64(bytes_get(source, cursor))
@@ -461,7 +429,7 @@ fn ng_symbol_kind(source: &bytes, cursor: i64, length: i64) -> i64:
                         1:
                             return kind
 
-fn ng_scan_symbol(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>) -> i64:
+fn ng_scan_symbol(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>, indent: i64) -> i64:
     mut kind: i64 = ng_symbol_kind(source, cursor, length)
     mut width: i64 = 1
     match kind < 0:
@@ -495,42 +463,41 @@ fn ng_scan_symbol(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<
                     width = 1
                 1:
                     width = 1
-    return ng_emit(tokens, kind, cursor, cursor + width)
+    return ng_emit(tokens, kind, cursor, cursor + width, indent)
 
-fn ng_scan_atom(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>) -> i64:
+fn ng_scan_atom(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>, indent: i64) -> i64:
     mut unit: i64 = to_i64(bytes_get(source, cursor))
     mut character_class: i64 = vector_get<i64>(classes, unit)
     match character_class < 4:
         -1:
             match character_class <=> 1:
                 -1:
-                    return ng_scan_symbol(source, cursor, length, tokens)
+                    return ng_scan_symbol(source, cursor, length, tokens, indent)
                 0:
-                    return ng_scan_integer(source, cursor, length, classes, tokens)
+                    return ng_scan_integer(source, cursor, length, classes, tokens, indent)
                 1:
-                    return ng_scan_identifier(source, cursor, length, classes, tokens)
+                    return ng_scan_identifier(source, cursor, length, classes, tokens, indent)
         0:
             match unit == 34:
                 -1:
-                    return ng_scan_string(source, cursor, length, tokens)
+                    return ng_scan_string(source, cursor, length, tokens, indent)
                 0:
-                    return ng_scan_symbol(source, cursor, length, tokens)
+                    return ng_scan_symbol(source, cursor, length, tokens, indent)
                 1:
-                    return ng_scan_string(source, cursor, length, tokens)
+                    return ng_scan_string(source, cursor, length, tokens, indent)
         1:
             match unit == 34:
                 -1:
-                    return ng_scan_string(source, cursor, length, tokens)
+                    return ng_scan_string(source, cursor, length, tokens, indent)
                 0:
-                    return ng_scan_symbol(source, cursor, length, tokens)
+                    return ng_scan_symbol(source, cursor, length, tokens, indent)
                 1:
-                    return ng_scan_string(source, cursor, length, tokens)
+                    return ng_scan_string(source, cursor, length, tokens, indent)
 
 fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>, state: &mut vector<i64>) -> i64:
     mut next: i64 = cursor
     mut unit: i64 = 0
     mut skipping_space: i64 = 1
-    mut prior_count: i64 = vector_len<NgToken>(&*tokens)
     mut indent: i64 = vector_get<i64>(&*state, 0)
     mut prefix_open: i64 = vector_get<i64>(&*state, 1)
     while skipping_space == 1:
@@ -598,28 +565,39 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
                                     discard vector_set<i64>(&mut *state, 1, 0)
                                     return ng_skip_line_comment(source, cursor + 2, length)
                                 0:
-                                    next = ng_scan_symbol(source, cursor, length, tokens)
+                                    next = ng_scan_symbol(source, cursor, length, tokens, indent)
                                 1:
-                                    next = ng_scan_symbol(source, cursor, length, tokens)
+                                    next = ng_scan_symbol(source, cursor, length, tokens, indent)
                         0:
-                            next = ng_scan_symbol(source, cursor, length, tokens)
+                            next = ng_scan_symbol(source, cursor, length, tokens, indent)
                         1:
-                            next = ng_scan_symbol(source, cursor, length, tokens)
+                            next = ng_scan_symbol(source, cursor, length, tokens, indent)
                 0:
-                                    next = ng_scan_atom(source, cursor, length, classes, tokens)
+                                    next = ng_scan_atom(source, cursor, length, classes, tokens, indent)
                 1:
-                    next = ng_scan_atom(source, cursor, length, classes, tokens)
+                    next = ng_scan_atom(source, cursor, length, classes, tokens, indent)
         1:
             discard vector_set<i64>(&mut *state, 1, 0)
             return ng_skip_line_comment(source, cursor + 1, length)
-    discard ng_record_token_indent(source, tokens, prior_count, cursor, next, state)
+    match next >= 0:
+        -1:
+            match unit <=> 34:
+                0:
+                    discard ng_advance_line_indent(source, cursor, next, state)
+                -1:
+                    discard vector_set<i64>(&mut *state, 1, 0)
+                1:
+                    discard vector_set<i64>(&mut *state, 1, 0)
+        0:
+            next = next
+        1:
+            next = next
     return next
 
 export fn ng_lex(source: &bytes, tokens: &mut vector<NgToken>) -> i64:
     mut cursor: i64 = 0
     mut length: i64 = bytes_len(source)
     mut next: i64 = 0
-    mut prior_count: i64 = 0
     mut indent_state: vector<i64> = vector_new<i64>(2)
     mut character_classes: vector<i64> = vector_new<i64>(256)
     mut failed: i64 = 0
@@ -640,9 +618,7 @@ export fn ng_lex(source: &bytes, tokens: &mut vector<NgToken>) -> i64:
         -1:
             return -1
         0:
-            prior_count = vector_len<NgToken>(&*tokens)
-            discard ng_emit(tokens, 0, length, length)
-            discard ng_record_token_indent(source, tokens, prior_count, length, length, &mut indent_state)
+            discard ng_emit(tokens, 0, length, length, vector_get<i64>(&indent_state, 0))
             return 0
         1:
             return -1

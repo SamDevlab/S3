@@ -204,6 +204,21 @@ def test_nextgen_runtime_lexer_records_line_indentation_once() -> None:
     assert _nextgen_conformance_result(source, _python_tokens(source)) == 0
 
 
+def test_nextgen_runtime_lexer_preserves_indentation_after_multiline_string() -> None:
+    source = 'alpha\n    "first line\n  second line"\n  omega'
+    string_start = source.index('"')
+    string_end = source.index('"', string_start + 1) + 1
+    omega_start = source.index("omega")
+    expected = (
+        (1, 0, 5),
+        (3, string_start, string_end),
+        (1, omega_start, omega_start + 5),
+        (0, len(source), len(source)),
+    )
+
+    assert _nextgen_conformance_result(source, expected) == 0
+
+
 def test_nextgen_ascii_classifiers_match_reference_ranges() -> None:
     wrapper = """
 fn main() -> vector<i64>:
