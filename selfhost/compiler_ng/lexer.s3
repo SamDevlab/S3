@@ -32,30 +32,10 @@ export fn ng_span_fingerprint(source: &bytes, start: i64, end: i64) -> i64:
                 1:
                     span_length = span_length
             middle = to_i64(bytes_get(source, start + span_length / 2))
-            match span_length > 3:
-                -1:
-                    second = to_i64(bytes_get(source, start + 1))
-                    penultimate = to_i64(bytes_get(source, end - 2))
-                    match span_length > 7:
-                        -1:
-                            quarter = to_i64(bytes_get(source, start + span_length / 4))
-                            three_quarter = to_i64(bytes_get(source, start + span_length * 3 / 4))
-                        0:
-                            quarter = 0
-                            three_quarter = 0
-                        1:
-                            quarter = 0
-                            three_quarter = 0
-                0:
-                    second = 0
-                    quarter = 0
-                    three_quarter = 0
-                    penultimate = 0
-                1:
-                    second = 0
-                    quarter = 0
-                    three_quarter = 0
-                    penultimate = 0
+            second = to_i64(bytes_get(source, start + 1))
+            quarter = to_i64(bytes_get(source, start + span_length / 4))
+            three_quarter = to_i64(bytes_get(source, start + span_length * 3 / 4))
+            penultimate = to_i64(bytes_get(source, end - 2))
             # For longer spans this fingerprint is only a prefilter; exact equality remains authoritative.
             fingerprint = span_length * 4294967296 + to_i64(bytes_get(source, start)) * 16777216 + second * 65536 + quarter * 16384 + middle * 4096 + three_quarter * 1024 + penultimate * 256 + to_i64(bytes_get(source, end - 1))
             return fingerprint

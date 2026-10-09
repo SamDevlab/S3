@@ -2282,8 +2282,10 @@ fn main() -> i64:
     calls = metrics["calls"]
     assert isinstance(calls, dict)
     exact_span_comparisons = int(calls.get("ng_spans_equal", 0))
+    fingerprint_calls = int(calls.get("ng_span_fingerprint", 0))
     linear_scan_reference_comparisons = 2 * parameter_count * (parameter_count + 1) // 2
-    assert exact_span_comparisons == 2 * parameter_count
+    assert exact_span_comparisons == 0
+    assert fingerprint_calls == 3 * parameter_count
     assert exact_span_comparisons * 16 < linear_scan_reference_comparisons
 
 
