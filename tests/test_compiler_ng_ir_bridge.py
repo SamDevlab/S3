@@ -2482,8 +2482,17 @@ fn main() -> vector<i64>:
     assert [int(result.get(index)) for index in range(result.length)] == [child_count + 1, -12, -14]
     line_counts = metrics["line_counts"]
     assert isinstance(line_counts, dict)
+    calls = metrics["calls"]
+    assert isinstance(calls, dict)
     lookup_steps = int(line_counts.get("ng_ir_variable_index", 0))
-    print(f"IR_VARIABLE_LOOKUP_PROFILE cells={3 * (child_count + 1) + 1} steps={lookup_steps}")
+    fingerprint_calls = int(calls.get("ng_span_fingerprint", 0))
+    total_steps = int(metrics["steps"])
+    print(
+        f"IR_VARIABLE_LOOKUP_PROFILE cells={3 * (child_count + 1) + 1} "
+        f"steps={lookup_steps} total_steps={total_steps} fingerprints={fingerprint_calls}"
+    )
+    assert fingerprint_calls == 3
+    assert total_steps < 419_174
     assert lookup_steps < 50_000
 
 
