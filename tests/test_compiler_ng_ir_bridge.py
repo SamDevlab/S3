@@ -355,6 +355,7 @@ def _run_ng_source_set_events(
     *,
     entry_module: str = "main",
     max_steps: int = 10_000_000,
+    metrics: dict[str, object] | None = None,
 ) -> tuple[int, bytes, list[int]]:
     source_capacity = max(
         32768,
@@ -399,6 +400,7 @@ fn collect_ng_source_set() -> NgSourceSetOutput:
         source_text=_NG_SOURCE + "\n" + wrapper,
         max_steps=max_steps,
         entry="collect_ng_source_set",
+        metrics=metrics,
     )
     assert isinstance(output, tuple) and len(output) == 3
     status, source, events = output
@@ -1112,6 +1114,38 @@ def test_ng_ir_v7_generic_vector_len_is_explicit_and_executable(
         {},
         HostExecutionContext(),
     ) == 2
+
+
+def test_ng_source_set_generic_vector_calls_skip_global_function_lookup() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "fn main() -> i64:\n"
+            "    mut values: vector<i64> = vector_new<i64>(1)\n"
+            "    discard vector_push<i64>(&mut values, 7)\n"
+            "    discard vector_set<i64>(&mut values, 0, 9)\n"
+            "    return vector_get<i64>(&values, 0) + vector_len<i64>(&values)\n"
+        )
+    }
+    reference = compile_sources(sources, entry_module="app").ir
+    assert reference is not None
+    metrics: dict[str, object] = {}
+
+    status, source, cells = _run_ng_source_set_events(
+        sources,
+        entry_module="app",
+        max_steps=50_000_000,
+        metrics=metrics,
+    )
+    assert status == 0, cells[-40:]
+    ng_ir = decode_ng_ir_events(source, cells)
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
+    assert execute_ir(ng_ir) == execute_ir(reference) == 10
+
+    calls = metrics["calls"]
+    assert isinstance(calls, dict)
+    assert calls.get("ng_find_function", 0) == 0
 
 
 def test_ng_ir_v7_vector_len_rejects_malformed_reference_metadata() -> None:

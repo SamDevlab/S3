@@ -2307,6 +2307,85 @@ fn ng_emit_vector_set_scalar_expression(source: &bytes, types: &vector<NgTypeDes
         1:
             return -13
 
+fn ng_ir_generic_vector_builtin_kind(source: &bytes, start: i64, end: i64) -> i64:
+    mut name_length: i64 = end - start
+    match name_length <=> 10:
+        0:
+            match ng_ir_span_matches_text(source, start, end, text_from_static("vector_len")):
+                -1:
+                    return 1
+                0:
+                    match ng_ir_span_matches_text(source, start, end, text_from_static("vector_get")):
+                        -1:
+                            return 3
+                        0:
+                            match ng_ir_span_matches_text(source, start, end, text_from_static("vector_set")):
+                                -1:
+                                    return 4
+                                0:
+                                    match ng_ir_span_matches_text(source, start, end, text_from_static("vector_new")):
+                                        -1:
+                                            return 5
+                                        0:
+                                            return -13
+                                        1:
+                                            return -13
+                                1:
+                                    return -13
+                        1:
+                            return -13
+                1:
+                    return -13
+        1:
+            match name_length <=> 11:
+                0:
+                    match ng_ir_span_matches_text(source, start, end, text_from_static("vector_push")):
+                        -1:
+                            return 2
+                        0:
+                            return -13
+                        1:
+                            return -13
+                -1:
+                    return -13
+                1:
+                    return -13
+        -1:
+            return -13
+
+fn ng_ir_emit_generic_vector_builtin(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, builtin_kind: i64, node: NgAstNode, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
+    match builtin_kind <=> 1:
+        -1:
+            return -13
+        0:
+            return ng_emit_vector_len_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+        1:
+            match builtin_kind <=> 2:
+                -1:
+                    return -13
+                0:
+                    return ng_emit_vector_push_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+                1:
+                    match builtin_kind <=> 3:
+                        -1:
+                            return -13
+                        0:
+                            return ng_emit_vector_get_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+                        1:
+                            match builtin_kind <=> 4:
+                                -1:
+                                    return -13
+                                0:
+                                    return ng_emit_vector_set_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+                                1:
+                                    match builtin_kind <=> 5:
+                                        -1:
+                                            return -13
+                                        0:
+                                            return ng_emit_vector_new_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+                                        1:
+                                            return -13
+
 fn ng_emit_call_expression(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, resolved_function_index: i64, node: NgAstNode, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
     mut function_index: i64 = resolved_function_index
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
@@ -2321,18 +2400,32 @@ fn ng_emit_call_expression(source: &bytes, types: &vector<NgTypeDescriptor>, fie
     mut result_count: i64 = 0
     mut parameter_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut status: i64 = 0
+    mut generic_vector_kind: i64 = -13
     match function_index < 0:
         -1:
             function_index = ng_resolved_call_function_index(node.operation)
             match function_index < 0:
                 -1:
-                    match ng_is_resolved_builtin_call(node):
+                    generic_vector_kind = ng_ir_generic_vector_builtin_kind(source, node.start, node.operation)
+                    match generic_vector_kind > 0:
                         -1:
-                            return ng_emit_builtin_call_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+                            return ng_ir_emit_generic_vector_builtin(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, generic_vector_kind, node, call_arguments, registers, instructions)
                         0:
-                            function_index = ng_find_function(source, functions, node.start, node.operation)
+                            match ng_is_resolved_builtin_call(node):
+                                -1:
+                                    return ng_emit_builtin_call_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+                                0:
+                                    function_index = ng_find_function(source, functions, node.start, node.operation)
+                                1:
+                                    function_index = ng_find_function(source, functions, node.start, node.operation)
                         1:
-                            function_index = ng_find_function(source, functions, node.start, node.operation)
+                            match ng_is_resolved_builtin_call(node):
+                                -1:
+                                    return ng_emit_builtin_call_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+                                0:
+                                    function_index = ng_find_function(source, functions, node.start, node.operation)
+                                1:
+                                    function_index = ng_find_function(source, functions, node.start, node.operation)
                 0:
                     function_index = function_index
                 1:
