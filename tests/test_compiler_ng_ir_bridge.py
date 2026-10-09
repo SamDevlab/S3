@@ -489,8 +489,7 @@ def _first_structure_difference(left: object, right: object, path: str = "root")
     if isinstance(left, tuple) and isinstance(right, tuple):
         if len(left) != len(right):
             return (
-                f"{path}: tuple lengths {len(left)} != {len(right)}; "
-                f"actual={left!r}; expected={right!r}"
+                f"{path}: tuple lengths {len(left)} != {len(right)}"
             )
         for index, (left_item, right_item) in enumerate(zip(left, right)):
             if left_item != right_item:
@@ -795,11 +794,7 @@ def test_ng_ir_v7_relational_match_selector_preserves_distinct_arms() -> None:
     reference_functions = {function.name: function for function in reference.functions}
     ng_classify = ng_functions["classify"]
     reference_classify = reference_functions["classify"]
-    assert any(
-        instruction.opcode.value == "relate"
-        for block in ng_classify.blocks
-        for instruction in block.instructions
-    )
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
     for value, expected in ((94, 22), (95, 11), (96, 22)):
         assert ir_emulator._execute_function(
             ng_functions, ng_classify, (value,), (), {}, HostExecutionContext()
@@ -812,6 +807,35 @@ def test_ng_ir_v7_relational_match_selector_preserves_distinct_arms() -> None:
             {},
             HostExecutionContext(),
         ) == expected
+
+
+def test_ng_ir_v7_relational_match_contextualizes_trit_literal() -> None:
+    source = (
+        "fn classify(value: trit) -> i64:\n"
+        "    match value < 0:\n"
+        "        -1:\n"
+        "            return 11\n"
+        "        0:\n"
+        "            return 22\n"
+        "        1:\n"
+        "            return 33\n"
+        "fn main() -> i64:\n"
+        "    return classify(-1)\n"
+    )
+    reference = compile_source(source).ir
+    assert reference is not None
+    ng_ir = decode_ng_ir_events(source.encode("utf-8"), _emit_ng_events(source))
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
+
+    functions = {function.name: function for function in ng_ir.functions}
+    classify = functions["classify"]
+    assert tuple(
+        ir_emulator._execute_function(
+            functions, classify, (value,), (), {}, HostExecutionContext()
+        )
+        for value in (-1, 0, 1)
+    ) == (11, 22, 22)
 
 
 def test_ng_emits_and_executes_while_with_nested_match_and_backedge() -> None:
@@ -837,22 +861,18 @@ def test_ng_emits_and_executes_while_with_nested_match_and_backedge() -> None:
 
     verify_ir(ng_ir)
     assert execute_ir(ng_ir) == execute_ir(reference) == 3
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
 
     function = next(item for item in ng_ir.functions if item.name == "main")
-    loop_headers = {
-        block_index
-        for block_index, block in enumerate(function.blocks)
-        if any(instruction.opcode.value == "branch3" for instruction in block.instructions)
-    }
-    assert len(loop_headers) == 2  # nested match plus loop condition
     loop_header = next(
         block.name
         for block in function.blocks
         if any(instruction.opcode.value == "branch3" for instruction in block.instructions)
-        and any(
-            instruction.opcode.value == "relate"
-            for instruction in block.instructions
-        )
+        and sum(
+            instruction.opcode.value == "jump" and instruction.targets == (block.name,)
+            for candidate in function.blocks
+            for instruction in candidate.instructions
+        ) >= 2
     )
     backedges = [
         instruction
@@ -2516,6 +2536,120 @@ def test_ng_compiles_its_own_character_class_module_through_source_set() -> None
     assert "function" in translate_verified_ir(ng_ir)
 
 
+def test_ng_self_compiles_real_span_fingerprint_function() -> None:
+    lexer_source = (_ROOT / "selfhost/compiler_ng/lexer.s3").read_text(encoding="utf-8")
+    lexer_source = lexer_source.split("\nexport fn ng_spans_equal", maxsplit=1)[0] + "\n"
+    app_source = (
+        "module app\n"
+        "from selfhost.compiler_ng.lexer import ng_span_fingerprint\n"
+        "fn main() -> i64:\n"
+        "    mut input: bytes = bytes_new(8)\n"
+        "    discard bytes_push(&mut input, 97)\n"
+        "    discard bytes_push(&mut input, 98)\n"
+        "    discard bytes_push(&mut input, 99)\n"
+        "    discard bytes_push(&mut input, 100)\n"
+        "    discard bytes_push(&mut input, 101)\n"
+        "    discard bytes_push(&mut input, 102)\n"
+        "    discard bytes_push(&mut input, 103)\n"
+        "    discard bytes_push(&mut input, 104)\n"
+        "    return ng_span_fingerprint(&input, 0, 8)\n"
+    )
+    sources = {
+        "app.s3": app_source,
+        "character_classes.s3": (
+            _ROOT / "selfhost/compiler_ng/character_classes.s3"
+        ).read_text(encoding="utf-8"),
+        "lexer.s3": lexer_source,
+    }
+    reference = compile_sources(sources, entry_module="app").ir
+    assert reference is not None
+
+    metrics: dict[str, object] = {}
+    status, source, cells = _run_ng_source_set_events(
+        sources,
+        entry_module="app",
+        max_steps=250_000_000,
+        metrics=metrics,
+    )
+    assert status == 0, (
+        f"NG status={status}; line_counts={metrics.get('line_counts')}; "
+        f"event_tail={cells[-32:]}"
+    )
+    ng_ir = decode_ng_ir_events(source, cells)
+    verify_ir(ng_ir)
+    verify_ir(reference)
+
+    actual = _canonical_structure(ng_ir)
+    expected = _canonical_structure(reference)
+    actual_function = next(
+        item for item in actual[0]
+        if item[0] == "__s3mod_selfhost_compiler_ng_lexer__ng_span_fingerprint"
+    )
+    expected_function = next(
+        item for item in expected[0]
+        if item[0] == "__s3mod_selfhost_compiler_ng_lexer__ng_span_fingerprint"
+    )
+
+    def register_context(module: IRModule, register: int) -> str:
+        function = next(
+            item
+            for item in module.functions
+            if item.name == "__s3mod_selfhost_compiler_ng_lexer__ng_span_fingerprint"
+        )
+        for block in function.blocks:
+            for index, instruction in enumerate(block.instructions):
+                if register in instruction.results:
+                    lower = max(0, index - 3)
+                    upper = min(len(block.instructions), index + 4)
+                    return (
+                        f"block={block.name} instruction={index} "
+                        f"window={[item.to_dict() for item in block.instructions[lower:upper]]}"
+                    )
+        return "no producer"
+
+    def block_summary(module: IRModule) -> tuple[tuple[str, tuple[str, ...]], ...]:
+        function = next(
+            item
+            for item in module.functions
+            if item.name == "__s3mod_selfhost_compiler_ng_lexer__ng_span_fingerprint"
+        )
+        return tuple(
+            (
+                block.name,
+                tuple(instruction.opcode.value for instruction in block.instructions),
+            )
+            for block in function.blocks
+        )
+
+    actual_registers, expected_registers = actual_function[4], expected_function[4]
+    first_register_difference = next(
+        (
+            (
+                index,
+                actual_registers[index] if index < len(actual_registers) else None,
+                expected_registers[index] if index < len(expected_registers) else None,
+            )
+            for index in range(max(len(actual_registers), len(expected_registers)))
+            if index >= len(actual_registers)
+            or index >= len(expected_registers)
+            or actual_registers[index] != expected_registers[index]
+        ),
+        None,
+    )
+    assert actual_function == expected_function, (
+        f"fingerprint registers: counts {len(actual_registers)} != "
+        f"{len(expected_registers)}; first difference at {first_register_difference}; "
+        f"actual r25={register_context(ng_ir, 25)}; "
+        f"reference r25={register_context(reference, 25)}; "
+        f"blocks={_first_structure_difference(actual_function[6], expected_function[6], 'blocks')}; "
+        f"actual_cfg={block_summary(ng_ir)}; reference_cfg={block_summary(reference)}; "
+        + _first_structure_difference(
+            actual_function, expected_function, "ng_span_fingerprint"
+        )
+    )
+    assert execute_ir(ng_ir) == execute_ir(reference)
+
+
 def test_ng_compiles_and_executes_real_lexer_source_set() -> None:
     app_source = (
         "module app\n"
@@ -2563,6 +2697,16 @@ def test_ng_compiles_and_executes_real_lexer_source_set() -> None:
     ng_ir = decode_ng_ir_events(source, cells)
     verify_ir(ng_ir)
     verify_ir(reference)
+    ng_shapes = {item[0]: item for item in _canonical_structure(ng_ir)[0]}
+    reference_shapes = {item[0]: item for item in _canonical_structure(reference)[0]}
+    fingerprint_function = "__s3mod_selfhost_compiler_ng_lexer__ng_span_fingerprint"
+    assert ng_shapes[fingerprint_function] == reference_shapes[fingerprint_function], (
+        _first_structure_difference(
+            ng_shapes[fingerprint_function],
+            reference_shapes[fingerprint_function],
+            fingerprint_function,
+        )
+    )
     ng_interfaces = tuple(
         (
             function.name,
@@ -2701,7 +2845,11 @@ def test_ng_self_compiles_real_parser_module_with_field_assignment() -> None:
     )
     ng_ir = decode_ng_ir_events(source, cells)
     verify_ir(ng_ir)
-    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
+    actual_structure = _canonical_structure(ng_ir)
+    expected_structure = _canonical_structure(reference)
+    assert actual_structure == expected_structure, _first_structure_difference(
+        actual_structure, expected_structure, "parser_self_compile"
+    )
     assert execute_ir(ng_ir) == execute_ir(reference) == 0
 
 

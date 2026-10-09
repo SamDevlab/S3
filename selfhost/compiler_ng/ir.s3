@@ -3787,11 +3787,213 @@ fn ng_emit_function_return(source: &bytes, types: &vector<NgTypeDescriptor>, fie
         1:
             return -14
 
-fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &mut vector<NgIRVariable>, function: NgFunction, statement: NgAstNode, loop_exit_block: i64, call_arguments: &mut vector<i64>, return_values: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, blocks: &mut vector<NgIRBlock>, current_block: &mut i64) -> i64:
+fn ng_ir_relation_result(relation_code: i64, ordering: i64) -> i64:
+    mut result: i64 = 0
+    match relation_code <=> 0:
+        -1:
+            return -21
+        0:
+            match ordering <=> 0:
+                -1:
+                    result = 0
+                0:
+                    result = -1
+                1:
+                    result = 0
+        1:
+            match relation_code <=> 1:
+                -1:
+                    return -21
+                0:
+                    match ordering <=> 0:
+                        -1:
+                            result = -1
+                        0:
+                            result = 0
+                        1:
+                            result = -1
+                1:
+                    match relation_code <=> 2:
+                        -1:
+                            return -21
+                        0:
+                            match ordering <=> 0:
+                                -1:
+                                    result = -1
+                                0:
+                                    result = 0
+                                1:
+                                    result = 0
+                        1:
+                            match relation_code <=> 3:
+                                -1:
+                                    return -21
+                                0:
+                                    match ordering <=> 0:
+                                        -1:
+                                            result = -1
+                                        0:
+                                            result = -1
+                                        1:
+                                            result = 0
+                                1:
+                                    match relation_code <=> 4:
+                                        -1:
+                                            return -21
+                                        0:
+                                            match ordering <=> 0:
+                                                -1:
+                                                    result = 0
+                                                0:
+                                                    result = 0
+                                                1:
+                                                    result = -1
+                                        1:
+                                            match relation_code <=> 5:
+                                                -1:
+                                                    return -21
+                                                0:
+                                                    match ordering <=> 0:
+                                                        -1:
+                                                            result = 0
+                                                        0:
+                                                            result = -1
+                                                        1:
+                                                            result = -1
+                                                1:
+                                                    return -21
+    return result
+
+fn ng_emit_relation_value(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, function: NgFunction, node_id: i64, memories: &mut vector<NgIRMemory>, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, blocks: &mut vector<NgIRBlock>, current_block: &mut i64, expanded: &mut i64) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    mut relation_code: i64 = -1
+    mut first_instruction: i64 = vector_len<NgIRInstruction>(&*instructions)
+    mut left: i64 = -1
+    mut right: i64 = -1
+    mut left_info: NgIRRegister = NgIRRegister(type_kind=0)
+    mut right_info: NgIRRegister = NgIRRegister(type_kind=0)
+    mut compare_register: i64 = -1
+    mut memory_index: i64 = -1
+    mut first_relation_block: i64 = -1
+    mut continuation_block: i64 = -1
+    mut block_index: i64 = 0
+    mut relation_block: i64 = -1
+    mut ordering: i64 = 0
+    mut relation_value: i64 = 0
+    mut index_register: i64 = -1
+    mut value_register: i64 = -1
+    mut result_register: i64 = -1
+    match node.kind <=> 4:
+        -1:
+            return ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, node_id, call_arguments, registers, instructions)
+        0:
+            relation_code = ng_relational_operator_code(node.operation)
+            match relation_code <=> -1:
+                -1:
+                    return -21
+                0:
+                    return ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, node_id, call_arguments, registers, instructions)
+                1:
+                    left = ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, node.left, call_arguments, registers, instructions)
+                    match left < 0:
+                        -1:
+                            return left
+                        0:
+                            left = left
+                        1:
+                            left = left
+                    right = ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, node.right, call_arguments, registers, instructions)
+                    match right < 0:
+                        -1:
+                            return right
+                        0:
+                            right = right
+                        1:
+                            right = right
+                    left_info = vector_get<NgIRRegister>(&*registers, left)
+                    discard ng_set_contextual_literal_type(nodes, node.right, left_info.type_kind, registers, right)
+                    right_info = vector_get<NgIRRegister>(&*registers, right)
+                    match left_info.type_kind <=> right_info.type_kind:
+                        -1:
+                            return -21
+                        0:
+                            left_info = left_info
+                        1:
+                            return -21
+                    match left_info.type_kind <=> 4:
+                        -1:
+                            compare_register = vector_len<NgIRRegister>(&*registers)
+                            discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=2))
+                            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=13, result=compare_register, operand_count=2, operand0=left, operand1=right, immediate=0, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
+                            memory_index = vector_len<NgIRMemory>(&*memories)
+                            discard vector_push<NgIRMemory>(memories, NgIRMemory(type_kind=2, length=1, mutable=1))
+                            first_relation_block = vector_len<NgIRBlock>(&*blocks)
+                            continuation_block = first_relation_block + 3
+                            discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=first_relation_block))
+                            discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=first_relation_block + 1))
+                            discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=first_relation_block + 2))
+                            discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=continuation_block))
+                            discard ng_mark_instruction_block(instructions, first_instruction, *current_block)
+                            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=11, result=-1, operand_count=1, operand0=compare_register, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=first_relation_block, target1=first_relation_block + 1, target2=first_relation_block + 2))
+                            block_index = 0
+                            while block_index < 3:
+                                relation_block = first_relation_block + block_index
+                                match block_index <=> 0:
+                                    -1:
+                                        return -16
+                                    0:
+                                        ordering = -1
+                                    1:
+                                        match block_index <=> 1:
+                                            -1:
+                                                return -16
+                                            0:
+                                                ordering = 0
+                                            1:
+                                                ordering = 1
+                                relation_value = ng_ir_relation_result(relation_code, ordering)
+                                match relation_value < -1:
+                                    -1:
+                                        return relation_value
+                                    0:
+                                        relation_value = relation_value
+                                    1:
+                                        relation_value = relation_value
+                                index_register = vector_len<NgIRRegister>(&*registers)
+                                discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=3))
+                                discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=1, result=index_register, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=relation_block, target0=-1, target1=-1, target2=-1))
+                                value_register = vector_len<NgIRRegister>(&*registers)
+                                discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=2))
+                                discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=1, result=value_register, operand_count=0, operand0=-1, operand1=-1, immediate=relation_value, memory=-1, initialization=0, block=relation_block, target0=-1, target1=-1, target2=-1))
+                                discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=10, result=-1, operand_count=2, operand0=index_register, operand1=value_register, immediate=0, memory=memory_index, initialization=1, block=relation_block, target0=-1, target1=-1, target2=-1))
+                                discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=12, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=relation_block, target0=continuation_block, target1=-1, target2=-1))
+                                block_index = block_index + 1
+                            *current_block = continuation_block
+                            index_register = vector_len<NgIRRegister>(&*registers)
+                            discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=3))
+                            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=1, result=index_register, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=-1, target1=-1, target2=-1))
+                            result_register = vector_len<NgIRRegister>(&*registers)
+                            discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=2))
+                            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=9, result=result_register, operand_count=1, operand0=index_register, operand1=-1, immediate=0, memory=memory_index, initialization=0, block=*current_block, target0=-1, target1=-1, target2=-1))
+                            *expanded = 1
+                            return result_register
+                        0:
+                            result_register = vector_len<NgIRRegister>(&*registers)
+                            discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=2))
+                            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=15, result=result_register, operand_count=2, operand0=left, operand1=right, immediate=relation_code, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
+                            return result_register
+                        1:
+                            return -21
+        1:
+            return ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, node_id, call_arguments, registers, instructions)
+
+fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &mut vector<NgIRVariable>, memories: &mut vector<NgIRMemory>, function: NgFunction, statement: NgAstNode, loop_exit_block: i64, call_arguments: &mut vector<i64>, return_values: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, blocks: &mut vector<NgIRBlock>, current_block: &mut i64) -> i64:
     mut selector_first_instruction: i64 = vector_len<NgIRInstruction>(&*instructions)
-    mut selector_register: i64 = ng_emit_expression(source, types, fields, functions, nodes, parameters, &*variables, function.first_parameter, function.parameter_count, statement.left, call_arguments, registers, instructions)
+    mut selector_register: i64 = -1
+    mut selector_expanded: i64 = 0
     mut block_index: i64 = 0
     mut first_arm_block: i64 = 0
+    mut arm_end_block: i64 = 0
     mut join_block: i64 = 0
     mut arm_id: i64 = -1
     mut matching_arm_id: i64 = -1
@@ -3805,12 +4007,15 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
     mut body_link_id: i64 = -1
     mut body_returned: i64 = 0
     mut any_fallthrough: i64 = 0
+    mut arm_exit_block: i64 = -1
+    mut arm_exit_blocks: vector<i64> = vector_new<i64>(3)
     mut variable_index: i64 = -1
     mut variable: NgIRVariable = NgIRVariable(name_start=0, name_end=0, name_fingerprint=0, type_kind=0, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1)
     mut first_instruction: i64 = 0
     mut value_register: i64 = -1
     mut index_register: i64 = -1
     mut status: i64 = 0
+    selector_register = ng_emit_relation_value(source, types, fields, functions, nodes, parameters, &*variables, function, statement.left, memories, call_arguments, registers, instructions, blocks, current_block, &mut selector_expanded)
     match selector_register < 0:
         -1:
             return selector_register
@@ -3860,9 +4065,9 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                                 arm_id = arm.right
         arm_id = arm.right
     first_arm_block = vector_len<NgIRBlock>(&*blocks)
-    join_block = first_arm_block + 3
+    arm_end_block = first_arm_block + 3
     block_index = first_arm_block
-    while block_index < join_block:
+    while block_index < arm_end_block:
         discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=block_index))
         arm_label = block_index - first_arm_block - 1
         matching_arm_id = -1
@@ -3897,7 +4102,7 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                     0:
                         match body_returned <=> 1:
                             -1:
-                                any_fallthrough = 1
+                                body_returned = body_returned
                             0:
                                 body_returned = body_returned
                             1:
@@ -3907,17 +4112,20 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
             1:
                 return -16
         block_index = block_index + 1
-    match any_fallthrough <=> 1:
+    block_index = 0
+    while block_index < 3:
+        discard vector_push<i64>(&mut arm_exit_blocks, -1)
+        block_index = block_index + 1
+    match selector_expanded <=> 0:
         -1:
-            block_index = block_index
+            return -16
         0:
-            discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=join_block))
+            discard ng_mark_instruction_block(instructions, selector_first_instruction, *current_block)
         1:
-            block_index = block_index
-    discard ng_mark_instruction_block(instructions, selector_first_instruction, *current_block)
+            selector_expanded = selector_expanded
     discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=11, result=-1, operand_count=1, operand0=selector_register, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=first_arm_block, target1=first_arm_block + 1, target2=first_arm_block + 2))
     block_index = first_arm_block
-    while block_index < join_block:
+    while block_index < arm_end_block:
         arm_label = block_index - first_arm_block - 1
         matching_arm_id = -1
         match arm_label <=> -1:
@@ -3983,7 +4191,7 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                                 0:
                                     match body_statement.kind == 12:
                                         -1:
-                                            status = ng_emit_match_arms(source, types, fields, functions, nodes, parameters, variables, function, body_statement, loop_exit_block, call_arguments, return_values, registers, instructions, blocks, current_block)
+                                            status = ng_emit_match_arms(source, types, fields, functions, nodes, parameters, variables, memories, function, body_statement, loop_exit_block, call_arguments, return_values, registers, instructions, blocks, current_block)
                                             match status <=> 0:
                                                 -1:
                                                     return status
@@ -4013,7 +4221,7 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                                                 0:
                                                     match body_statement.kind == 17:
                                                         -1:
-                                                            status = ng_emit_while(source, types, fields, functions, nodes, parameters, variables, function, body_statement, call_arguments, return_values, registers, instructions, blocks, current_block)
+                                                            status = ng_emit_while(source, types, fields, functions, nodes, parameters, variables, memories, function, body_statement, call_arguments, return_values, registers, instructions, blocks, current_block)
                                                             match status <=> 0:
                                                                 -1:
                                                                     return status
@@ -4055,7 +4263,9 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                             -1:
                                 body_returned = 1
                             0:
-                                discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=12, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=join_block, target1=-1, target2=-1))
+                                arm_exit_block = *current_block
+                                discard vector_set<i64>(&mut arm_exit_blocks, block_index - first_arm_block, arm_exit_block)
+                                any_fallthrough = 1
                             1:
                                 return -16
                     1:
@@ -4067,12 +4277,25 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
         -1:
             *current_block = -1
         0:
+            join_block = vector_len<NgIRBlock>(&*blocks)
+            discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=join_block))
+            block_index = 0
+            while block_index < 3:
+                arm_exit_block = vector_get<i64>(&arm_exit_blocks, block_index)
+                match arm_exit_block >= 0:
+                    -1:
+                        discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=12, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=arm_exit_block, target0=join_block, target1=-1, target2=-1))
+                    0:
+                        arm_exit_block = arm_exit_block
+                    1:
+                        return -16
+                block_index = block_index + 1
             *current_block = join_block
         1:
-            *current_block = join_block
+            return -16
     return 0
 
-fn ng_emit_while(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &mut vector<NgIRVariable>, function: NgFunction, statement: NgAstNode, call_arguments: &mut vector<i64>, return_values: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, blocks: &mut vector<NgIRBlock>, current_block: &mut i64) -> i64:
+fn ng_emit_while(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &mut vector<NgIRVariable>, memories: &mut vector<NgIRMemory>, function: NgFunction, statement: NgAstNode, call_arguments: &mut vector<i64>, return_values: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, blocks: &mut vector<NgIRBlock>, current_block: &mut i64) -> i64:
     mut header_block: i64 = vector_len<NgIRBlock>(&*blocks)
     mut body_block: i64 = 0
     mut exit_zero_block: i64 = 0
@@ -4088,6 +4311,8 @@ fn ng_emit_while(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vect
     mut value_register: i64 = -1
     mut index_register: i64 = -1
     mut status: i64 = 0
+    mut condition_expanded: i64 = 0
+    mut condition_block: i64 = -1
     match *current_block <=> -1:
         -1:
             return -16
@@ -4104,16 +4329,25 @@ fn ng_emit_while(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vect
     discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=exit_positive_block))
     discard vector_push<NgIRBlock>(blocks, NgIRBlock(index=exit_block))
     discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=12, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=header_block, target1=-1, target2=-1))
+    *current_block = header_block
     first_instruction = vector_len<NgIRInstruction>(&*instructions)
-    condition_register = ng_emit_expression(source, types, fields, functions, nodes, parameters, &*variables, function.first_parameter, function.parameter_count, statement.left, call_arguments, registers, instructions)
+    condition_register = ng_emit_relation_value(source, types, fields, functions, nodes, parameters, &*variables, function, statement.left, memories, call_arguments, registers, instructions, blocks, current_block, &mut condition_expanded)
     match condition_register <=> -1:
         -1:
             return condition_register
         0:
             return condition_register
         1:
-            discard ng_mark_instruction_block(instructions, first_instruction, header_block)
-    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=11, result=-1, operand_count=1, operand0=condition_register, operand1=-1, immediate=0, memory=-1, initialization=0, block=header_block, target0=body_block, target1=exit_zero_block, target2=exit_positive_block))
+            match condition_expanded <=> 0:
+                -1:
+                    return -16
+                0:
+                    discard ng_mark_instruction_block(instructions, first_instruction, header_block)
+                    *current_block = header_block
+                1:
+                    condition_expanded = condition_expanded
+    condition_block = *current_block
+    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=11, result=-1, operand_count=1, operand0=condition_register, operand1=-1, immediate=0, memory=-1, initialization=0, block=condition_block, target0=body_block, target1=exit_zero_block, target2=exit_positive_block))
     *current_block = body_block
     while body_link_id >= 0:
         match *current_block <=> -1:
@@ -4155,7 +4389,7 @@ fn ng_emit_while(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vect
                             0:
                                 match body_statement.kind == 12:
                                     -1:
-                                        status = ng_emit_match_arms(source, types, fields, functions, nodes, parameters, variables, function, body_statement, exit_block, call_arguments, return_values, registers, instructions, blocks, current_block)
+                                        status = ng_emit_match_arms(source, types, fields, functions, nodes, parameters, variables, memories, function, body_statement, exit_block, call_arguments, return_values, registers, instructions, blocks, current_block)
                                         match status <=> 0:
                                             -1:
                                                 return status
@@ -4177,7 +4411,7 @@ fn ng_emit_while(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vect
                                             0:
                                                 match body_statement.kind == 17:
                                                     -1:
-                                                        status = ng_emit_while(source, types, fields, functions, nodes, parameters, variables, function, body_statement, call_arguments, return_values, registers, instructions, blocks, current_block)
+                                                        status = ng_emit_while(source, types, fields, functions, nodes, parameters, variables, memories, function, body_statement, call_arguments, return_values, registers, instructions, blocks, current_block)
                                                         match status <=> 0:
                                                             -1:
                                                                 return status
@@ -4547,7 +4781,7 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
                                 0:
                                     match statement.kind == 12:
                                         -1:
-                                            status = ng_emit_match_arms(source, types, fields, functions, &*nodes, parameters, &mut variables, function, statement, -1, &mut call_arguments, &mut return_values, &mut registers, &mut instructions, &mut blocks, &mut current_block)
+                                            status = ng_emit_match_arms(source, types, fields, functions, &*nodes, parameters, &mut variables, &mut memories, function, statement, -1, &mut call_arguments, &mut return_values, &mut registers, &mut instructions, &mut blocks, &mut current_block)
                                             match status <=> 0:
                                                 -1:
                                                     return status
@@ -4569,7 +4803,7 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
                                                 0:
                                                     match statement.kind == 17:
                                                         -1:
-                                                            status = ng_emit_while(source, types, fields, functions, &*nodes, parameters, &mut variables, function, statement, &mut call_arguments, &mut return_values, &mut registers, &mut instructions, &mut blocks, &mut current_block)
+                                                            status = ng_emit_while(source, types, fields, functions, &*nodes, parameters, &mut variables, &mut memories, function, statement, &mut call_arguments, &mut return_values, &mut registers, &mut instructions, &mut blocks, &mut current_block)
                                                             match status <=> 0:
                                                                 -1:
                                                                     return status

@@ -3,9 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
+from bootstrap.s3.dynamic import DynamicVector
 from bootstrap.s3.ir import IRType
 from bootstrap.s3.ir_emulator import execute_ir
 from bootstrap.s3.pipeline import compile_source
+from bootstrap.s3.verifier import verify_ir
 
 
 _ROOT = Path(__file__).parents[1]
@@ -86,12 +89,13 @@ def _reference_events(program: object, source: str) -> list[int]:
         assert len(fields) == 7
         events.extend((kind, *fields))
 
-    event(0, 16, 8, 0, 0, 0, 0, 0)
+    event(0, 17, 8, 0, 0, 0, 0, 0)
     for type_id in range(1, 7):
         event(12, type_id, type_id, -1, -1, -1, -1, -1)
         event(13, type_id, -1, 0, 0, 0, 0, 0)
     for function_index, function in enumerate(program.functions):
         call_argument_cursor = 0
+        return_cell_cursor = 0
         block_indices = {block.name: index for index, block in enumerate(function.blocks)}
         assert function.location is not None
         function_name_start, function_name_end = _source_name_span(
@@ -159,7 +163,31 @@ def _reference_events(program: object, source: str) -> list[int]:
                 if opcode == "call" and result_register is None and instruction.results:
                     assert len(instruction.results) == 1, "NG event format currently supports one call result"
                     result_register = instruction.results[0]
-                if opcode == "call":
+                if opcode == "return":
+                    assert operands
+                    event(
+                        4,
+                        function_index,
+                        _OPCODE_CODES[opcode],
+                        -1,
+                        len(operands),
+                        operands[0],
+                        return_cell_cursor,
+                        0,
+                    )
+                    for result_ordinal, return_register in enumerate(operands):
+                        event(
+                            24,
+                            function_index,
+                            instruction_index,
+                            result_ordinal,
+                            return_register,
+                            0,
+                            0,
+                            0,
+                        )
+                    return_cell_cursor += len(operands)
+                elif opcode == "call":
                     assert instruction.callee in function_indices
                     event(
                         4,
@@ -199,74 +227,124 @@ def _reference_events(program: object, source: str) -> list[int]:
     return events
 
 
+def _canonical_ir_structure(program: object) -> tuple[object, ...]:
+    functions: list[object] = []
+    for function in program.functions:
+        block_names = {
+            block.name: f"b{index}" for index, block in enumerate(function.blocks)
+        }
+        blocks = tuple(
+            (
+                block_names[block.name],
+                tuple(
+                    (
+                        instruction.opcode.value,
+                        (
+                            None
+                            if instruction.opcode.value == "call" and instruction.results
+                            else instruction.result
+                        ),
+                        instruction.results,
+                        instruction.operands,
+                        instruction.immediate,
+                        instruction.static_string,
+                        instruction.callee,
+                        tuple(block_names[target] for target in instruction.targets),
+                        instruction.memory,
+                        instruction.initialization,
+                        instruction.reference_target,
+                        instruction.reference_mutable,
+                        instruction.reference_is_slice,
+                        instruction.slice_length_result,
+                        instruction.reference_aggregate,
+                        instruction.aggregate_field_paths,
+                        instruction.aggregate_field_path,
+                    )
+                    for instruction in block.instructions
+                ),
+            )
+            for block in function.blocks
+        )
+        functions.append(
+            (
+                function.name,
+                tuple(
+                    (parameter.name, parameter.register, parameter.type)
+                    for parameter in function.parameters
+                ),
+                function.return_type,
+                function.result_types,
+                tuple((register.index, register.type) for register in function.registers),
+                tuple(
+                    (memory.index, memory.element_type, memory.length, memory.mutable)
+                    for memory in function.memory_objects
+                ),
+                blocks,
+                function.external,
+                function.exported,
+            )
+        )
+    return tuple(functions), tuple(
+        (item.id, item.value) for item in program.static_strings
+    )
+
+
 def _nextgen_event_parity_result(source: str) -> int:
     reference = compile_source(source).ir
     assert reference is not None
     expected = _reference_events(reference, source)
-    expected_pushes = "\n".join(
-        [f"discard vector_push<i64>(&mut expected, {expected[0]})"]
-        + [
-            f"{' ' * 28}discard vector_push<i64>(&mut expected, {value})"
-            for value in expected[1:]
-        ]
-    )
     wrapper = f'''
-fn main() -> i64:
+fn main() -> vector<i64>:
     mut source_text: text = text_from_static({json.dumps(source)})
     mut source_bytes: bytes = bytes_from_text(&source_text)
-    mut tokens: vector<NgToken> = vector_new<NgToken>(1024)
+    mut tokens: vector<NgToken> = vector_new<NgToken>(8192)
     mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(16)
     mut records: vector<NgRecord> = vector_new<NgRecord>(1)
     mut fields: vector<NgField> = vector_new<NgField>(1)
     mut functions: vector<NgFunction> = vector_new<NgFunction>(64)
     mut parameters: vector<NgParameter> = vector_new<NgParameter>(256)
     mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(2048)
-    mut actual: vector<i64> = vector_new<i64>({max(len(expected) * 4, len(expected) + 512)})
-    mut expected: vector<i64> = vector_new<i64>({len(expected)})
-    mut index: i64 = 0
+    mut events: vector<i64> = vector_new<i64>({max(len(expected), 1)})
     discard ng_initialize_type_table(&mut types)
     mut status: i64 = ng_lex(&source_bytes, &mut tokens)
     match status <=> 0:
         -1:
-            return -100
+            discard vector_push<i64>(&mut events, status)
+            return events
         0:
             status = ng_parse_program_typed(&source_bytes, &tokens, &mut types, -1, -1, &mut functions, &mut parameters, &mut nodes)
             match status <=> 0:
                 -1:
-                    return -1001
+                    discard vector_push<i64>(&mut events, status)
+                    return events
                 0:
-                    status = ng_emit_program(&source_bytes, &types, &records, &fields, &functions, &parameters, &mut nodes, &mut actual)
+                    status = ng_emit_program(&source_bytes, &types, &records, &fields, &functions, &parameters, &mut nodes, &mut events)
                     match status <=> 0:
                         -1:
-                            return status
+                            return events
                         0:
-                            {expected_pushes}
-                            match vector_len<i64>(&actual) <=> {len(expected)}:
-                                -1:
-                                    return -30000
-                                0:
-                                    index = 0
-                                    while index < {len(expected)}:
-                                        match vector_get<i64>(&actual, index) <=> vector_get<i64>(&expected, index):
-                                            -1:
-                                                return index + 1
-                                            0:
-                                                index = index + 1
-                                            1:
-                                                return index + 1
-                                    return 0
-                                1:
-                                    return -30000
+                            return events
                         1:
-                            return -1004
+                            discard vector_push<i64>(&mut events, status)
+                            return events
                 1:
-                    return -1002
+                    discard vector_push<i64>(&mut events, status)
+                    return events
         1:
-            return -100
+            discard vector_push<i64>(&mut events, status)
+            return events
 '''
     compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
     assert compilation.ir is not None
-    return int(execute_ir(compilation.ir))
+    events = execute_ir(compilation.ir)
+    if not isinstance(events, DynamicVector):
+        return -100
+    cells = [int(cell) for cell in events]
+    if not cells or cells[0] != 0:
+        return cells[0] if cells else -100
+    candidate = decode_ng_ir_events(source.encode("utf-8"), cells)
+    verify_ir(candidate)
+    return 0 if _canonical_ir_structure(candidate) == _canonical_ir_structure(reference) else -30000
 
 
 def test_nextgen_emits_reference_equivalent_typed_ir_for_multiple_functions() -> None:
