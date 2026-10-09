@@ -116,26 +116,68 @@ fn ng_ir_variable_index(source: &bytes, variables: &vector<NgIRVariable>, name_s
     return -12
 
 fn ng_ir_variable_field_index(source: &bytes, variables: &vector<NgIRVariable>, parent_index: i64, field_start: i64, field_end: i64) -> i64:
-    mut index: i64 = vector_len<NgIRVariable>(variables)
+    mut index: i64 = 0
+    mut variable_count: i64 = vector_len<NgIRVariable>(variables)
     mut variable: NgIRVariable = NgIRVariable(name_start=0, name_end=0, name_fingerprint=0, type_kind=0, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1)
-    while index > 0:
-        index = index - 1
-        variable = vector_get<NgIRVariable>(variables, index)
-        match variable.parent_index <=> parent_index:
-            0:
-                match ng_spans_equal(source, field_start, field_end, variable.field_name_start, variable.field_name_end):
-                    -1:
-                        return index
-                    0:
-                        index = index
-                    1:
-                        index = index
-            -1:
-                index = index
-            1:
-                index = index
-    return -12
-
+    mut ancestor_index: i64 = -1
+    mut ancestor: NgIRVariable = NgIRVariable(name_start=0, name_end=0, name_fingerprint=0, type_kind=0, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1)
+    match parent_index >= 0:
+        -1:
+            match parent_index < variable_count:
+                -1:
+                    index = parent_index + 1
+                    while index < variable_count:
+                        variable = vector_get<NgIRVariable>(variables, index)
+                        match variable.parent_index < index:
+                            -1:
+                                match variable.parent_index <=> parent_index:
+                                    0:
+                                        match ng_spans_equal(source, field_start, field_end, variable.field_name_start, variable.field_name_end):
+                                            -1:
+                                                return index
+                                            0:
+                                                index = index + 1
+                                            1:
+                                                index = index + 1
+                                    -1:
+                                        return -12
+                                    1:
+                                        ancestor_index = variable.parent_index
+                                        while ancestor_index > parent_index:
+                                            match ancestor_index < index:
+                                                -1:
+                                                    ancestor = vector_get<NgIRVariable>(variables, ancestor_index)
+                                                    match ancestor.parent_index < ancestor_index:
+                                                        -1:
+                                                            ancestor_index = ancestor.parent_index
+                                                        0:
+                                                            return -14
+                                                        1:
+                                                            return -14
+                                                0:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        match ancestor_index <=> parent_index:
+                                            0:
+                                                index = index + 1
+                                            -1:
+                                                return -12
+                                            1:
+                                                return -14
+                            0:
+                                return -14
+                            1:
+                                return -14
+                    return -12
+                0:
+                    return -14
+                1:
+                    return -14
+        0:
+            return -14
+        1:
+            return -14
 fn ng_ir_field_variable_index(source: &bytes, nodes: &vector<NgAstNode>, variables: &vector<NgIRVariable>, node_id: i64) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
     mut base: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
