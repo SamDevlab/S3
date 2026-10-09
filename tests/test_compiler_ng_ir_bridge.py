@@ -2334,17 +2334,17 @@ fn main() -> vector<i64>:
     discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=5, name_end=11, name_fingerprint=fingerprint, type_kind=1, mutable=0, register=1, memory=-1, parent_index=3, field_name_start=23, field_name_end=27))
     discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=5, name_end=11, name_fingerprint=fingerprint, type_kind=1, mutable=0, register=2, memory=-1, parent_index=1, field_name_start=28, field_name_end=33))
     sibling_index = vector_len<NgIRVariable>(&variables)
-    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=34, name_end=42, name_fingerprint=ng_span_fingerprint(&source, 34, 42), type_kind=7, mutable=0, register=-1, memory=-1, parent_index=0, field_name_start=34, field_name_end=42))
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=34, name_end=41, name_fingerprint=ng_span_fingerprint(&source, 34, 41), type_kind=7, mutable=0, register=-1, memory=-1, parent_index=0, field_name_start=34, field_name_end=41))
     while index < {sibling_count}:
-        discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=34, name_end=42, name_fingerprint=ng_span_fingerprint(&source, 34, 42), type_kind=1, mutable=0, register=index, memory=-1, parent_index=sibling_index, field_name_start=12, field_name_end=16))
+        discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=34, name_end=41, name_fingerprint=ng_span_fingerprint(&source, 34, 41), type_kind=1, mutable=0, register=index, memory=-1, parent_index=sibling_index, field_name_start=12, field_name_end=16))
         index = index + 1
     index = 0
     while index < {root_count}:
-        discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=43, name_end=48, name_fingerprint=ng_span_fingerprint(&source, 43, 48), type_kind=1, mutable=0, register=index, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
+        discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=42, name_end=47, name_fingerprint=ng_span_fingerprint(&source, 42, 47), type_kind=1, mutable=0, register=index, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
         index = index + 1
     discard vector_push<i64>(&mut result, ng_ir_variable_field_index(&source, &variables, 1, 28, 33))
     discard vector_push<i64>(&mut result, ng_ir_variable_field_index(&source, &variables, 3, 23, 27))
-    discard vector_push<i64>(&mut result, ng_ir_variable_field_index(&source, &variables, 1, 49, 56))
+    discard vector_push<i64>(&mut result, ng_ir_variable_field_index(&source, &variables, 1, 48, 55))
     discard vector_push<NgIRVariable>(&mut invalid_variables, NgIRVariable(name_start=0, name_end=4, name_fingerprint=fingerprint, type_kind=7, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
     discard vector_push<NgIRVariable>(&mut invalid_variables, NgIRVariable(name_start=5, name_end=11, name_fingerprint=fingerprint, type_kind=1, mutable=0, register=0, memory=-1, parent_index=2, field_name_start=12, field_name_end=16))
     discard vector_push<i64>(&mut result, ng_ir_variable_field_index(&source, &invalid_variables, 0, 12, 16))

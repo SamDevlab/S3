@@ -2297,13 +2297,32 @@ fn ng_scope_has_right_child(kind: i64) -> trit:
         1:
             return 0
 
-fn ng_scope_push_task(node_index: i64, scope_id: i64, create_scope: i64, pending_nodes: &mut vector<i64>, pending_scopes: &mut vector<i64>, pending_new_scope: &mut vector<i64>) -> i64:
+fn ng_scope_push_task(node_index: i64, scope_id: i64, create_scope: i64, pending_tasks: &mut vector<i64>) -> i64:
+    mut encoded_scope: i64 = scope_id
     match node_index >= 0:
         -1:
-            discard vector_push<i64>(pending_nodes, node_index)
-            discard vector_push<i64>(pending_scopes, scope_id)
-            discard vector_push<i64>(pending_new_scope, create_scope)
-            return 0
+            match scope_id >= 0:
+                -1:
+                    match create_scope <=> 0:
+                        0:
+                            encoded_scope = scope_id
+                        1:
+                            match create_scope <=> 1:
+                                0:
+                                    encoded_scope = 0 - scope_id - 1
+                                -1:
+                                    return -14
+                                1:
+                                    return -14
+                        -1:
+                            return -14
+                    discard vector_push<i64>(pending_tasks, node_index)
+                    discard vector_push<i64>(pending_tasks, encoded_scope)
+                    return 0
+                0:
+                    return -14
+                1:
+                    return -14
         0:
             return 0
         1:
@@ -2315,13 +2334,12 @@ fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAs
     mut node_index: i64 = 0
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     mut node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
-    mut pending_capacity: i64 = node_count * 2 + vector_len<NgFunction>(functions) + 1
-    mut pending_nodes: vector<i64> = vector_new<i64>(pending_capacity)
-    mut pending_scopes: vector<i64> = vector_new<i64>(pending_capacity)
-    mut pending_new_scope: vector<i64> = vector_new<i64>(pending_capacity)
+    mut pending_capacity: i64 = (node_count * 2 + vector_len<NgFunction>(functions) + 1) * 2
+    mut pending_tasks: vector<i64> = vector_new<i64>(pending_capacity)
     mut pending_index: i64 = 0
     mut pending_node: i64 = -1
     mut pending_scope: i64 = -1
+    mut encoded_scope: i64 = 0
     mut create_scope: i64 = 0
     mut child_scope: i64 = 0
     mut scope_id: i64 = -1
@@ -2333,13 +2351,22 @@ fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAs
         function = vector_get<NgFunction>(functions, function_index)
         scope_id = vector_len<i64>(&*scope_parents)
         discard vector_push<i64>(scope_parents, -1)
-        discard ng_scope_push_task(function.body_node, scope_id, 0, &mut pending_nodes, &mut pending_scopes, &mut pending_new_scope)
+        discard ng_scope_push_task(function.body_node, scope_id, 0, &mut pending_tasks)
         function_index = function_index + 1
-    while pending_index < vector_len<i64>(&pending_nodes):
-        pending_node = vector_get<i64>(&pending_nodes, pending_index)
-        pending_scope = vector_get<i64>(&pending_scopes, pending_index)
-        create_scope = vector_get<i64>(&pending_new_scope, pending_index)
-        pending_index = pending_index + 1
+    while pending_index < vector_len<i64>(&pending_tasks):
+        pending_node = vector_get<i64>(&pending_tasks, pending_index)
+        encoded_scope = vector_get<i64>(&pending_tasks, pending_index + 1)
+        pending_index = pending_index + 2
+        match encoded_scope <=> 0:
+            -1:
+                create_scope = 1
+                pending_scope = 0 - encoded_scope - 1
+            0:
+                create_scope = 0
+                pending_scope = 0
+            1:
+                create_scope = 0
+                pending_scope = encoded_scope
         match pending_node < node_count:
             -1:
                 match pending_node >= 0:
@@ -2367,7 +2394,7 @@ fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAs
                                         return -14
                                 match node.left >= 0:
                                     -1:
-                                        discard ng_scope_push_task(node.left, pending_scope, child_scope, &mut pending_nodes, &mut pending_scopes, &mut pending_new_scope)
+                                        discard ng_scope_push_task(node.left, pending_scope, child_scope, &mut pending_tasks)
                                     0:
                                         node = node
                                     1:
@@ -2384,7 +2411,7 @@ fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAs
                                     -1:
                                         match ng_scope_has_right_child(node.kind):
                                             -1:
-                                                discard ng_scope_push_task(node.right, pending_scope, child_scope, &mut pending_nodes, &mut pending_scopes, &mut pending_new_scope)
+                                                discard ng_scope_push_task(node.right, pending_scope, child_scope, &mut pending_tasks)
                                             0:
                                                 node = node
                                             1:
