@@ -88,8 +88,16 @@ fn ng_ir_variable_index(source: &bytes, variables: &vector<NgIRVariable>, name_s
     while index > 0:
         index = index - 1
         variable = vector_get<NgIRVariable>(variables, index)
-        match variable.parent_index < 0:
+        match variable.parent_index >= 0:
             -1:
+                match variable.parent_index < index:
+                    -1:
+                        index = variable.parent_index + 1
+                    0:
+                        return -14
+                    1:
+                        return -14
+            0:
                 match name_end - name_start <=> variable.name_end - variable.name_start:
                     -1:
                         index = index
@@ -103,10 +111,8 @@ fn ng_ir_variable_index(source: &bytes, variables: &vector<NgIRVariable>, name_s
                                 index = index
                     1:
                         index = index
-            0:
-                index = index
             1:
-                index = index
+                return -14
     return -12
 
 fn ng_ir_variable_field_index(source: &bytes, variables: &vector<NgIRVariable>, parent_index: i64, field_start: i64, field_end: i64) -> i64:

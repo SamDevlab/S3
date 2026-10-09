@@ -2313,6 +2313,64 @@ def test_ng_ir_variable_lookup_keeps_near_matching_local_names_distinct() -> Non
     assert execute_ir(ng_ir) == execute_ir(reference) == 12
 
 
+def test_ng_ir_variable_lookup_skips_contiguous_record_cells() -> None:
+    child_count = 256
+    wrapper = f'''\
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static("item item other missing")
+    mut source: bytes = bytes_from_text(&source_text)
+    mut variables: vector<NgIRVariable> = vector_new<NgIRVariable>(1024)
+    mut result: vector<i64> = vector_new<i64>(3)
+    mut index: i64 = 0
+    mut fingerprint: i64 = ng_span_fingerprint(&source, 0, 4)
+    mut shadow_index: i64 = -1
+    mut other_index: i64 = -1
+    mut invalid_index: i64 = -1
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=0, name_end=4, name_fingerprint=fingerprint, type_kind=7, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
+    while index < {child_count}:
+        discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=0, name_end=4, name_fingerprint=fingerprint, type_kind=1, mutable=0, register=index, memory=-1, parent_index=0, field_name_start=-1, field_name_end=-1))
+        index = index + 1
+    shadow_index = vector_len<NgIRVariable>(&variables)
+    fingerprint = ng_span_fingerprint(&source, 5, 9)
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=5, name_end=9, name_fingerprint=fingerprint, type_kind=7, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
+    index = 0
+    while index < {child_count}:
+        discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=5, name_end=9, name_fingerprint=fingerprint, type_kind=1, mutable=0, register=index, memory=-1, parent_index=shadow_index, field_name_start=-1, field_name_end=-1))
+        index = index + 1
+    other_index = vector_len<NgIRVariable>(&variables)
+    fingerprint = ng_span_fingerprint(&source, 10, 15)
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=10, name_end=15, name_fingerprint=fingerprint, type_kind=7, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
+    index = 0
+    while index < {child_count}:
+        discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=10, name_end=15, name_fingerprint=fingerprint, type_kind=1, mutable=0, register=index, memory=-1, parent_index=other_index, field_name_start=-1, field_name_end=-1))
+        index = index + 1
+    discard vector_push<i64>(&mut result, ng_ir_variable_index(&source, &variables, 0, 4))
+    discard vector_push<i64>(&mut result, ng_ir_variable_index(&source, &variables, 16, 23))
+    invalid_index = vector_len<NgIRVariable>(&variables)
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=0, name_end=4, name_fingerprint=fingerprint, type_kind=1, mutable=0, register=-1, memory=-1, parent_index=invalid_index, field_name_start=-1, field_name_end=-1))
+    discard vector_push<i64>(&mut result, ng_ir_variable_index(&source, &variables, 16, 23))
+    return result
+'''
+    harness_source = _NG_SOURCE + "\n" + wrapper
+    compilation = compile_source(harness_source)
+    assert compilation.ir is not None
+    metrics: dict[str, object] = {}
+    result = _execute_ir_with_step_budget(
+        compilation.ir,
+        source_text=harness_source,
+        max_steps=10_000_000,
+        metrics=metrics,
+    )
+
+    assert hasattr(result, "element_type")
+    assert [int(result.get(index)) for index in range(result.length)] == [child_count + 1, -12, -14]
+    line_counts = metrics["line_counts"]
+    assert isinstance(line_counts, dict)
+    lookup_steps = int(line_counts.get("ng_ir_variable_index", 0))
+    print(f"IR_VARIABLE_LOOKUP_PROFILE cells={3 * (child_count + 1) + 1} steps={lookup_steps}")
+    assert lookup_steps < 50_000
+
+
 def _character_class_self_module_sources() -> dict[str, str]:
     character_module = (_ROOT / "selfhost/compiler_ng/character_classes.s3").read_text(
         encoding="utf-8"
