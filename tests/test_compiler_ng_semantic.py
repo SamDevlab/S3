@@ -101,6 +101,28 @@ fn main() -> vector<i64>:
     assert [int(value) for value in execute_ir(compilation.ir)] == [0, 0, -1]
 
 
+def test_nextgen_named_short_fingerprint_is_injective() -> None:
+    wrapper = """
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static("abcdef abXdef abcdef")
+    mut source_bytes: bytes = bytes_from_text(&source_text)
+    mut left_fingerprint: i64 = ng_span_fingerprint(&source_bytes, 0, 6)
+    mut changed_fingerprint: i64 = ng_span_fingerprint(&source_bytes, 7, 13)
+    mut equal_fingerprint: i64 = ng_span_fingerprint(&source_bytes, 14, 20)
+    mut result: vector<i64> = vector_new<i64>(3)
+    discard vector_push<i64>(&mut result, to_i64(ng_named_spans_equal(&source_bytes, 0, 6, left_fingerprint, 7, 13, changed_fingerprint)))
+    discard vector_push<i64>(&mut result, to_i64(ng_named_spans_equal(&source_bytes, 0, 6, left_fingerprint, 14, 20, equal_fingerprint)))
+    discard vector_push<i64>(&mut result, left_fingerprint - changed_fingerprint)
+    return result
+"""
+    compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+
+    actual = [int(value) for value in execute_ir(compilation.ir)]
+    assert actual[:2] == [0, -1]
+    assert actual[2] != 0
+
+
 def test_resolved_call_function_index_encoding_is_unambiguous() -> None:
     wrapper = """
 fn main() -> vector<i64>:

@@ -31,7 +31,20 @@ export fn ng_named_spans_equal(source: &bytes, left_start: i64, left_end: i64, l
                         -1:
                             return 0
                         0:
-                            return ng_spans_equal(source, left_start, left_end, right_start, right_end)
+                            match left_end - left_start <=> right_end - right_start:
+                                -1:
+                                    return 0
+                                0:
+                                    match left_end - left_start < 8:
+                                        -1:
+                                            # Short fingerprints encode the complete span and its length.
+                                            return -1
+                                        0:
+                                            return ng_spans_equal(source, left_start, left_end, right_start, right_end)
+                                        1:
+                                            return ng_spans_equal(source, left_start, left_end, right_start, right_end)
+                                1:
+                                    return 0
                         1:
                             return 0
                 0:

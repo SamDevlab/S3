@@ -304,6 +304,23 @@ fn main() -> vector<i64>:
     assert first != different_penultimate
 
 
+def test_nextgen_short_span_fingerprint_covers_every_byte() -> None:
+    wrapper = """
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static("abcdef abXdef")
+    mut source_bytes: bytes = bytes_from_text(&source_text)
+    mut result: vector<i64> = vector_new<i64>(2)
+    discard vector_push<i64>(&mut result, ng_span_fingerprint(&source_bytes, 0, 6))
+    discard vector_push<i64>(&mut result, ng_span_fingerprint(&source_bytes, 7, 13))
+    return result
+"""
+    compilation = compile_source(_LEXER_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+    first, changed_at_unsampled_index = map(int, execute_ir(compilation.ir))
+
+    assert first != changed_at_unsampled_index
+
+
 def test_nextgen_runtime_lexer_fails_closed_on_unterminated_string() -> None:
     source = "fn broken() -> i64: return \"unterminated"
     assert _nextgen_rejects(source)

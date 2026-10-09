@@ -16,8 +16,21 @@ export fn ng_span_fingerprint(source: &bytes, start: i64, end: i64) -> i64:
     mut three_quarter: i64 = 0
     mut penultimate: i64 = 0
     mut fingerprint: i64 = 0
+    mut packed_bytes: i64 = 0
+    mut byte_index: i64 = start
     match span_length > 0:
         -1:
+            match span_length < 8:
+                -1:
+                    while byte_index < end:
+                        packed_bytes = packed_bytes * 256 + to_i64(bytes_get(source, byte_index))
+                        byte_index = byte_index + 1
+                    # Length-separated packed bytes are injective for spans up to seven bytes.
+                    return span_length * 72057594037927936 + packed_bytes
+                0:
+                    span_length = span_length
+                1:
+                    span_length = span_length
             middle = to_i64(bytes_get(source, start + span_length / 2))
             match span_length > 3:
                 -1:
@@ -43,7 +56,7 @@ export fn ng_span_fingerprint(source: &bytes, start: i64, end: i64) -> i64:
                     quarter = 0
                     three_quarter = 0
                     penultimate = 0
-            # Exact span equality remains the authority after this prefilter.
+            # For longer spans this fingerprint is only a prefilter; exact equality remains authoritative.
             fingerprint = span_length * 4294967296 + to_i64(bytes_get(source, start)) * 16777216 + second * 65536 + quarter * 16384 + middle * 4096 + three_quarter * 1024 + penultimate * 256 + to_i64(bytes_get(source, end - 1))
             return fingerprint
         0:
