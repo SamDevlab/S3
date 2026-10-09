@@ -3,7 +3,7 @@ module selfhost.compiler_ng.modules
 from selfhost.compiler_ng.lexer import NgToken, ng_lex, ng_span_fingerprint, ng_spans_equal
 from selfhost.compiler_ng.parser import NgFunction, NgImport, NgModule, NgSpan, NgAstNode, NgParameter, NgRecord, NgField, ng_parse_module_header, ng_parse_module_functions, ng_validate_nominal_types
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table
-from selfhost.compiler_ng.semantic import ng_named_spans_equal, ng_resolve_record_field_nodes, ng_resolve_address_nodes
+from selfhost.compiler_ng.semantic import ng_builtin_call_kind, ng_encode_resolved_call_function, ng_named_spans_equal, ng_resolve_semantic_nodes, ng_resolved_builtin_call_marker
 from selfhost.compiler_ng.ir import ng_emit_program
 
 export record NgSourceUnit:
@@ -118,7 +118,12 @@ fn ng_find_module_by_name(source: &bytes, modules: &vector<NgModule>, name_start
 
 fn ng_find_function_in_module(source: &bytes, modules: &vector<NgModule>, functions: &vector<NgFunction>, module_index: i64, name_start: i64, name_end: i64) -> i64:
     mut index: i64 = -1
-    mut fingerprint: i64 = ng_span_fingerprint(source, name_start, name_end)
+    mut name_length: i64 = name_end - name_start
+    mut candidate_length: i64 = 0
+    mut fingerprint: i64 = 0
+    mut fingerprint_ready: i64 = 0
+    mut candidate_fingerprint: i64 = 0
+    mut compare_required: i64 = 1
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
     match module_index < 0:
@@ -131,11 +136,53 @@ fn ng_find_function_in_module(source: &bytes, modules: &vector<NgModule>, functi
                     index = module_item.first_function
                     while index < module_item.first_function + module_item.function_count:
                         function = vector_get<NgFunction>(functions, index)
-                        match ng_named_spans_equal(source, name_start, name_end, fingerprint, function.local_name_start, function.local_name_end, function.local_name_fingerprint):
+                        candidate_length = function.local_name_end - function.local_name_start
+                        match name_length <=> candidate_length:
                             -1:
-                                return index
-                            0:
                                 index = index + 1
+                            0:
+                                match fingerprint_ready <=> 0:
+                                    0:
+                                        fingerprint = ng_span_fingerprint(source, name_start, name_end)
+                                        fingerprint_ready = 1
+                                    -1:
+                                        fingerprint_ready = fingerprint_ready
+                                    1:
+                                        fingerprint_ready = fingerprint_ready
+                                candidate_fingerprint = function.local_name_fingerprint
+                                compare_required = 1
+                                match fingerprint > 0:
+                                    -1:
+                                        match candidate_fingerprint > 0:
+                                            -1:
+                                                match fingerprint <=> candidate_fingerprint:
+                                                    -1:
+                                                        compare_required = 0
+                                                    0:
+                                                        compare_required = 1
+                                                    1:
+                                                        compare_required = 0
+                                            0:
+                                                compare_required = 1
+                                            1:
+                                                compare_required = 1
+                                    0:
+                                        compare_required = 1
+                                    1:
+                                        compare_required = 1
+                                match compare_required <=> 1:
+                                    0:
+                                        match ng_named_spans_equal(source, name_start, name_end, fingerprint, function.local_name_start, function.local_name_end, candidate_fingerprint):
+                                            -1:
+                                                return index
+                                            0:
+                                                index = index + 1
+                                            1:
+                                                index = index + 1
+                                    -1:
+                                        index = index + 1
+                                    1:
+                                        index = index + 1
                             1:
                                 index = index + 1
                     return -1
@@ -677,14 +724,30 @@ fn ng_resolve_record_constructor_call(source: &bytes, modules: &vector<NgModule>
         1:
             return 0
 
+fn ng_mark_unresolved_builtin_call(source: &bytes, nodes: &mut vector<NgAstNode>, node_index: i64) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
+    match node.right < 0:
+        -1:
+            match ng_builtin_call_kind(source, node.start, node.operation) > 0:
+                -1:
+                    node.right = ng_resolved_builtin_call_marker()
+                    discard vector_set<NgAstNode>(&mut *nodes, node_index, node)
+                    return 1
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
 fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, records: &vector<NgRecord>, caller: NgFunction, nodes: &mut vector<NgAstNode>, node_index: i64) -> i64:
     mut function_index: i64 = -1
     mut import_index: i64 = -1
     mut imported: NgImport = NgImport(module_index=0, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
     mut target_module: i64 = -1
     mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
-    mut target_name_start: i64 = 0
-    mut target_name_end: i64 = 0
     function_index = ng_find_function_in_module(source, modules, functions, caller.module_index, node.start, node.operation)
     match function_index < 0:
         -1:
@@ -695,6 +758,7 @@ fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vec
                     import_index = ng_find_local_import(source, imports, caller.module_index, node.start, node.operation)
                     match import_index < 0:
                         -1:
+                            discard ng_mark_unresolved_builtin_call(source, &mut *nodes, node_index)
                             return 0
                         0:
                             imported = vector_get<NgImport>(imports, import_index)
@@ -704,8 +768,7 @@ fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vec
                                 -1:
                                     return -4
                                 0:
-                                    target_name_start = vector_get<NgFunction>(functions, function_index).name_start
-                                    target_name_end = vector_get<NgFunction>(functions, function_index).name_end
+                                    function_index = function_index
                                 1:
                                     return -4
                         1:
@@ -713,12 +776,10 @@ fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vec
                 1:
                     return 0
         0:
-            target_name_start = vector_get<NgFunction>(functions, function_index).name_start
-            target_name_end = vector_get<NgFunction>(functions, function_index).name_end
+            function_index = function_index
         1:
             return 0
-    node.start = target_name_start
-    node.operation = target_name_end
+    node.operation = ng_encode_resolved_call_function(function_index)
     discard vector_set<NgAstNode>(&mut *nodes, node_index, node)
     return 0
 
@@ -1063,20 +1124,13 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
                 -1:
                     return status
                 0:
-                    status = ng_resolve_record_field_nodes(&*source, &types, &records, &fields, &functions, &parameters, &mut nodes)
+                    status = ng_resolve_semantic_nodes(&*source, &mut types, &records, &fields, &functions, &parameters, &mut nodes)
                     match status <=> 0:
                         -1:
                             return status
                         0:
-                            status = ng_resolve_address_nodes(&*source, &mut types, &functions, &parameters, &mut nodes)
-                            match status <=> 0:
-                                -1:
-                                    return status
-                                0:
-                                    status = ng_emit_program(&*source, &types, &records, &fields, &functions, &parameters, &mut nodes, events)
-                                    return status
-                                1:
-                                    return status
+                            status = ng_emit_program(&*source, &types, &records, &fields, &functions, &parameters, &mut nodes, events)
+                            return status
                         1:
                             return status
                 1:

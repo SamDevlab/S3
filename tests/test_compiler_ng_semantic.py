@@ -81,6 +81,67 @@ fn main() -> vector<i64>:
     assert [int(value) for value in execute_ir(compilation.ir)] == [0, 0, 0, -1, -1]
 
 
+def test_nextgen_named_span_fingerprint_collision_keeps_exact_equality() -> None:
+    wrapper = """
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static("abcdefghij abcXefghij abcdefghij")
+    mut source_bytes: bytes = bytes_from_text(&source_text)
+    mut left_fingerprint: i64 = ng_span_fingerprint(&source_bytes, 0, 10)
+    mut collision_fingerprint: i64 = ng_span_fingerprint(&source_bytes, 11, 21)
+    mut equal_fingerprint: i64 = ng_span_fingerprint(&source_bytes, 22, 32)
+    mut result: vector<i64> = vector_new<i64>(3)
+    discard vector_push<i64>(&mut result, left_fingerprint - collision_fingerprint)
+    discard vector_push<i64>(&mut result, to_i64(ng_named_spans_equal(&source_bytes, 0, 10, left_fingerprint, 11, 21, collision_fingerprint)))
+    discard vector_push<i64>(&mut result, to_i64(ng_named_spans_equal(&source_bytes, 0, 10, left_fingerprint, 22, 32, equal_fingerprint)))
+    return result
+"""
+    compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+
+    assert [int(value) for value in execute_ir(compilation.ir)] == [0, 0, -1]
+
+
+def test_resolved_call_function_index_encoding_is_unambiguous() -> None:
+    wrapper = """
+fn main() -> vector<i64>:
+    mut result: vector<i64> = vector_new<i64>(9)
+    mut node: NgAstNode = NgAstNode(kind=5, start=1, end=20, left=-1, right=-1, operation=20)
+    node.right = ng_resolved_builtin_call_marker()
+    discard vector_push<i64>(&mut result, ng_encode_resolved_call_function(0))
+    discard vector_push<i64>(&mut result, ng_encode_resolved_call_function(5))
+    discard vector_push<i64>(&mut result, ng_resolved_call_function_index(-2))
+    discard vector_push<i64>(&mut result, ng_resolved_call_function_index(-7))
+    discard vector_push<i64>(&mut result, ng_resolved_call_function_index(-1))
+    discard vector_push<i64>(&mut result, ng_resolved_call_function_index(23))
+    discard vector_push<i64>(&mut result, node.right)
+    discard vector_push<i64>(&mut result, to_i64(ng_is_resolved_builtin_call(node)))
+    node.right = -1
+    discard vector_push<i64>(&mut result, to_i64(ng_is_resolved_builtin_call(node)))
+    return result
+"""
+    compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+
+    assert [int(value) for value in execute_ir(compilation.ir)] == [-2, -7, 0, 5, -1, -1, -2, -1, 0]
+
+
+def test_nextgen_span_matches_text_checks_length_then_exact_bytes() -> None:
+    wrapper = """
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static("parser")
+    mut source_bytes: bytes = bytes_from_text(&source_text)
+    mut result: vector<i64> = vector_new<i64>(3)
+    discard vector_push<i64>(&mut result, to_i64(ng_span_matches_text(&source_bytes, 0, 6, text_from_static("parser"))))
+    discard vector_push<i64>(&mut result, to_i64(ng_span_matches_text(&source_bytes, 0, 6, text_from_static("pasper"))))
+    discard vector_push<i64>(&mut result, to_i64(ng_span_matches_text(&source_bytes, 0, 6, text_from_static("parserx"))))
+    return result
+"""
+    compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+
+    assert [int(value) for value in execute_ir(compilation.ir)] == [-1, 0, 0]
+
+
 def _ng_module_semantic_statuses(sources: list[str]) -> list[int]:
     wrapper = """
 fn ng_module_semantic_status(input_source: text) -> i64:
@@ -164,12 +225,12 @@ fn main() -> vector<i64>:
     mut source_text: text = text_from_static({json.dumps(source_text)})
     mut source: bytes = bytes_from_text(&source_text)
     mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(16)
-    mut records: vector<NgRecord> = vector_new<NgRecord>(1)
+    mut records: vector<NgRecord> = vector_new<NgRecord>(2)
     mut fields: vector<NgField> = vector_new<NgField>(1)
     mut functions: vector<NgFunction> = vector_new<NgFunction>(1)
     mut parameters: vector<NgParameter> = vector_new<NgParameter>(1)
     mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(2)
-    mut result: vector<i64> = vector_new<i64>(4)
+    mut result: vector<i64> = vector_new<i64>(6)
     mut record_type_id: i64 = 0
     mut alias_type_id: i64 = 0
     mut status: i64 = ng_initialize_type_table(&mut types)
@@ -179,7 +240,7 @@ fn main() -> vector<i64>:
     discard vector_push<NgTypeDescriptor>(&mut types, NgTypeDescriptor(kind=7, module_start=0, module_end=5, name_start=5, name_end=10, element_type=-1, target_type=-1, mutable=0, first_field=0, field_count=1))
     discard vector_push<NgRecord>(&mut records, NgRecord(module_index=0, name_start=5, name_end=10, type_id=record_type_id, first_field=0, field_count=1, exported=1))
     discard vector_push<NgField>(&mut fields, NgField(record_index=0, name_start=10, name_end=15, type_id=1, order=0))
-    discard vector_push<NgParameter>(&mut parameters, NgParameter(name_start=15, name_end=20, type_kind=alias_type_id))
+    discard vector_push<NgParameter>(&mut parameters, NgParameter(name_start=15, name_end=20, name_fingerprint=0, type_kind=alias_type_id))
     discard vector_push<NgFunction>(&mut functions, NgFunction(start=0, end=20, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=1, return_type=1, first_node=0, body_node=1, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0))
     discard vector_push<NgAstNode>(&mut nodes, NgAstNode(kind=2, start=15, end=20, left=-1, right=0, operation=0))
     discard vector_push<NgAstNode>(&mut nodes, NgAstNode(kind=14, start=15, end=15, left=0, right=-1, operation=10))
@@ -188,6 +249,11 @@ fn main() -> vector<i64>:
     discard vector_push<i64>(&mut result, status)
     discard vector_push<i64>(&mut result, vector_get<NgAstNode>(&nodes, 1).right)
     discard vector_push<i64>(&mut result, vector_get<NgAstNode>(&nodes, 1).operation)
+    status = ng_resolve_record_field_nodes(&source, &types, &records, &fields, &functions, &parameters, &mut nodes)
+    discard vector_push<i64>(&mut result, status)
+    discard vector_push<NgRecord>(&mut records, NgRecord(module_index=0, name_start=5, name_end=10, type_id=record_type_id, first_field=0, field_count=1, exported=1))
+    status = ng_resolve_record_field_nodes(&source, &types, &records, &fields, &functions, &parameters, &mut nodes)
+    discard vector_push<i64>(&mut result, status)
     return result
 """
     compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
@@ -195,7 +261,7 @@ fn main() -> vector<i64>:
     output = execute_ir(compilation.ir)
     assert hasattr(output, "element_type")
     values = [int(value) for value in output]
-    assert values[1:] == [0, 1, values[0]], values
+    assert values[1:] == [0, 1, values[0], 0, -14], values
 
 
 def test_local_declaration_index_preserves_order_and_reduces_lookup_work() -> None:
@@ -212,6 +278,8 @@ fn main() -> vector<i64>:
     mut nodes: vector<NgAstNode> = vector_new<NgAstNode>({declaration_count + 1})
     mut functions: vector<NgFunction> = vector_new<NgFunction>(1)
     mut declarations: vector<i64> = vector_new<i64>({declaration_count + 1})
+    mut scope_ids: vector<i64> = vector_new<i64>({declaration_count + lookup_count + 1})
+    mut scope_parents: vector<i64> = vector_new<i64>(1)
     mut symbols: vector<NgLocalLookupSymbol> = vector_new<NgLocalLookupSymbol>({declaration_count + 1})
     mut buckets: vector<i64> = vector_new<i64>({(declaration_count + 1) * 2 + 1})
     mut offsets: vector<i64> = vector_new<i64>({declaration_count + 2})
@@ -224,18 +292,23 @@ fn main() -> vector<i64>:
     mut lookup: NgLocalLookupResult = NgLocalLookupResult(index=-1, probes=0)
     mut probes_total: i64 = 0
     discard vector_push<NgFunction>(&mut functions, NgFunction(start=0, end=bytes_len(&source), name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=1, first_node=0, body_node={declaration_count + lookup_count + 1}, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0))
+    discard vector_push<i64>(&mut scope_parents, -1)
+    while index < {declaration_count + lookup_count + 1}:
+        discard vector_push<i64>(&mut scope_ids, 0)
+        index = index + 1
+    index = 0
     while index < {declaration_count}:
         discard vector_push<NgAstNode>(&mut nodes, NgAstNode(kind=7, start=index * 5, end=index * 5 + 4, left=-1, right=-1, operation=1))
         index = index + 1
     discard vector_push<NgAstNode>(&mut nodes, NgAstNode(kind=7, start={shadow_start}, end={shadow_start + 4}, left=-1, right=-1, operation=2))
     discard ng_collect_local_declaration_indices(&nodes, &mut declarations)
-    status = ng_build_local_declaration_lookup(&source, &functions, &nodes, &declarations, &mut symbols, &mut buckets, &mut offsets, &mut occurrences)
+    status = ng_build_local_declaration_lookup(&source, &functions, &nodes, &declarations, &scope_ids, &mut symbols, &mut buckets, &mut offsets, &mut occurrences)
     discard vector_push<i64>(&mut result, status)
     index = 0
     while index < {lookup_count}:
         before.start = {lookup_start} + index * 5
         before.end = before.start + 4
-        lookup = ng_prior_local_declaration(&source, &nodes, vector_get<NgFunction>(&functions, 0), before, {declaration_count + 1} + index, target, &mut symbols, &mut buckets, &mut offsets, &mut occurrences)
+        lookup = ng_prior_local_declaration(&source, &nodes, vector_get<NgFunction>(&functions, 0), before, {declaration_count + 1} + index, target, &scope_ids, &scope_parents, &mut symbols, &mut buckets, &mut offsets, &mut occurrences)
         probes_total = probes_total + lookup.probes
         match lookup.index <=> 1:
             0:
@@ -248,13 +321,13 @@ fn main() -> vector<i64>:
     discard vector_push<i64>(&mut result, probes_total)
     before.start = {lookup_start}
     before.end = {lookup_start + 4}
-    lookup = ng_prior_local_declaration(&source, &nodes, vector_get<NgFunction>(&functions, 0), before, {declaration_count + 1}, NgAstNode(kind=2, start=0, end=4, left=-1, right=-1, operation=0), &mut symbols, &mut buckets, &mut offsets, &mut occurrences)
+    lookup = ng_prior_local_declaration(&source, &nodes, vector_get<NgFunction>(&functions, 0), before, {declaration_count + 1}, NgAstNode(kind=2, start=0, end=4, left=-1, right=-1, operation=0), &scope_ids, &scope_parents, &mut symbols, &mut buckets, &mut offsets, &mut occurrences)
     discard vector_push<i64>(&mut result, lookup.index)
     before.start = {shadow_start}
     before.end = {shadow_start + 4}
-    lookup = ng_prior_local_declaration(&source, &nodes, vector_get<NgFunction>(&functions, 0), before, {declaration_count}, NgAstNode(kind=2, start=0, end=4, left=-1, right=-1, operation=0), &mut symbols, &mut buckets, &mut offsets, &mut occurrences)
+    lookup = ng_prior_local_declaration(&source, &nodes, vector_get<NgFunction>(&functions, 0), before, {declaration_count}, NgAstNode(kind=2, start=0, end=4, left=-1, right=-1, operation=0), &scope_ids, &scope_parents, &mut symbols, &mut buckets, &mut offsets, &mut occurrences)
     discard vector_push<i64>(&mut result, lookup.index)
-    lookup = ng_prior_local_declaration(&source, &nodes, vector_get<NgFunction>(&functions, 0), before, {declaration_count - 2}, NgAstNode(kind=2, start={127 * 5}, end={127 * 5 + 4}, left=-1, right=-1, operation=0), &mut symbols, &mut buckets, &mut offsets, &mut occurrences)
+    lookup = ng_prior_local_declaration(&source, &nodes, vector_get<NgFunction>(&functions, 0), before, {declaration_count - 2}, NgAstNode(kind=2, start={127 * 5}, end={127 * 5 + 4}, left=-1, right=-1, operation=0), &scope_ids, &scope_parents, &mut symbols, &mut buckets, &mut offsets, &mut occurrences)
     discard vector_push<i64>(&mut result, lookup.index)
     return result
 """
@@ -265,6 +338,14 @@ fn main() -> vector<i64>:
     status, indexed_probes, shadowed, before_shadow, use_before_declaration = [int(value) for value in output]
     assert status == 0
     assert indexed_probes < lookup_count * declaration_count // 8
+    print(
+        "LOCAL_LOOKUP_CHARACTERIZATION "
+        f"ast_declarations={declaration_count + 1} "
+        f"field_base_lookups={lookup_count} "
+        f"lookup_calls={lookup_count} "
+        f"indexed_probes={indexed_probes} "
+        f"linear_scan_reference_visits={lookup_count * declaration_count}"
+    )
     assert shadowed == declaration_count
     assert before_shadow == 0
     assert use_before_declaration == -1
@@ -854,3 +935,96 @@ def test_nextgen_field_resolution_does_not_bind_a_later_local_declaration() -> N
     )
 
     assert _ng_module_semantic_statuses([source])[0] < 0
+
+
+def test_nextgen_field_resolution_restores_outer_binding_after_match_scope() -> None:
+    source = (
+        "module app\n"
+        "record Outer:\n"
+        "    outer_value: i64\n"
+        "record Inner:\n"
+        "    inner_value: i64\n"
+        "fn run(flag: trit) -> i64:\n"
+        "    x: Outer = Outer(outer_value=17)\n"
+        "    match flag:\n"
+        "        -1:\n"
+        "            x: Inner = Inner(inner_value=23)\n"
+        "            return x.inner_value\n"
+        "        0:\n"
+        "            discard 0\n"
+        "        1:\n"
+        "            discard 1\n"
+        "    return x.outer_value\n"
+        "fn main() -> i64:\n"
+        "    return run(0)\n"
+    )
+
+    assert compile_source(source).ir is not None
+    assert _ng_module_semantic_statuses([source]) == [0]
+
+
+def test_nextgen_control_local_bindings_do_not_escape_or_cross_sibling_scopes() -> None:
+    sibling_escape = (
+        "module app\n"
+        "record Inner:\n"
+        "    value: i64\n"
+        "fn main(flag: trit) -> i64:\n"
+        "    match flag:\n"
+        "        -1:\n"
+        "            local: Inner = Inner(value=1)\n"
+        "            discard local.value\n"
+        "        0:\n"
+        "            discard local.value\n"
+        "        1:\n"
+        "            discard 1\n"
+        "    return 0\n"
+    )
+    after_match = (
+        "module app\n"
+        "record Inner:\n"
+        "    value: i64\n"
+        "fn main(flag: trit) -> i64:\n"
+        "    match flag:\n"
+        "        -1:\n"
+        "            local: Inner = Inner(value=1)\n"
+        "            discard local.value\n"
+        "        0:\n"
+        "            discard 0\n"
+        "        1:\n"
+        "            discard 1\n"
+        "    return local.value\n"
+    )
+    after_while = (
+        "module app\n"
+        "record Inner:\n"
+        "    value: i64\n"
+        "fn main(flag: trit) -> i64:\n"
+        "    while flag:\n"
+        "        local: Inner = Inner(value=1)\n"
+        "        discard local.value\n"
+        "    return local.value\n"
+    )
+
+    statuses = _ng_module_semantic_statuses([sibling_escape, after_match, after_while])
+    assert statuses[0] < 0
+    assert statuses[1] < 0
+    assert statuses[2] < 0
+
+
+def test_nextgen_field_resolution_finds_outer_local_from_while_scope() -> None:
+    source = (
+        "module app\n"
+        "record Item:\n"
+        "    value: i64\n"
+        "fn run(flag: trit) -> i64:\n"
+        "    local: Item = Item(value=73)\n"
+        "    while flag:\n"
+        "        discard local.value\n"
+        "        break\n"
+        "    return local.value\n"
+        "fn main() -> i64:\n"
+        "    return run(0)\n"
+    )
+
+    assert compile_source(source).ir is not None
+    assert _ng_module_semantic_statuses([source]) == [0]

@@ -281,7 +281,7 @@ fn main() -> vector<i64>:
     assert actual == expected
 
 
-def test_nextgen_span_fingerprint_samples_interior_bytes() -> None:
+def test_nextgen_span_fingerprint_distinguishes_interior_bytes() -> None:
     wrapper = """
 fn main() -> vector<i64>:
     mut source_text: text = text_from_static("parser pester pasper paszxr")
@@ -295,12 +295,12 @@ fn main() -> vector<i64>:
 """
     compilation = compile_source(_LEXER_SOURCE + "\n" + wrapper)
     assert compilation.ir is not None
-    first, second, same_samples, different_penultimate = map(
+    first, second, different_interior, different_penultimate = map(
         int, execute_ir(compilation.ir)
     )
 
     assert first != second
-    assert first == same_samples
+    assert first != different_interior
     assert first != different_penultimate
 
 

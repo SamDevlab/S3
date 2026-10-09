@@ -19,6 +19,7 @@ from bootstrap.s3.backends.x86_64 import NativeToolchain
 from bootstrap.s3.diagnostics import SemanticError
 from bootstrap.s3.dynamic import (
     DynamicCompositeVector,
+    DynamicBytes,
     DynamicVector,
     f64_vector_new,
     i64_vector_new,
@@ -82,12 +83,14 @@ def _execute_ir_with_step_budget(
     *,
     source_text: str,
     max_steps: int = 10_000_000,
+    entry: str = "main",
+    metrics: dict[str, object] | None = None,
 ) -> object:
     # The generated compiler harness is trusted test support; verify_ir is
     # required on the NG-produced target IR below, not on this large harness.
     functions = {function.name: function for function in module.functions}
-    if "main" not in functions:
-        raise AssertionError("compiler harness is missing main")
+    if entry not in functions:
+        raise AssertionError(f"compiler harness is missing entry function {entry!r}")
     static_strings = {item.id: item.value for item in module.static_strings}
     target_code = ir_emulator._execute_function.__code__
     steps = 0
@@ -200,7 +203,7 @@ def _execute_ir_with_step_budget(
         try:
             return ir_emulator._execute_function(
                 functions,
-                functions["main"],
+                functions[entry],
                 (),
                 (),
                 static_strings,
@@ -273,6 +276,15 @@ def _execute_ir_with_step_budget(
                 f"caller={caller_details}; s3_stack={s3_stack}"
             ) from exc
     finally:
+        if metrics is not None:
+            metrics.update(
+                {
+                    "steps": steps,
+                    "calls": dict(calls),
+                    "call_edges": dict(call_edges),
+                    "line_counts": dict(line_counts),
+                }
+            )
         sys.settrace(previous_trace)
 
 
@@ -353,7 +365,6 @@ def _run_ng_source_set_events(
         + 8192,
     )
     event_capacity = max(32768, source_capacity * 8)
-    result_capacity = source_capacity + event_capacity + 4
     unit_initializers: list[str] = []
     for index, (path, contents) in enumerate(sources.items()):
         unit_initializers.extend(
@@ -365,25 +376,21 @@ def _run_ng_source_set_events(
             )
         )
     wrapper = f'''
-fn main() -> vector<i64>:
+record NgSourceSetOutput:
+    status: i64
+    source: bytes
+    events: vector<i64>
+
+fn main() -> i64:
+    return 0
+
+fn collect_ng_source_set() -> NgSourceSetOutput:
     mut units: vector<NgSourceUnit> = vector_new<NgSourceUnit>({len(sources) + 1})
 {chr(10).join("    " + line for line in unit_initializers)}
     mut source: bytes = bytes_new({source_capacity})
     mut events: vector<i64> = vector_new<i64>({event_capacity})
-    mut result: vector<i64> = vector_new<i64>({result_capacity})
     mut status: i64 = ng_emit_source_set(&units, text_from_static({json.dumps(entry_module)}), &mut source, &mut events)
-    mut index: i64 = 0
-    discard vector_push<i64>(&mut result, status)
-    discard vector_push<i64>(&mut result, bytes_len(&source))
-    while index < bytes_len(&source):
-        discard vector_push<i64>(&mut result, to_i64(bytes_get(&source, index)))
-        index = index + 1
-    discard vector_push<i64>(&mut result, vector_len<i64>(&events))
-    index = 0
-    while index < vector_len<i64>(&events):
-        discard vector_push<i64>(&mut result, vector_get<i64>(&events, index))
-        index = index + 1
-    return result
+    return NgSourceSetOutput(status=status, source=source, events=events)
 '''
     compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
     assert compilation.ir is not None
@@ -391,18 +398,13 @@ fn main() -> vector<i64>:
         compilation.ir,
         source_text=_NG_SOURCE + "\n" + wrapper,
         max_steps=max_steps,
+        entry="collect_ng_source_set",
     )
-    assert isinstance(output, DynamicVector)
-    values = [int(value) for value in output]
-    assert len(values) >= 2
-    status, source_length = values[:2]
-    source_end = 2 + source_length
-    assert source_end < len(values)
-    source = bytes(values[2:source_end])
-    event_length = values[source_end]
-    cells = values[source_end + 1 :]
-    assert len(cells) == event_length
-    return status, source, cells
+    assert isinstance(output, tuple) and len(output) == 3
+    status, source, events = output
+    assert isinstance(source, DynamicBytes)
+    assert isinstance(events, DynamicVector)
+    return int(status), source.to_bytes(), [int(value) for value in events]
 
 
 def _emit_ng_source_set_events(
@@ -416,7 +418,11 @@ def _emit_ng_source_set_events(
         entry_module=entry_module,
         max_steps=max_steps,
     )
-    assert status == 0, f"S3C-NG source-set compilation failed with status {status}"
+    if status != 0:
+        raise AssertionError(
+            f"S3C-NG source-set compilation failed with status {status}; "
+            f"event_count={len(cells)}; event_tail={cells[-80:]}"
+        )
     return source, cells
 
 
@@ -504,7 +510,12 @@ def _legacy_event_records(records: list[list[int]], version: int) -> list[list[i
         for record in records
         if not (version < 14 and record[0] == 22)
         and not (version < 15 and record[0] == 23)
+        and not (version < 17 and record[0] == 24)
     ]
+    if version < 17:
+        for record in legacy:
+            if record[0] == 4 and record[2] == 6:
+                record[6] = -1
     legacy[0][1] = version
     return legacy
 
@@ -534,7 +545,7 @@ def test_ng_ir_v7_preserves_bytes_text_and_decodes_v2() -> None:
     reference_ir = compile_source(source).ir
     assert reference_ir is not None
     events = _emit_ng_events(source)
-    assert _event_records(events)[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert _event_records(events)[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
 
     verify_ir(ng_ir)
@@ -567,7 +578,7 @@ def test_ng_ir_v7_preserves_vector_and_reference_signature_categories() -> None:
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     assert any(record[0] == 12 and record[2] == 8 for record in records)
     assert any(record[0] == 12 and record[2] == 9 for record in records)
 
@@ -593,7 +604,7 @@ def test_ng_ir_v12_dereference_and_reborrow_match_reference_ir() -> None:
 
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     assert any(record[0] == 4 and record[2] == 18 for record in records)
 
     ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
@@ -626,6 +637,30 @@ def test_ng_ir_v12_dereference_and_reborrow_match_reference_ir() -> None:
         decode_ng_ir_events(source.encode("utf-8"), _flatten(malformed))
 
 
+def test_ng_ir_resolves_outer_local_reference_from_while_scope() -> None:
+    source = (
+        "fn read(value: &i64) -> i64:\n"
+        "    return *value\n"
+        "fn run(flag: trit) -> i64:\n"
+        "    mut local: i64 = 73\n"
+        "    while flag:\n"
+        "        discard read(&local)\n"
+        "        break\n"
+        "    return local\n"
+        "fn main() -> i64:\n"
+        "    return run(0)\n"
+    )
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+
+    events = _emit_ng_events(source)
+    ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
+    verify_ir(ng_ir)
+
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 73
+
+
 def test_ng_ir_v13_static_strings_match_reference_ir_and_fail_closed() -> None:
     accented = chr(233)
     source = (
@@ -638,7 +673,7 @@ def test_ng_ir_v13_static_strings_match_reference_ir_and_fail_closed() -> None:
     reference = compile_source(source).ir
     assert reference is not None
     records = _event_records(_emit_ng_events(source))
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     string_instructions = [record for record in records if record[0] == 4 and record[2] == 19]
     assert len(string_instructions) == 3
 
@@ -705,7 +740,7 @@ def test_ng_ir_v7_relational_opcode_executes_and_is_not_valid_in_v6() -> None:
     reference = compile_source(source).ir
     assert reference is not None
     records = _event_records(_emit_ng_events(source))
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     relation_records = [record for record in records if record[0] == 4 and record[2] == 15]
     assert len(relation_records) == len(cases)
     assert {record[7] for record in relation_records} == set(range(6))
@@ -975,7 +1010,7 @@ def test_ng_ir_v7_generic_vector_new_is_explicit_and_executable(element_type: st
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     builtin_record = next(record for record in records if record[0] == 16)
     call_instructions = [record for record in records if record[0] == 4]
     call_instruction_index = next(index for index, record in enumerate(call_instructions) if record[2] == 7)
@@ -1048,7 +1083,7 @@ def test_ng_ir_v7_generic_vector_len_is_explicit_and_executable(
     reference_ir = compile_source(source).ir
     assert reference_ir is not None
     records = _event_records(_emit_ng_events(source))
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     builtin_record = next(record for record in records if record[0] == 17)
     assert builtin_record[1:5] == [0, 0, 1, element_type_id]
 
@@ -1110,7 +1145,7 @@ def test_ng_ir_v16_generic_vector_get_is_explicit_and_executable() -> None:
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
 
     ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
     verify_ir(ng_ir)
@@ -1151,7 +1186,7 @@ def test_ng_ir_v16_generic_vector_set_is_explicit_and_executable() -> None:
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     metadata = next(record for record in records if record[0] == 23)
     assert metadata[3:5] == [2, 1]
 
@@ -1210,7 +1245,7 @@ def test_ng_ir_v16_vector_record_get_set_and_local_assignment_preserve_cells() -
     assert reference_ir is not None
     source, events = _emit_ng_source_set_events(sources, entry_module="app")
     records = _event_records(events)
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     assert sum(record[0] == 19 and record[3] == 4 for record in records) == 3
     assert sum(record[0] == 19 and record[3] == 5 for record in records) == 1
 
@@ -1294,7 +1329,7 @@ def test_ng_ir_v8_generic_vector_push_is_explicit_and_executable(
     reference_ir = compile_source(source).ir
     assert reference_ir is not None
     records = _event_records(_emit_ng_events(source))
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     metadata = next(record for record in records if record[0] == 18)
     assert metadata[1] == 0
     assert metadata[3:5] == [1, element_type_id]
@@ -1504,6 +1539,80 @@ def test_ng_source_set_lowers_record_constructor_field_projection() -> None:
     assert execute_ir(ng_ir) == execute_ir(reference_ir) == 23
 
 
+def test_ng_aggregate_returns_inside_match_and_while_match_reference() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "record Pair:\n"
+            "    left: i64\n"
+            "    right: i64\n"
+            "fn from_match(flag: trit) -> Pair:\n"
+            "    match flag:\n"
+            "        -1:\n"
+            "            return Pair(left=11, right=1)\n"
+            "        0:\n"
+            "            return Pair(left=22, right=2)\n"
+            "        1:\n"
+            "            return Pair(left=33, right=3)\n"
+            "fn from_while(flag: trit) -> Pair:\n"
+            "    while flag:\n"
+            "        return Pair(left=40, right=2)\n"
+            "    return Pair(left=1, right=1)\n"
+            "fn main() -> i64:\n"
+            "    matched: Pair = from_match(0)\n"
+            "    looped: Pair = from_while(-1)\n"
+            "    return matched.left + matched.right + looped.left + looped.right\n"
+        ),
+    }
+    reference = compile_sources(sources, entry_module="app").ir
+    assert reference is not None
+    source, events = _emit_ng_source_set_events(sources, entry_module="app")
+    ng_ir = decode_ng_ir_events(source, events)
+
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
+    assert execute_ir(ng_ir) == execute_ir(reference) == 66
+
+
+@pytest.mark.parametrize(
+    ("corruption", "message"),
+    (
+        ("missing-cell", "expected record kind 24"),
+        ("wrong-ordinal", "V17 RETURN result-cell identity"),
+    ),
+)
+def test_ng_ir_v17_rejects_malformed_explicit_return_cells(
+    corruption: str, message: str
+) -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "record Pair:\n"
+            "    left: i64\n"
+            "    right: i64\n"
+            "fn make() -> Pair:\n"
+            "    return Pair(left=5, right=8)\n"
+            "fn main() -> i64:\n"
+            "    return 0\n"
+        )
+    }
+    source, events = _emit_ng_source_set_events(sources, entry_module="app")
+    records = _event_records(events)
+    return_index = next(
+        index for index, record in enumerate(records) if record[0] == 4 and record[2] == 6
+    )
+    assert records[return_index][4] == 2
+    assert records[return_index + 1][0] == 24
+
+    if corruption == "missing-cell":
+        del records[return_index + 1 : return_index + 3]
+    else:
+        records[return_index + 2][3] = 0
+
+    with pytest.raises(NGIRDecodeError, match=message):
+        decode_ng_ir_events(source, _flatten(records))
+
+
 def test_ng_source_set_resolves_field_access_on_mutable_record_local() -> None:
     sources = {
         "app.s3": (
@@ -1639,7 +1748,7 @@ def test_ng_source_set_executes_composite_vector_new_push_and_len() -> None:
     assert reference_ir is not None
     source, events = _emit_ng_source_set_events(sources, entry_module="app")
     records = _event_records(events)
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     assert sum(row[0] == 19 and row[3] == 1 for row in records) == 1
     assert sum(row[0] == 19 and row[3] == 2 for row in records) == 1
     assert sum(row[0] == 19 and row[3] == 3 for row in records) == 1
@@ -1999,6 +2108,188 @@ def test_ng_source_set_grows_type_table_for_generic_references() -> None:
     verify_ir(ng_ir)
     assert _canonical_structure(ng_ir) == _canonical_structure(reference)
     assert execute_ir(ng_ir) == execute_ir(reference) == 0
+
+
+def test_ng_record_parameter_preallocates_flattened_variable_and_register_capacity() -> None:
+    fields = "\n".join(f"    field_{index:02d}: i64" for index in range(48))
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "record Wide:\n"
+            f"{fields}\n"
+            "fn consume(value: Wide) -> i64:\n"
+            "    return 0\n"
+            "fn main() -> i64:\n"
+            "    return 0\n"
+        )
+    }
+
+    reference = compile_sources(sources, entry_module="app").ir
+    assert reference is not None
+    source, cells = _emit_ng_source_set_events(sources, entry_module="app")
+    ng_ir = decode_ng_ir_events(source, cells)
+
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
+    assert execute_ir(ng_ir) == execute_ir(reference) == 0
+
+
+def test_ng_function_lookup_fingerprint_filter_reduces_name_comparisons() -> None:
+    function_count = 64
+    names = " ".join(f"f{index:04d}" for index in range(function_count))
+    wrapper = f'''\
+fn main() -> i64:
+    mut source_text: text = text_from_static({json.dumps(names + " missing_long")})
+    mut source: bytes = bytes_from_text(&source_text)
+    mut functions: vector<NgFunction> = vector_new<NgFunction>({function_count})
+    mut modules: vector<NgModule> = vector_new<NgModule>(1)
+    mut index: i64 = 0
+    mut name_start: i64 = 0
+    mut name_end: i64 = 0
+    mut fingerprint: i64 = 0
+    mut total: i64 = 0
+    mut module_total: i64 = 0
+    mut missing_function_index: i64 = -1
+    mut missing_module_index: i64 = -1
+    while index < {function_count}:
+        name_start = index * 6
+        name_end = name_start + 5
+        fingerprint = ng_span_fingerprint(&source, name_start, name_end)
+        discard vector_push<NgFunction>(&mut functions, NgFunction(start=0, end=0, name_start=name_start, name_end=name_end, local_name_start=name_start, local_name_end=name_end, first_parameter=0, parameter_count=0, return_type=1, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=fingerprint, local_name_fingerprint=fingerprint))
+        index = index + 1
+    discard vector_push<NgModule>(&mut modules, NgModule(source_index=0, source_start=0, source_end=bytes_len(&source), path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count={function_count}, first_import=0, import_count=0))
+    index = 0
+    while index < {function_count}:
+        name_start = index * 6
+        name_end = name_start + 5
+        total = total + ng_find_function(&source, &functions, name_start, name_end)
+        module_total = module_total + ng_find_function_in_module(&source, &modules, &functions, 0, name_start, name_end)
+        index = index + 1
+    name_start = {function_count * 6}
+    name_end = name_start + 12
+    missing_function_index = ng_find_function(&source, &functions, name_start, name_end)
+    missing_module_index = ng_find_function_in_module(&source, &modules, &functions, 0, name_start, name_end)
+    match missing_function_index <=> -13:
+        0:
+            match missing_module_index <=> -1:
+                0:
+                    return total + module_total
+                -1:
+                    return -1
+                1:
+                    return -1
+        -1:
+            return -1
+        1:
+            return -1
+'''
+    harness_source = _NG_SOURCE + "\n" + wrapper
+    compilation = compile_source(harness_source)
+    assert compilation.ir is not None
+    metrics: dict[str, object] = {}
+    result = _execute_ir_with_step_budget(
+        compilation.ir,
+        source_text=harness_source,
+        max_steps=10_000_000,
+        metrics=metrics,
+    )
+
+    assert result == 2 * function_count * (function_count - 1) // 2
+    calls = metrics["calls"]
+    assert isinstance(calls, dict)
+    named_comparisons = int(calls.get("ng_named_spans_equal", 0))
+    baseline_linear_name_comparisons = function_count * (function_count + 1) // 2
+    fingerprint_calls = int(calls.get("ng_span_fingerprint", 0))
+    assert named_comparisons <= 2 * function_count
+    assert named_comparisons < 2 * baseline_linear_name_comparisons // 8
+    assert fingerprint_calls == 3 * function_count
+
+
+def test_ng_parameter_lookups_fingerprint_before_exact_span_comparison() -> None:
+    parameter_count = 64
+    names = " ".join(f"p{index:03d}" for index in range(parameter_count))
+    wrapper = f'''\
+fn main() -> i64:
+    mut source_text: text = text_from_static({json.dumps(names)})
+    mut source: bytes = bytes_from_text(&source_text)
+    mut parameters: vector<NgParameter> = vector_new<NgParameter>({parameter_count})
+    mut index: i64 = 0
+    mut name_start: i64 = 0
+    mut name_end: i64 = 0
+    mut fingerprint: i64 = 0
+    mut result: i64 = 0
+    while index < {parameter_count}:
+        name_start = index * 5
+        name_end = name_start + 4
+        fingerprint = ng_span_fingerprint(&source, name_start, name_end)
+        discard vector_push<NgParameter>(&mut parameters, NgParameter(name_start=name_start, name_end=name_end, name_fingerprint=fingerprint, type_kind=index + 1))
+        index = index + 1
+    index = 0
+    while index < {parameter_count}:
+        name_start = index * 5
+        name_end = name_start + 4
+        result = result + ng_parameter_type(&source, &parameters, 0, {parameter_count}, name_start, name_end)
+        result = result + ng_parameter_register(&source, &parameters, 0, {parameter_count}, name_start, name_end)
+        index = index + 1
+    return result
+'''
+    harness_source = _NG_SOURCE + "\n" + wrapper
+    compilation = compile_source(harness_source)
+    assert compilation.ir is not None
+    metrics: dict[str, object] = {}
+    result = _execute_ir_with_step_budget(
+        compilation.ir,
+        source_text=harness_source,
+        max_steps=10_000_000,
+        metrics=metrics,
+    )
+
+    assert result == parameter_count * parameter_count
+    calls = metrics["calls"]
+    assert isinstance(calls, dict)
+    exact_span_comparisons = int(calls.get("ng_spans_equal", 0))
+    linear_scan_reference_comparisons = 2 * parameter_count * (parameter_count + 1) // 2
+    assert exact_span_comparisons == 2 * parameter_count
+    assert exact_span_comparisons * 16 < linear_scan_reference_comparisons
+
+
+def test_ng_span_equality_cost_profile_baseline() -> None:
+    comparison_count = 32
+    wrapper = f'''\
+fn main() -> i64:
+    mut source_text: text = text_from_static("abcdefghij abcdefghij abcdefghik")
+    mut source: bytes = bytes_from_text(&source_text)
+    mut index: i64 = 0
+    mut result: i64 = 0
+    while index < {comparison_count}:
+        result = result + to_i64(ng_spans_equal(&source, 0, 10, 11, 21))
+        result = result + to_i64(ng_spans_equal(&source, 0, 10, 22, 32))
+        index = index + 1
+    return result
+'''
+    harness_source = _NG_SOURCE + "\n" + wrapper
+    compilation = compile_source(harness_source)
+    assert compilation.ir is not None
+    metrics: dict[str, object] = {}
+    result = _execute_ir_with_step_budget(
+        compilation.ir,
+        source_text=harness_source,
+        max_steps=10_000_000,
+        metrics=metrics,
+    )
+    assert result == -comparison_count
+    line_counts = metrics["line_counts"]
+    assert isinstance(line_counts, dict)
+    equality_events = int(line_counts.get("ng_spans_equal", 0))
+    calls = metrics["calls"]
+    assert isinstance(calls, dict)
+    equality_calls = int(calls.get("ng_spans_equal", 0))
+    print(
+        "SPAN_EQUALITY_PROFILE "
+        f"calls={equality_calls} "
+        f"ir_steps={equality_events} "
+        f"steps_per_call={equality_events // equality_calls}"
+    )
 
 
 def test_ng_ir_variable_lookup_keeps_near_matching_local_names_distinct() -> None:
@@ -2447,7 +2738,7 @@ def test_ng_ir_v11_lowers_numeric_conversions_and_dynamic_bytes_calls() -> None:
     assert reference_ir is not None
     cells = _emit_ng_events(source)
     records = _event_records(cells)
-    assert records[0] == [0, 16, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 17, 8, 0, 0, 0, 0, 0]
     assert sum(record[0] == 21 for record in records) == 5
     assert any(record[0] == 4 and record[2] == 17 for record in records)
 

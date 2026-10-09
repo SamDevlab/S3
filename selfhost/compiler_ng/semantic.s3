@@ -12,6 +12,7 @@ export record NgLocal:
 
 export record NgLocalLookupSymbol:
     function_first_node: i64
+    scope_id: i64
     name_start: i64
     name_end: i64
     first_occurrence: i64
@@ -44,44 +45,96 @@ export fn ng_named_spans_equal(source: &bytes, left_start: i64, left_end: i64, l
 
 fn ng_parameter_type(source: &bytes, parameters: &vector<NgParameter>, first_parameter: i64, parameter_count: i64, name_start: i64, name_end: i64) -> i64:
     mut index: i64 = first_parameter
-    mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
+    mut name_length: i64 = name_end - name_start
+    mut name_fingerprint: i64 = ng_span_fingerprint(source, name_start, name_end)
+    mut parameter_name_length: i64 = 0
+    mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, name_fingerprint=0, type_kind=0)
     while index < first_parameter + parameter_count:
         parameter = vector_get<NgParameter>(parameters, index)
-        match ng_spans_equal(source, name_start, name_end, parameter.name_start, parameter.name_end):
+        parameter_name_length = parameter.name_end - parameter.name_start
+        match name_length <=> parameter_name_length:
             -1:
-                return parameter.type_kind
-            0:
                 index = index + 1
+            0:
+                match ng_named_spans_equal(source, name_start, name_end, name_fingerprint, parameter.name_start, parameter.name_end, parameter.name_fingerprint):
+                    -1:
+                        return parameter.type_kind
+                    0:
+                        index = index + 1
+                    1:
+                        index = index + 1
             1:
                 index = index + 1
     return -12
 
 fn ng_local_type(source: &bytes, locals: &vector<NgLocal>, name_start: i64, name_end: i64) -> i64:
     mut index: i64 = vector_len<NgLocal>(locals)
+    mut name_length: i64 = name_end - name_start
+    mut local_name_length: i64 = 0
     mut local: NgLocal = NgLocal(name_start=0, name_end=0, type_kind=0, mutable=0)
     while index > 0:
         index = index - 1
         local = vector_get<NgLocal>(locals, index)
-        match ng_spans_equal(source, name_start, name_end, local.name_start, local.name_end):
+        local_name_length = local.name_end - local.name_start
+        match name_length <=> local_name_length:
             -1:
-                return local.type_kind
-            0:
                 index = index
+            0:
+                match ng_spans_equal(source, name_start, name_end, local.name_start, local.name_end):
+                    -1:
+                        return local.type_kind
+                    0:
+                        index = index
+                    1:
+                        index = index
             1:
                 index = index
     return -12
 
 fn ng_local_index(source: &bytes, locals: &vector<NgLocal>, name_start: i64, name_end: i64) -> i64:
     mut index: i64 = vector_len<NgLocal>(locals)
+    mut name_length: i64 = name_end - name_start
+    mut local_name_length: i64 = 0
     mut local: NgLocal = NgLocal(name_start=0, name_end=0, type_kind=0, mutable=0)
     while index > 0:
         index = index - 1
         local = vector_get<NgLocal>(locals, index)
-        match ng_spans_equal(source, name_start, name_end, local.name_start, local.name_end):
+        local_name_length = local.name_end - local.name_start
+        match name_length <=> local_name_length:
             -1:
-                return index
-            0:
                 index = index
+            0:
+                match ng_spans_equal(source, name_start, name_end, local.name_start, local.name_end):
+                    -1:
+                        return index
+                    0:
+                        index = index
+                    1:
+                        index = index
+            1:
+                index = index
+    return -12
+
+fn ng_local_index_from(source: &bytes, locals: &vector<NgLocal>, first_index: i64, name_start: i64, name_end: i64) -> i64:
+    mut index: i64 = vector_len<NgLocal>(locals)
+    mut name_length: i64 = name_end - name_start
+    mut local_name_length: i64 = 0
+    mut local: NgLocal = NgLocal(name_start=0, name_end=0, type_kind=0, mutable=0)
+    while index > first_index:
+        index = index - 1
+        local = vector_get<NgLocal>(locals, index)
+        local_name_length = local.name_end - local.name_start
+        match name_length <=> local_name_length:
+            -1:
+                index = index
+            0:
+                match ng_spans_equal(source, name_start, name_end, local.name_start, local.name_end):
+                    -1:
+                        return index
+                    0:
+                        index = index
+                    1:
+                        index = index
             1:
                 index = index
     return -12
@@ -187,12 +240,13 @@ fn ng_i64_literal_fits(source: &bytes, node: NgAstNode) -> trit:
     return ng_literal_magnitude_fits(source, node, 922337203685477580, 7)
 
 fn ng_span_matches_text(source: &bytes, start: i64, end: i64, wanted: text) -> trit:
-    mut expected: bytes = bytes_from_text(&wanted)
+    mut expected_length: i64 = text_len(&wanted)
     mut index: i64 = 0
-    match end - start <=> bytes_len(&expected):
+    match end - start <=> expected_length:
         -1:
             return 0
         0:
+            mut expected: bytes = bytes_from_text(&wanted)
             while index < bytes_len(&expected):
                 match to_i64(bytes_get(source, start + index)) <=> to_i64(bytes_get(&expected, index)):
                     -1:
@@ -491,17 +545,100 @@ fn ng_contextual_expression_type(source: &bytes, types: &vector<NgTypeDescriptor
         1:
             return ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node_id)
 
+export fn ng_encode_resolved_call_function(function_index: i64) -> i64:
+    match function_index < 0:
+        -1:
+            return -1
+        0:
+            return -function_index - 2
+        1:
+            return -function_index - 2
+
+export fn ng_resolved_call_function_index(operation: i64) -> i64:
+    match operation < -1:
+        -1:
+            return -operation - 2
+        0:
+            return -1
+        1:
+            return -1
+
+export fn ng_resolved_builtin_call_marker() -> i64:
+    return -2
+
+export fn ng_is_resolved_builtin_call(node: NgAstNode) -> trit:
+    match node.kind <=> 5:
+        0:
+            match node.right <=> -2:
+                0:
+                    return -1
+                -1:
+                    return 0
+                1:
+                    return 0
+        -1:
+            return 0
+        1:
+            return 0
+
 export fn ng_find_function(source: &bytes, functions: &vector<NgFunction>, name_start: i64, name_end: i64) -> i64:
     mut index: i64 = 0
-    mut fingerprint: i64 = ng_span_fingerprint(source, name_start, name_end)
+    mut name_length: i64 = name_end - name_start
+    mut candidate_length: i64 = 0
+    mut fingerprint: i64 = 0
+    mut fingerprint_ready: i64 = 0
+    mut candidate_fingerprint: i64 = 0
+    mut compare_required: i64 = 1
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     while index < vector_len<NgFunction>(functions):
         function = vector_get<NgFunction>(functions, index)
-        match ng_named_spans_equal(source, name_start, name_end, fingerprint, function.name_start, function.name_end, function.name_fingerprint):
+        candidate_length = function.name_end - function.name_start
+        match name_length <=> candidate_length:
             -1:
-                return index
-            0:
                 index = index + 1
+            0:
+                match fingerprint_ready <=> 0:
+                    0:
+                        fingerprint = ng_span_fingerprint(source, name_start, name_end)
+                        fingerprint_ready = 1
+                    -1:
+                        fingerprint_ready = fingerprint_ready
+                    1:
+                        fingerprint_ready = fingerprint_ready
+                candidate_fingerprint = function.name_fingerprint
+                compare_required = 1
+                match fingerprint > 0:
+                    -1:
+                        match candidate_fingerprint > 0:
+                            -1:
+                                match fingerprint <=> candidate_fingerprint:
+                                    -1:
+                                        compare_required = 0
+                                    0:
+                                        compare_required = 1
+                                    1:
+                                        compare_required = 0
+                            0:
+                                compare_required = 1
+                            1:
+                                compare_required = 1
+                    0:
+                        compare_required = 1
+                    1:
+                        compare_required = 1
+                match compare_required <=> 1:
+                    0:
+                        match ng_named_spans_equal(source, name_start, name_end, fingerprint, function.name_start, function.name_end, candidate_fingerprint):
+                            -1:
+                                return index
+                            0:
+                                index = index + 1
+                            1:
+                                index = index + 1
+                    -1:
+                        index = index + 1
+                    1:
+                        index = index + 1
             1:
                 index = index + 1
     return -13
@@ -1833,13 +1970,26 @@ fn ng_generic_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields
             return -13
 
 fn ng_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode) -> i64:
-    mut callee_index: i64 = ng_find_function(source, functions, call_node.start, call_node.operation)
+    mut callee_index: i64 = ng_resolved_call_function_index(call_node.operation)
     mut callee: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     mut argument_list: i64 = call_node.left
     mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut argument_type: i64 = 0
-    mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
+    mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, name_fingerprint=0, type_kind=0)
     mut argument_index: i64 = 0
+    match callee_index < 0:
+        -1:
+            match ng_is_resolved_builtin_call(call_node):
+                -1:
+                    return ng_builtin_call_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node)
+                0:
+                    callee_index = ng_find_function(source, functions, call_node.start, call_node.operation)
+                1:
+                    callee_index = ng_find_function(source, functions, call_node.start, call_node.operation)
+        0:
+            callee_index = callee_index
+        1:
+            callee_index = callee_index
     match callee_index < 0:
         -1:
             return ng_builtin_call_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node)
@@ -2102,6 +2252,167 @@ fn ng_function_index_for_node(functions: &vector<NgFunction>, node_index: i64) -
         1:
             return -1
 
+fn ng_scope_has_right_child(kind: i64) -> trit:
+    match kind == 4:
+        -1:
+            return -1
+        0:
+            match kind == 6:
+                -1:
+                    return -1
+                0:
+                    match kind == 8:
+                        -1:
+                            return -1
+                        0:
+                            match kind == 11:
+                                -1:
+                                    return -1
+                                0:
+                                    match kind == 12:
+                                        -1:
+                                            return -1
+                                        0:
+                                            match kind == 13:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    match kind == 17:
+                                                        -1:
+                                                            return -1
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                1:
+                                                    return 0
+                                        1:
+                                            return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn ng_scope_push_task(node_index: i64, scope_id: i64, create_scope: i64, pending_nodes: &mut vector<i64>, pending_scopes: &mut vector<i64>, pending_new_scope: &mut vector<i64>) -> i64:
+    match node_index >= 0:
+        -1:
+            discard vector_push<i64>(pending_nodes, node_index)
+            discard vector_push<i64>(pending_scopes, scope_id)
+            discard vector_push<i64>(pending_new_scope, create_scope)
+            return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, node_scope_ids: &mut vector<i64>, scope_parents: &mut vector<i64>) -> i64:
+    mut node_count: i64 = vector_len<NgAstNode>(nodes)
+    mut function_index: i64 = 0
+    mut node_index: i64 = 0
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
+    mut node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut pending_capacity: i64 = node_count * 2 + vector_len<NgFunction>(functions) + 1
+    mut pending_nodes: vector<i64> = vector_new<i64>(pending_capacity)
+    mut pending_scopes: vector<i64> = vector_new<i64>(pending_capacity)
+    mut pending_new_scope: vector<i64> = vector_new<i64>(pending_capacity)
+    mut pending_index: i64 = 0
+    mut pending_node: i64 = -1
+    mut pending_scope: i64 = -1
+    mut create_scope: i64 = 0
+    mut child_scope: i64 = 0
+    mut scope_id: i64 = -1
+    mut existing_scope: i64 = -1
+    while node_index < node_count:
+        discard vector_push<i64>(node_scope_ids, -1)
+        node_index = node_index + 1
+    while function_index < vector_len<NgFunction>(functions):
+        function = vector_get<NgFunction>(functions, function_index)
+        scope_id = vector_len<i64>(&*scope_parents)
+        discard vector_push<i64>(scope_parents, -1)
+        discard ng_scope_push_task(function.body_node, scope_id, 0, &mut pending_nodes, &mut pending_scopes, &mut pending_new_scope)
+        function_index = function_index + 1
+    while pending_index < vector_len<i64>(&pending_nodes):
+        pending_node = vector_get<i64>(&pending_nodes, pending_index)
+        pending_scope = vector_get<i64>(&pending_scopes, pending_index)
+        create_scope = vector_get<i64>(&pending_new_scope, pending_index)
+        pending_index = pending_index + 1
+        match pending_node < node_count:
+            -1:
+                match pending_node >= 0:
+                    -1:
+                        match create_scope == 1:
+                            -1:
+                                scope_id = vector_len<i64>(&*scope_parents)
+                                discard vector_push<i64>(&mut *scope_parents, pending_scope)
+                                pending_scope = scope_id
+                            0:
+                                pending_scope = pending_scope
+                            1:
+                                return -14
+                        existing_scope = vector_get<i64>(&*node_scope_ids, pending_node)
+                        match existing_scope < 0:
+                            -1:
+                                discard vector_set<i64>(&mut *node_scope_ids, pending_node, pending_scope)
+                                node = vector_get<NgAstNode>(nodes, pending_node)
+                                match node.kind == 13:
+                                    -1:
+                                        child_scope = 1
+                                    0:
+                                        child_scope = 0
+                                    1:
+                                        return -14
+                                match node.left >= 0:
+                                    -1:
+                                        discard ng_scope_push_task(node.left, pending_scope, child_scope, &mut pending_nodes, &mut pending_scopes, &mut pending_new_scope)
+                                    0:
+                                        node = node
+                                    1:
+                                        return -14
+                                child_scope = 0
+                                match node.kind == 17:
+                                    -1:
+                                        child_scope = 1
+                                    0:
+                                        child_scope = 0
+                                    1:
+                                        return -14
+                                match node.right >= 0:
+                                    -1:
+                                        match ng_scope_has_right_child(node.kind):
+                                            -1:
+                                                discard ng_scope_push_task(node.right, pending_scope, child_scope, &mut pending_nodes, &mut pending_scopes, &mut pending_new_scope)
+                                            0:
+                                                node = node
+                                            1:
+                                                return -14
+                                    0:
+                                        node = node
+                                    1:
+                                        return -14
+                            0:
+                                match existing_scope <=> pending_scope:
+                                    0:
+                                        node = node
+                                    -1:
+                                        return -14
+                                    1:
+                                        return -14
+                            1:
+                                return -14
+                    0:
+                        return -14
+                    1:
+                        return -14
+            0:
+                return -14
+            1:
+                return -14
+    return 0
+
 fn ng_record_index_for_type(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, type_id: i64) -> i64:
     mut record_index: i64 = 0
     mut record_item: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
@@ -2116,7 +2427,7 @@ fn ng_record_index_for_type(source: &bytes, types: &vector<NgTypeDescriptor>, re
                 record_index = record_index + 1
     return -1
 
-fn ng_resolve_record_field_node(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, function: NgFunction, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>, declaration_indices: &vector<i64>, record_index_by_type: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>, node_index: i64) -> i64:
+fn ng_resolve_record_field_node(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, function: NgFunction, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>, declaration_indices: &vector<i64>, node_scope_ids: &vector<i64>, scope_parents: &vector<i64>, record_index_by_type: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>, node_index: i64) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
     mut target: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
@@ -2174,7 +2485,7 @@ fn ng_resolve_record_field_node(source: &bytes, types: &vector<NgTypeDescriptor>
                                 -1:
                                     target_type_id = target_type_id
                                 0:
-                                    lookup_result = ng_prior_local_declaration(source, &*nodes, function, node, node_index, target, local_symbols, local_buckets, local_offsets, local_occurrences)
+                                    lookup_result = ng_prior_local_declaration(source, &*nodes, function, node, node_index, target, node_scope_ids, scope_parents, local_symbols, local_buckets, local_offsets, local_occurrences)
                                     declaration_index = lookup_result.index
                                     match declaration_index >= 0:
                                         -1:
@@ -2204,7 +2515,7 @@ fn ng_resolve_record_field_node(source: &bytes, types: &vector<NgTypeDescriptor>
                                 -1:
                                     target_type_id = target.right
                                 0:
-                                    status = ng_resolve_record_field_node(source, types, records, fields, function, parameters, nodes, declaration_indices, record_index_by_type, local_symbols, local_buckets, local_offsets, local_occurrences, node.left)
+                                    status = ng_resolve_record_field_node(source, types, records, fields, function, parameters, nodes, declaration_indices, node_scope_ids, scope_parents, record_index_by_type, local_symbols, local_buckets, local_offsets, local_occurrences, node.left)
                                     match status <=> 0:
                                         0:
                                             target = vector_get<NgAstNode>(&*nodes, node.left)
@@ -2312,32 +2623,18 @@ fn ng_resolve_record_field_node(source: &bytes, types: &vector<NgTypeDescriptor>
         1:
             return -14
 
-export fn ng_resolve_record_field_nodes(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>) -> i64:
+fn ng_resolve_record_field_nodes_indexed(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>, declaration_indices: &vector<i64>, node_scope_ids: &vector<i64>, scope_parents: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>) -> i64:
     mut function_index: i64 = 0
     mut node_index: i64 = 0
     mut node_count: i64 = vector_len<NgAstNode>(&*nodes)
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     mut node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut status: i64 = 0
-    mut declaration_indices: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
-    mut local_symbols: vector<NgLocalLookupSymbol> = vector_new<NgLocalLookupSymbol>(vector_len<NgAstNode>(&*nodes))
-    mut local_buckets: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) * 2 + 1)
-    mut local_offsets: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) + 1)
-    mut local_occurrences: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
     mut record_index_by_type: vector<i64> = vector_new<i64>(vector_len<NgTypeDescriptor>(types))
     mut type_index: i64 = 0
     mut record_index: i64 = 0
     mut record_item: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
     mut prior_record_index: i64 = -1
-    discard ng_collect_local_declaration_indices(&*nodes, &mut declaration_indices)
-    status = ng_build_local_declaration_lookup(source, functions, &*nodes, &declaration_indices, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences)
-    match status <=> 0:
-        0:
-            status = status
-        -1:
-            return status
-        1:
-            return status
     while type_index < vector_len<NgTypeDescriptor>(types):
         discard vector_push<i64>(&mut record_index_by_type, -1)
         type_index = type_index + 1
@@ -2400,7 +2697,7 @@ export fn ng_resolve_record_field_nodes(source: &bytes, types: &vector<NgTypeDes
                         match function_index >= 0:
                             -1:
                                 function = vector_get<NgFunction>(functions, function_index)
-                                status = ng_resolve_record_field_node(source, types, records, fields, function, parameters, nodes, &declaration_indices, &record_index_by_type, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences, node_index)
+                                status = ng_resolve_record_field_node(source, types, records, fields, function, parameters, nodes, declaration_indices, node_scope_ids, scope_parents, &record_index_by_type, local_symbols, local_buckets, local_offsets, local_occurrences, node_index)
                                 match status <=> 0:
                                     -1:
                                         return status
@@ -2454,21 +2751,27 @@ fn ng_local_name_bucket(source: &bytes, function_first_node: i64, name_start: i6
         1:
             return 0
 
-fn ng_local_symbol_matches(source: &bytes, symbol: NgLocalLookupSymbol, function_first_node: i64, name_start: i64, name_end: i64) -> trit:
+fn ng_local_symbol_matches(source: &bytes, symbol: NgLocalLookupSymbol, function_first_node: i64, scope_id: i64, name_start: i64, name_end: i64) -> trit:
     match symbol.function_first_node <=> function_first_node:
         0:
-            return ng_spans_equal(source, symbol.name_start, symbol.name_end, name_start, name_end)
+            match symbol.scope_id <=> scope_id:
+                0:
+                    return ng_spans_equal(source, symbol.name_start, symbol.name_end, name_start, name_end)
+                -1:
+                    return 0
+                1:
+                    return 0
         -1:
             return 0
         1:
             return 0
 
-fn ng_local_symbol_slot(source: &bytes, symbols: &mut vector<NgLocalLookupSymbol>, bucket_slots: &mut vector<i64>, function_first_node: i64, name_start: i64, name_end: i64) -> NgLocalLookupResult:
+fn ng_local_symbol_slot(source: &bytes, symbols: &mut vector<NgLocalLookupSymbol>, bucket_slots: &mut vector<i64>, function_first_node: i64, scope_id: i64, name_start: i64, name_end: i64) -> NgLocalLookupResult:
     mut bucket_count: i64 = vector_len<i64>(&*bucket_slots)
     mut slot: i64 = 0
     mut probes: i64 = 0
     mut symbol_id: i64 = -1
-    mut symbol: NgLocalLookupSymbol = NgLocalLookupSymbol(function_first_node=0, name_start=0, name_end=0, first_occurrence=0, occurrence_count=0)
+    mut symbol: NgLocalLookupSymbol = NgLocalLookupSymbol(function_first_node=0, scope_id=0, name_start=0, name_end=0, first_occurrence=0, occurrence_count=0)
     match bucket_count > 0:
         -1:
             slot = ng_local_name_bucket(source, function_first_node, name_start, name_end, bucket_count)
@@ -2480,7 +2783,7 @@ fn ng_local_symbol_slot(source: &bytes, symbols: &mut vector<NgLocalLookupSymbol
                         return NgLocalLookupResult(index=slot, probes=probes)
                     0:
                         symbol = vector_get<NgLocalLookupSymbol>(&*symbols, symbol_id)
-                        match ng_local_symbol_matches(source, symbol, function_first_node, name_start, name_end) <=> -1:
+                        match ng_local_symbol_matches(source, symbol, function_first_node, scope_id, name_start, name_end) <=> -1:
                             0:
                                 return NgLocalLookupResult(index=slot, probes=probes)
                             -1:
@@ -2502,7 +2805,7 @@ fn ng_local_symbol_slot(source: &bytes, symbols: &mut vector<NgLocalLookupSymbol
         1:
             return NgLocalLookupResult(index=-1, probes=0)
 
-fn ng_build_local_declaration_lookup(source: &bytes, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, declaration_indices: &vector<i64>, symbols: &mut vector<NgLocalLookupSymbol>, bucket_slots: &mut vector<i64>, symbol_offsets: &mut vector<i64>, occurrence_nodes: &mut vector<i64>) -> i64:
+fn ng_build_local_declaration_lookup(source: &bytes, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, declaration_indices: &vector<i64>, node_scope_ids: &vector<i64>, symbols: &mut vector<NgLocalLookupSymbol>, bucket_slots: &mut vector<i64>, symbol_offsets: &mut vector<i64>, occurrence_nodes: &mut vector<i64>) -> i64:
     mut declaration_count: i64 = vector_len<i64>(declaration_indices)
     mut bucket_count: i64 = declaration_count * 2 + 1
     mut declaration_position: i64 = 0
@@ -2510,11 +2813,12 @@ fn ng_build_local_declaration_lookup(source: &bytes, functions: &vector<NgFuncti
     mut function_index: i64 = -1
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     mut declaration: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut scope_id: i64 = -1
     mut slot_result: NgLocalLookupResult = NgLocalLookupResult(index=-1, probes=0)
     mut slot: i64 = 0
     mut symbol_id: i64 = -1
     mut symbol_count: i64 = 0
-    mut symbol: NgLocalLookupSymbol = NgLocalLookupSymbol(function_first_node=0, name_start=0, name_end=0, first_occurrence=0, occurrence_count=0)
+    mut symbol: NgLocalLookupSymbol = NgLocalLookupSymbol(function_first_node=0, scope_id=0, name_start=0, name_end=0, first_occurrence=0, occurrence_count=0)
     mut symbol_counts: vector<i64> = vector_new<i64>(declaration_count)
     mut declaration_symbol_ids: vector<i64> = vector_new<i64>(declaration_count)
     mut symbol_index: i64 = 0
@@ -2528,11 +2832,18 @@ fn ng_build_local_declaration_lookup(source: &bytes, functions: &vector<NgFuncti
     while declaration_position < declaration_count:
         declaration_node_index = vector_get<i64>(declaration_indices, declaration_position)
         declaration = vector_get<NgAstNode>(nodes, declaration_node_index)
-        function_index = ng_function_index_for_node(functions, declaration_node_index)
+        scope_id = vector_get<i64>(node_scope_ids, declaration_node_index)
+        match scope_id >= 0:
+            -1:
+                function_index = ng_function_index_for_node(functions, declaration_node_index)
+            0:
+                return -14
+            1:
+                return -14
         match function_index >= 0:
             -1:
                 function = vector_get<NgFunction>(functions, function_index)
-                slot_result = ng_local_symbol_slot(source, symbols, bucket_slots, function.first_node, declaration.start, declaration.end)
+                slot_result = ng_local_symbol_slot(source, symbols, bucket_slots, function.first_node, scope_id, declaration.start, declaration.end)
                 slot = slot_result.index
                 match slot >= 0:
                     -1:
@@ -2540,7 +2851,7 @@ fn ng_build_local_declaration_lookup(source: &bytes, functions: &vector<NgFuncti
                         match symbol_id < 0:
                             -1:
                                 symbol_id = vector_len<NgLocalLookupSymbol>(&*symbols)
-                                symbol = NgLocalLookupSymbol(function_first_node=function.first_node, name_start=declaration.start, name_end=declaration.end, first_occurrence=0, occurrence_count=0)
+                                symbol = NgLocalLookupSymbol(function_first_node=function.first_node, scope_id=scope_id, name_start=declaration.start, name_end=declaration.end, first_occurrence=0, occurrence_count=0)
                                 discard vector_push<NgLocalLookupSymbol>(symbols, symbol)
                                 discard vector_set<i64>(bucket_slots, slot, symbol_id)
                                 discard vector_push<i64>(&mut symbol_counts, 1)
@@ -2591,8 +2902,123 @@ fn ng_build_local_declaration_lookup(source: &bytes, functions: &vector<NgFuncti
         declaration_position = declaration_position + 1
     return 0
 
-fn ng_prior_local_declaration(source: &bytes, nodes: &vector<NgAstNode>, function: NgFunction, before_node: NgAstNode, before_node_index: i64, target: NgAstNode, symbols: &mut vector<NgLocalLookupSymbol>, bucket_slots: &mut vector<i64>, symbol_offsets: &mut vector<i64>, occurrence_nodes: &mut vector<i64>) -> NgLocalLookupResult:
-    mut slot_result: NgLocalLookupResult = ng_local_symbol_slot(source, symbols, bucket_slots, function.first_node, target.start, target.end)
+fn ng_build_resolution_context(source: &bytes, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, declaration_indices: &mut vector<i64>, node_scope_ids: &mut vector<i64>, scope_parents: &mut vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>) -> i64:
+    mut status: i64 = ng_build_node_scope_index(functions, nodes, node_scope_ids, scope_parents)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            discard ng_collect_local_declaration_indices(nodes, declaration_indices)
+            return ng_build_local_declaration_lookup(source, functions, nodes, &*declaration_indices, &*node_scope_ids, local_symbols, local_buckets, local_offsets, local_occurrences)
+        1:
+            return status
+
+fn ng_has_unresolved_record_field_node(nodes: &vector<NgAstNode>) -> trit:
+    mut node_index: i64 = 0
+    mut node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    while node_index < vector_len<NgAstNode>(nodes):
+        node = vector_get<NgAstNode>(nodes, node_index)
+        match node.kind <=> 14:
+            0:
+                match node.right < 0:
+                    -1:
+                        return -1
+                    0:
+                        node_index = node_index + 1
+                    1:
+                        node_index = node_index + 1
+            -1:
+                node_index = node_index + 1
+            1:
+                node_index = node_index + 1
+    return 0
+
+fn ng_validate_record_type_metadata(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>) -> i64:
+    mut record_index_by_type: vector<i64> = vector_new<i64>(vector_len<NgTypeDescriptor>(types))
+    mut type_index: i64 = 0
+    mut record_index: i64 = 0
+    mut prior_record_index: i64 = -1
+    mut record_item: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
+    while type_index < vector_len<NgTypeDescriptor>(types):
+        discard vector_push<i64>(&mut record_index_by_type, -1)
+        type_index = type_index + 1
+    while record_index < vector_len<NgRecord>(records):
+        record_item = vector_get<NgRecord>(records, record_index)
+        match record_item.type_id > 0:
+            -1:
+                match record_item.type_id <= vector_len<NgTypeDescriptor>(types):
+                    -1:
+                        prior_record_index = vector_get<i64>(&record_index_by_type, record_item.type_id - 1)
+                        match prior_record_index < 0:
+                            -1:
+                                discard vector_set<i64>(&mut record_index_by_type, record_item.type_id - 1, record_index)
+                            0:
+                                return -14
+                            1:
+                                return -14
+                    0:
+                        return -14
+                    1:
+                        return -14
+            0:
+                return -14
+            1:
+                return -14
+        record_index = record_index + 1
+    type_index = 0
+    while type_index < vector_len<NgTypeDescriptor>(types):
+        record_index = ng_record_index_for_type(&*source, types, records, type_index + 1)
+        match record_index <=> -1:
+            0:
+                type_index = type_index + 1
+            -1:
+                return -14
+            1:
+                prior_record_index = vector_get<i64>(&record_index_by_type, type_index)
+                match prior_record_index <=> -1:
+                    0:
+                        discard vector_set<i64>(&mut record_index_by_type, type_index, record_index)
+                    -1:
+                        return -14
+                    1:
+                        match prior_record_index <=> record_index:
+                            0:
+                                prior_record_index = prior_record_index
+                            -1:
+                                return -14
+                            1:
+                                return -14
+                type_index = type_index + 1
+    return 0
+
+export fn ng_resolve_record_field_nodes(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>) -> i64:
+    mut pending_status: trit = ng_has_unresolved_record_field_node(&*nodes)
+    mut status: i64 = 0
+    match pending_status <=> 0:
+        0:
+            return ng_validate_record_type_metadata(source, types, records)
+        -1:
+            status = 0
+        1:
+            return -14
+    mut declaration_indices: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
+    mut node_scope_ids: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
+    mut scope_parents: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) + vector_len<NgFunction>(functions) + 1)
+    mut local_symbols: vector<NgLocalLookupSymbol> = vector_new<NgLocalLookupSymbol>(vector_len<NgAstNode>(&*nodes))
+    mut local_buckets: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) * 2 + 1)
+    mut local_offsets: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) + 1)
+    mut local_occurrences: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
+    status = ng_build_resolution_context(source, functions, &*nodes, &mut declaration_indices, &mut node_scope_ids, &mut scope_parents, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            return ng_resolve_record_field_nodes_indexed(source, types, records, fields, functions, parameters, nodes, &declaration_indices, &node_scope_ids, &scope_parents, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences)
+        1:
+            return status
+
+fn ng_prior_local_declaration(source: &bytes, nodes: &vector<NgAstNode>, function: NgFunction, before_node: NgAstNode, before_node_index: i64, target: NgAstNode, node_scope_ids: &vector<i64>, scope_parents: &vector<i64>, symbols: &mut vector<NgLocalLookupSymbol>, bucket_slots: &mut vector<i64>, symbol_offsets: &mut vector<i64>, occurrence_nodes: &mut vector<i64>) -> NgLocalLookupResult:
+    mut slot_result: NgLocalLookupResult = NgLocalLookupResult(index=-1, probes=0)
     mut symbol_id: i64 = -1
     mut low: i64 = 0
     mut high: i64 = 0
@@ -2600,49 +3026,62 @@ fn ng_prior_local_declaration(source: &bytes, nodes: &vector<NgAstNode>, functio
     mut position: i64 = -1
     mut declaration_node_index: i64 = -1
     mut declaration: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
-    mut probes: i64 = slot_result.probes
-    match slot_result.index >= 0:
-        -1:
-            symbol_id = vector_get<i64>(&*bucket_slots, slot_result.index)
-            match symbol_id >= 0:
-                -1:
-                    low = vector_get<i64>(&*symbol_offsets, symbol_id)
-                    high = vector_get<i64>(&*symbol_offsets, symbol_id + 1)
-                    while low < high:
-                        middle = low + (high - low) / 2
-                        declaration_node_index = vector_get<i64>(&*occurrence_nodes, middle)
-                        probes = probes + 1
-                        match declaration_node_index <=> before_node_index:
+    mut probes: i64 = 0
+    mut current_scope: i64 = -1
+    mut scope_count: i64 = vector_len<i64>(scope_parents)
+    current_scope = vector_get<i64>(node_scope_ids, before_node_index)
+    while current_scope >= 0:
+        match current_scope < scope_count:
+            -1:
+                slot_result = ng_local_symbol_slot(source, symbols, bucket_slots, function.first_node, current_scope, target.start, target.end)
+                probes = probes + slot_result.probes
+                match slot_result.index >= 0:
+                    -1:
+                        symbol_id = vector_get<i64>(&*bucket_slots, slot_result.index)
+                        match symbol_id >= 0:
                             -1:
-                                low = middle + 1
+                                low = vector_get<i64>(&*symbol_offsets, symbol_id)
+                                high = vector_get<i64>(&*symbol_offsets, symbol_id + 1)
+                                while low < high:
+                                    middle = low + (high - low) / 2
+                                    declaration_node_index = vector_get<i64>(&*occurrence_nodes, middle)
+                                    probes = probes + 1
+                                    match declaration_node_index <=> before_node_index:
+                                        -1:
+                                            low = middle + 1
+                                        0:
+                                            low = middle + 1
+                                        1:
+                                            high = middle
+                                position = low - 1
+                                low = vector_get<i64>(&*symbol_offsets, symbol_id)
+                                while position >= low:
+                                    declaration_node_index = vector_get<i64>(&*occurrence_nodes, position)
+                                    declaration = vector_get<NgAstNode>(nodes, declaration_node_index)
+                                    probes = probes + 1
+                                    match declaration.start <=> before_node.start:
+                                        -1:
+                                            return NgLocalLookupResult(index=declaration_node_index, probes=probes)
+                                        0:
+                                            position = position - 1
+                                        1:
+                                            position = position - 1
                             0:
-                                low = middle + 1
+                                slot_result = slot_result
                             1:
-                                high = middle
-                    position = low - 1
-                    low = vector_get<i64>(&*symbol_offsets, symbol_id)
-                    while position >= low:
-                        declaration_node_index = vector_get<i64>(&*occurrence_nodes, position)
-                        declaration = vector_get<NgAstNode>(nodes, declaration_node_index)
-                        probes = probes + 1
-                        match declaration.start <=> before_node.start:
-                            -1:
-                                return NgLocalLookupResult(index=declaration_node_index, probes=probes)
-                            0:
-                                position = position - 1
-                            1:
-                                position = position - 1
-                    return NgLocalLookupResult(index=-1, probes=probes)
-                0:
-                    return NgLocalLookupResult(index=-1, probes=probes)
-                1:
-                    return NgLocalLookupResult(index=-1, probes=probes)
-        0:
-            return NgLocalLookupResult(index=-1, probes=probes)
-        1:
-            return NgLocalLookupResult(index=-1, probes=probes)
+                                return NgLocalLookupResult(index=-1, probes=probes)
+                    0:
+                        slot_result = slot_result
+                    1:
+                        return NgLocalLookupResult(index=-1, probes=probes)
+                current_scope = vector_get<i64>(&*scope_parents, current_scope)
+            0:
+                return NgLocalLookupResult(index=-1, probes=probes)
+            1:
+                return NgLocalLookupResult(index=-1, probes=probes)
+    return NgLocalLookupResult(index=-1, probes=probes)
 
-fn ng_address_value_type(source: &bytes, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &vector<NgAstNode>, declaration_indices: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>, function: NgFunction, address: NgAstNode, address_index: i64, expression_id: i64) -> i64:
+fn ng_address_value_type(source: &bytes, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &vector<NgAstNode>, declaration_indices: &vector<i64>, node_scope_ids: &vector<i64>, scope_parents: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>, function: NgFunction, address: NgAstNode, address_index: i64, expression_id: i64) -> i64:
     mut expression: NgAstNode = vector_get<NgAstNode>(nodes, expression_id)
     mut declaration_index: i64 = -1
     mut declaration: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -2657,7 +3096,7 @@ fn ng_address_value_type(source: &bytes, functions: &vector<NgFunction>, paramet
                 -1:
                     return parameter_type
                 0:
-                    lookup_result = ng_prior_local_declaration(source, nodes, function, address, address_index, expression, local_symbols, local_buckets, local_offsets, local_occurrences)
+                    lookup_result = ng_prior_local_declaration(source, nodes, function, address, address_index, expression, node_scope_ids, scope_parents, local_symbols, local_buckets, local_offsets, local_occurrences)
                     declaration_index = lookup_result.index
                     match declaration_index >= 0:
                         -1:
@@ -2680,7 +3119,7 @@ fn ng_address_value_type(source: &bytes, functions: &vector<NgFunction>, paramet
         1:
             match expression.kind <=> 3:
                 0:
-                    return ng_address_value_type(source, functions, parameters, nodes, declaration_indices, local_symbols, local_buckets, local_offsets, local_occurrences, function, address, address_index, expression.left)
+                    return ng_address_value_type(source, functions, parameters, nodes, declaration_indices, node_scope_ids, scope_parents, local_symbols, local_buckets, local_offsets, local_occurrences, function, address, address_index, expression.left)
                 -1:
                     return -14
                 1:
@@ -2743,7 +3182,7 @@ fn ng_address_value_type(source: &bytes, functions: &vector<NgFunction>, paramet
                                                 1:
                                                     return -14
 
-fn ng_resolve_dereference_nodes(source: &bytes, types: &vector<NgTypeDescriptor>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>, declaration_indices: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>) -> i64:
+fn ng_resolve_dereference_nodes(source: &bytes, types: &vector<NgTypeDescriptor>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>, declaration_indices: &vector<i64>, node_scope_ids: &vector<i64>, scope_parents: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>) -> i64:
     mut node_index: i64 = 0
     mut function_index: i64 = 0
     mut owner_index: i64 = -1
@@ -2759,7 +3198,7 @@ fn ng_resolve_dereference_nodes(source: &bytes, types: &vector<NgTypeDescriptor>
                 match owner_index >= 0:
                     -1:
                         function = vector_get<NgFunction>(functions, owner_index)
-                        source_type_id = ng_address_value_type(source, functions, parameters, &*nodes, declaration_indices, local_symbols, local_buckets, local_offsets, local_occurrences, function, node, node_index, node.left)
+                        source_type_id = ng_address_value_type(source, functions, parameters, &*nodes, declaration_indices, node_scope_ids, scope_parents, local_symbols, local_buckets, local_offsets, local_occurrences, function, node, node_index, node.left)
                         match source_type_id > 0:
                             -1:
                                 match source_type_id <= vector_len<NgTypeDescriptor>(types):
@@ -2869,7 +3308,7 @@ fn ng_resolve_reborrow_addresses(types: &mut vector<NgTypeDescriptor>, nodes: &m
         node_index = node_index + 1
     return 0
 
-export fn ng_resolve_address_nodes(source: &bytes, types: &mut vector<NgTypeDescriptor>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>) -> i64:
+fn ng_resolve_address_nodes_indexed(source: &bytes, types: &mut vector<NgTypeDescriptor>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>, declaration_indices: &vector<i64>, node_scope_ids: &vector<i64>, scope_parents: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>) -> i64:
     mut node_index: i64 = 0
     mut function_index: i64 = 0
     mut owner_index: i64 = -1
@@ -2887,20 +3326,7 @@ export fn ng_resolve_address_nodes(source: &bytes, types: &mut vector<NgTypeDesc
     mut reference_type: i64 = -1
     mut resolution_status: i64 = 0
     mut lookup_result: NgLocalLookupResult = NgLocalLookupResult(index=-1, probes=0)
-    mut declaration_indices: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
-    mut local_symbols: vector<NgLocalLookupSymbol> = vector_new<NgLocalLookupSymbol>(vector_len<NgAstNode>(&*nodes))
-    mut local_buckets: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) * 2 + 1)
-    mut local_offsets: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) + 1)
-    mut local_occurrences: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
-    discard ng_collect_local_declaration_indices(&*nodes, &mut declaration_indices)
-    resolution_status = ng_build_local_declaration_lookup(source, functions, &*nodes, &declaration_indices, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences)
-    match resolution_status <=> 0:
-        0:
-            resolution_status = ng_resolve_dereference_nodes(source, &*types, functions, parameters, &mut *nodes, &declaration_indices, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences)
-        -1:
-            return resolution_status
-        1:
-            return resolution_status
+    resolution_status = ng_resolve_dereference_nodes(source, &*types, functions, parameters, &mut *nodes, declaration_indices, node_scope_ids, scope_parents, local_symbols, local_buckets, local_offsets, local_occurrences)
     match resolution_status <=> 0:
         0:
             resolution_status = ng_resolve_reborrow_addresses(types, &mut *nodes)
@@ -2941,7 +3367,7 @@ export fn ng_resolve_address_nodes(source: &bytes, types: &mut vector<NgTypeDesc
                                                         target_type = parameter_type
                                                         is_parameter = 1
                                                     0:
-                                                        lookup_result = ng_prior_local_declaration(source, &*nodes, function, node, node_index, target, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences)
+                                                        lookup_result = ng_prior_local_declaration(source, &*nodes, function, node, node_index, target, node_scope_ids, scope_parents, local_symbols, local_buckets, local_offsets, local_occurrences)
                                                         declaration_index = lookup_result.index
                                                         match declaration_index >= 0:
                                                             -1:
@@ -3034,6 +3460,47 @@ export fn ng_resolve_address_nodes(source: &bytes, types: &mut vector<NgTypeDesc
                 node_index = node_index
         node_index = node_index + 1
     return 0
+
+export fn ng_resolve_address_nodes(source: &bytes, types: &mut vector<NgTypeDescriptor>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>) -> i64:
+    mut declaration_indices: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
+    mut node_scope_ids: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
+    mut scope_parents: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) + vector_len<NgFunction>(functions) + 1)
+    mut local_symbols: vector<NgLocalLookupSymbol> = vector_new<NgLocalLookupSymbol>(vector_len<NgAstNode>(&*nodes))
+    mut local_buckets: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) * 2 + 1)
+    mut local_offsets: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) + 1)
+    mut local_occurrences: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
+    mut status: i64 = ng_build_resolution_context(source, functions, &*nodes, &mut declaration_indices, &mut node_scope_ids, &mut scope_parents, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            return ng_resolve_address_nodes_indexed(source, types, functions, parameters, nodes, &declaration_indices, &node_scope_ids, &scope_parents, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences)
+        1:
+            return status
+
+export fn ng_resolve_semantic_nodes(source: &bytes, types: &mut vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>) -> i64:
+    mut declaration_indices: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
+    mut node_scope_ids: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
+    mut scope_parents: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) + vector_len<NgFunction>(functions) + 1)
+    mut local_symbols: vector<NgLocalLookupSymbol> = vector_new<NgLocalLookupSymbol>(vector_len<NgAstNode>(&*nodes))
+    mut local_buckets: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) * 2 + 1)
+    mut local_offsets: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes) + 1)
+    mut local_occurrences: vector<i64> = vector_new<i64>(vector_len<NgAstNode>(&*nodes))
+    mut status: i64 = ng_build_resolution_context(source, functions, &*nodes, &mut declaration_indices, &mut node_scope_ids, &mut scope_parents, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            status = ng_resolve_record_field_nodes_indexed(source, &*types, records, fields, functions, parameters, nodes, &declaration_indices, &node_scope_ids, &scope_parents, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences)
+            match status <=> 0:
+                -1:
+                    return status
+                0:
+                    return ng_resolve_address_nodes_indexed(source, types, functions, parameters, nodes, &declaration_indices, &node_scope_ids, &scope_parents, &mut local_symbols, &mut local_buckets, &mut local_offsets, &mut local_occurrences)
+                1:
+                    return status
+        1:
+            return status
 
 fn ng_assignment_root_node(nodes: &vector<NgAstNode>, target_node_id: i64) -> i64:
     mut current: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -3141,15 +3608,130 @@ fn ng_check_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields:
         1:
             return -12
 
+fn ng_check_control_statement(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, function: NgFunction, link: NgAstNode, statement: NgAstNode, loop_depth: i64) -> i64:
+    mut value_type: i64 = 0
+    mut nested_flow: i64 = 0
+    mut status: i64 = 0
+    match statement.kind == 8:
+        -1:
+            status = ng_check_assignment(source, types, fields, functions, nodes, parameters, locals, function, statement)
+            match status <=> 0:
+                0:
+                    return 1
+                -1:
+                    return status
+                1:
+                    return status
+        0:
+            match statement.kind == 9:
+                -1:
+                    value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left, function.return_type)
+                    match ng_type_equal(source, types, value_type, function.return_type) <=> -1:
+                        -1:
+                            return -15
+                        0:
+                            match link.right <=> -1:
+                                0:
+                                    return 0
+                                -1:
+                                    return -17
+                                1:
+                                    return -17
+                        1:
+                            return -15
+                0:
+                    match statement.kind == 12:
+                        -1:
+                            nested_flow = ng_check_match_arms(source, types, fields, functions, nodes, parameters, locals, function, statement, loop_depth)
+                            match nested_flow < 0:
+                                -1:
+                                    return nested_flow
+                                0:
+                                    match nested_flow <=> 0:
+                                        -1:
+                                            return nested_flow
+                                        0:
+                                            match link.right <=> -1:
+                                                0:
+                                                    return 0
+                                                -1:
+                                                    return -17
+                                                1:
+                                                    return -17
+                                        1:
+                                            match nested_flow <=> 2:
+                                                -1:
+                                                    return 1
+                                                0:
+                                                    match link.right <=> -1:
+                                                        0:
+                                                            return 2
+                                                        -1:
+                                                            return -17
+                                                        1:
+                                                            return -17
+                                                1:
+                                                    return -16
+                                1:
+                                    return -16
+                        0:
+                            match statement.kind == 15:
+                                -1:
+                                    value_type = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left)
+                                    match value_type < 0:
+                                        -1:
+                                            return value_type
+                                        0:
+                                            return 1
+                                        1:
+                                            return 1
+                                0:
+                                    match statement.kind == 17:
+                                        -1:
+                                            value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left, 2)
+                                            match value_type <=> 2:
+                                                -1:
+                                                    return -14
+                                                0:
+                                                    nested_flow = ng_check_control_body(source, types, fields, functions, nodes, parameters, locals, function, statement.right, loop_depth + 1)
+                                                    match nested_flow < 0:
+                                                        -1:
+                                                            return nested_flow
+                                                        0:
+                                                            return 1
+                                                        1:
+                                                            return 1
+                                                1:
+                                                    return -14
+                                        0:
+                                            return -16
+                                        1:
+                                            return -16
+                                1:
+                                    return -16
+                        1:
+                            return -16
+                1:
+                    return -16
+        1:
+            return -16
+
 fn ng_check_control_body(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, function: NgFunction, body_head: i64, loop_depth: i64) -> i64:
+    mut scoped_locals: vector<NgLocal> = vector_new<NgLocal>(function.end - function.start + vector_len<NgLocal>(locals) + 1)
+    mut inherited_index: i64 = 0
+    mut local_scope_start: i64 = vector_len<NgLocal>(locals)
     mut link_id: i64 = body_head
     mut link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut statement: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut local_id: i64 = -1
-    mut local_binding: NgLocal = NgLocal(name_start=0, name_end=0, type_kind=0, mutable=0)
+    mut declared_type: i64 = 0
+    mut mutable: i64 = 0
+    mut parameter_type: i64 = 0
     mut value_type: i64 = 0
-    mut nested_flow: i64 = 0
     mut status: i64 = 0
+    while inherited_index < local_scope_start:
+        discard vector_push<NgLocal>(&mut scoped_locals, vector_get<NgLocal>(locals, inherited_index))
+        inherited_index = inherited_index + 1
     while link_id >= 0:
         link = vector_get<NgAstNode>(nodes, link_id)
         match link.kind <=> 11:
@@ -3176,105 +3758,59 @@ fn ng_check_control_body(source: &bytes, types: &vector<NgTypeDescriptor>, field
                         statement = statement
                     1:
                         statement = statement
-                match statement.kind == 8:
+                match statement.kind == 7:
                     -1:
-                        status = ng_check_assignment(source, types, fields, functions, nodes, parameters, locals, function, statement)
-                        match status <=> 0:
-                            0:
-                                status = status
+                        declared_type = statement.operation
+                        mutable = 0
+                        match declared_type < 0:
                             -1:
-                                return status
+                                declared_type = 0 - declared_type
+                                mutable = 1
+                            0:
+                                mutable = 0
                             1:
-                                return status
-                    0:
-                        match statement.kind == 9:
+                                mutable = 0
+                        parameter_type = ng_parameter_type(source, parameters, function.first_parameter, function.parameter_count, statement.start, statement.end)
+                        local_id = ng_local_index_from(source, &scoped_locals, local_scope_start, statement.start, statement.end)
+                        match parameter_type >= 0:
                             -1:
-                                value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left, function.return_type)
-                                match ng_type_equal(source, types, value_type, function.return_type) <=> -1:
-                                    -1:
-                                        return -15
-                                    0:
-                                        match link.right <=> -1:
-                                            0:
-                                                return 0
-                                            -1:
-                                                return -17
-                                            1:
-                                                return -17
-                                    1:
-                                        return -15
+                                return -11
                             0:
-                                match statement.kind == 12:
+                                match local_id >= 0:
                                     -1:
-                                        nested_flow = ng_check_match_arms(source, types, fields, functions, nodes, parameters, locals, function, statement, loop_depth)
-                                        match nested_flow < 0:
-                                            -1:
-                                                return nested_flow
-                                            0:
-                                                match nested_flow <=> 0:
-                                                    -1:
-                                                        return nested_flow
-                                                    0:
-                                                        match link.right <=> -1:
-                                                            0:
-                                                                return 0
-                                                            -1:
-                                                                return -17
-                                                            1:
-                                                                return -17
-                                                    1:
-                                                        match nested_flow <=> 2:
-                                                            -1:
-                                                                link_id = link.right
-                                                            0:
-                                                                match link.right <=> -1:
-                                                                    0:
-                                                                        return 2
-                                                                    -1:
-                                                                        return -17
-                                                                    1:
-                                                                        return -17
-                                                            1:
-                                                                return -16
-                                            1:
-                                                return -16
+                                        return -11
                                     0:
-                                        match statement.kind == 15:
+                                        value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, &scoped_locals, function.first_parameter, function.parameter_count, statement.left, declared_type)
+                                        match ng_type_equal(source, types, value_type, declared_type) <=> -1:
                                             -1:
-                                                value_type = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left)
-                                                match value_type < 0:
-                                                    -1:
-                                                        return value_type
-                                                    0:
-                                                        value_type = value_type
-                                                    1:
-                                                        value_type = value_type
+                                                return -14
                                             0:
-                                                match statement.kind == 17:
-                                                    -1:
-                                                        value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left, 2)
-                                                        match value_type <=> 2:
-                                                            -1:
-                                                                return -14
-                                                            0:
-                                                                nested_flow = ng_check_control_body(source, types, fields, functions, nodes, parameters, locals, function, statement.right, loop_depth + 1)
-                                                                match nested_flow < 0:
-                                                                    -1:
-                                                                        return nested_flow
-                                                                    0:
-                                                                        nested_flow = nested_flow
-                                                                    1:
-                                                                        nested_flow = nested_flow
-                                                            1:
-                                                                return -14
-                                                    0:
-                                                        return -16
-                                                    1:
-                                                        return -16
+                                                discard vector_push<NgLocal>(&mut scoped_locals, NgLocal(name_start=statement.start, name_end=statement.end, type_kind=declared_type, mutable=mutable))
+                                            1:
+                                                return -14
+                                    1:
+                                        return -11
+                            1:
+                                return -11
+                    0:
+                        status = ng_check_control_statement(source, types, fields, functions, nodes, parameters, &scoped_locals, function, link, statement, loop_depth)
+                        match status < 0:
+                            -1:
+                                return status
+                            0:
+                                match status <=> 0:
+                                    -1:
+                                        return status
+                                    0:
+                                        return 0
+                                    1:
+                                        match status <=> 2:
+                                            -1:
+                                                status = status
+                                            0:
+                                                return 2
                                             1:
                                                 return -16
-                                    1:
-                                        return -16
                             1:
                                 return -16
                     1:
@@ -3591,8 +4127,8 @@ fn ng_check_program_core(source: &bytes, types: &vector<NgTypeDescriptor>, field
     mut prior_parameter_index: i64 = 0
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     mut prior_function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
-    mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
-    mut prior_parameter: NgParameter = NgParameter(name_start=0, name_end=0, type_kind=0)
+    mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, name_fingerprint=0, type_kind=0)
+    mut prior_parameter: NgParameter = NgParameter(name_start=0, name_end=0, name_fingerprint=0, type_kind=0)
     mut body_status: i64 = 0
     while function_index < vector_len<NgFunction>(functions):
         function = vector_get<NgFunction>(functions, function_index)

@@ -14,6 +14,7 @@ export record NgAstNode:
 export record NgParameter:
     name_start: i64
     name_end: i64
+    name_fingerprint: i64
     type_kind: i64
 
 export record NgRecord:
@@ -822,22 +823,40 @@ fn ng_is_generic_call_ahead(source: &bytes, tokens: &vector<NgToken>, cursor: &v
 
 fn ng_local_nominal_type_id(source: &bytes, types: &vector<NgTypeDescriptor>, module_start: i64, module_end: i64, name: NgToken) -> i64:
     mut index: i64 = 6
+    mut module_length: i64 = module_end - module_start
+    mut descriptor_module_length: i64 = 0
+    mut name_length: i64 = name.end - name.start
+    mut descriptor_name_length: i64 = 0
     mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     while index < vector_len<NgTypeDescriptor>(types):
         descriptor = vector_get<NgTypeDescriptor>(types, index)
         match descriptor.kind <=> 7:
             0:
-                match ng_spans_equal(source, descriptor.module_start, descriptor.module_end, module_start, module_end):
+                descriptor_module_length = descriptor.module_end - descriptor.module_start
+                match module_length <=> descriptor_module_length:
                     -1:
-                        match ng_spans_equal(source, descriptor.name_start, descriptor.name_end, name.start, name.end):
+                        index = index + 1
+                    0:
+                        match ng_spans_equal(source, descriptor.module_start, descriptor.module_end, module_start, module_end):
                             -1:
-                                return index + 1
+                                descriptor_name_length = descriptor.name_end - descriptor.name_start
+                                match name_length <=> descriptor_name_length:
+                                    0:
+                                        match ng_spans_equal(source, descriptor.name_start, descriptor.name_end, name.start, name.end):
+                                            -1:
+                                                return index + 1
+                                            0:
+                                                index = index + 1
+                                            1:
+                                                index = index + 1
+                                    -1:
+                                        index = index + 1
+                                    1:
+                                        index = index + 1
                             0:
                                 index = index + 1
                             1:
                                 index = index + 1
-                    0:
-                        index = index + 1
                     1:
                         index = index + 1
             -1:
@@ -1363,7 +1382,7 @@ fn ng_parse_parameter(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vec
             type_kind = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
             match type_kind > 0:
                 -1:
-                    discard vector_push<NgParameter>(parameters, NgParameter(name_start=name.start, name_end=name.end, type_kind=type_kind))
+                    discard vector_push<NgParameter>(parameters, NgParameter(name_start=name.start, name_end=name.end, name_fingerprint=ng_span_fingerprint(source, name.start, name.end), type_kind=type_kind))
                     return 0
                 0:
                     return -1

@@ -34,6 +34,9 @@ decoder formats those paths into canonical parameter names but does not resolve
 fields or types.
 V16 adds kind 23 after CALL arguments for typed scalar ``vector_get<T>`` and
 ``vector_set<T>`` targets.
+V17 stores each RETURN's explicit result-register IDs in kind 24 records
+immediately following that instruction. This preserves non-contiguous
+aggregate result layouts without inserting semantic MOVE instructions.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
@@ -63,7 +66,7 @@ from .static_text import StaticTextDecodeError, decode_static_text
 from .vector_types import composite_vector_runtime_name_from_key
 
 
-NG_IR_FORMAT_VERSION = 16
+NG_IR_FORMAT_VERSION = 17
 NG_IR_RECORD_WIDTH = 8
 
 _V5_VECTOR_NEW_BUILTINS = {
@@ -196,7 +199,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -567,6 +570,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
 
         instruction_records: list[_InstructionRecord] = []
         call_pool_length = 0
+        return_pool_length = 0
         while cursor < len(records) and records[cursor][0] == 4:
             item = take(4, f"instruction {len(instruction_records)} of {function_name}")
             _, owner, opcode_code, result_id, operand_count, operand0, operand1, immediate = item
@@ -627,9 +631,48 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 operands = (operand0, operand1)
                 decoded_immediate = immediate
             elif opcode is IROpcode.RETURN:
-                if result is not None or operand1 != -1 or immediate != 0:
+                if result is not None or immediate != 0:
                     raise NGIRDecodeError("malformed RETURN record")
-                if version >= 14:
+                if version >= 17:
+                    if (
+                        operand_count != len(result_type_ids)
+                        or operand_count <= 0
+                        or operand0 < 0
+                        or operand1 != return_pool_length
+                    ):
+                        raise NGIRDecodeError("V17 RETURN width or result-pool offset is malformed")
+                    explicit_operands: list[int] = []
+                    for result_ordinal in range(operand_count):
+                        result_record = take(24, f"V17 RETURN result cell {result_ordinal}")
+                        (
+                            _,
+                            result_owner,
+                            result_instruction,
+                            encoded_ordinal,
+                            register_id,
+                            reserved0,
+                            reserved1,
+                            reserved2,
+                        ) = result_record
+                        if (
+                            result_owner != function_index
+                            or result_instruction != instruction_index
+                            or encoded_ordinal != result_ordinal
+                            or any((reserved0, reserved1, reserved2))
+                        ):
+                            raise NGIRDecodeError("malformed V17 RETURN result-cell identity or reserved fields")
+                        if not 0 <= register_id < len(register_type_ids):
+                            raise NGIRDecodeError("V17 RETURN references a missing result register")
+                        explicit_operands.append(register_id)
+                    if explicit_operands[0] != operand0:
+                        raise NGIRDecodeError("V17 RETURN first-register field disagrees with its explicit result cells")
+                    operands = tuple(explicit_operands)
+                    if tuple(register_type_ids[index] for index in operands) != tuple(result_type_ids):
+                        raise NGIRDecodeError("V17 RETURN registers disagree with function result-cell types")
+                    return_pool_length += len(operands)
+                elif version >= 14:
+                    if operand1 != -1:
+                        raise NGIRDecodeError("malformed pre-V17 RETURN record")
                     if operand_count != len(result_type_ids) or operand_count <= 0 or operand0 < 0:
                         raise NGIRDecodeError("V14 RETURN width disagrees with its function signature")
                     if operand0 + operand_count > len(register_type_ids):
@@ -638,6 +681,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     if tuple(register_type_ids[index] for index in operands) != tuple(result_type_ids):
                         raise NGIRDecodeError("V14 RETURN registers disagree with function result-cell types")
                 else:
+                    if operand1 != -1:
+                        raise NGIRDecodeError("malformed RETURN record")
                     if operand_count != 1:
                         raise NGIRDecodeError("malformed RETURN record")
                     operands = (operand0,)
