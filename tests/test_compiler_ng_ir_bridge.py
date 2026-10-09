@@ -2318,25 +2318,27 @@ def test_ng_ir_variable_field_lookup_stays_with_parent_subtree() -> None:
     root_count = 128
     wrapper = f'''\
 fn main() -> vector<i64>:
-    mut source_text: text = text_from_static("root target left inner leaf right sibling other missing")
+    mut source_text: text = text_from_static("root target left inner leaf right sibling other missing long_prefix_alpha long_prefix_omega")
     mut source: bytes = bytes_from_text(&source_text)
     mut variables: vector<NgIRVariable> = vector_new<NgIRVariable>(512)
     mut invalid_variables: vector<NgIRVariable> = vector_new<NgIRVariable>(2)
-    mut result: vector<i64> = vector_new<i64>(4)
+    mut result: vector<i64> = vector_new<i64>(5)
     mut index: i64 = 0
     mut fingerprint: i64 = ng_span_fingerprint(&source, 0, 4)
     mut sibling_index: i64 = -1
     discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=0, name_end=4, name_fingerprint=fingerprint, type_kind=7, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
     fingerprint = ng_span_fingerprint(&source, 5, 11)
     discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=5, name_end=11, name_fingerprint=fingerprint, type_kind=7, mutable=0, register=-1, memory=-1, parent_index=0, field_name_start=5, field_name_end=11))
-    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=5, name_end=11, name_fingerprint=fingerprint, type_kind=1, mutable=0, register=0, memory=-1, parent_index=1, field_name_start=12, field_name_end=16))
-    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=5, name_end=11, name_fingerprint=fingerprint, type_kind=7, mutable=0, register=-1, memory=-1, parent_index=1, field_name_start=17, field_name_end=22))
-    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=5, name_end=11, name_fingerprint=fingerprint, type_kind=1, mutable=0, register=1, memory=-1, parent_index=3, field_name_start=23, field_name_end=27))
-    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=5, name_end=11, name_fingerprint=fingerprint, type_kind=1, mutable=0, register=2, memory=-1, parent_index=1, field_name_start=28, field_name_end=33))
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=12, name_end=16, name_fingerprint=ng_span_fingerprint(&source, 12, 16), type_kind=1, mutable=0, register=0, memory=-1, parent_index=1, field_name_start=12, field_name_end=16))
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=17, name_end=22, name_fingerprint=ng_span_fingerprint(&source, 17, 22), type_kind=7, mutable=0, register=-1, memory=-1, parent_index=1, field_name_start=17, field_name_end=22))
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=23, name_end=27, name_fingerprint=ng_span_fingerprint(&source, 23, 27), type_kind=1, mutable=0, register=1, memory=-1, parent_index=3, field_name_start=23, field_name_end=27))
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=28, name_end=33, name_fingerprint=ng_span_fingerprint(&source, 28, 33), type_kind=1, mutable=0, register=2, memory=-1, parent_index=1, field_name_start=28, field_name_end=33))
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=56, name_end=73, name_fingerprint=ng_span_fingerprint(&source, 56, 73), type_kind=1, mutable=0, register=3, memory=-1, parent_index=1, field_name_start=56, field_name_end=73))
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=74, name_end=91, name_fingerprint=ng_span_fingerprint(&source, 74, 91), type_kind=1, mutable=0, register=4, memory=-1, parent_index=1, field_name_start=74, field_name_end=91))
     sibling_index = vector_len<NgIRVariable>(&variables)
     discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=34, name_end=41, name_fingerprint=ng_span_fingerprint(&source, 34, 41), type_kind=7, mutable=0, register=-1, memory=-1, parent_index=0, field_name_start=34, field_name_end=41))
     while index < {sibling_count}:
-        discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=34, name_end=41, name_fingerprint=ng_span_fingerprint(&source, 34, 41), type_kind=1, mutable=0, register=index, memory=-1, parent_index=sibling_index, field_name_start=12, field_name_end=16))
+        discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=12, name_end=16, name_fingerprint=ng_span_fingerprint(&source, 12, 16), type_kind=1, mutable=0, register=index, memory=-1, parent_index=sibling_index, field_name_start=12, field_name_end=16))
         index = index + 1
     index = 0
     while index < {root_count}:
@@ -2345,8 +2347,9 @@ fn main() -> vector<i64>:
     discard vector_push<i64>(&mut result, ng_ir_variable_field_index(&source, &variables, 1, 28, 33))
     discard vector_push<i64>(&mut result, ng_ir_variable_field_index(&source, &variables, 3, 23, 27))
     discard vector_push<i64>(&mut result, ng_ir_variable_field_index(&source, &variables, 1, 48, 55))
+    discard vector_push<i64>(&mut result, ng_ir_variable_field_index(&source, &variables, 1, 74, 91))
     discard vector_push<NgIRVariable>(&mut invalid_variables, NgIRVariable(name_start=0, name_end=4, name_fingerprint=fingerprint, type_kind=7, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
-    discard vector_push<NgIRVariable>(&mut invalid_variables, NgIRVariable(name_start=5, name_end=11, name_fingerprint=fingerprint, type_kind=1, mutable=0, register=0, memory=-1, parent_index=2, field_name_start=12, field_name_end=16))
+    discard vector_push<NgIRVariable>(&mut invalid_variables, NgIRVariable(name_start=12, name_end=16, name_fingerprint=ng_span_fingerprint(&source, 12, 16), type_kind=1, mutable=0, register=0, memory=-1, parent_index=2, field_name_start=12, field_name_end=16))
     discard vector_push<i64>(&mut result, ng_ir_variable_field_index(&source, &invalid_variables, 0, 12, 16))
     return result
 '''
@@ -2362,12 +2365,12 @@ fn main() -> vector<i64>:
     )
 
     assert hasattr(result, "element_type")
-    assert [int(result.get(index)) for index in range(result.length)] == [5, 4, -12, -14]
+    assert [int(result.get(index)) for index in range(result.length)] == [5, 4, -12, 7, -14]
     line_counts = metrics["line_counts"]
     assert isinstance(line_counts, dict)
     lookup_steps = int(line_counts.get("ng_ir_variable_field_index", 0))
-    print(f"IR_FIELD_LOOKUP_PROFILE variables={6 + sibling_count + root_count} steps={lookup_steps}")
-    assert lookup_steps < 20_000
+    print(f"IR_FIELD_LOOKUP_PROFILE variables={9 + sibling_count + root_count} steps={lookup_steps}")
+    assert lookup_steps < 25_000
 
 
 def test_ng_ir_variable_lookup_skips_contiguous_record_cells() -> None:
