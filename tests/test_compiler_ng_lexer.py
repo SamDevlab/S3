@@ -163,7 +163,7 @@ fn main() -> i64:
 def _nextgen_rejects(source: str) -> bool:
     wrapper = f"""
 fn main() -> i64:
-    mut source_text: text = text_from_static({json.dumps(source)})
+    mut source_text: text = text_from_static({json.dumps(source, ensure_ascii=False)})
     mut source_bytes: bytes = bytes_from_text(&source_text)
     mut tokens: vector<NgToken> = vector_new<NgToken>(32)
     mut status: i64 = ng_lex(&source_bytes, &mut tokens)
@@ -282,8 +282,12 @@ fn main() -> vector<i64>:
             expected.append(6)
         elif unit == 34:
             expected.append(7)
-        else:
+        elif unit in {33, 42, 43, 45, 60, 61, 62}:
             expected.append(8)
+        elif unit < 128:
+            expected.append(9)
+        else:
+            expected.append(10)
     assert actual == expected
 
 
@@ -330,3 +334,7 @@ fn main() -> vector<i64>:
 def test_nextgen_runtime_lexer_fails_closed_on_unterminated_string() -> None:
     source = "fn broken() -> i64: return \"unterminated"
     assert _nextgen_rejects(source)
+
+
+def test_nextgen_runtime_lexer_fails_closed_on_non_ascii_symbol() -> None:
+    assert _nextgen_rejects("fn main() -> i64: return §")

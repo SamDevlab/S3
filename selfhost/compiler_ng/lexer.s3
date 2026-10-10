@@ -302,6 +302,60 @@ fn ng_is_space(unit: i64) -> trit:
         1:
             return 0
 
+fn ng_is_multi_symbol_start(unit: i64) -> trit:
+    match unit <=> 60:
+        -1:
+            match unit == 33:
+                -1:
+                    return -1
+                0:
+                    match unit == 42:
+                        -1:
+                            return -1
+                        0:
+                            match unit == 43:
+                                -1:
+                                    return -1
+                                0:
+                                    match unit == 45:
+                                        -1:
+                                            return -1
+                                        0:
+                                            return 0
+                                        1:
+                                            return -1
+                                1:
+                                    return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            match unit <=> 62:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn ng_other_symbol_class(unit: i64) -> i64:
+    match unit < 128:
+        -1:
+            match ng_is_multi_symbol_start(unit):
+                -1:
+                    return 8
+                0:
+                    return 9
+                1:
+                    return 9
+        0:
+            return 10
+        1:
+            return 10
+
 fn ng_character_class(unit: i64) -> i64:
     match ng_is_digit(unit):
         -1:
@@ -332,17 +386,17 @@ fn ng_character_class(unit: i64) -> i64:
                                                         -1:
                                                             return 7
                                                         0:
-                                                            return 8
+                                                            return ng_other_symbol_class(unit)
                                                         1:
-                                                            return 8
+                                                            return ng_other_symbol_class(unit)
                                                 1:
-                                                    return 8
+                                                    return ng_other_symbol_class(unit)
                                         1:
-                                            return 8
+                                            return ng_other_symbol_class(unit)
                                 1:
-                                    return 8
+                                    return ng_other_symbol_class(unit)
                         1:
-                            return 8
+                            return ng_other_symbol_class(unit)
                 1:
                     return 2
         1:
@@ -709,7 +763,13 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
         0:
             next = ng_scan_string(source, token_start, length, tokens, indent)
         1:
-            next = ng_scan_symbol(source, token_start, length, tokens, indent)
+            match character_class <=> 9:
+                -1:
+                    next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                0:
+                    next = ng_emit(tokens, 300 + unit, token_start, token_start + 1, indent)
+                1:
+                    next = ng_scan_symbol(source, token_start, length, tokens, indent)
     match next >= 0:
         -1:
             match unit <=> 34:
