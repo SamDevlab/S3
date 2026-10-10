@@ -2267,7 +2267,7 @@ fn ng_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                                                                 1:
                                                                     return -11
 
-fn ng_function_index_for_node(functions: &vector<NgFunction>, node_index: i64) -> i64:
+export fn ng_function_index_for_node(functions: &vector<NgFunction>, node_index: i64) -> i64:
     mut low: i64 = 0
     mut high: i64 = vector_len<NgFunction>(functions)
     mut middle: i64 = 0

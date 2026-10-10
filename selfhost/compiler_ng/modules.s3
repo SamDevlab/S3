@@ -3,7 +3,7 @@ module selfhost.compiler_ng.modules
 from selfhost.compiler_ng.lexer import NgToken, ng_lex, ng_span_fingerprint, ng_spans_equal
 from selfhost.compiler_ng.parser import NgFunction, NgImport, NgModule, NgSpan, NgAstNode, NgParameter, NgRecord, NgField, ng_parse_module_header, ng_parse_module_functions, ng_validate_nominal_types
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table
-from selfhost.compiler_ng.semantic import ng_builtin_call_kind, ng_encode_resolved_call_function, ng_named_spans_equal, ng_resolve_semantic_nodes, ng_resolved_builtin_call_marker
+from selfhost.compiler_ng.semantic import ng_builtin_call_kind, ng_encode_resolved_call_function, ng_function_index_for_node, ng_named_spans_equal, ng_resolve_semantic_nodes, ng_resolved_builtin_call_marker
 from selfhost.compiler_ng.ir import ng_emit_program
 
 export record NgSourceUnit:
@@ -783,118 +783,34 @@ fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vec
     discard vector_set<NgAstNode>(&mut *nodes, node_index, node)
     return 0
 
-fn ng_function_node_position(function: NgFunction, node: NgAstNode) -> trit:
-    match node.start < function.start:
-        -1:
-            return -1
-        0:
-            match node.start < function.end:
-                -1:
-                    return 0
-                0:
-                    return 1
-                1:
-                    return 1
-        1:
-            match node.start < function.end:
-                -1:
-                    return 0
-                0:
-                    return 1
-                1:
-                    return 1
 fn ng_resolve_module_calls(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, records: &vector<NgRecord>, nodes: &mut vector<NgAstNode>) -> i64:
-    mut function_count: i64 = vector_len<NgFunction>(functions)
-    mut function_index: i64 = 0
-    mut function_order_index: i64 = 0
     mut node_index: i64 = 0
-    mut candidate_index: i64 = 0
-    mut best_index: i64 = -1
-    mut low: i64 = 0
-    mut high: i64 = 0
-    mut middle: i64 = 0
-    mut position: trit = 0
+    mut function_index: i64 = -1
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
-    mut candidate_function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
-    mut best_function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     mut node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut status: i64 = 0
-    mut function_order: vector<i64> = vector_new<i64>(function_count)
-    mut selected_functions: vector<i64> = vector_new<i64>(function_count)
-    while candidate_index < function_count:
-        discard vector_push<i64>(&mut selected_functions, 0)
-        candidate_index = candidate_index + 1
-    while function_order_index < function_count:
-        candidate_index = 0
-        best_index = -1
-        while candidate_index < function_count:
-            match vector_get<i64>(&selected_functions, candidate_index) <=> 0:
-                0:
-                    candidate_function = vector_get<NgFunction>(functions, candidate_index)
-                    match best_index < 0:
-                        -1:
-                            best_index = candidate_index
-                        0:
-                            best_function = vector_get<NgFunction>(functions, best_index)
-                            match candidate_function.start < best_function.start:
-                                -1:
-                                    best_index = candidate_index
-                                0:
-                                    best_index = best_index
-                                1:
-                                    best_index = best_index
-                        1:
-                            best_function = vector_get<NgFunction>(functions, best_index)
-                            match candidate_function.start < best_function.start:
-                                -1:
-                                    best_index = candidate_index
-                                0:
-                                    best_index = best_index
-                                1:
-                                    best_index = best_index
-                -1:
-                    best_index = best_index
-                1:
-                    best_index = best_index
-            candidate_index = candidate_index + 1
-        match best_index <=> -1:
-            -1:
-                return -14
-            0:
-                return -14
-            1:
-                discard vector_push<i64>(&mut function_order, best_index)
-                discard vector_set<i64>(&mut selected_functions, best_index, 1)
-        function_order_index = function_order_index + 1
-    node_index = 0
     while node_index < vector_len<NgAstNode>(&*nodes):
         node = vector_get<NgAstNode>(&*nodes, node_index)
         match node.kind <=> 5:
+            0:
+                function_index = ng_function_index_for_node(functions, node_index)
+                match function_index >= 0:
+                    -1:
+                        function = vector_get<NgFunction>(functions, function_index)
+                        status = ng_resolve_one_call(source, modules, imports, functions, records, function, &mut *nodes, node_index)
+                        match status <=> 0:
+                            -1:
+                                return status
+                            0:
+                                status = status
+                            1:
+                                return status
+                    0:
+                        return -12
+                    1:
+                        return -12
             -1:
                 node = node
-            0:
-                low = 0
-                high = function_count
-                while low < high:
-                    middle = low + (high - low) / 2
-                    function_index = vector_get<i64>(&function_order, middle)
-                    function = vector_get<NgFunction>(functions, function_index)
-                    position = ng_function_node_position(function, node)
-                    match position:
-                        -1:
-                            high = middle
-                        0:
-                            low = high
-                            status = ng_resolve_one_call(source, modules, imports, functions, records, function, &mut *nodes, node_index)
-                            match status <=> 0:
-                                -1:
-                                    return status
-                                0:
-                                    status = status
-                                1:
-                                    return status
-                        1:
-                            low = middle + 1
             1:
                 node = node
         node_index = node_index + 1
