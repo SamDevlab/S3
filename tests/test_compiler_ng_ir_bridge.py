@@ -2418,6 +2418,7 @@ fn main() -> i64:
         result = result + ng_parameter_type(&source, &parameters, 0, {parameter_count}, name_start, name_end)
         result = result + ng_parameter_register(&source, &parameters, 0, {parameter_count}, name_start, name_end)
         index = index + 1
+    result = result + ng_parameter_type(&source, &parameters, 0, {parameter_count}, {missing_start}, {missing_start + 7})
     return result + ng_parameter_register(&source, &parameters, 0, {parameter_count}, {missing_start}, {missing_start + 7})
 '''
     harness_source = _NG_SOURCE + "\n" + wrapper
@@ -2431,7 +2432,7 @@ fn main() -> i64:
         metrics=metrics,
     )
 
-    assert result == parameter_count * parameter_count - 12
+    assert result == parameter_count * parameter_count - 24
     calls = metrics["calls"]
     assert isinstance(calls, dict)
     exact_span_comparisons = int(calls.get("ng_spans_equal", 0))
