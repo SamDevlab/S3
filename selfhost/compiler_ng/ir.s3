@@ -3053,7 +3053,24 @@ fn ng_emit_expression(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                                                                         -1:
                                                                             return -20
                                                                         1:
-                                                                            return -20
+                                                                            match node.kind <=> 22:
+                                                                                -1:
+                                                                                    return -20
+                                                                                0:
+                                                                                    left = ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node.left, call_arguments, registers, instructions)
+                                                                                    match left >= 0:
+                                                                                        -1:
+                                                                                            left_info = vector_get<NgIRRegister>(&*registers, left)
+                                                                                            register = vector_len<NgIRRegister>(&*registers)
+                                                                                            discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=left_info.type_kind))
+                                                                                            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=20, result=register, operand_count=1, operand0=left, operand1=-1, immediate=0, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1))
+                                                                                            return register
+                                                                                        0:
+                                                                                            return left
+                                                                                        1:
+                                                                                            return left
+                                                                                1:
+                                                                                    return -20
 
 fn ng_ir_constructor_field_value(nodes: &vector<NgAstNode>, source: &bytes, constructor: NgAstNode, field: NgField) -> i64:
     mut argument_id: i64 = constructor.left
@@ -4664,7 +4681,7 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
         -1:
             return status
         0:
-            discard ng_ir_event(events, 0, 17, 8, 0, 0, 0, 0, 0)
+            discard ng_ir_event(events, 0, 18, 8, 0, 0, 0, 0, 0)
             while type_index < vector_len<NgTypeDescriptor>(types):
                 type_descriptor = vector_get<NgTypeDescriptor>(types, type_index)
                 discard ng_ir_event(events, 12, type_index + 1, type_descriptor.kind, type_descriptor.module_start, type_descriptor.module_end, type_descriptor.name_start, type_descriptor.name_end, type_descriptor.element_type)

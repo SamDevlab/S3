@@ -37,6 +37,8 @@ V16 adds kind 23 after CALL arguments for typed scalar ``vector_get<T>`` and
 V17 stores each RETURN's explicit result-register IDs in kind 24 records
 immediately following that instruction. This preserves non-contiguous
 aggregate result layouts without inserting semantic MOVE instructions.
+V18 adds opcode 20 for type-preserving unary negation, mapped to canonical
+INVERT semantics for i64, f64, trit, and tryte register types.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
@@ -66,7 +68,7 @@ from .static_text import StaticTextDecodeError, decode_static_text
 from .vector_types import composite_vector_runtime_name_from_key
 
 
-NG_IR_FORMAT_VERSION = 17
+NG_IR_FORMAT_VERSION = 18
 NG_IR_RECORD_WIDTH = 8
 
 _V5_VECTOR_NEW_BUILTINS = {
@@ -135,6 +137,7 @@ _OPCODE_CODES = {
     17: IROpcode.CONVERT,
     18: IROpcode.REFERENCE_LOAD,
     19: IROpcode.CONST_STR,
+    20: IROpcode.INVERT,
 }
 
 
@@ -199,7 +202,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -583,6 +586,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 raise NGIRDecodeError(f"unknown opcode code {opcode_code}") from exc
             if opcode is IROpcode.RELATE and version < 7:
                 raise NGIRDecodeError("RELATE opcode requires NG IR format V7")
+            if opcode is IROpcode.INVERT and version < 18:
+                raise NGIRDecodeError("INVERT opcode requires NG IR format V18")
 
             result = None if result_id == -1 else result_id
             callee_index: int | None = None
@@ -1112,6 +1117,11 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 elif result is not None and not instruction_results:
                     instruction_results = (result,)
                 operands = tuple(call_arguments)
+                decoded_immediate = None
+            elif opcode is IROpcode.INVERT:
+                if result is None or operand_count != 1 or operand1 != -1 or immediate != 0:
+                    raise NGIRDecodeError("malformed INVERT record")
+                operands = (operand0,)
                 decoded_immediate = None
             elif opcode is IROpcode.MOVE:
                 if result is None or operand_count != 1 or operand1 != -1 or immediate != 0:

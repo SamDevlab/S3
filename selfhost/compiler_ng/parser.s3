@@ -972,6 +972,36 @@ fn ng_parse_dereference(source: &bytes, tokens: &vector<NgToken>, cursor: &mut v
         1:
             return -1
 
+fn ng_parse_negation(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, operator: NgToken) -> i64:
+    mut operand_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut operand_id: i64 = -1
+    mut operand: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    discard ng_advance(cursor)
+    operand_token = ng_token_at(tokens, cursor)
+    match operand_token.kind == 2:
+        -1:
+            discard ng_advance(cursor)
+            return ng_append_node(nodes, NgAstNode(kind=1, start=operator.start, end=operand_token.end, left=-1, right=-1, operation=0))
+        0:
+            operand_id = ng_parse_primary(source, tokens, cursor, nodes, types, module_start, module_end)
+            match operand_id >= 0:
+                -1:
+                    operand_id = ng_parse_postfix_field(source, tokens, cursor, nodes, operand_id)
+                    match operand_id >= 0:
+                        -1:
+                            operand = vector_get<NgAstNode>(&*nodes, operand_id)
+                            return ng_append_node(nodes, NgAstNode(kind=22, start=operator.start, end=operand.end, left=operand_id, right=-1, operation=0))
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+
 fn ng_parse_primary(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
     mut token: NgToken = ng_token_at(tokens, cursor)
     mut signed_start: i64 = 0
@@ -1024,17 +1054,7 @@ fn ng_parse_primary(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vecto
                                 1:
                                     return -1
         0:
-            signed_start = token.start
-            discard ng_advance(cursor)
-            token = ng_token_at(tokens, cursor)
-            match token.kind <=> 2:
-                -1:
-                    return -1
-                0:
-                    discard ng_advance(cursor)
-                    return ng_append_node(nodes, NgAstNode(kind=1, start=signed_start, end=token.end, left=-1, right=-1, operation=0))
-                1:
-                    return -1
+            return ng_parse_negation(source, tokens, cursor, nodes, types, module_start, module_end, token)
         1:
             return -1
 

@@ -690,6 +690,16 @@ def test_nextgen_parser_accepts_signed_integer_literal_expression() -> None:
     assert _ng_parse_status(source) == 0
 
 
+def test_nextgen_parser_accepts_unary_negation_of_general_expressions() -> None:
+    source = (
+        "fn negate(value: i64) -> i64:\n"
+        "    return -value + 2\n"
+        "fn negate_group(value: i64) -> i64:\n"
+        "    return -(value + 2)\n"
+    )
+    assert _ng_parse_status(source) == 0
+
+
 def test_nextgen_parser_rejects_minus_without_integer_operand() -> None:
     source = "fn broken() -> i64:\n    return -\n"
     with pytest.raises(ParseError):

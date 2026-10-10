@@ -2074,6 +2074,28 @@ fn ng_is_numeric_type(type_kind: i64) -> trit:
                         1:
                             return 0
 
+fn ng_negation_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode) -> i64:
+    mut operand_type: i64 = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+    match operand_type < 0:
+        -1:
+            return operand_type
+        0:
+            match operand_type >= 1:
+                -1:
+                    match operand_type <= 4:
+                        -1:
+                            return operand_type
+                        0:
+                            return operand_type
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+        1:
+            return -14
+
 fn ng_trit_binary_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode) -> i64:
     mut right_type: i64 = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.right, 2)
     match right_type < 0:
@@ -2152,6 +2174,13 @@ fn ng_binary_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, f
 
 fn ng_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node_id: i64) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    match node.kind == 22:
+        -1:
+            return ng_negation_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node)
+        0:
+            node = node
+        1:
+            return -11
     match node.kind <=> 1:
         -1:
             return -11
