@@ -334,6 +334,7 @@ fn ng_append_internal_name(source: &mut bytes, module_item: NgModule, function: 
     mut start: i64 = bytes_len(&*source)
     mut index: i64 = 0
     mut value: i64 = 0
+    mut required_capacity: i64 = 0
     mut octet: tryte = 0
     mut module_is_entry: trit = ng_span_equals_bytes(&*source, module_item.name_start, module_item.name_end, entry_module)
     mut function_is_main: trit = ng_span_equals_bytes(&*source, function.local_name_start, function.local_name_end, main_name)
@@ -350,6 +351,8 @@ fn ng_append_internal_name(source: &mut bytes, module_item: NgModule, function: 
             module_is_entry = 0
         1:
             module_is_entry = 0
+    required_capacity = bytes_len(&*source) + 10 + module_item.name_end - module_item.name_start + function.local_name_end - function.local_name_start
+    discard bytes_reserve(source, required_capacity)
     discard bytes_push(source, 95)
     discard bytes_push(source, 95)
     discard bytes_push(source, 115)

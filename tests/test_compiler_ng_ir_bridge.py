@@ -2110,6 +2110,46 @@ def test_ng_source_set_imports_exported_function_and_matches_reference() -> None
     assert "function" in translate_verified_ir(ng_ir)
 
 
+def test_ng_internal_name_reserves_exact_buffer_capacity() -> None:
+    source_text = "module library\nexport fn transform() -> i64:\n    return 1\n"
+    function_name_start = source_text.index("transform")
+    generated_name = b"__s3mod_library__transform"
+    wrapper = f'''\
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static({json.dumps(source_text)})
+    mut source: bytes = bytes_from_text(&source_text)
+    mut original_length: i64 = bytes_len(&source)
+    mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=original_length, path_start=0, path_end=0, name_start=7, name_end=14, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
+    mut function: NgFunction = NgFunction(start=0, end=original_length, name_start={function_name_start}, name_end={function_name_start + len("transform")}, local_name_start={function_name_start}, local_name_end={function_name_start + len("transform")}, first_parameter=0, parameter_count=0, return_type=1, first_node=0, body_node=0, module_index=0, exported=1, name_fingerprint=0, local_name_fingerprint=0)
+    mut entry_text: text = text_from_static("app")
+    mut entry_module: bytes = bytes_from_text(&entry_text)
+    mut main_text: text = text_from_static("main")
+    mut main_name: bytes = bytes_from_text(&main_text)
+    mut span: NgSpan = ng_append_internal_name(&mut source, module_item, function, &entry_module, &main_name)
+    mut result: vector<i64> = vector_new<i64>({4 + len(generated_name)})
+    mut index: i64 = 0
+    discard vector_push<i64>(&mut result, span.start)
+    discard vector_push<i64>(&mut result, span.end)
+    discard vector_push<i64>(&mut result, bytes_len(&source))
+    discard vector_push<i64>(&mut result, bytes_capacity(&source))
+    while index < bytes_len(&source) - original_length:
+        discard vector_push<i64>(&mut result, to_i64(bytes_get(&source, original_length + index)))
+        index = index + 1
+    return result
+'''
+    compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+
+    result = execute_ir(compilation.ir)
+    assert hasattr(result, "element_type")
+    values = [int(value) for value in result]
+    expected_start = len(source_text.encode("utf-8"))
+    expected_end = expected_start + len(generated_name)
+    assert values[:3] == [expected_start, expected_end, expected_end]
+    assert values[3] >= expected_end
+    assert values[4:] == list(generated_name)
+
+
 def test_ng_source_set_accepts_qualified_module_identity() -> None:
     module_name = "selfhost.compiler_ng.lexer"
     sources = {
