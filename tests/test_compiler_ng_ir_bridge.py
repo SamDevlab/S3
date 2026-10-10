@@ -2482,6 +2482,40 @@ fn main() -> i64:
     )
 
 
+def test_ng_span_equality_samples_long_spans_before_exact_fallback() -> None:
+    left = "a" * 64
+    sampled_difference = "a" * 32 + "b" + "a" * 31
+    unsampled_difference = "a" * 33 + "b" + "a" * 30
+    source_text = " ".join((left, sampled_difference, unsampled_difference, left))
+    starts = (0, 65, 130, 195)
+    wrapper = f'''\
+fn main() -> i64:
+    mut source_text: text = text_from_static({json.dumps(source_text)})
+    mut source: bytes = bytes_from_text(&source_text)
+    mut result: i64 = 0
+    result = result + to_i64(ng_spans_equal(&source, {starts[0]}, {starts[0] + 64}, {starts[1]}, {starts[1] + 64}))
+    result = result + to_i64(ng_spans_equal(&source, {starts[0]}, {starts[0] + 64}, {starts[2]}, {starts[2] + 64}))
+    result = result + to_i64(ng_spans_equal(&source, {starts[0]}, {starts[0] + 64}, {starts[3]}, {starts[3] + 64}))
+    return result
+'''
+    harness_source = _NG_SOURCE + "\n" + wrapper
+    compilation = compile_source(harness_source)
+    assert compilation.ir is not None
+    metrics: dict[str, object] = {}
+    result = _execute_ir_with_step_budget(
+        compilation.ir,
+        source_text=harness_source,
+        max_steps=10_000_000,
+        metrics=metrics,
+    )
+
+    assert result == -1
+    line_counts = metrics["line_counts"]
+    assert isinstance(line_counts, dict)
+    sample_calls = int(line_counts.get("ng_span_samples_equal", 0))
+    assert sample_calls > 0
+
+
 def test_ng_ir_variable_lookup_keeps_near_matching_local_names_distinct() -> None:
     sources = {
         "app.s3": (
