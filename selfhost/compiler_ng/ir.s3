@@ -4171,6 +4171,7 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                 arm = vector_get<NgAstNode>(nodes, matching_arm_id)
                 body_link_id = arm.left
                 body_returned = 0
+                variable_index = vector_len<NgIRVariable>(&*variables)
                 *current_block = block_index
                 while body_link_id >= 0:
                     body_link = vector_get<NgAstNode>(nodes, body_link_id)
@@ -4258,7 +4259,15 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                                                                         1:
                                                                             return -16
                                                                 0:
-                                                                    return -16
+                                                                    first_instruction = vector_len<NgIRInstruction>(&*instructions)
+                                                                    status = ng_emit_local_declaration(source, types, fields, functions, nodes, parameters, function, body_statement, variables, memories, registers, instructions, call_arguments)
+                                                                    match status <=> 0:
+                                                                        0:
+                                                                            discard ng_mark_instruction_block(instructions, first_instruction, *current_block)
+                                                                        -1:
+                                                                            return status
+                                                                        1:
+                                                                            return status
                                                                 1:
                                                                     return -16
                                                         1:
@@ -4272,6 +4281,8 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                         1:
                             return -16
                     body_link_id = body_link.right
+                while vector_len<NgIRVariable>(&*variables) > variable_index:
+                    discard vector_pop<NgIRVariable>(variables)
                 match body_returned <=> 0:
                     -1:
                         return -16
@@ -4325,6 +4336,7 @@ fn ng_emit_while(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vect
     mut body_statement: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut variable_index: i64 = -1
     mut variable: NgIRVariable = NgIRVariable(name_start=0, name_end=0, name_fingerprint=0, type_kind=0, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1)
+    mut scoped_variable_count: i64 = vector_len<NgIRVariable>(&*variables)
     mut value_register: i64 = -1
     mut index_register: i64 = -1
     mut status: i64 = 0
@@ -4442,7 +4454,15 @@ fn ng_emit_while(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vect
                                                                 discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=12, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=exit_block, target1=-1, target2=-1))
                                                                 *current_block = -1
                                                             0:
-                                                                return -16
+                                                                first_instruction = vector_len<NgIRInstruction>(&*instructions)
+                                                                status = ng_emit_local_declaration(source, types, fields, functions, nodes, parameters, function, body_statement, variables, memories, registers, instructions, call_arguments)
+                                                                match status <=> 0:
+                                                                    0:
+                                                                        discard ng_mark_instruction_block(instructions, first_instruction, *current_block)
+                                                                    -1:
+                                                                        return status
+                                                                    1:
+                                                                        return status
                                                             1:
                                                                 return -16
                                                     1:
@@ -4466,6 +4486,8 @@ fn ng_emit_while(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vect
     discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=12, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=exit_zero_block, target0=exit_block, target1=-1, target2=-1))
     discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=12, result=-1, operand_count=0, operand0=-1, operand1=-1, immediate=0, memory=-1, initialization=0, block=exit_positive_block, target0=exit_block, target1=-1, target2=-1))
     *current_block = exit_block
+    while vector_len<NgIRVariable>(&*variables) > scoped_variable_count:
+        discard vector_pop<NgIRVariable>(variables)
     return 0
 
 fn ng_ir_vector_builtin_target(builtin_id: i64, scalar_target: i64, record_target: i64) -> i64:

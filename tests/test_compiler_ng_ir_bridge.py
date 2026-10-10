@@ -883,6 +883,52 @@ def test_ng_emits_and_executes_while_with_nested_match_and_backedge() -> None:
     assert len(backedges) >= 2  # preheader entry and loop-body backedge
 
 
+def test_ng_local_declarations_in_match_arms_are_scoped_per_arm() -> None:
+    source = (
+        "fn choose(flag: trit) -> i64:\n"
+        "    mut result: i64 = 5\n"
+        "    match flag:\n"
+        "        -1:\n"
+        "            mut result: i64 = 11\n"
+        "            result = result + 1\n"
+        "        0:\n"
+        "            mut result: i64 = 22\n"
+        "            result = result + 1\n"
+        "        1:\n"
+        "            mut result: i64 = 33\n"
+        "            result = result + 1\n"
+        "    return result\n"
+        "fn main() -> i64:\n"
+        "    return choose(-1) + choose(0) + choose(1)\n"
+    )
+    reference = compile_source(source).ir
+    assert reference is not None
+    ng_ir = decode_ng_ir_events(source.encode("utf-8"), _emit_ng_events(source))
+
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
+    assert execute_ir(ng_ir) == execute_ir(reference) == 15
+
+
+def test_ng_loop_local_declarations_do_not_leak_after_loop() -> None:
+    source = (
+        "fn main() -> i64:\n"
+        "    mut result: i64 = 7\n"
+        "    mut index: i64 = 0\n"
+        "    while index < 3:\n"
+        "        mut result: i64 = 20 + index\n"
+        "        index = index + 1\n"
+        "    return result * 10 + index\n"
+    )
+    reference = compile_source(source).ir
+    assert reference is not None
+    ng_ir = decode_ng_ir_events(source.encode("utf-8"), _emit_ng_events(source))
+
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference)
+    assert execute_ir(ng_ir) == execute_ir(reference) == 73
+
+
 def test_ng_break_in_nested_match_targets_the_nearest_loop_exit() -> None:
     source = (
         "fn classify(value: trit) -> i64:\n"
