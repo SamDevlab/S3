@@ -828,6 +828,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
     mut path_end: i64 = 0
     mut total_source_bytes: i64 = 0
     mut pool_capacity: i64 = 0
+    mut function_capacity: i64 = 0
     mut module_index: i64 = 0
     mut order_index: i64 = 0
     mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
@@ -873,6 +874,8 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
         total_source_bytes = total_source_bytes + bytes_len(&unit.contents)
         source_index = source_index + 1
     pool_capacity = total_source_bytes + 1
+    # A function declaration needs multiple source bytes; avoid sizing its wide record vector by every byte.
+    function_capacity = total_source_bytes / 8 + 1
     types = vector_new<NgTypeDescriptor>(pool_capacity)
     status = ng_initialize_type_table(&mut types)
     match status <=> 0:
@@ -883,7 +886,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
         1:
             return status
     imports = vector_new<NgImport>(pool_capacity)
-    functions = vector_new<NgFunction>(pool_capacity)
+    functions = vector_new<NgFunction>(function_capacity)
     records = vector_new<NgRecord>(pool_capacity)
     fields = vector_new<NgField>(pool_capacity)
     parameters = vector_new<NgParameter>(pool_capacity)

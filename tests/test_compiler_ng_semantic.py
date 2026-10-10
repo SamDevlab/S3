@@ -207,7 +207,14 @@ fn ng_module_semantic_status(input_source: text) -> i64:
         -1:
             return status
         0:
-            return ng_check_program_typed(&source_bytes, &types, &records, &fields, &functions, &parameters, &mut nodes)
+            status = ng_resolve_semantic_nodes(&source_bytes, &mut types, &records, &fields, &functions, &parameters, &mut nodes)
+            match status <=> 0:
+                -1:
+                    return status
+                0:
+                    return ng_check_program_typed(&source_bytes, &types, &records, &fields, &functions, &parameters, &mut nodes)
+                1:
+                    return status
         1:
             return status
 
@@ -238,6 +245,39 @@ def test_nextgen_semantic_pass_supports_more_than_eight_function_locals() -> Non
     source = "fn main() -> i64:\n" + declarations + "    return value_0 + value_8\n"
 
     assert _ng_semantic_status(source) == 0
+
+
+def test_nextgen_semantic_pass_accepts_assignment_through_mutable_reference() -> None:
+    source = (
+        "module app\n"
+        "fn bump(value: &mut i64) -> i64:\n"
+        "    *value = *value + 1\n"
+        "    return *value\n"
+    )
+
+    assert _ng_module_semantic_statuses([source]) == [0]
+
+
+def test_nextgen_semantic_pass_rejects_assignment_through_immutable_reference() -> None:
+    source = (
+        "module app\n"
+        "fn bump(value: &i64) -> i64:\n"
+        "    *value = 1\n"
+        "    return *value\n"
+    )
+
+    assert _ng_module_semantic_statuses([source]) == [-16]
+
+
+def test_nextgen_semantic_pass_rejects_dereference_assignment_type_mismatch() -> None:
+    source = (
+        "module app\n"
+        "fn bump(value: &mut i64) -> i64:\n"
+        "    *value = 1 <=> 2\n"
+        "    return *value\n"
+    )
+
+    assert _ng_module_semantic_statuses([source]) == [-14]
 
 
 def test_record_field_resolution_accepts_equivalent_nominal_type_ids() -> None:

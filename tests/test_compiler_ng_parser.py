@@ -196,6 +196,16 @@ def test_nextgen_parser_accepts_dereference_and_reference_reborrow() -> None:
     assert _ng_parse_status(source) == 0
 
 
+def test_nextgen_parser_accepts_assignment_through_dereference() -> None:
+    source = (
+        "fn bump(value: &mut i64) -> i64:\n"
+        "    *value = *value + 1\n"
+        "    return *value\n"
+    )
+
+    assert _ng_parse_status(source) == 0
+
+
 def _ng_module_type_probe() -> list[int]:
     source = (
         "module app\n"

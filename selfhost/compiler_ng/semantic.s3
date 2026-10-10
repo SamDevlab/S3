@@ -3625,6 +3625,62 @@ fn ng_assignment_root_node(nodes: &vector<NgAstNode>, target_node_id: i64) -> i6
         1:
             return -1
 
+fn ng_check_dereference_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, function: NgFunction, statement: NgAstNode, target_node_id: i64) -> i64:
+    mut target: NgAstNode = vector_get<NgAstNode>(nodes, target_node_id)
+    match target.kind <=> 19:
+        0:
+            return ng_check_dereference_assignment_valid(source, types, fields, functions, nodes, parameters, locals, function, statement, target_node_id)
+        -1:
+            return -16
+        1:
+            return -16
+
+fn ng_check_dereference_assignment_valid(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, function: NgFunction, statement: NgAstNode, target_node_id: i64) -> i64:
+    mut target: NgAstNode = vector_get<NgAstNode>(nodes, target_node_id)
+    mut reference_type_id: i64 = -1
+    mut reference_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut value_type: i64 = -1
+    reference_type_id = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, target.left)
+    match reference_type_id > 0:
+        -1:
+            match reference_type_id <= vector_len<NgTypeDescriptor>(types):
+                -1:
+                    reference_type = vector_get<NgTypeDescriptor>(types, reference_type_id - 1)
+                    match reference_type.kind <=> 9:
+                        0:
+                            match reference_type.mutable <=> 1:
+                                0:
+                                    match ng_type_equal(source, types, reference_type.target_type, target.right) <=> -1:
+                                        0:
+                                            value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left, reference_type.target_type)
+                                            match ng_type_equal(source, types, value_type, reference_type.target_type) <=> -1:
+                                                0:
+                                                    return 0
+                                                -1:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        -1:
+                                            return -14
+                                        1:
+                                            return -14
+                                -1:
+                                    return -16
+                                1:
+                                    return -16
+                        -1:
+                            return -16
+                        1:
+                            return -16
+                0:
+                    return -16
+                1:
+                    return -16
+        0:
+            return reference_type_id
+        1:
+            return reference_type_id
+
 fn ng_check_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, function: NgFunction, statement: NgAstNode) -> i64:
     mut root_id: i64 = -1
     mut root: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -3649,7 +3705,7 @@ fn ng_check_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields:
                 -1:
                     return -16
                 1:
-                    return -16
+                    return ng_check_dereference_assignment(source, types, fields, functions, nodes, parameters, locals, function, statement, statement.right)
         0:
             local_id = ng_local_index(source, locals, statement.start, statement.end)
         1:

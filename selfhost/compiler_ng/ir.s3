@@ -3684,6 +3684,76 @@ fn ng_emit_record_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, f
         1:
             return status
 
+fn ng_emit_dereference_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, function: NgFunction, statement: NgAstNode, variables: &vector<NgIRVariable>, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, block: i64) -> i64:
+    mut target: NgAstNode = vector_get<NgAstNode>(nodes, statement.right)
+    mut reference_register: i64 = -1
+    mut value_register: i64 = -1
+    mut reference_info: NgIRRegister = NgIRRegister(type_kind=0)
+    mut reference_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut value_info: NgIRRegister = NgIRRegister(type_kind=0)
+    match target.kind <=> 19:
+        0:
+            reference_register = ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, target.left, call_arguments, registers, instructions)
+            match reference_register >= 0:
+                -1:
+                    reference_info = vector_get<NgIRRegister>(&*registers, reference_register)
+                    match reference_info.type_kind > 0:
+                        -1:
+                            match reference_info.type_kind <= vector_len<NgTypeDescriptor>(types):
+                                -1:
+                                    reference_type = vector_get<NgTypeDescriptor>(types, reference_info.type_kind - 1)
+                                    match reference_type.kind <=> 9:
+                                        0:
+                                            match reference_type.mutable <=> 1:
+                                                0:
+                                                    match ng_type_equal(source, types, reference_type.target_type, target.right) <=> -1:
+                                                        0:
+                                                            value_register = ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, statement.left, call_arguments, registers, instructions)
+                                                            match value_register >= 0:
+                                                                -1:
+                                                                    discard ng_set_contextual_literal_type(nodes, statement.left, reference_type.target_type, registers, value_register)
+                                                                    value_info = vector_get<NgIRRegister>(&*registers, value_register)
+                                                                    match ng_type_equal(source, types, value_info.type_kind, reference_type.target_type) <=> -1:
+                                                                        0:
+                                                                            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=21, result=-1, operand_count=2, operand0=reference_register, operand1=value_register, immediate=0, memory=-1, initialization=0, block=block, target0=-1, target1=-1, target2=-1))
+                                                                            return 0
+                                                                        -1:
+                                                                            return -14
+                                                                        1:
+                                                                            return -14
+                                                                0:
+                                                                    return value_register
+                                                                1:
+                                                                    return value_register
+                                                        -1:
+                                                            return -14
+                                                        1:
+                                                            return -14
+                                                -1:
+                                                    return -16
+                                                1:
+                                                    return -16
+                                        -1:
+                                            return -14
+                                        1:
+                                            return -14
+                                0:
+                                    return -14
+                                1:
+                                    return -14
+                        0:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return reference_register
+                1:
+                    return reference_register
+        -1:
+            return -14
+        1:
+            return -14
+
 fn ng_emit_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, function: NgFunction, statement: NgAstNode, variables: &mut vector<NgIRVariable>, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, block: i64) -> i64:
     mut variable_index: i64 = -1
     mut target: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -3701,7 +3771,7 @@ fn ng_emit_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                 -1:
                     return -14
                 1:
-                    return -14
+                    return ng_emit_dereference_assignment(source, types, fields, functions, nodes, parameters, function, statement, &*variables, call_arguments, registers, instructions, block)
         0:
             variable_index = ng_ir_variable_index(source, &*variables, statement.start, statement.end)
         1:
@@ -4704,7 +4774,7 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
         -1:
             return status
         0:
-            discard ng_ir_event(events, 0, 18, 8, 0, 0, 0, 0, 0)
+            discard ng_ir_event(events, 0, 19, 8, 0, 0, 0, 0, 0)
             while type_index < vector_len<NgTypeDescriptor>(types):
                 type_descriptor = vector_get<NgTypeDescriptor>(types, type_index)
                 discard ng_ir_event(events, 12, type_index + 1, type_descriptor.kind, type_descriptor.module_start, type_descriptor.module_end, type_descriptor.name_start, type_descriptor.name_end, type_descriptor.element_type)

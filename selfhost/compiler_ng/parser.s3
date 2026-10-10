@@ -200,6 +200,38 @@ fn ng_parse_declaration(source: &bytes, tokens: &vector<NgToken>, cursor: &mut v
         1:
             return -1
 
+fn ng_parse_dereference_assignment(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, operator: NgToken) -> i64:
+    mut target_id: i64 = -1
+    mut target: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut following: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut value_id: i64 = -1
+    mut value: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    target_id = ng_parse_dereference(source, tokens, cursor, nodes, types, module_start, module_end, operator)
+    match target_id >= 0:
+        -1:
+            target = vector_get<NgAstNode>(&*nodes, target_id)
+            following = ng_token_at(tokens, cursor)
+            match following.kind == 361:
+                -1:
+                    discard ng_advance(cursor)
+                    value_id = ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+                    match value_id >= 0:
+                        -1:
+                            value = vector_get<NgAstNode>(&*nodes, value_id)
+                            return ng_append_node(nodes, NgAstNode(kind=8, start=target.start, end=value.end, left=value_id, right=target_id, operation=361))
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
 fn ng_parse_statement(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
     mut token: NgToken = ng_token_at(tokens, cursor)
     mut name: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
@@ -212,6 +244,13 @@ fn ng_parse_statement(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vec
     mut target_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut field: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut scanning_target: i64 = 0
+    match token.kind == 342:
+        -1:
+            return ng_parse_dereference_assignment(source, tokens, cursor, nodes, types, module_start, module_end, token)
+        0:
+            token = token
+        1:
+            return -1
     match ng_token_spells(source, token, text_from_static("discard")):
         -1:
             discard ng_advance(cursor)

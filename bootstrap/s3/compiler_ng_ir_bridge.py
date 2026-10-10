@@ -39,6 +39,8 @@ immediately following that instruction. This preserves non-contiguous
 aggregate result layouts without inserting semantic MOVE instructions.
 V18 adds opcode 20 for type-preserving unary negation, mapped to canonical
 INVERT semantics for i64, f64, trit, and tryte register types.
+V19 adds opcode 21 for writes through a typed mutable reference. Its target
+type and mutability are derived from the reference register's descriptor.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
@@ -68,7 +70,7 @@ from .static_text import StaticTextDecodeError, decode_static_text
 from .vector_types import composite_vector_runtime_name_from_key
 
 
-NG_IR_FORMAT_VERSION = 18
+NG_IR_FORMAT_VERSION = 19
 NG_IR_RECORD_WIDTH = 8
 
 _V5_VECTOR_NEW_BUILTINS = {
@@ -138,6 +140,7 @@ _OPCODE_CODES = {
     18: IROpcode.REFERENCE_LOAD,
     19: IROpcode.CONST_STR,
     20: IROpcode.INVERT,
+    21: IROpcode.REFERENCE_STORE,
 }
 
 
@@ -202,7 +205,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -588,6 +591,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 raise NGIRDecodeError("RELATE opcode requires NG IR format V7")
             if opcode is IROpcode.INVERT and version < 18:
                 raise NGIRDecodeError("INVERT opcode requires NG IR format V18")
+            if opcode is IROpcode.REFERENCE_STORE and version < 19:
+                raise NGIRDecodeError("REFERENCE_STORE opcode requires NG IR format V19")
 
             result = None if result_id == -1 else result_id
             callee_index: int | None = None
@@ -1211,6 +1216,26 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     raise NGIRDecodeError("REFERENCE_LOAD result type disagrees with its reference target")
                 reference_target = type_for(result_type_id, "REFERENCE_LOAD target")
                 operands = (operand0,)
+                decoded_immediate = None
+            elif opcode is IROpcode.REFERENCE_STORE:
+                if (
+                    result is not None
+                    or operand_count != 2
+                    or immediate != 0
+                    or not 0 <= operand0 < len(register_type_ids)
+                    or not 0 <= operand1 < len(register_type_ids)
+                ):
+                    raise NGIRDecodeError("malformed REFERENCE_STORE record")
+                reference_descriptor = type_descriptors.get(register_type_ids[operand0])
+                if reference_descriptor is None or reference_descriptor.kind != 9:
+                    raise NGIRDecodeError("REFERENCE_STORE operand must use a reference type descriptor")
+                if reference_descriptor.mutable != 1:
+                    raise NGIRDecodeError("REFERENCE_STORE operand must be a mutable reference")
+                if reference_descriptor.target_type != register_type_ids[operand1]:
+                    raise NGIRDecodeError("REFERENCE_STORE value type disagrees with its reference target")
+                reference_target = type_for(reference_descriptor.target_type, "REFERENCE_STORE target")
+                reference_mutable = True
+                operands = (operand0, operand1)
                 decoded_immediate = None
             elif opcode is IROpcode.BRANCH3:
                 if result is not None or operand_count != 1 or operand1 != -1 or immediate != 0:
