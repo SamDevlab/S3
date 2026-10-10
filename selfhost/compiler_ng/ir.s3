@@ -60,7 +60,8 @@ fn ng_ir_event(events: &mut vector<i64>, kind: i64, a: i64, b: i64, c: i64, d: i
 fn ng_parameter_register(source: &bytes, parameters: &vector<NgParameter>, first_parameter: i64, parameter_count: i64, name_start: i64, name_end: i64) -> i64:
     mut index: i64 = 0
     mut name_length: i64 = name_end - name_start
-    mut name_fingerprint: i64 = ng_span_fingerprint(source, name_start, name_end)
+    mut name_fingerprint: i64 = 0
+    mut fingerprint_ready: i64 = 0
     mut parameter_name_length: i64 = 0
     mut parameter: NgParameter = NgParameter(name_start=0, name_end=0, name_fingerprint=0, type_kind=0)
     while index < parameter_count:
@@ -70,6 +71,14 @@ fn ng_parameter_register(source: &bytes, parameters: &vector<NgParameter>, first
             -1:
                 index = index + 1
             0:
+                match fingerprint_ready <=> 0:
+                    -1:
+                        name_fingerprint = name_fingerprint
+                    0:
+                        name_fingerprint = ng_span_fingerprint(source, name_start, name_end)
+                        fingerprint_ready = 1
+                    1:
+                        name_fingerprint = name_fingerprint
                 match ng_named_spans_equal(source, name_start, name_end, name_fingerprint, parameter.name_start, parameter.name_end, parameter.name_fingerprint):
                     -1:
                         return index

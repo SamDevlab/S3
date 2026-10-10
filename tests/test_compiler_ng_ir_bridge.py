@@ -2393,7 +2393,8 @@ fn main() -> i64:
 
 def test_ng_parameter_lookups_fingerprint_before_exact_span_comparison() -> None:
     parameter_count = 64
-    names = " ".join(f"p{index:03d}" for index in range(parameter_count))
+    names = " ".join(f"p{index:03d}" for index in range(parameter_count)) + " missing"
+    missing_start = names.index("missing")
     wrapper = f'''\
 fn main() -> i64:
     mut source_text: text = text_from_static({json.dumps(names)})
@@ -2417,7 +2418,7 @@ fn main() -> i64:
         result = result + ng_parameter_type(&source, &parameters, 0, {parameter_count}, name_start, name_end)
         result = result + ng_parameter_register(&source, &parameters, 0, {parameter_count}, name_start, name_end)
         index = index + 1
-    return result
+    return result + ng_parameter_register(&source, &parameters, 0, {parameter_count}, {missing_start}, {missing_start + 7})
 '''
     harness_source = _NG_SOURCE + "\n" + wrapper
     compilation = compile_source(harness_source)
@@ -2430,7 +2431,7 @@ fn main() -> i64:
         metrics=metrics,
     )
 
-    assert result == parameter_count * parameter_count
+    assert result == parameter_count * parameter_count - 12
     calls = metrics["calls"]
     assert isinstance(calls, dict)
     exact_span_comparisons = int(calls.get("ng_spans_equal", 0))
