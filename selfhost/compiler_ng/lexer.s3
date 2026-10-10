@@ -319,11 +319,30 @@ fn ng_character_class(unit: i64) -> i64:
                                 -1:
                                     return 4
                                 0:
-                                    return 5
+                    # Reserve distinct classes so ordinary symbols bypass comment and quote checks.
+                                    match unit == 35:
+                                        -1:
+                                            return 5
+                                        0:
+                                            match unit == 47:
+                                                -1:
+                                                    return 6
+                                                0:
+                                                    match unit == 34:
+                                                        -1:
+                                                            return 7
+                                                        0:
+                                                            return 8
+                                                        1:
+                                                            return 8
+                                                1:
+                                                    return 8
+                                        1:
+                                            return 8
                                 1:
-                                    return 5
+                                    return 8
                         1:
-                            return 5
+                            return 8
                 1:
                     return 2
         1:
@@ -596,6 +615,9 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
     mut skipping_space: i64 = 1
     mut indent: i64 = vector_get<i64>(&*state, 0)
     mut prefix_open: i64 = 0
+    mut newline: i64 = 0
+    mut space: i64 = 0
+    mut prefix_is_open: i64 = 0
     character_class = vector_get<i64>(classes, unit)
     match character_class <=> 4:
         -1:
@@ -603,38 +625,12 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
         0:
             prefix_open = vector_get<i64>(&*state, 1)
             while skipping_space == 1:
-                match unit <=> 32:
-                    -1:
-                        match unit <=> 10:
-                            -1:
-                                match prefix_open <=> 1:
-                                    0:
-                                        prefix_open = 0
-                                    -1:
-                                        prefix_open = prefix_open
-                                    1:
-                                        prefix_open = prefix_open
-                            0:
-                                indent = 0
-                                prefix_open = 1
-                            1:
-                                match prefix_open <=> 1:
-                                    0:
-                                        prefix_open = 0
-                                    -1:
-                                        prefix_open = prefix_open
-                                    1:
-                                        prefix_open = prefix_open
-                    0:
-                        match prefix_open <=> 1:
-                            0:
-                                indent = indent + 1
-                            -1:
-                                prefix_open = prefix_open
-                            1:
-                                prefix_open = prefix_open
-                    1:
-                        prefix_open = prefix_open
+                # Whitespace classes are space, tab, LF and CR; equality trits map to 0/1 flags.
+                newline = 0 - to_i64(unit == 10)
+                space = 0 - to_i64(unit == 32)
+                prefix_is_open = 0 - to_i64(prefix_open == 1)
+                indent = indent * (1 - newline) + space * prefix_is_open
+                prefix_open = prefix_open + newline * (1 - prefix_open)
                 next = next + 1
                 match next < length:
                     -1:
@@ -683,46 +679,39 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
             unit = unit
         1:
             unit = unit
-    match unit == 35:
+    match character_class <=> 7:
         -1:
-            discard vector_set<i64>(&mut *state, 1, 0)
-            return ng_skip_line_comment(source, token_start + 1, length)
-        0:
-            match unit == 47:
+            match character_class <=> 5:
                 -1:
-                    match token_start + 1 < length:
+                    next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                0:
+                    discard vector_set<i64>(&mut *state, 1, 0)
+                    return ng_skip_line_comment(source, token_start + 1, length)
+                1:
+                    match character_class <=> 6:
                         -1:
-                            match to_i64(bytes_get(source, token_start + 1)) == 47:
+                            next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                        0:
+                            match token_start + 1 < length:
                                 -1:
-                                    discard vector_set<i64>(&mut *state, 1, 0)
-                                    return ng_skip_line_comment(source, token_start + 2, length)
+                                    match to_i64(bytes_get(source, token_start + 1)) == 47:
+                                        -1:
+                                            discard vector_set<i64>(&mut *state, 1, 0)
+                                            return ng_skip_line_comment(source, token_start + 2, length)
+                                        0:
+                                            next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                                        1:
+                                            next = ng_scan_symbol(source, token_start, length, tokens, indent)
                                 0:
                                     next = ng_scan_symbol(source, token_start, length, tokens, indent)
                                 1:
                                     next = ng_scan_symbol(source, token_start, length, tokens, indent)
-                        0:
-                            next = ng_scan_symbol(source, token_start, length, tokens, indent)
                         1:
                             next = ng_scan_symbol(source, token_start, length, tokens, indent)
-                0:
-                    match unit == 34:
-                        -1:
-                            next = ng_scan_string(source, token_start, length, tokens, indent)
-                        0:
-                            next = ng_scan_symbol(source, token_start, length, tokens, indent)
-                        1:
-                            next = ng_scan_string(source, token_start, length, tokens, indent)
-                1:
-                    match unit == 34:
-                        -1:
-                            next = ng_scan_string(source, token_start, length, tokens, indent)
-                        0:
-                            next = ng_scan_symbol(source, token_start, length, tokens, indent)
-                        1:
-                            next = ng_scan_string(source, token_start, length, tokens, indent)
+        0:
+            next = ng_scan_string(source, token_start, length, tokens, indent)
         1:
-            discard vector_set<i64>(&mut *state, 1, 0)
-            return ng_skip_line_comment(source, token_start + 1, length)
+            next = ng_scan_symbol(source, token_start, length, tokens, indent)
     match next >= 0:
         -1:
             match unit <=> 34:

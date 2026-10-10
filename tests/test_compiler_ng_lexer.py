@@ -276,8 +276,14 @@ fn main() -> vector<i64>:
             expected.append(3)
         elif unit in {9, 10, 13, 32}:
             expected.append(4)
-        else:
+        elif unit == 35:
             expected.append(5)
+        elif unit == 47:
+            expected.append(6)
+        elif unit == 34:
+            expected.append(7)
+        else:
+            expected.append(8)
     assert actual == expected
 
 

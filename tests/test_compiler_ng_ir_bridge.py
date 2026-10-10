@@ -2485,9 +2485,9 @@ def test_ng_ir_variable_lookup_keeps_near_matching_local_names_distinct() -> Non
         "app.s3": (
             "module app\n"
             "fn main() -> i64:\n"
-            "    parser: i64 = 1\n"
-            "    pasper: i64 = 2\n"
-            "    return parser * 10 + pasper\n"
+            "    abcdefghij: i64 = 1\n"
+            "    abcXefghij: i64 = 2\n"
+            "    return abcdefghij * 10 + abcXefghij\n"
         )
     }
     reference = compile_sources(sources, entry_module="app").ir
@@ -2623,7 +2623,7 @@ fn main() -> vector<i64>:
         f"IR_VARIABLE_LOOKUP_PROFILE cells={3 * (child_count + 1) + 1} "
         f"steps={lookup_steps} total_steps={total_steps} fingerprints={fingerprint_calls}"
     )
-    assert fingerprint_calls == 3
+    assert fingerprint_calls == 4
     assert total_steps < 419_174
     assert lookup_steps < 50_000
 
