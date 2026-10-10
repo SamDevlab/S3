@@ -411,6 +411,35 @@ def test_nextgen_semantic_pass_checks_discarded_call_expression() -> None:
     assert _ng_semantic_status(source) == 0
 
 
+def test_nextgen_scope_index_preserves_fifo_scope_identity() -> None:
+    wrapper = """
+fn main() -> vector<i64>:
+    mut functions: vector<NgFunction> = vector_new<NgFunction>(1)
+    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(4)
+    mut node_scope_ids: vector<i64> = vector_new<i64>(4)
+    mut scope_parents: vector<i64> = vector_new<i64>(5)
+    mut result: vector<i64> = vector_new<i64>(8)
+    discard vector_push<NgFunction>(&mut functions, NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=1, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0))
+    discard vector_push<NgAstNode>(&mut nodes, NgAstNode(kind=13, start=0, end=0, left=1, right=2, operation=0))
+    discard vector_push<NgAstNode>(&mut nodes, NgAstNode(kind=17, start=0, end=0, left=-1, right=3, operation=0))
+    discard vector_push<NgAstNode>(&mut nodes, NgAstNode(kind=2, start=0, end=0, left=-1, right=-1, operation=0))
+    discard vector_push<NgAstNode>(&mut nodes, NgAstNode(kind=2, start=0, end=0, left=-1, right=-1, operation=0))
+    discard vector_push<i64>(&mut result, ng_build_node_scope_index(&functions, &nodes, &mut node_scope_ids, &mut scope_parents))
+    discard vector_push<i64>(&mut result, vector_get<i64>(&node_scope_ids, 0))
+    discard vector_push<i64>(&mut result, vector_get<i64>(&node_scope_ids, 1))
+    discard vector_push<i64>(&mut result, vector_get<i64>(&node_scope_ids, 2))
+    discard vector_push<i64>(&mut result, vector_get<i64>(&node_scope_ids, 3))
+    discard vector_push<i64>(&mut result, vector_get<i64>(&scope_parents, 0))
+    discard vector_push<i64>(&mut result, vector_get<i64>(&scope_parents, 1))
+    discard vector_push<i64>(&mut result, vector_get<i64>(&scope_parents, 2))
+    return result
+"""
+    compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+
+    assert [int(value) for value in execute_ir(compilation.ir)] == [0, 0, 1, 0, 2, -1, 0, 1]
+
+
 def test_nextgen_semantics_types_relational_operators_as_trit() -> None:
     source = (
         "fn comparisons(left: i64, right: i64) -> i64:\n"
