@@ -2369,6 +2369,71 @@ def test_ng_ir_variable_lookup_keeps_near_matching_local_names_distinct() -> Non
     assert execute_ir(ng_ir) == execute_ir(reference) == 12
 
 
+def test_ng_ir_variable_lookup_uses_fingerprints_and_checks_collisions() -> None:
+    candidate_count = 128
+    candidates = [f"item{index:05d}" for index in range(candidate_count)]
+    query_names = ["target000", "abcXefYhij", "abcdefghij"]
+    names = candidates + query_names
+    offsets: list[int] = []
+    cursor = 0
+    for name in names:
+        offsets.append(cursor)
+        cursor += len(name) + 1
+
+    candidate_pushes = "\n".join(
+        "    discard vector_push<NgIRVariable>(&mut variables, "
+        f"NgIRVariable(name_start={offsets[index]}, name_end={offsets[index] + len(name)}, "
+        f"name_fingerprint=ng_span_fingerprint(&source, {offsets[index]}, {offsets[index] + len(name)}), "
+        "type_kind=1, mutable=0, register=0, memory=-1, parent_index=-1, "
+        "field_name_start=-1, field_name_end=-1))"
+        for index, name in enumerate(candidates)
+    )
+    collision_name_start = offsets[candidate_count + 1]
+    matching_name_start = offsets[candidate_count + 2]
+    wrapper = f'''\
+fn main() -> vector<i64>:
+    mut source_text: text = text_from_static({json.dumps(" ".join(names))})
+    mut source: bytes = bytes_from_text(&source_text)
+    mut variables: vector<NgIRVariable> = vector_new<NgIRVariable>({candidate_count + 1})
+    mut result: vector<i64> = vector_new<i64>(4)
+{candidate_pushes}
+    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start={matching_name_start}, name_end={matching_name_start + 10}, name_fingerprint=ng_span_fingerprint(&source, {matching_name_start}, {matching_name_start + 10}), type_kind=1, mutable=0, register=0, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
+    discard vector_push<i64>(&mut result, to_i64(ng_span_fingerprint(&source, {collision_name_start}, {collision_name_start + 10}) <=> ng_span_fingerprint(&source, {matching_name_start}, {matching_name_start + 10})))
+    discard vector_push<i64>(&mut result, ng_ir_variable_index(&source, &variables, {offsets[candidate_count]}, {offsets[candidate_count] + 9}))
+    discard vector_push<i64>(&mut result, ng_ir_variable_index(&source, &variables, {collision_name_start}, {collision_name_start + 10}))
+    discard vector_push<i64>(&mut result, ng_ir_variable_index(&source, &variables, {matching_name_start}, {matching_name_start + 10}))
+    return result
+'''
+    harness_source = _NG_SOURCE + "\n" + wrapper
+    compilation = compile_source(harness_source)
+    assert compilation.ir is not None
+    metrics: dict[str, object] = {}
+    result = _execute_ir_with_step_budget(
+        compilation.ir,
+        source_text=harness_source,
+        max_steps=10_000_000,
+        metrics=metrics,
+    )
+
+    assert hasattr(result, "element_type")
+    assert [int(result.get(index)) for index in range(result.length)] == [0, -12, -12, candidate_count]
+    calls = metrics["calls"]
+    assert isinstance(calls, dict)
+    named_comparisons = int(calls.get("ng_named_spans_equal", 0))
+    exact_comparisons = int(calls.get("ng_spans_equal", 0))
+    linear_reference_comparisons = candidate_count + 2
+    print(
+        "IR_VARIABLE_NAME_MATCH_PROFILE "
+        f"candidates={candidate_count + 1} lookups=3 "
+        f"named_comparisons={named_comparisons} "
+        f"exact_span_checks={exact_comparisons} "
+        f"linear_reference_checks={linear_reference_comparisons}"
+    )
+    assert named_comparisons == candidate_count * 2 + 3
+    assert exact_comparisons == 2
+    assert exact_comparisons * 16 < linear_reference_comparisons
+
+
 def test_ng_ir_variable_field_lookup_stays_with_parent_subtree() -> None:
     sibling_count = 256
     root_count = 128
@@ -2491,7 +2556,7 @@ fn main() -> vector<i64>:
         f"IR_VARIABLE_LOOKUP_PROFILE cells={3 * (child_count + 1) + 1} "
         f"steps={lookup_steps} total_steps={total_steps} fingerprints={fingerprint_calls}"
     )
-    assert fingerprint_calls == 3
+    assert fingerprint_calls == 3  # only the three stored root names need hashes
     assert total_steps < 419_174
     assert lookup_steps < 50_000
 
