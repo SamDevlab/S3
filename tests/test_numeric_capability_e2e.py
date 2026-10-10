@@ -37,6 +37,19 @@ def test_i64_arithmetic_is_source_visible_end_to_end() -> None:
         assert IROpcode.COMPARE in opcodes
 
 
+def test_chained_i64_division_uses_the_contextual_domain() -> None:
+    source = (
+        "fn divide_twice(value: i64) -> i64:\n"
+        "    return value / 2 / 2\n"
+        "fn main() -> i64:\n"
+        "    return divide_twice(40)\n"
+    )
+    for optimization in ("O0", "O1"):
+        compilation = compile_program(source, optimization)
+        assert execute_ir(compilation.ir) == 10
+        assert Emulator().execute(compilation.assembly) == 10
+
+
 @pytest.mark.s3_native
 @pytest.mark.skipif(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},

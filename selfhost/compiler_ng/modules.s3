@@ -1,0 +1,1061 @@
+module selfhost.compiler_ng.modules
+
+from selfhost.compiler_ng.lexer import NgToken, ng_lex, ng_span_fingerprint, ng_spans_equal
+from selfhost.compiler_ng.parser import NgFunction, NgImport, NgModule, NgSpan, NgAstNode, NgParameter, NgRecord, NgField, ng_parse_module_header, ng_parse_module_functions, ng_validate_nominal_types
+from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table
+from selfhost.compiler_ng.semantic import ng_builtin_call_kind, ng_encode_resolved_call_function, ng_function_index_for_node, ng_named_spans_equal, ng_resolve_semantic_nodes, ng_resolved_builtin_call_marker
+from selfhost.compiler_ng.ir import ng_emit_program
+
+export record NgSourceUnit:
+    path: text
+    contents: bytes
+
+fn ng_append_bytes(target: &mut bytes, source: &bytes) -> i64:
+    mut target_capacity: i64 = bytes_capacity(&*target)
+    mut required_capacity: i64 = bytes_len(&*target) + bytes_len(source)
+    match target_capacity < required_capacity:
+        -1:
+            target_capacity = required_capacity
+        0:
+            target_capacity = target_capacity
+        1:
+            target_capacity = target_capacity
+    *target = bytes_concat(&*target, source)
+    discard bytes_reserve(target, target_capacity)
+    return 0
+
+fn ng_shift_tokens(tokens: &mut vector<NgToken>, base: i64) -> i64:
+    mut index: i64 = 0
+    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    while index < vector_len<NgToken>(&*tokens):
+        token = vector_get<NgToken>(&*tokens, index)
+        token.start = token.start + base
+        token.end = token.end + base
+        discard vector_set<NgToken>(&mut *tokens, index, token)
+        index = index + 1
+    return 0
+
+fn ng_lex_source_unit(source: &bytes, tokens: &mut vector<NgToken>, base: i64) -> i64:
+    mut status: i64 = ng_lex(source, tokens)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            return ng_shift_tokens(tokens, base)
+        1:
+            return status
+
+fn ng_compare_spans(source: &bytes, left_start: i64, left_end: i64, right_start: i64, right_end: i64) -> i64:
+    mut index: i64 = 0
+    mut left_length: i64 = left_end - left_start
+    mut right_length: i64 = right_end - right_start
+    mut common_length: i64 = left_length
+    mut left_byte: i64 = 0
+    mut right_byte: i64 = 0
+    match right_length < left_length:
+        -1:
+            common_length = right_length
+        0:
+            common_length = left_length
+        1:
+            common_length = left_length
+    while index < common_length:
+        left_byte = to_i64(bytes_get(source, left_start + index))
+        right_byte = to_i64(bytes_get(source, right_start + index))
+        match left_byte < right_byte:
+            -1:
+                return -1
+            0:
+                match left_byte > right_byte:
+                    -1:
+                        return 1
+                    0:
+                        index = index + 1
+                    1:
+                        return 1
+            1:
+                return -1
+    match left_length < right_length:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 1
+
+fn ng_span_equals_bytes(source: &bytes, start: i64, end: i64, expected: &bytes) -> trit:
+    mut index: i64 = 0
+    match end - start <=> bytes_len(expected):
+        -1:
+            return 0
+        0:
+            index = 0
+        1:
+            return 0
+    while index < bytes_len(expected):
+        match to_i64(bytes_get(source, start + index)) <=> to_i64(bytes_get(expected, index)):
+            -1:
+                return 0
+            0:
+                index = index + 1
+            1:
+                return 0
+    return -1
+
+fn ng_find_module_by_name(source: &bytes, modules: &vector<NgModule>, name_start: i64, name_end: i64) -> i64:
+    mut index: i64 = 0
+    mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
+    while index < vector_len<NgModule>(modules):
+        module_item = vector_get<NgModule>(modules, index)
+        match ng_spans_equal(source, name_start, name_end, module_item.name_start, module_item.name_end):
+            -1:
+                return index
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    return -1
+
+fn ng_find_function_in_module(source: &bytes, modules: &vector<NgModule>, functions: &vector<NgFunction>, module_index: i64, name_start: i64, name_end: i64) -> i64:
+    mut index: i64 = -1
+    mut name_length: i64 = name_end - name_start
+    mut candidate_length: i64 = 0
+    mut fingerprint: i64 = 0
+    mut fingerprint_ready: i64 = 0
+    mut candidate_fingerprint: i64 = 0
+    mut compare_required: i64 = 1
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
+    mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
+    match module_index < 0:
+        -1:
+            return -1
+        0:
+            match module_index < vector_len<NgModule>(modules):
+                -1:
+                    module_item = vector_get<NgModule>(modules, module_index)
+                    index = module_item.first_function
+                    while index < module_item.first_function + module_item.function_count:
+                        function = vector_get<NgFunction>(functions, index)
+                        candidate_length = function.local_name_end - function.local_name_start
+                        match name_length <=> candidate_length:
+                            -1:
+                                index = index + 1
+                            0:
+                                match fingerprint_ready <=> 0:
+                                    0:
+                                        fingerprint = ng_span_fingerprint(source, name_start, name_end)
+                                        fingerprint_ready = 1
+                                    -1:
+                                        fingerprint_ready = fingerprint_ready
+                                    1:
+                                        fingerprint_ready = fingerprint_ready
+                                candidate_fingerprint = function.local_name_fingerprint
+                                compare_required = 1
+                                match fingerprint > 0:
+                                    -1:
+                                        match candidate_fingerprint > 0:
+                                            -1:
+                                                match fingerprint <=> candidate_fingerprint:
+                                                    -1:
+                                                        compare_required = 0
+                                                    0:
+                                                        compare_required = 1
+                                                    1:
+                                                        compare_required = 0
+                                            0:
+                                                compare_required = 1
+                                            1:
+                                                compare_required = 1
+                                    0:
+                                        compare_required = 1
+                                    1:
+                                        compare_required = 1
+                                match compare_required <=> 1:
+                                    0:
+                                        match ng_named_spans_equal(source, name_start, name_end, fingerprint, function.local_name_start, function.local_name_end, candidate_fingerprint):
+                                            -1:
+                                                return index
+                                            0:
+                                                index = index + 1
+                                            1:
+                                                index = index + 1
+                                    -1:
+                                        index = index + 1
+                                    1:
+                                        index = index + 1
+                            1:
+                                index = index + 1
+                    return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+fn ng_find_record_in_module(source: &bytes, records: &vector<NgRecord>, module_index: i64, name_start: i64, name_end: i64) -> i64:
+    mut index: i64 = 0
+    mut record_item: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
+    while index < vector_len<NgRecord>(records):
+        record_item = vector_get<NgRecord>(records, index)
+        match record_item.module_index <=> module_index:
+            0:
+                match ng_spans_equal(source, name_start, name_end, record_item.name_start, record_item.name_end):
+                    -1:
+                        return index
+                    0:
+                        index = index + 1
+                    1:
+                        index = index + 1
+            -1:
+                index = index + 1
+            1:
+                index = index + 1
+    return -1
+
+fn ng_find_import_target(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, import_index: i64) -> i64:
+    mut imported: NgImport = vector_get<NgImport>(imports, import_index)
+    return ng_find_module_by_name(source, modules, imported.target_start, imported.target_end)
+
+fn ng_order_modules(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, order: &mut vector<i64>) -> i64:
+    mut done: vector<i64> = vector_new<i64>(vector_len<NgModule>(modules) + 1)
+    mut module_index: i64 = 0
+    mut import_index: i64 = 0
+    mut target_index: i64 = -1
+    mut candidate: i64 = -1
+    mut ready: i64 = 0
+    mut current: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
+    mut best: NgModule = current
+    mut imported: NgImport = NgImport(module_index=0, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
+    while module_index < vector_len<NgModule>(modules):
+        discard vector_push<i64>(&mut done, 0)
+        module_index = module_index + 1
+    while vector_len<i64>(&*order) < vector_len<NgModule>(modules):
+        module_index = 0
+        candidate = -1
+        while module_index < vector_len<NgModule>(modules):
+            match vector_get<i64>(&done, module_index) <=> 0:
+                0:
+                    current = vector_get<NgModule>(modules, module_index)
+                    ready = 1
+                    import_index = 0
+                    while import_index < vector_len<NgImport>(imports):
+                        imported = vector_get<NgImport>(imports, import_index)
+                        match imported.module_index <=> module_index:
+                            0:
+                                target_index = ng_find_import_target(source, modules, imports, import_index)
+                                match target_index < 0:
+                                    -1:
+                                        return -3
+                                    0:
+                                        match target_index <=> module_index:
+                                            0:
+                                                return -6
+                                            1:
+                                                match vector_get<i64>(&done, target_index) <=> 0:
+                                                    0:
+                                                        ready = 0
+                                                    -1:
+                                                        ready = ready
+                                                    1:
+                                                        ready = ready
+                                            -1:
+                                                match vector_get<i64>(&done, target_index) <=> 0:
+                                                    0:
+                                                        ready = 0
+                                                    -1:
+                                                        ready = ready
+                                                    1:
+                                                        ready = ready
+                                    1:
+                                        return -3
+                            -1:
+                                imported = imported
+                            1:
+                                imported = imported
+                        import_index = import_index + 1
+                    match ready <=> 1:
+                        -1:
+                            ready = ready
+                        0:
+                            match candidate < 0:
+                                -1:
+                                    candidate = module_index
+                                0:
+                                    current = vector_get<NgModule>(modules, module_index)
+                                    best = vector_get<NgModule>(modules, candidate)
+                                    match ng_compare_spans(source, current.name_start, current.name_end, best.name_start, best.name_end) < 0:
+                                        -1:
+                                            candidate = module_index
+                                        0:
+                                            candidate = candidate
+                                        1:
+                                            candidate = candidate
+                                1:
+                                    candidate = candidate
+                        1:
+                            ready = ready
+                -1:
+                    module_index = module_index
+                1:
+                    module_index = module_index
+            module_index = module_index + 1
+        match candidate < 0:
+            -1:
+                return -6
+            0:
+                discard vector_push<i64>(order, candidate)
+                discard vector_set<i64>(&mut done, candidate, 1)
+            1:
+                return -6
+    return 0
+
+fn ng_find_local_import(source: &bytes, imports: &vector<NgImport>, module_index: i64, name_start: i64, name_end: i64) -> i64:
+    mut index: i64 = 0
+    mut imported: NgImport = NgImport(module_index=0, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
+    while index < vector_len<NgImport>(imports):
+        imported = vector_get<NgImport>(imports, index)
+        match imported.module_index <=> module_index:
+            0:
+                match ng_spans_equal(source, name_start, name_end, imported.local_start, imported.local_end):
+                    -1:
+                        return index
+                    0:
+                        index = index + 1
+                    1:
+                        index = index + 1
+            -1:
+                index = index + 1
+            1:
+                index = index + 1
+    return -1
+
+fn ng_append_internal_name(source: &mut bytes, module_item: NgModule, function: NgFunction, entry_module: &bytes, main_name: &bytes) -> NgSpan:
+    mut start: i64 = bytes_len(&*source)
+    mut index: i64 = 0
+    mut value: i64 = 0
+    mut required_capacity: i64 = 0
+    mut octet: tryte = 0
+    mut module_is_entry: trit = ng_span_equals_bytes(&*source, module_item.name_start, module_item.name_end, entry_module)
+    mut function_is_main: trit = ng_span_equals_bytes(&*source, function.local_name_start, function.local_name_end, main_name)
+    match module_is_entry:
+        -1:
+            match function_is_main:
+                -1:
+                    return NgSpan(start=function.local_name_start, end=function.local_name_end)
+                0:
+                    module_is_entry = 0
+                1:
+                    module_is_entry = 0
+        0:
+            module_is_entry = 0
+        1:
+            module_is_entry = 0
+    required_capacity = bytes_len(&*source) + 10 + module_item.name_end - module_item.name_start + function.local_name_end - function.local_name_start
+    discard bytes_reserve(source, required_capacity)
+    discard bytes_push(source, 95)
+    discard bytes_push(source, 95)
+    discard bytes_push(source, 115)
+    discard bytes_push(source, 51)
+    discard bytes_push(source, 109)
+    discard bytes_push(source, 111)
+    discard bytes_push(source, 100)
+    discard bytes_push(source, 95)
+    while index < module_item.name_end - module_item.name_start:
+        value = to_i64(bytes_get(&*source, module_item.name_start + index))
+        match value == 46:
+            -1:
+                value = 95
+            0:
+                value = value
+            1:
+                value = value
+        discard bytes_push(source, to_tryte(value))
+        index = index + 1
+    discard bytes_push(source, 95)
+    discard bytes_push(source, 95)
+    index = 0
+    while index < function.local_name_end - function.local_name_start:
+        octet = bytes_get(&*source, function.local_name_start + index)
+        discard bytes_push(source, octet)
+        index = index + 1
+    return NgSpan(start=start, end=bytes_len(&*source))
+
+fn ng_validate_module_table(source: &bytes, modules: &vector<NgModule>) -> i64:
+    mut left_index: i64 = 0
+    mut right_index: i64 = 0
+    mut left: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
+    mut right: NgModule = left
+    while left_index < vector_len<NgModule>(modules):
+        left = vector_get<NgModule>(modules, left_index)
+        right_index = 0
+        while right_index < left_index:
+            right = vector_get<NgModule>(modules, right_index)
+            match ng_spans_equal(source, left.name_start, left.name_end, right.name_start, right.name_end):
+                -1:
+                    return -2
+                0:
+                    right = right
+                1:
+                    right = right
+            match ng_spans_equal(source, left.path_start, left.path_end, right.path_start, right.path_end):
+                -1:
+                    return -2
+                0:
+                    right = right
+                1:
+                    right = right
+            right_index = right_index + 1
+        left_index = left_index + 1
+    return 0
+
+fn ng_validate_functions(source: &bytes, modules: &vector<NgModule>, functions: &vector<NgFunction>) -> i64:
+    mut left_index: i64 = 0
+    mut right_index: i64 = 0
+    mut left: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
+    mut right: NgFunction = left
+    while left_index < vector_len<NgFunction>(functions):
+        left = vector_get<NgFunction>(functions, left_index)
+        right_index = 0
+        while right_index < left_index:
+            right = vector_get<NgFunction>(functions, right_index)
+            match left.module_index <=> right.module_index:
+                -1:
+                    right = right
+                0:
+                    match ng_named_spans_equal(source, left.local_name_start, left.local_name_end, left.local_name_fingerprint, right.local_name_start, right.local_name_end, right.local_name_fingerprint):
+                        -1:
+                            return -8
+                        0:
+                            right = right
+                        1:
+                            right = right
+                1:
+                    right = right
+            right_index = right_index + 1
+        left_index = left_index + 1
+    return 0
+
+fn ng_rewrite_imported_nominal_types(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, records: &vector<NgRecord>, types: &mut vector<NgTypeDescriptor>) -> i64:
+    mut type_index: i64 = 6
+    mut module_index: i64 = -1
+    mut import_index: i64 = -1
+    mut target_index: i64 = -1
+    mut function_index: i64 = -1
+    mut record_index: i64 = -1
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
+    mut imported: NgImport = NgImport(module_index=0, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
+    mut target_record: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
+    mut target_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut target_function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
+    while type_index < vector_len<NgTypeDescriptor>(&*types):
+        descriptor = vector_get<NgTypeDescriptor>(&*types, type_index)
+        match descriptor.kind <=> 7:
+            0:
+                module_index = ng_find_module_by_name(source, modules, descriptor.module_start, descriptor.module_end)
+                match module_index < 0:
+                    -1:
+                        type_index = type_index
+                    0:
+                        import_index = ng_find_local_import(source, imports, module_index, descriptor.name_start, descriptor.name_end)
+                        match import_index < 0:
+                            -1:
+                                import_index = import_index
+                            0:
+                                imported = vector_get<NgImport>(imports, import_index)
+                                target_index = ng_find_import_target(source, modules, imports, import_index)
+                                match target_index < 0:
+                                    -1:
+                                        return -3
+                                    0:
+                                        record_index = ng_find_record_in_module(source, records, target_index, imported.symbol_start, imported.symbol_end)
+                                        function_index = ng_find_function_in_module(source, modules, functions, target_index, imported.symbol_start, imported.symbol_end)
+                                        match record_index < 0:
+                                            -1:
+                                                return -5
+                                            0:
+                                                target_record = vector_get<NgRecord>(records, record_index)
+                                                match target_record.exported <=> 1:
+                                                    0:
+                                                        match function_index < 0:
+                                                            -1:
+                                                                function_index = function_index
+                                                            0:
+                                                                target_function = vector_get<NgFunction>(functions, function_index)
+                                                                match target_function.exported <=> 1:
+                                                                    0:
+                                                                        return -8
+                                                                    -1:
+                                                                        target_function = target_function
+                                                                    1:
+                                                                        return -8
+                                                            1:
+                                                                function_index = function_index
+                                                        match ng_spans_equal(source, imported.local_start, imported.local_end, imported.symbol_start, imported.symbol_end):
+                                                            -1:
+                                                                module_item = vector_get<NgModule>(modules, target_index)
+                                                                descriptor.module_start = module_item.name_start
+                                                                descriptor.module_end = module_item.name_end
+                                                                descriptor.name_start = target_record.name_start
+                                                                descriptor.name_end = target_record.name_end
+                                                                target_type = vector_get<NgTypeDescriptor>(&*types, target_record.type_id - 1)
+                                                                descriptor.first_field = target_type.first_field
+                                                                descriptor.field_count = target_type.field_count
+                                                                discard vector_set<NgTypeDescriptor>(&mut *types, type_index, descriptor)
+                                                            0:
+                                                                return -8
+                                                            1:
+                                                                return -8
+                                                    -1:
+                                                        return -5
+                                                    1:
+                                                        return -5
+                                            1:
+                                                return -5
+                                    1:
+                                        return -3
+                            1:
+                                import_index = import_index
+                    1:
+                        type_index = type_index
+            -1:
+                type_index = type_index
+            1:
+                type_index = type_index
+        type_index = type_index + 1
+    return 0
+
+fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, records: &vector<NgRecord>) -> i64:
+    mut import_index: i64 = 0
+    mut prior_index: i64 = 0
+    mut target_index: i64 = -1
+    mut function_index: i64 = -1
+    mut record_index: i64 = -1
+    mut local_function: i64 = -1
+    mut local_record: i64 = -1
+    mut type_import: i64 = 0
+    mut imported: NgImport = NgImport(module_index=0, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
+    mut prior: NgImport = imported
+    mut target: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
+    mut target_record: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
+    while import_index < vector_len<NgImport>(imports):
+        imported = vector_get<NgImport>(imports, import_index)
+        type_import = 0
+        target_index = ng_find_import_target(source, modules, imports, import_index)
+        match target_index < 0:
+            -1:
+                return -3
+            0:
+                target_index = target_index
+            1:
+                return -3
+        match target_index <=> imported.module_index:
+            0:
+                return -6
+            -1:
+                target_index = target_index
+            1:
+                target_index = target_index
+        function_index = ng_find_function_in_module(source, modules, functions, target_index, imported.symbol_start, imported.symbol_end)
+        record_index = ng_find_record_in_module(source, records, target_index, imported.symbol_start, imported.symbol_end)
+        match function_index < 0:
+            -1:
+                match record_index < 0:
+                    -1:
+                        return -4
+                    0:
+                        target_record = vector_get<NgRecord>(records, record_index)
+                        match target_record.exported <=> 1:
+                            0:
+                                type_import = 1
+                            -1:
+                                return -5
+                            1:
+                                return -5
+                    1:
+                        return -4
+            0:
+                target = vector_get<NgFunction>(functions, function_index)
+                match target.exported <=> 1:
+                    0:
+                        match record_index < 0:
+                            -1:
+                                target = target
+                            0:
+                                target_record = vector_get<NgRecord>(records, record_index)
+                                match target_record.exported <=> 1:
+                                    0:
+                                        return -8
+                                    -1:
+                                        target = target
+                                    1:
+                                        target = target
+                            1:
+                                target = target
+                    -1:
+                        match record_index < 0:
+                            -1:
+                                return -5
+                            0:
+                                target_record = vector_get<NgRecord>(records, record_index)
+                                match target_record.exported <=> 1:
+                                    0:
+                                        type_import = 1
+                                    -1:
+                                        return -5
+                                    1:
+                                        return -5
+                            1:
+                                return -5
+                    1:
+                        match record_index < 0:
+                            -1:
+                                return -5
+                            0:
+                                target_record = vector_get<NgRecord>(records, record_index)
+                                match target_record.exported <=> 1:
+                                    0:
+                                        return -8
+                                    -1:
+                                        target = target
+                                    1:
+                                        target = target
+                            1:
+                                return -5
+            1:
+                return -4
+        match type_import <=> 1:
+            0:
+                match ng_spans_equal(source, imported.local_start, imported.local_end, imported.symbol_start, imported.symbol_end):
+                    -1:
+                        local_function = ng_find_function_in_module(source, modules, functions, imported.module_index, imported.local_start, imported.local_end)
+                        local_record = ng_find_record_in_module(source, records, imported.module_index, imported.local_start, imported.local_end)
+                        match local_function < 0:
+                            -1:
+                                match local_record < 0:
+                                    -1:
+                                        local_function = local_function
+                                    0:
+                                        return -7
+                                    1:
+                                        return -7
+                            0:
+                                return -7
+                            1:
+                                return -7
+                    0:
+                        return -8
+                    1:
+                        return -8
+            -1:
+                local_function = ng_find_function_in_module(source, modules, functions, imported.module_index, imported.local_start, imported.local_end)
+                match local_function < 0:
+                    -1:
+                        local_function = local_function
+                    0:
+                        return -7
+                    1:
+                        return -7
+            1:
+                return -8
+        prior_index = 0
+        while prior_index < import_index:
+            prior = vector_get<NgImport>(imports, prior_index)
+            match prior.module_index <=> imported.module_index:
+                0:
+                    match ng_spans_equal(source, prior.local_start, prior.local_end, imported.local_start, imported.local_end):
+                        -1:
+                            return -7
+                        0:
+                            prior = prior
+                        1:
+                            prior = prior
+                -1:
+                    prior_index = prior_index + 1
+                1:
+                    prior_index = prior_index + 1
+            prior_index = prior_index + 1
+        import_index = import_index + 1
+    return 0
+
+fn ng_mark_record_constructor_call(nodes: &mut vector<NgAstNode>, node_index: i64, record_item: NgRecord) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
+    node.start = record_item.name_start
+    node.operation = record_item.name_end
+    node.right = record_item.type_id
+    discard vector_set<NgAstNode>(&mut *nodes, node_index, node)
+    return 1
+
+fn ng_resolve_imported_record_constructor(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, records: &vector<NgRecord>, caller: NgFunction, nodes: &mut vector<NgAstNode>, node_index: i64) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
+    mut import_index: i64 = ng_find_local_import(source, imports, caller.module_index, node.start, node.operation)
+    mut imported: NgImport = NgImport(module_index=0, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
+    mut target_module: i64 = -1
+    mut record_index: i64 = -1
+    match import_index < 0:
+        -1:
+            return 0
+        0:
+            imported = vector_get<NgImport>(imports, import_index)
+        1:
+            return 0
+    target_module = ng_find_import_target(source, modules, imports, import_index)
+    match target_module < 0:
+        -1:
+            return -4
+        0:
+            record_index = ng_find_record_in_module(source, records, target_module, imported.symbol_start, imported.symbol_end)
+            match record_index < 0:
+                -1:
+                    return 0
+                0:
+                    return ng_mark_record_constructor_call(nodes, node_index, vector_get<NgRecord>(records, record_index))
+                1:
+                    return 0
+        1:
+            return -4
+
+fn ng_resolve_record_constructor_call(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, records: &vector<NgRecord>, caller: NgFunction, nodes: &mut vector<NgAstNode>, node_index: i64) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
+    mut record_index: i64 = ng_find_record_in_module(source, records, caller.module_index, node.start, node.operation)
+    match record_index < 0:
+        -1:
+            return ng_resolve_imported_record_constructor(source, modules, imports, records, caller, nodes, node_index)
+        0:
+            return ng_mark_record_constructor_call(nodes, node_index, vector_get<NgRecord>(records, record_index))
+        1:
+            return 0
+
+fn ng_mark_unresolved_builtin_call(source: &bytes, nodes: &mut vector<NgAstNode>, node_index: i64) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
+    match node.right < 0:
+        -1:
+            match ng_builtin_call_kind(source, node.start, node.operation) > 0:
+                -1:
+                    node.right = ng_resolved_builtin_call_marker()
+                    discard vector_set<NgAstNode>(&mut *nodes, node_index, node)
+                    return 1
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, records: &vector<NgRecord>, caller: NgFunction, nodes: &mut vector<NgAstNode>, node_index: i64) -> i64:
+    mut function_index: i64 = -1
+    mut import_index: i64 = -1
+    mut imported: NgImport = NgImport(module_index=0, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
+    mut target_module: i64 = -1
+    mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
+    function_index = ng_find_function_in_module(source, modules, functions, caller.module_index, node.start, node.operation)
+    match function_index < 0:
+        -1:
+            match ng_resolve_record_constructor_call(source, modules, imports, records, caller, &mut *nodes, node_index) <=> 0:
+                -1:
+                    return -4
+                0:
+                    import_index = ng_find_local_import(source, imports, caller.module_index, node.start, node.operation)
+                    match import_index < 0:
+                        -1:
+                            discard ng_mark_unresolved_builtin_call(source, &mut *nodes, node_index)
+                            return 0
+                        0:
+                            imported = vector_get<NgImport>(imports, import_index)
+                            target_module = ng_find_import_target(source, modules, imports, import_index)
+                            function_index = ng_find_function_in_module(source, modules, functions, target_module, imported.symbol_start, imported.symbol_end)
+                            match function_index < 0:
+                                -1:
+                                    return -4
+                                0:
+                                    function_index = function_index
+                                1:
+                                    return -4
+                        1:
+                            return 0
+                1:
+                    return 0
+        0:
+            function_index = function_index
+        1:
+            return 0
+    node.operation = ng_encode_resolved_call_function(function_index)
+    discard vector_set<NgAstNode>(&mut *nodes, node_index, node)
+    return 0
+
+fn ng_resolve_module_calls(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, records: &vector<NgRecord>, nodes: &mut vector<NgAstNode>) -> i64:
+    mut node_index: i64 = 0
+    mut function_index: i64 = -1
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
+    mut node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut status: i64 = 0
+    while node_index < vector_len<NgAstNode>(&*nodes):
+        node = vector_get<NgAstNode>(&*nodes, node_index)
+        match node.kind <=> 5:
+            0:
+                function_index = ng_function_index_for_node(functions, node_index)
+                match function_index >= 0:
+                    -1:
+                        function = vector_get<NgFunction>(functions, function_index)
+                        status = ng_resolve_one_call(source, modules, imports, functions, records, function, &mut *nodes, node_index)
+                        match status <=> 0:
+                            -1:
+                                return status
+                            0:
+                                status = status
+                            1:
+                                return status
+                    0:
+                        return -12
+                    1:
+                        return -12
+            -1:
+                node = node
+            1:
+                node = node
+        node_index = node_index + 1
+    return 0
+
+export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, source: &mut bytes, events: &mut vector<i64>) -> i64:
+    mut unit_count: i64 = vector_len<NgSourceUnit>(units)
+    mut source_index: i64 = 0
+    mut source_start: i64 = 0
+    mut source_end: i64 = 0
+    mut path_start: i64 = 0
+    mut path_end: i64 = 0
+    mut total_source_bytes: i64 = 0
+    mut pool_capacity: i64 = 0
+    mut function_capacity: i64 = 0
+    mut module_index: i64 = 0
+    mut order_index: i64 = 0
+    mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
+    mut unit: NgSourceUnit = NgSourceUnit(path=text_from_static(""), contents=bytes_new(1))
+    mut path_bytes: bytes = bytes_new(1)
+    mut tokens: vector<NgToken> = vector_new<NgToken>(1)
+    mut unit_tokens: vector<NgToken> = vector_new<NgToken>(1)
+    mut modules: vector<NgModule> = vector_new<NgModule>(unit_count + 1)
+    mut imports: vector<NgImport> = vector_new<NgImport>(1)
+    mut functions: vector<NgFunction> = vector_new<NgFunction>(1)
+    mut records: vector<NgRecord> = vector_new<NgRecord>(1)
+    mut fields: vector<NgField> = vector_new<NgField>(1)
+    mut parameters: vector<NgParameter> = vector_new<NgParameter>(1)
+    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(1)
+    mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(16)
+    mut order: vector<i64> = vector_new<i64>(unit_count + 1)
+    mut status: i64 = 0
+    mut entry_bytes: bytes = bytes_from_text(&entry_module)
+    mut main_text: text = text_from_static("main")
+    mut main_bytes: bytes = bytes_from_text(&main_text)
+    mut function_index: i64 = 0
+    mut token_copy_index: i64 = 0
+    mut target_module: i64 = -1
+    mut entry_function: i64 = -1
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
+    mut internal_name: NgSpan = NgSpan(start=0, end=0)
+    match unit_count > 0:
+        -1:
+            unit_count = unit_count
+        0:
+            return -1
+        1:
+            return -1
+    match bytes_len(&*source) == 0:
+        -1:
+            source_index = 0
+        0:
+            return -20
+        1:
+            source_index = 0
+    while source_index < unit_count:
+        unit = vector_get<NgSourceUnit>(units, source_index)
+        total_source_bytes = total_source_bytes + bytes_len(&unit.contents)
+        source_index = source_index + 1
+    pool_capacity = total_source_bytes + 1
+    # A function declaration needs multiple source bytes; avoid sizing its wide record vector by every byte.
+    function_capacity = total_source_bytes / 8 + 1
+    types = vector_new<NgTypeDescriptor>(pool_capacity)
+    status = ng_initialize_type_table(&mut types)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            status = status
+        1:
+            return status
+    imports = vector_new<NgImport>(pool_capacity)
+    functions = vector_new<NgFunction>(function_capacity)
+    records = vector_new<NgRecord>(pool_capacity)
+    fields = vector_new<NgField>(pool_capacity)
+    parameters = vector_new<NgParameter>(pool_capacity)
+    nodes = vector_new<NgAstNode>(pool_capacity)
+    tokens = vector_new<NgToken>(total_source_bytes + unit_count + 1)
+    source_index = 0
+    while source_index < unit_count:
+        unit = vector_get<NgSourceUnit>(units, source_index)
+        source_start = bytes_len(&*source)
+        discard ng_append_bytes(source, &unit.contents)
+        source_end = bytes_len(&*source)
+        discard bytes_push(source, 10)
+        path_bytes = bytes_from_text(&unit.path)
+        path_start = bytes_len(&*source)
+        discard ng_append_bytes(source, &path_bytes)
+        path_end = bytes_len(&*source)
+        discard bytes_push(source, 10)
+        unit_tokens = vector_new<NgToken>(bytes_len(&unit.contents) + 1)
+        status = ng_lex_source_unit(&unit.contents, &mut unit_tokens, source_start)
+        match status <=> 0:
+            -1:
+                return -1
+            0:
+                module_item = ng_parse_module_header(source, &unit_tokens, source_index, source_start, source_end, path_start, path_end, &mut imports)
+                match module_item.name_start < 0:
+                    -1:
+                        return -1
+                    0:
+                        module_item.body_token_index = module_item.body_token_index + vector_len<NgToken>(&tokens)
+                        token_copy_index = 0
+                        while token_copy_index < vector_len<NgToken>(&unit_tokens):
+                            discard vector_push<NgToken>(&mut tokens, vector_get<NgToken>(&unit_tokens, token_copy_index))
+                            token_copy_index = token_copy_index + 1
+                        discard vector_push<NgModule>(&mut modules, module_item)
+                    1:
+                        return -1
+            1:
+                return -1
+        source_index = source_index + 1
+    status = ng_validate_module_table(&*source, &modules)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            status = ng_order_modules(&*source, &modules, &imports, &mut order)
+        1:
+            return status
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            module_index = 0
+            while module_index < vector_len<NgModule>(&modules):
+                module_item = vector_get<NgModule>(&modules, module_index)
+                match ng_span_equals_bytes(&*source, module_item.name_start, module_item.name_end, &entry_bytes):
+                    -1:
+                        target_module = module_index
+                    0:
+                        target_module = target_module
+                    1:
+                        target_module = target_module
+                module_index = module_index + 1
+            match target_module < 0:
+                -1:
+                    return -9
+                0:
+                    target_module = target_module
+                1:
+                    return -9
+        1:
+            return status
+    order_index = 0
+    while order_index < vector_len<i64>(&order):
+        module_index = vector_get<i64>(&order, order_index)
+        module_item = vector_get<NgModule>(&modules, module_index)
+        module_item.first_function = vector_len<NgFunction>(&functions)
+        status = ng_parse_module_functions(&*source, &tokens, module_item, &mut types, &mut records, &mut fields, &mut parameters, &mut nodes, &mut functions)
+        match status <=> 0:
+            -1:
+                return status
+            0:
+                module_item.function_count = vector_len<NgFunction>(&functions) - module_item.first_function
+                discard vector_set<NgModule>(&mut modules, module_index, module_item)
+            1:
+                return status
+        order_index = order_index + 1
+    status = ng_rewrite_imported_nominal_types(&*source, &modules, &imports, &functions, &records, &mut types)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            status = ng_validate_nominal_types(&*source, &types, &modules, &records)
+        1:
+            return status
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            status = ng_validate_functions(&*source, &modules, &functions)
+        1:
+            return status
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            status = ng_validate_imports(&*source, &modules, &imports, &functions, &records)
+        1:
+            return status
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            function_index = 0
+            while function_index < vector_len<NgFunction>(&functions):
+                function = vector_get<NgFunction>(&functions, function_index)
+                module_item = vector_get<NgModule>(&modules, function.module_index)
+                match ng_span_equals_bytes(&*source, function.local_name_start, function.local_name_end, &main_bytes):
+                    -1:
+                        match ng_span_equals_bytes(&*source, module_item.name_start, module_item.name_end, &entry_bytes):
+                            -1:
+                                entry_function = function_index
+                            0:
+                                function_index = function_index
+                            1:
+                                function_index = function_index
+                    0:
+                        function_index = function_index
+                    1:
+                        function_index = function_index
+                function_index = function_index + 1
+            match entry_function < 0:
+                -1:
+                    return -9
+                0:
+                    function = vector_get<NgFunction>(&functions, entry_function)
+                    match function.parameter_count <=> 0:
+                        -1:
+                            return -9
+                        0:
+                            function_index = 0
+                        1:
+                            return -9
+                1:
+                    return -9
+            function_index = 0
+            while function_index < vector_len<NgFunction>(&functions):
+                function = vector_get<NgFunction>(&functions, function_index)
+                module_item = vector_get<NgModule>(&modules, function.module_index)
+                internal_name = ng_append_internal_name(source, module_item, function, &entry_bytes, &main_bytes)
+                function.name_start = internal_name.start
+                function.name_end = internal_name.end
+                function.name_fingerprint = ng_span_fingerprint(&*source, internal_name.start, internal_name.end)
+                discard vector_set<NgFunction>(&mut functions, function_index, function)
+                function_index = function_index + 1
+            status = ng_resolve_module_calls(&*source, &modules, &imports, &functions, &records, &mut nodes)
+            match status <=> 0:
+                -1:
+                    return status
+                0:
+                    status = ng_resolve_semantic_nodes(&*source, &mut types, &records, &fields, &functions, &parameters, &mut nodes)
+                    match status <=> 0:
+                        -1:
+                            return status
+                        0:
+                            status = ng_emit_program(&*source, &types, &records, &fields, &functions, &parameters, &mut nodes, events)
+                            return status
+                        1:
+                            return status
+                1:
+                    return status
+        1:
+            return status

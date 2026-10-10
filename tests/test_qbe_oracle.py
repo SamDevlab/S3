@@ -5,6 +5,7 @@ from functools import lru_cache
 import os
 import platform
 from pathlib import Path
+import re
 import shutil
 import subprocess
 
@@ -28,6 +29,12 @@ from bootstrap.s3.pipeline import compile_source, compile_sources
 from bootstrap.s3.backends.x86_64.backend import X8664Backend
 from bootstrap.s3.stdlib import standard_library_sources
 from bootstrap.s3.verifier import IRVerificationError, verify_ir
+from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
+from tests.test_compiler_ng_ir_bridge import (
+    _REAL_NG_MODULE_SOURCES,
+    _emit_ng_events,
+    _emit_ng_source_set_events,
+)
 from tools.qbe_oracle import QBETranslationError, translate_verified_ir
 
 
@@ -1297,6 +1304,9 @@ def test_qbe_s3_runtime_provider_excludes_workload_functions(optimization) -> No
     assert "__s3_builtin_bytes_new:" in runtime_assembly
     assert "__s3_builtin_text_new:" in runtime_assembly
     assert "__s3_builtin_text_i64_map_new:" in runtime_assembly
+    assert "__s3_builtin_host_capability_grant:" in runtime_assembly
+    assert "__s3_builtin_resource_open:" in runtime_assembly
+    assert "__s3_builtin_resource_close:" in runtime_assembly
     assert "s3_main:" in runtime_assembly
     assert "__s3mod_" not in runtime_assembly
 
@@ -1400,6 +1410,17 @@ def _build_qbe_native(
             *[f"__s3_builtin_{builtin}" for builtin in _QBE_BYTES_BUILTINS],
             *[f"__s3_builtin_{builtin}" for builtin in _QBE_TEXT_BUILTINS],
             *[f"__s3_builtin_{builtin}" for builtin in _QBE_TEXT_MAP_BUILTINS],
+            *[
+                f"__s3_builtin_{builtin}"
+                for builtin in (
+                    "host_capability_grant",
+                    "resource_open",
+                    "resource_is_open",
+                    "resource_kind",
+                    "resource_invoke",
+                    "resource_close",
+                )
+            ],
         ]
         expose = subprocess.run(
             [
@@ -1534,6 +1555,87 @@ def _require_qbe_native_tools() -> tuple[str, str]:
     return qbe, cc
 
 
+_HOST_RESOURCE_LIFECYCLE_PROGRAM = """\
+fn main() -> i64:
+    capability: host_capability = host_capability_grant(1)
+    mut handle: resource_handle = resource_open(capability)
+    mut total: i64 = resource_kind(&handle)
+    one: i64 = 1
+    zero: i64 = 0
+    match resource_is_open(&handle):
+        -1:
+            total = total + one
+        0:
+            total = total + zero
+        1:
+            discard resource_invoke(&handle, 1)
+    discard resource_invoke(&handle, 7)
+    discard resource_close(&mut handle)
+    match resource_is_open(&handle):
+        -1:
+            total = total + 10
+        0:
+            total = total + zero
+        1:
+            discard resource_invoke(&handle, 1)
+    return total
+"""
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_translates_host_resource_builtin_contracts(optimization) -> None:
+    compilation = compile_source(
+        _HOST_RESOURCE_LIFECYCLE_PROGRAM,
+        optimization=optimization,
+    )
+    assert compilation.ir is not None
+    qbe_il = translate_verified_ir(compilation.ir)
+
+    for builtin in (
+        "host_capability_grant",
+        "resource_open",
+        "resource_is_open",
+        "resource_kind",
+        "resource_invoke",
+        "resource_close",
+    ):
+        assert f"call $__s3_builtin_{builtin}(" in qbe_il
+
+
+@pytest.mark.parametrize("optimization", [OptimizationLevel.O0, OptimizationLevel.O1])
+def test_qbe_executes_scoped_host_resource_lifecycle_natively_when_available(
+    optimization, tmp_path
+) -> None:
+    compilation = compile_source(
+        _HOST_RESOURCE_LIFECYCLE_PROGRAM,
+        optimization=optimization,
+    )
+    assert compilation.ir is not None and compilation.assembly is not None
+    qbe, cc = _require_qbe_native_tools()
+    qbe_native = _build_qbe_native(
+        compilation.ir,
+        optimization,
+        "host-resource-lifecycle",
+        tmp_path,
+        qbe,
+        cc,
+        s3_runtime_assembly=_qbe_s3_runtime_assembly(optimization),
+    )
+    s3_native = _build_s3_native(
+        compilation,
+        optimization,
+        "host-resource-lifecycle",
+        tmp_path,
+        cc,
+    )
+
+    assert execute_ir(compilation.ir) == 2
+    assert execute_assembly(compilation.assembly) == 2
+    assert qbe_native.returncode == 2, qbe_native.stderr.decode(errors="replace")
+    assert s3_native.returncode == 0, s3_native.stdout + s3_native.stderr
+    assert "program returned: 2" in s3_native.stdout
+
+
 def _assert_qbe_cross_target_codegen(
     qbe: str | None,
     qbe_il: str,
@@ -1587,6 +1689,122 @@ def test_qbe_real_s3_examples_match_explicit_results(name, expected, optimizatio
     assert execute_ir(compilation.ir) == expected
     assert execute_assembly(compilation.assembly) == expected
     assert translate_verified_ir(compilation.ir)
+
+
+@pytest.mark.parametrize("workload", ("branches.s3", "calls.s3"))
+def _assert_qbe_assigns_ng_scalar_call_results(module) -> None:
+    qbe = translate_verified_ir(module)
+    functions = {function.name: function for function in module.functions}
+    scalar_calls = [
+        (instruction.callee, instruction.results[0])
+        for function in module.functions
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.CALL
+        and instruction.callee in functions
+        and functions[instruction.callee].result_width == 1
+        and len(instruction.results) == 1
+    ]
+
+    assert scalar_calls
+    for callee, result_register in scalar_calls:
+        assert re.search(
+            rf"^\s*%r{result_register} =\w call \${re.escape(callee)}\(",
+            qbe,
+            re.MULTILINE,
+        ), f"scalar result r{result_register} from {callee} was not assigned"
+
+
+@pytest.mark.parametrize("workload", ("branches.s3", "calls.s3"))
+def test_qbe_translates_s3c_ng_scalar_call_result_cells(workload: str) -> None:
+    source = (
+        Path(__file__).parents[1] / "benchmarks/workloads" / workload
+    ).read_text(encoding="utf-8")
+    module = decode_ng_ir_events(source.encode("utf-8"), _emit_ng_events(source))
+    _assert_qbe_assigns_ng_scalar_call_results(module)
+
+
+def test_qbe_translates_s3c_ng_multimodule_scalar_call_result_cells() -> None:
+    source, cells = _emit_ng_source_set_events(
+        _REAL_NG_MODULE_SOURCES, entry_module="app"
+    )
+    module = decode_ng_ir_events(source, cells)
+    _assert_qbe_assigns_ng_scalar_call_results(module)
+
+
+def test_qbe_translates_s3c_ng_dynamic_scalar_call_result_cell() -> None:
+    source = """\
+fn main() -> i64:
+    mut values: vector<i64> = vector_new<i64>(1)
+    discard vector_push<i64>(&mut values, 7)
+    return vector_len<i64>(&values)
+"""
+    module = decode_ng_ir_events(source.encode("utf-8"), _emit_ng_events(source))
+    qbe = translate_verified_ir(module)
+    instruction = next(
+        instruction
+        for function in module.functions
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.CALL
+        and instruction.callee == "i64_vector_len"
+    )
+
+    assert len(instruction.results) == 1
+    assert re.search(
+        rf"^\s*%r{instruction.results[0]} =l call \$__s3_builtin_i64_vector_len\(",
+        qbe,
+        re.MULTILINE,
+    )
+
+
+@pytest.mark.s3_native
+@pytest.mark.parametrize("workload", ("branches.s3", "calls.s3"))
+def test_qbe_native_executes_s3c_ng_origin_ir_when_linux_toolchain_exists(
+    workload, tmp_path
+) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    source = (
+        Path(__file__).parents[1] / "benchmarks/workloads" / workload
+    ).read_text(encoding="utf-8")
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+    ng_canonical_ir = decode_ng_ir_events(source.encode("utf-8"), _emit_ng_events(source))
+    verify_ir(ng_canonical_ir)
+    expected = execute_ir(reference_ir)
+    assert execute_ir(ng_canonical_ir) == expected
+
+    qbe_native = _build_qbe_native(
+        ng_canonical_ir,
+        OptimizationLevel.O0,
+        f"s3c-ng-{Path(workload).stem}",
+        tmp_path,
+        qbe,
+        cc,
+    )
+    assert qbe_native.returncode == expected, qbe_native.stderr.decode(errors="replace")
+
+
+@pytest.mark.s3_native
+def test_qbe_native_executes_s3c_ng_real_multimodule_ir_when_available(tmp_path) -> None:
+    qbe, cc = _require_qbe_native_tools()
+    reference_ir = compile_sources(_REAL_NG_MODULE_SOURCES, entry_module="app").ir
+    assert reference_ir is not None
+    source, cells = _emit_ng_source_set_events(_REAL_NG_MODULE_SOURCES, entry_module="app")
+    ng_ir = decode_ng_ir_events(source, cells)
+    verify_ir(ng_ir)
+    expected = execute_ir(reference_ir)
+    assert execute_ir(ng_ir) == expected == 16
+
+    qbe_native = _build_qbe_native(
+        ng_ir,
+        OptimizationLevel.O0,
+        "s3c-ng-real-multimodule",
+        tmp_path,
+        qbe,
+        cc,
+    )
+    assert qbe_native.returncode == expected, qbe_native.stderr.decode(errors="replace")
 
 
 @pytest.mark.parametrize("target", ["arm64", "rv64"])

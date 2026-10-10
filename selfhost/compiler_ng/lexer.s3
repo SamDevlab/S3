@@ -1,0 +1,815 @@
+module selfhost.compiler_ng.lexer
+
+from selfhost.compiler_ng.character_classes import ng_is_digit
+
+export record NgToken:
+    kind: i64
+    start: i64
+    end: i64
+    indent: i64
+
+export fn ng_span_fingerprint(source: &bytes, start: i64, end: i64) -> i64:
+    mut span_length: i64 = end - start
+    mut second: i64 = 0
+    mut quarter: i64 = 0
+    mut middle: i64 = 0
+    mut three_quarter: i64 = 0
+    mut penultimate: i64 = 0
+    mut fingerprint: i64 = 0
+    mut packed_bytes: i64 = 0
+    mut byte_index: i64 = start
+    match span_length > 0:
+        -1:
+            match span_length < 8:
+                -1:
+                    while byte_index < end:
+                        packed_bytes = packed_bytes * 256 + to_i64(bytes_get(source, byte_index))
+                        byte_index = byte_index + 1
+                    # Length-separated packed bytes are injective for spans up to seven bytes.
+                    return span_length * 72057594037927936 + packed_bytes
+                0:
+                    span_length = span_length
+                1:
+                    span_length = span_length
+            middle = to_i64(bytes_get(source, start + span_length / 2))
+            second = to_i64(bytes_get(source, start + 1))
+            quarter = to_i64(bytes_get(source, start + span_length / 4))
+            three_quarter = to_i64(bytes_get(source, start + span_length * 3 / 4))
+            penultimate = to_i64(bytes_get(source, end - 2))
+            # For longer spans this fingerprint is only a prefilter; exact equality remains authoritative.
+            fingerprint = span_length * 4294967296 + to_i64(bytes_get(source, start)) * 16777216 + second * 65536 + quarter * 16384 + middle * 4096 + three_quarter * 1024 + penultimate * 256 + to_i64(bytes_get(source, end - 1))
+            return fingerprint
+        0:
+            return 0
+        1:
+            return 0
+
+export fn ng_spans_equal(source: &bytes, left_start: i64, left_end: i64, right_start: i64, right_end: i64) -> trit:
+    mut left: i64 = left_start
+    mut right: i64 = right_start
+    mut span_length: i64 = left_end - left_start
+    mut last_left: i64 = left_end - 1
+    mut last_right: i64 = right_end - 1
+    mut source_length: i64 = 0
+    match left_start <=> right_start:
+        0:
+            match left_end <=> right_end:
+                0:
+                    match span_length > 0:
+                        -1:
+                            source_length = bytes_len(source)
+                            match left_start >= 0:
+                                -1:
+                                    match left_end <= source_length:
+                                        -1:
+                                            return -1
+                                        0:
+                                            source_length = source_length
+                                        1:
+                                            source_length = source_length
+                                0:
+                                    source_length = source_length
+                                1:
+                                    source_length = source_length
+                        0:
+                            source_length = source_length
+                        1:
+                            source_length = source_length
+                -1:
+                    source_length = source_length
+                1:
+                    source_length = source_length
+        -1:
+            source_length = source_length
+        1:
+            source_length = source_length
+    match left_end - left_start <=> right_end - right_start:
+        -1:
+            return 0
+        0:
+            match span_length > 0:
+                -1:
+                    match to_i64(bytes_get(source, left_start)) <=> to_i64(bytes_get(source, right_start)):
+                        -1:
+                            return 0
+                        0:
+                            match span_length <=> 1:
+                                -1:
+                                    return -1
+                                0:
+                                    return -1
+                                1:
+                                    match to_i64(bytes_get(source, last_left)) <=> to_i64(bytes_get(source, last_right)):
+                                        -1:
+                                            return 0
+                                        0:
+                                            match span_length > 3:
+                                                -1:
+                                                    match to_i64(bytes_get(source, left_start + 1)) <=> to_i64(bytes_get(source, right_start + 1)):
+                                                        -1:
+                                                            return 0
+                                                        0:
+                                                            match to_i64(bytes_get(source, last_left - 1)) <=> to_i64(bytes_get(source, last_right - 1)):
+                                                                -1:
+                                                                    return 0
+                                                                0:
+                                                                    left = left_start + 2
+                                                                    right = right_start + 2
+                                                                    last_left = last_left - 1
+                                                                    last_right = last_right - 1
+                                                                1:
+                                                                    return 0
+                                                        1:
+                                                            return 0
+                                                0:
+                                                    left = left_start + 1
+                                                    right = right_start + 1
+                                                1:
+                                                    left = left_start + 1
+                                                    right = right_start + 1
+                                            while left < last_left:
+                                                match to_i64(bytes_get(source, left)) <=> to_i64(bytes_get(source, right)):
+                                                    -1:
+                                                        return 0
+                                                    0:
+                                                        left = left + 1
+                                                        right = right + 1
+                                                    1:
+                                                        return 0
+                                            return -1
+                                        1:
+                                            return 0
+                        1:
+                            return 0
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return 0
+
+fn ng_advance_line_indent(source: &bytes, start: i64, end: i64, state: &mut vector<i64>) -> i64:
+    mut cursor: i64 = start
+    mut unit: i64 = 0
+    mut indent: i64 = vector_get<i64>(&*state, 0)
+    mut prefix_open: i64 = vector_get<i64>(&*state, 1)
+    while cursor < end:
+        unit = to_i64(bytes_get(source, cursor))
+        match unit <=> 10:
+            0:
+                indent = 0
+                prefix_open = 1
+            -1:
+                match prefix_open <=> 1:
+                    0:
+                        match unit <=> 32:
+                            0:
+                                indent = indent + 1
+                            -1:
+                                match unit <=> 9:
+                                    0:
+                                        indent = -1
+                                    -1:
+                                        prefix_open = 0
+                                    1:
+                                        prefix_open = 0
+                                prefix_open = 0
+                            1:
+                                match unit <=> 9:
+                                    0:
+                                        indent = -1
+                                    -1:
+                                        prefix_open = 0
+                                    1:
+                                        prefix_open = 0
+                                prefix_open = 0
+                    -1:
+                        prefix_open = 0
+                    1:
+                        prefix_open = 0
+            1:
+                match prefix_open <=> 1:
+                    0:
+                        match unit <=> 32:
+                            0:
+                                indent = indent + 1
+                            -1:
+                                match unit <=> 9:
+                                    0:
+                                        indent = -1
+                                    -1:
+                                        prefix_open = 0
+                                    1:
+                                        prefix_open = 0
+                                prefix_open = 0
+                            1:
+                                match unit <=> 9:
+                                    0:
+                                        indent = -1
+                                    -1:
+                                        prefix_open = 0
+                                    1:
+                                        prefix_open = 0
+                                prefix_open = 0
+                    -1:
+                        prefix_open = 0
+                    1:
+                        prefix_open = 0
+        cursor = cursor + 1
+    discard vector_set<i64>(&mut *state, 0, indent)
+    discard vector_set<i64>(&mut *state, 1, prefix_open)
+    return 0
+
+fn ng_emit(tokens: &mut vector<NgToken>, kind: i64, start: i64, end: i64, indent: i64) -> i64:
+    discard vector_push<NgToken>(tokens, NgToken(kind=kind, start=start, end=end, indent=indent))
+    return end
+
+fn ng_is_alpha(unit: i64) -> trit:
+    match unit <=> 91:
+        -1:
+            match unit <=> 65:
+                -1:
+                    return 0
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return 0
+        1:
+            match unit <=> 97:
+                -1:
+                    return 0
+                0:
+                    return -1
+                1:
+                    match unit <=> 123:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+
+fn ng_is_identifier_start(unit: i64) -> trit:
+    match ng_is_alpha(unit):
+        -1:
+            return -1
+        0:
+            match unit == 95:
+                -1:
+                    return -1
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            return -1
+
+fn ng_is_identifier_continue(unit: i64) -> trit:
+    match ng_is_identifier_start(unit):
+        -1:
+            return -1
+        0:
+            return ng_is_digit(unit)
+        1:
+            return -1
+
+fn ng_is_space(unit: i64) -> trit:
+    match unit <=> 32:
+        -1:
+            match unit == 9:
+                -1:
+                    return -1
+                0:
+                    match unit == 10:
+                        -1:
+                            return -1
+                        0:
+                            match unit == 13:
+                                -1:
+                                    return -1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        0:
+            return -1
+        1:
+            return 0
+
+fn ng_is_multi_symbol_start(unit: i64) -> trit:
+    match unit <=> 60:
+        -1:
+            match unit == 33:
+                -1:
+                    return -1
+                0:
+                    match unit == 42:
+                        -1:
+                            return -1
+                        0:
+                            match unit == 43:
+                                -1:
+                                    return -1
+                                0:
+                                    match unit == 45:
+                                        -1:
+                                            return -1
+                                        0:
+                                            return 0
+                                        1:
+                                            return -1
+                                1:
+                                    return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            match unit <=> 62:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn ng_other_symbol_class(unit: i64) -> i64:
+    match unit < 128:
+        -1:
+            match ng_is_multi_symbol_start(unit):
+                -1:
+                    return 8
+                0:
+                    return 9
+                1:
+                    return 9
+        0:
+            return 10
+        1:
+            return 10
+
+fn ng_character_class(unit: i64) -> i64:
+    match ng_is_digit(unit):
+        -1:
+            return 1
+        0:
+            match ng_is_alpha(unit):
+                -1:
+                    return 2
+                0:
+                    match unit == 95:
+                        -1:
+                            return 3
+                        0:
+                            match ng_is_space(unit):
+                                -1:
+                                    return 4
+                                0:
+                    # Reserve distinct classes so ordinary symbols bypass comment and quote checks.
+                                    match unit == 35:
+                                        -1:
+                                            return 5
+                                        0:
+                                            match unit == 47:
+                                                -1:
+                                                    return 6
+                                                0:
+                                                    match unit == 34:
+                                                        -1:
+                                                            return 7
+                                                        0:
+                                                            return ng_other_symbol_class(unit)
+                                                        1:
+                                                            return ng_other_symbol_class(unit)
+                                                1:
+                                                    return ng_other_symbol_class(unit)
+                                        1:
+                                            return ng_other_symbol_class(unit)
+                                1:
+                                    return ng_other_symbol_class(unit)
+                        1:
+                            return ng_other_symbol_class(unit)
+                1:
+                    return 2
+        1:
+            return 1
+
+fn ng_build_character_class_table(classes: &mut vector<i64>) -> i64:
+    mut unit: i64 = 0
+    while unit < 256:
+        discard vector_push<i64>(&mut *classes, ng_character_class(unit))
+        unit = unit + 1
+    return 0
+
+fn ng_skip_line_comment(source: &bytes, cursor: i64, length: i64) -> i64:
+    mut next: i64 = cursor
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match next < length:
+            -1:
+                match to_i64(bytes_get(source, next)) == 10:
+                    -1:
+                        scanning = 0
+                    0:
+                        next = next + 1
+                    1:
+                        next = next + 1
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    return next
+
+fn ng_scan_identifier(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>, indent: i64) -> i64:
+    mut next: i64 = cursor + 1
+    mut character_class: i64 = 0
+    while next < length:
+        character_class = vector_get<i64>(classes, to_i64(bytes_get(source, next)))
+        match character_class < 4:
+            -1:
+                next = next + 1
+            0:
+                return ng_emit(tokens, 1, cursor, next, indent)
+            1:
+                return ng_emit(tokens, 1, cursor, next, indent)
+    return ng_emit(tokens, 1, cursor, next, indent)
+
+fn ng_scan_integer(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>, indent: i64) -> i64:
+    mut next: i64 = cursor + 1
+    mut scanning: i64 = 1
+    mut character_class: i64 = 0
+    while scanning == 1:
+        match next < length:
+            -1:
+                character_class = vector_get<i64>(classes, to_i64(bytes_get(source, next)))
+                match character_class <=> 1:
+                    -1:
+                        scanning = 0
+                    0:
+                        next = next + 1
+                    1:
+                        scanning = 0
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    return ng_emit(tokens, 2, cursor, next, indent)
+
+fn ng_scan_string(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>, indent: i64) -> i64:
+    mut next: i64 = cursor + 1
+    mut escaped: i64 = 0
+    mut closed: i64 = 0
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match next < length:
+            -1:
+                match escaped == 1:
+                    -1:
+                        escaped = 0
+                        next = next + 1
+                    0:
+                        match to_i64(bytes_get(source, next)) == 92:
+                            -1:
+                                escaped = 1
+                                next = next + 1
+                            0:
+                                match to_i64(bytes_get(source, next)) == 34:
+                                    -1:
+                                        closed = 1
+                                        next = next + 1
+                                        scanning = 0
+                                    0:
+                                        next = next + 1
+                                    1:
+                                        next = next + 1
+                            1:
+                                next = next + 1
+                    1:
+                        escaped = 0
+                        next = next + 1
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    match closed == 1:
+        -1:
+            return ng_emit(tokens, 3, cursor, next, indent)
+        0:
+            return -1
+        1:
+            return ng_emit(tokens, 3, cursor, next, indent)
+
+fn ng_symbol_kind(source: &bytes, cursor: i64, length: i64) -> i64:
+    mut first: i64 = to_i64(bytes_get(source, cursor))
+    mut second: i64 = 0
+    mut third: i64 = 0
+    mut kind: i64 = 0
+    match first < 128:
+        -1:
+            kind = 300 + first
+        0:
+            return -1
+        1:
+            return -1
+    match cursor + 1 < length:
+        -1:
+            second = to_i64(bytes_get(source, cursor + 1))
+        0:
+            second = 0
+        1:
+            second = 0
+    match first <=> 60:
+        -1:
+            match first <=> 42:
+                -1:
+                    match first == 33:
+                        -1:
+                            match second == 61:
+                                -1:
+                                    return 204
+                                0:
+                                    return kind
+                                1:
+                                    return kind
+                        0:
+                            return kind
+                        1:
+                            return kind
+                0:
+                    match second == 61:
+                        -1:
+                            return 208
+                        0:
+                            return kind
+                        1:
+                            return kind
+                1:
+                    match first <=> 43:
+                        -1:
+                            return kind
+                        0:
+                            match second == 61:
+                                -1:
+                                    return 207
+                                0:
+                                    return kind
+                                1:
+                                    return kind
+                        1:
+                            match first <=> 45:
+                                0:
+                                    match second == 62:
+                                        -1:
+                                            return 201
+                                        0:
+                                            return kind
+                                        1:
+                                            return kind
+                                -1:
+                                    return kind
+                                1:
+                                    return kind
+        0:
+            match second == 61:
+                -1:
+                    match cursor + 2 < length:
+                        -1:
+                            third = to_i64(bytes_get(source, cursor + 2))
+                            match third == 62:
+                                -1:
+                                    return 202
+                                0:
+                                    return 205
+                                1:
+                                    return 205
+                        0:
+                            return 205
+                        1:
+                            return 205
+                0:
+                    return kind
+                1:
+                    return kind
+        1:
+            match first <=> 61:
+                -1:
+                    return kind
+                0:
+                    match second == 61:
+                        -1:
+                            return 203
+                        0:
+                            return kind
+                        1:
+                            return kind
+                1:
+                    match first <=> 62:
+                        0:
+                            match second == 61:
+                                -1:
+                                    return 206
+                                0:
+                                    return kind
+                                1:
+                                    return kind
+                        -1:
+                            return kind
+                        1:
+                            return kind
+
+fn ng_scan_symbol(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>, indent: i64) -> i64:
+    mut kind: i64 = ng_symbol_kind(source, cursor, length)
+    mut width: i64 = 1
+    match kind < 0:
+        -1:
+            return -1
+        0:
+            match kind < 300:
+                -1:
+                    match kind == 202:
+                        -1:
+                            width = 3
+                        0:
+                            width = 2
+                        1:
+                            width = 2
+                0:
+                    width = 1
+                1:
+                    width = 1
+        1:
+            match kind < 300:
+                -1:
+                    match kind == 202:
+                        -1:
+                            width = 3
+                        0:
+                            width = 2
+                        1:
+                            width = 2
+                0:
+                    width = 1
+                1:
+                    width = 1
+    return ng_emit(tokens, kind, cursor, cursor + width, indent)
+
+fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>, state: &mut vector<i64>) -> i64:
+    mut next: i64 = cursor
+    mut token_start: i64 = cursor
+    mut unit: i64 = to_i64(bytes_get(source, cursor))
+    mut character_class: i64 = 0
+    mut skipping_space: i64 = 1
+    mut indent: i64 = vector_get<i64>(&*state, 0)
+    mut prefix_open: i64 = 0
+    mut newline: i64 = 0
+    mut space: i64 = 0
+    character_class = vector_get<i64>(classes, unit)
+    match character_class <=> 4:
+        -1:
+            skipping_space = 0
+        0:
+            prefix_open = vector_get<i64>(&*state, 1)
+            while skipping_space == 1:
+                # Whitespace classes are space, tab, LF and CR; equality trits map to 0/1 flags.
+                newline = 0 - to_i64(unit == 10)
+                space = 0 - to_i64(unit == 32)
+                indent = indent * (1 - newline) + space * prefix_open
+                prefix_open = prefix_open + newline * (1 - prefix_open)
+                next = next + 1
+                match next < length:
+                    -1:
+                        unit = to_i64(bytes_get(source, next))
+                        character_class = vector_get<i64>(classes, unit)
+                        match character_class <=> 4:
+                            -1:
+                                skipping_space = 0
+                            0:
+                                skipping_space = 1
+                            1:
+                                skipping_space = 0
+                    0:
+                        skipping_space = 0
+                    1:
+                        skipping_space = 0
+        1:
+            skipping_space = 0
+    match next > cursor:
+        -1:
+            discard vector_set<i64>(&mut *state, 0, indent)
+            discard vector_set<i64>(&mut *state, 1, prefix_open)
+            match next < length:
+                -1:
+                    token_start = next
+                0:
+                    return next
+                1:
+                    return next
+        0:
+            unit = unit
+        1:
+            token_start = cursor
+    match character_class < 4:
+        -1:
+            match character_class <=> 1:
+                -1:
+                    next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                0:
+                    next = ng_scan_integer(source, token_start, length, classes, tokens, indent)
+                1:
+                    next = ng_scan_identifier(source, token_start, length, classes, tokens, indent)
+            discard vector_set<i64>(&mut *state, 1, 0)
+            return next
+        0:
+            unit = unit
+        1:
+            unit = unit
+    match character_class <=> 7:
+        -1:
+            match character_class <=> 5:
+                -1:
+                    next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                0:
+                    discard vector_set<i64>(&mut *state, 1, 0)
+                    return ng_skip_line_comment(source, token_start + 1, length)
+                1:
+                    match character_class <=> 6:
+                        -1:
+                            next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                        0:
+                            match token_start + 1 < length:
+                                -1:
+                                    match to_i64(bytes_get(source, token_start + 1)) == 47:
+                                        -1:
+                                            discard vector_set<i64>(&mut *state, 1, 0)
+                                            return ng_skip_line_comment(source, token_start + 2, length)
+                                        0:
+                                            next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                                        1:
+                                            next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                                0:
+                                    next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                                1:
+                                    next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                        1:
+                            next = ng_scan_symbol(source, token_start, length, tokens, indent)
+        0:
+            next = ng_scan_string(source, token_start, length, tokens, indent)
+        1:
+            match character_class <=> 9:
+                -1:
+                    next = ng_scan_symbol(source, token_start, length, tokens, indent)
+                0:
+                    next = ng_emit(tokens, 300 + unit, token_start, token_start + 1, indent)
+                1:
+                    next = ng_scan_symbol(source, token_start, length, tokens, indent)
+    match next >= 0:
+        -1:
+            match unit <=> 34:
+                0:
+                    discard ng_advance_line_indent(source, token_start, next, state)
+                -1:
+                    discard vector_set<i64>(&mut *state, 1, 0)
+                1:
+                    discard vector_set<i64>(&mut *state, 1, 0)
+        0:
+            next = next
+        1:
+            next = next
+    return next
+
+export fn ng_lex(source: &bytes, tokens: &mut vector<NgToken>) -> i64:
+    mut cursor: i64 = 0
+    mut length: i64 = bytes_len(source)
+    mut next: i64 = 0
+    mut indent_state: vector<i64> = vector_new<i64>(2)
+    mut character_classes: vector<i64> = vector_new<i64>(256)
+    mut failed: i64 = 0
+    discard ng_build_character_class_table(&mut character_classes)
+    discard vector_push<i64>(&mut indent_state, 0)
+    discard vector_push<i64>(&mut indent_state, 1)
+    while cursor < length:
+        next = ng_scan_next(source, cursor, length, &character_classes, tokens, &mut indent_state)
+        match next < 0:
+            -1:
+                failed = 1
+                cursor = length
+            0:
+                cursor = next
+            1:
+                cursor = next
+    match failed == 1:
+        -1:
+            return -1
+        0:
+            discard ng_emit(tokens, 0, length, length, vector_get<i64>(&indent_state, 0))
+            return 0
+        1:
+            return -1

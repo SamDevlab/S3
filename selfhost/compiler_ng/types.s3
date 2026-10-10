@@ -1,0 +1,638 @@
+module selfhost.compiler_ng.types
+
+from selfhost.compiler_ng.lexer import NgToken
+
+export record NgTypeDescriptor:
+    kind: i64
+    module_start: i64
+    module_end: i64
+    name_start: i64
+    name_end: i64
+    element_type: i64
+    target_type: i64
+    mutable: i64
+    first_field: i64
+    field_count: i64
+
+fn ng_type_descriptor(kind: i64, module_start: i64, module_end: i64, name_start: i64, name_end: i64, element_type: i64, target_type: i64, mutable: i64, first_field: i64, field_count: i64) -> NgTypeDescriptor:
+    return NgTypeDescriptor(kind=kind, module_start=module_start, module_end=module_end, name_start=name_start, name_end=name_end, element_type=element_type, target_type=target_type, mutable=mutable, first_field=first_field, field_count=field_count)
+
+fn ng_type_id_valid(types: &vector<NgTypeDescriptor>, type_id: i64) -> trit:
+    match type_id > 0:
+        -1:
+            match type_id <= vector_len<NgTypeDescriptor>(types):
+                -1:
+                    return -1
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn ng_type_ids_valid(types: &vector<NgTypeDescriptor>, left_id: i64, right_id: i64) -> trit:
+    match ng_type_id_valid(types, left_id) <=> -1:
+        0:
+            match ng_type_id_valid(types, right_id) <=> -1:
+                0:
+                    return -1
+                -1:
+                    return 0
+                1:
+                    return 0
+        -1:
+            return 0
+        1:
+            return 0
+
+fn ng_type_span_valid(source: &bytes, start: i64, end: i64) -> trit:
+    match start >= 0:
+        -1:
+            match end > start:
+                -1:
+                    match end <= bytes_len(source):
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn ng_nominal_type_spans_identical(source: &bytes, left: NgTypeDescriptor, right: NgTypeDescriptor) -> trit:
+    match left.module_start <=> right.module_start:
+        0:
+            match left.module_end <=> right.module_end:
+                0:
+                    match left.name_start <=> right.name_start:
+                        0:
+                            match left.name_end <=> right.name_end:
+                                0:
+                                    match ng_type_span_valid(source, left.module_start, left.module_end) <=> -1:
+                                        0:
+                                            match ng_type_span_valid(source, left.name_start, left.name_end) <=> -1:
+                                                0:
+                                                    return -1
+                                                -1:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        -1:
+                                            return 0
+                                        1:
+                                            return 0
+                                -1:
+                                    return 0
+                                1:
+                                    return 0
+                        -1:
+                            return 0
+                        1:
+                            return 0
+                -1:
+                    return 0
+                1:
+                    return 0
+        -1:
+            return 0
+        1:
+            return 0
+
+fn ng_nominal_type_equal_by_bytes(source: &bytes, left: NgTypeDescriptor, right: NgTypeDescriptor) -> trit:
+    match ng_type_spans_equal_by_bytes(source, left.module_start, left.module_end, right.module_start, right.module_end) <=> -1:
+        0:
+            return ng_type_spans_equal_by_bytes(source, left.name_start, left.name_end, right.name_start, right.name_end)
+        -1:
+            return 0
+        1:
+            return 0
+
+fn ng_type_spans_equal_by_bytes(source: &bytes, left_start: i64, left_end: i64, right_start: i64, right_end: i64) -> trit:
+    mut left_cursor: i64 = left_start
+    mut right_cursor: i64 = right_start
+    match ng_type_span_valid(source, left_start, left_end) <=> -1:
+        0:
+            match ng_type_span_valid(source, right_start, right_end) <=> -1:
+                0:
+                    match left_end - left_start <=> right_end - right_start:
+                        0:
+                            while left_cursor < left_end:
+                                match to_i64(bytes_get(source, left_cursor)) <=> to_i64(bytes_get(source, right_cursor)):
+                                    -1:
+                                        return 0
+                                    0:
+                                        left_cursor = left_cursor + 1
+                                        right_cursor = right_cursor + 1
+                                    1:
+                                        return 0
+                            return -1
+                        -1:
+                            return 0
+                        1:
+                            return 0
+                -1:
+                    return 0
+                1:
+                    return 0
+        -1:
+            return 0
+        1:
+            return 0
+
+fn ng_type_token_at(tokens: &vector<NgToken>, cursor: &mut vector<i64>) -> NgToken:
+    return vector_get<NgToken>(tokens, vector_get<i64>(&*cursor, 0))
+
+fn ng_type_advance(cursor: &mut vector<i64>) -> i64:
+    mut next: i64 = vector_get<i64>(&*cursor, 0) + 1
+    discard vector_set<i64>(&mut *cursor, 0, next)
+    return next
+
+fn ng_type_token_spells(source: &bytes, token: NgToken, wanted: text) -> trit:
+    mut expected_length: i64 = text_len(&wanted)
+    mut expected_index: i64 = 0
+    mut source_index: i64 = token.start
+    match token.kind <=> 1:
+        0:
+            match token.end - token.start <=> expected_length:
+                -1:
+                    return 0
+                0:
+                    mut expected: bytes = bytes_from_text(&wanted)
+                    while expected_index < expected_length:
+                        match to_i64(bytes_get(source, source_index)) <=> to_i64(bytes_get(&expected, expected_index)):
+                            -1:
+                                return 0
+                            0:
+                                source_index = source_index + 1
+                                expected_index = expected_index + 1
+                            1:
+                                return 0
+                    return -1
+                1:
+                    return 0
+        -1:
+            return 0
+        1:
+            return 0
+
+fn ng_type_expect_kind(tokens: &vector<NgToken>, cursor: &mut vector<i64>, expected: i64) -> trit:
+    mut token: NgToken = ng_type_token_at(tokens, cursor)
+    match token.kind <=> expected:
+        0:
+            discard ng_type_advance(cursor)
+            return -1
+        -1:
+            return 0
+        1:
+            return 0
+
+export fn ng_parse_type_descriptor(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut token: NgToken = ng_type_token_at(tokens, cursor)
+    mut type_id: i64 = -1
+    mut element_type: i64 = -1
+    mut mutable: i64 = 0
+    match token.kind <=> 338:
+        0:
+            discard ng_type_advance(cursor)
+            token = ng_type_token_at(tokens, cursor)
+            match ng_type_token_spells(source, token, text_from_static("mut")):
+                -1:
+                    mutable = 1
+                    discard ng_type_advance(cursor)
+                0:
+                    mutable = 0
+                1:
+                    return -1
+            type_id = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
+            match type_id > 0:
+                -1:
+                    return ng_intern_reference_type(types, type_id, mutable)
+                0:
+                    return -1
+                1:
+                    return -1
+        -1:
+            return ng_parse_named_type(source, tokens, cursor, types, module_start, module_end)
+        1:
+            return -1
+
+fn ng_parse_named_type(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut token: NgToken = ng_type_token_at(tokens, cursor)
+    mut element_type: i64 = -1
+    match token.kind <=> 1:
+        0:
+            discard ng_type_advance(cursor)
+            match ng_type_token_spells(source, token, text_from_static("i64")):
+                -1:
+                    return 1
+                0:
+                    match ng_type_token_spells(source, token, text_from_static("trit")):
+                        -1:
+                            return 2
+                        0:
+                            match ng_type_token_spells(source, token, text_from_static("tryte")):
+                                -1:
+                                    return 3
+                                0:
+                                    match ng_type_token_spells(source, token, text_from_static("f64")):
+                                        -1:
+                                            return 4
+                                        0:
+                                            match ng_type_token_spells(source, token, text_from_static("bytes")):
+                                                -1:
+                                                    return 5
+                                                0:
+                                                    match ng_type_token_spells(source, token, text_from_static("text")):
+                                                        -1:
+                                                            return 6
+                                                        0:
+                                                            match ng_type_token_spells(source, token, text_from_static("string")):
+                                                                -1:
+                                                                    return ng_intern_string_type(types)
+                                                                0:
+                                                                    match ng_type_token_spells(source, token, text_from_static("vector")):
+                                                                        -1:
+                                                                            match ng_type_expect_kind(tokens, cursor, 360):
+                                                                                -1:
+                                                                                    element_type = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
+                                                                                    match element_type > 0:
+                                                                                        -1:
+                                                                                            match ng_type_expect_kind(tokens, cursor, 362):
+                                                                                                -1:
+                                                                                                    return ng_intern_vector_type(types, element_type)
+                                                                                                0:
+                                                                                                    return -1
+                                                                                                1:
+                                                                                                    return -1
+                                                                                        0:
+                                                                                            return -1
+                                                                                        1:
+                                                                                            return -1
+                                                                                0:
+                                                                                    return -1
+                                                                                1:
+                                                                                    return -1
+                                                                        0:
+                                                                            match module_start >= 0:
+                                                                                -1:
+                                                                                    return ng_intern_nominal_type(source, types, module_start, module_end, token.start, token.end)
+                                                                                0:
+                                                                                    return -1
+                                                                                1:
+                                                                                    return -1
+                                                                        1:
+                                                                            return -1
+                                                                1:
+                                                                    return -1
+                                                        1:
+                                                            return -1
+                                                1:
+                                                    return -1
+                                        1:
+                                            return -1
+                                1:
+                                    return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        -1:
+            return -1
+        1:
+            return -1
+
+export fn ng_initialize_type_table(types: &mut vector<NgTypeDescriptor>) -> i64:
+    mut table_view: vector<NgTypeDescriptor> = *types
+    mut length: i64 = vector_len<NgTypeDescriptor>(&table_view)
+    mut index: i64 = 0
+    mut item: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    match length == 0:
+        -1:
+            discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(1, -1, -1, -1, -1, -1, -1, 0, 0, 0))
+            discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(2, -1, -1, -1, -1, -1, -1, 0, 0, 0))
+            discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(3, -1, -1, -1, -1, -1, -1, 0, 0, 0))
+            discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(4, -1, -1, -1, -1, -1, -1, 0, 0, 0))
+            discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(5, -1, -1, -1, -1, -1, -1, 0, 0, 0))
+            discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(6, -1, -1, -1, -1, -1, -1, 0, 0, 0))
+            return 0
+        0:
+            match length < 6:
+                -1:
+                    return -1
+                0:
+                    while index < 6:
+                        item = vector_get<NgTypeDescriptor>(&table_view, index)
+                        match item.kind <=> index + 1:
+                            0:
+                                index = index + 1
+                            -1:
+                                return -1
+                            1:
+                                return -1
+                    return 0
+                1:
+                    return -1
+        1:
+            return -1
+
+export fn ng_intern_string_type(types: &mut vector<NgTypeDescriptor>) -> i64:
+    mut index: i64 = 6
+    mut item: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut table_view: vector<NgTypeDescriptor> = *types
+    while index < vector_len<NgTypeDescriptor>(&table_view):
+        item = vector_get<NgTypeDescriptor>(&table_view, index)
+        match item.kind <=> 10:
+            0:
+                return index + 1
+            -1:
+                index = index + 1
+            1:
+                index = index + 1
+    discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(10, -1, -1, -1, -1, -1, -1, 0, 0, 0))
+    return index + 1
+
+export fn ng_builtin_type_id(types: &vector<NgTypeDescriptor>, kind: i64) -> i64:
+    mut item: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    match kind >= 1:
+        -1:
+            match kind <= 6:
+                -1:
+                    match kind <= vector_len<NgTypeDescriptor>(types):
+                        -1:
+                            item = vector_get<NgTypeDescriptor>(types, kind - 1)
+                            match item.kind <=> kind:
+                                0:
+                                    return kind
+                                -1:
+                                    return -1
+                                1:
+                                    return -1
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+export fn ng_primitive_type_id(types: &vector<NgTypeDescriptor>, kind: i64) -> i64:
+    match kind <= 4:
+        -1:
+            return ng_builtin_type_id(types, kind)
+        0:
+            return -1
+        1:
+            return -1
+
+export fn ng_type_equal(source: &bytes, types: &vector<NgTypeDescriptor>, left_id: i64, right_id: i64) -> trit:
+    match ng_type_ids_valid(types, left_id, right_id) <=> -1:
+        0:
+            return ng_type_equal_validated(source, types, left_id, right_id)
+        -1:
+            return 0
+        1:
+            return 0
+
+fn ng_type_equal_validated(source: &bytes, types: &vector<NgTypeDescriptor>, left_id: i64, right_id: i64) -> trit:
+    mut left: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut right: NgTypeDescriptor = left
+    match left_id <=> right_id:
+        0:
+            return -1
+        -1:
+            return ng_type_equal_validated(source, types, right_id, left_id)
+        1:
+            match left_id > 0:
+                -1:
+                    left = vector_get<NgTypeDescriptor>(types, left_id - 1)
+                    right = vector_get<NgTypeDescriptor>(types, right_id - 1)
+                    match left.kind <=> right.kind:
+                        -1:
+                            return 0
+                        0:
+                            match left.kind <=> 7:
+                                0:
+                                    match left.module_end - left.module_start <=> right.module_end - right.module_start:
+                                        -1:
+                                            return 0
+                                        0:
+                                            match left.name_end - left.name_start <=> right.name_end - right.name_start:
+                                                -1:
+                                                    return 0
+                                                0:
+                                                    match ng_nominal_type_spans_identical(source, left, right) <=> -1:
+                                                        0:
+                                                            return -1
+                                                        -1:
+                                                            return 0
+                                                        1:
+                                                            return ng_nominal_type_equal_by_bytes(source, left, right)
+                                                1:
+                                                    return 0
+                                        1:
+                                            return 0
+                                1:
+                                    match left.kind <=> 8:
+                                        0:
+                                            return ng_type_equal(source, types, left.element_type, right.element_type)
+                                        1:
+                                            match left.kind <=> 9:
+                                                0:
+                                                    match left.mutable <=> right.mutable:
+                                                        0:
+                                                            return ng_type_equal(source, types, left.target_type, right.target_type)
+                                                        -1:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                1:
+                                                    match left.kind <=> 10:
+                                                        0:
+                                                            return -1
+                                                        -1:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                -1:
+                                                    return 0
+                                        -1:
+                                            return 0
+                                -1:
+                                    return -1
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+
+export fn ng_intern_nominal_type(source: &bytes, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, name_start: i64, name_end: i64) -> i64:
+    match ng_type_span_valid(source, module_start, module_end) <=> -1:
+        0:
+            match ng_type_span_valid(source, name_start, name_end) <=> -1:
+                0:
+                    return ng_intern_nominal_type_valid(source, types, module_start, module_end, name_start, name_end)
+                -1:
+                    return -1
+                1:
+                    return -1
+        -1:
+            return -1
+        1:
+            return -1
+
+fn ng_intern_nominal_type_valid(source: &bytes, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, name_start: i64, name_end: i64) -> i64:
+    mut index: i64 = 6
+    mut item: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut table_view: vector<NgTypeDescriptor> = *types
+    while index < vector_len<NgTypeDescriptor>(&table_view):
+        item = vector_get<NgTypeDescriptor>(&table_view, index)
+        match item.kind <=> 7:
+            0:
+                match item.module_end - item.module_start <=> module_end - module_start:
+                    -1:
+                        index = index + 1
+                    0:
+                        match item.name_end - item.name_start <=> name_end - name_start:
+                            -1:
+                                index = index + 1
+                            0:
+                                match ng_type_bytes_equal(source, item.module_start, item.module_end, module_start, module_end):
+                                    -1:
+                                        match ng_type_bytes_equal(source, item.name_start, item.name_end, name_start, name_end):
+                                            -1:
+                                                return index + 1
+                                            0:
+                                                index = index + 1
+                                            1:
+                                                index = index + 1
+                                    0:
+                                        index = index + 1
+                                    1:
+                                        index = index + 1
+                            1:
+                                index = index + 1
+                    1:
+                        index = index + 1
+            -1:
+                index = index + 1
+            1:
+                index = index + 1
+    discard vector_push<NgTypeDescriptor>(&mut *types, ng_type_descriptor(7, module_start, module_end, name_start, name_end, -1, -1, 0, 0, 0))
+    return index + 1
+
+fn ng_type_bytes_equal(source: &bytes, left_start: i64, left_end: i64, right_start: i64, right_end: i64) -> trit:
+    mut left: i64 = left_start
+    mut right: i64 = right_start
+    match left_end - left_start <=> right_end - right_start:
+        -1:
+            return 0
+        0:
+            while left < left_end:
+                match to_i64(bytes_get(source, left)) <=> to_i64(bytes_get(source, right)):
+                    -1:
+                        return 0
+                    0:
+                        left = left + 1
+                        right = right + 1
+                    1:
+                        return 0
+            return -1
+        1:
+            return 0
+
+export fn ng_intern_vector_type(table: &mut vector<NgTypeDescriptor>, element_type: i64) -> i64:
+    mut table_view: vector<NgTypeDescriptor> = *table
+    match ng_type_id_valid(&table_view, element_type) <=> -1:
+        0:
+            return ng_intern_vector_type_validated(table, element_type)
+        -1:
+            return -1
+        1:
+            return -1
+
+fn ng_intern_vector_type_validated(table: &mut vector<NgTypeDescriptor>, element_type: i64) -> i64:
+    mut index: i64 = 6
+    mut item: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut table_view: vector<NgTypeDescriptor> = *table
+    while index < vector_len<NgTypeDescriptor>(&table_view):
+        item = vector_get<NgTypeDescriptor>(&table_view, index)
+        match item.kind <=> 8:
+            0:
+                match item.element_type <=> element_type:
+                    0:
+                        return index + 1
+                    -1:
+                        index = index + 1
+                    1:
+                        index = index + 1
+            -1:
+                index = index + 1
+            1:
+                index = index + 1
+    discard vector_push<NgTypeDescriptor>(&mut *table, ng_type_descriptor(8, -1, -1, -1, -1, element_type, -1, 0, 0, 0))
+    return index + 1
+
+export fn ng_intern_reference_type(types: &mut vector<NgTypeDescriptor>, target_type: i64, mutable: i64) -> i64:
+    mut table_view: vector<NgTypeDescriptor> = *types
+    match ng_type_id_valid(&table_view, target_type) <=> -1:
+        0:
+            match mutable == 0:
+                -1:
+                    return ng_intern_reference_type_validated(types, target_type, mutable)
+                0:
+                    match mutable == 1:
+                        -1:
+                            return ng_intern_reference_type_validated(types, target_type, mutable)
+                        0:
+                            return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        -1:
+            return -1
+        1:
+            return -1
+
+fn ng_intern_reference_type_validated(types: &mut vector<NgTypeDescriptor>, target_type: i64, mutable: i64) -> i64:
+    mut index: i64 = 6
+    mut item: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut table_view: vector<NgTypeDescriptor> = *types
+    while index < vector_len<NgTypeDescriptor>(&table_view):
+        item = vector_get<NgTypeDescriptor>(&table_view, index)
+        match item.kind <=> 9:
+            0:
+                match item.target_type <=> target_type:
+                    0:
+                        match item.mutable <=> mutable:
+                            0:
+                                return index + 1
+                            -1:
+                                index = index + 1
+                            1:
+                                index = index + 1
+                    -1:
+                        index = index + 1
+                    1:
+                        index = index + 1
+            -1:
+                index = index + 1
+            1:
+                index = index + 1
+    discard vector_push<NgTypeDescriptor>(&mut *types, ng_type_descriptor(9, -1, -1, -1, -1, -1, target_type, mutable, 0, 0))
+    return index + 1

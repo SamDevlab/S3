@@ -3,6 +3,9 @@ from __future__ import annotations
 import pytest
 
 from bootstrap.s3.diagnostics import ParseError
+from bootstrap.s3.generic_lexer import tokenize_to_arena
+from bootstrap.s3.generic_parser import GenericParser
+from bootstrap.s3.generic_syntax import NodeKind, SymbolPayload
 from bootstrap.s3.lexer import SyntaxMode, TokenKind, tokenize
 from bootstrap.s3.module_graph import (
     ModuleGraph,
@@ -54,6 +57,69 @@ def test_parser_accepts_module_imports_and_exported_function() -> None:
     assert program.imports[1].alias == "classify"
     assert program.functions[0].exported is True
     assert program.functions[1].exported is False
+
+
+def test_parsers_expand_comma_separated_imports_and_preserve_aliases() -> None:
+    source = (
+        "module app.main\n"
+        "from lib.types import First as LocalFirst, Second, Third as LocalThird\n"
+        "fn main() -> tryte:\n"
+        "    return 0\n"
+    )
+    expected = [
+        ("First", "LocalFirst"),
+        ("Second", None),
+        ("Third", "LocalThird"),
+    ]
+
+    program = parse(source, mode=SyntaxMode.V0_6)
+    assert [(item.symbol_name, item.alias) for item in program.imports] == expected
+
+    parsed = GenericParser(tokenize_to_arena(source, mode=SyntaxMode.V0_6)).parse_program()
+    arena = parsed.syntax_arena
+    imports = [
+        arena.node(node_id)
+        for node_id in arena.child_ids(parsed.root_id)
+        if arena.node(node_id).kind is NodeKind.IMPORT_DECLARATION
+    ]
+    assert len(imports) == 3
+    imported_names: list[tuple[str, str, str | None]] = []
+    for node in imports:
+        module_id, symbol_id, *alias_ids = arena.child_ids(node.id)
+        module_symbol = arena.payload(arena.node(module_id))
+        imported_symbol = arena.payload(arena.node(symbol_id))
+        assert isinstance(module_symbol, SymbolPayload)
+        assert isinstance(imported_symbol, SymbolPayload)
+        alias_name = None
+        if alias_ids:
+            alias_symbol = arena.payload(arena.node(alias_ids[0]))
+            assert isinstance(alias_symbol, SymbolPayload)
+            alias_name = parsed.symbol_names[alias_symbol.symbol_id]
+        imported_names.append(
+            (
+                parsed.symbol_names[module_symbol.symbol_id],
+                parsed.symbol_names[imported_symbol.symbol_id],
+                alias_name,
+            )
+        )
+    assert imported_names == [
+        ("lib.types", symbol, alias) for symbol, alias in expected
+    ]
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "module app\nfrom lib.types import First,\nfn main() -> tryte:\n    return 0\n",
+        "module app\nfrom lib.types import First as, Second\nfn main() -> tryte:\n    return 0\n",
+    ),
+)
+def test_parser_rejects_incomplete_comma_separated_imports(source: str) -> None:
+    with pytest.raises(ParseError):
+        parse(source, mode=SyntaxMode.V0_6)
+
+    with pytest.raises(Exception):
+        GenericParser(tokenize_to_arena(source, mode=SyntaxMode.V0_6)).parse_program()
 
 
 def test_parser_module_helpers_feed_module_graph() -> None:

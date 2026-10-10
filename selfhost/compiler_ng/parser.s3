@@ -1,0 +1,2241 @@
+module selfhost.compiler_ng.parser
+
+from selfhost.compiler_ng.lexer import NgToken, ng_span_fingerprint, ng_spans_equal
+from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table, ng_intern_nominal_type, ng_intern_string_type, ng_parse_type_descriptor
+
+export record NgAstNode:
+    kind: i64
+    start: i64
+    end: i64
+    left: i64
+    right: i64
+    operation: i64
+
+export record NgParameter:
+    name_start: i64
+    name_end: i64
+    name_fingerprint: i64
+    type_kind: i64
+
+export record NgRecord:
+    module_index: i64
+    name_start: i64
+    name_end: i64
+    type_id: i64
+    first_field: i64
+    field_count: i64
+    exported: i64
+
+export record NgField:
+    record_index: i64
+    name_start: i64
+    name_end: i64
+    type_id: i64
+    order: i64
+
+export record NgFunction:
+    start: i64
+    end: i64
+    name_start: i64
+    name_end: i64
+    local_name_start: i64
+    local_name_end: i64
+    first_parameter: i64
+    parameter_count: i64
+    return_type: i64
+    first_node: i64
+    body_node: i64
+    module_index: i64
+    exported: i64
+    name_fingerprint: i64
+    local_name_fingerprint: i64
+
+export record NgModule:
+    source_index: i64
+    source_start: i64
+    source_end: i64
+    path_start: i64
+    path_end: i64
+    name_start: i64
+    name_end: i64
+    body_token_index: i64
+    first_function: i64
+    function_count: i64
+    first_import: i64
+    import_count: i64
+
+export record NgImport:
+    module_index: i64
+    target_start: i64
+    target_end: i64
+    symbol_start: i64
+    symbol_end: i64
+    local_start: i64
+    local_end: i64
+
+export record NgSpan:
+    start: i64
+    end: i64
+
+fn ng_token_at(tokens: &vector<NgToken>, cursor: &mut vector<i64>) -> NgToken:
+    return vector_get<NgToken>(tokens, vector_get<i64>(&*cursor, 0))
+
+fn ng_advance(cursor: &mut vector<i64>) -> i64:
+    mut next: i64 = vector_get<i64>(&*cursor, 0) + 1
+    discard vector_set<i64>(&mut *cursor, 0, next)
+    return next
+
+fn ng_expect_kind(tokens: &vector<NgToken>, cursor: &mut vector<i64>, wanted: i64) -> trit:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    match token.kind <=> wanted:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return -1
+
+fn ng_token_spells(source: &bytes, token: NgToken, wanted: text) -> trit:
+    mut expected_length: i64 = text_len(&wanted)
+    mut source_index: i64 = token.start
+    mut expected_index: i64 = 0
+    match token.end - token.start <=> expected_length:
+        -1:
+            return 0
+        0:
+            mut expected: bytes = bytes_from_text(&wanted)
+            while expected_index < expected_length:
+                match to_i64(bytes_get(source, source_index)) <=> to_i64(bytes_get(&expected, expected_index)):
+                    -1:
+                        return 0
+                    0:
+                        source_index = source_index + 1
+                        expected_index = expected_index + 1
+                    1:
+                        return 0
+            return -1
+        1:
+            return 0
+
+fn ng_token_kind_at(tokens: &vector<NgToken>, cursor: &mut vector<i64>) -> i64:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    return token.kind
+
+fn ng_token_spells_at(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, wanted: text) -> trit:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    return ng_token_spells(source, token, wanted)
+
+fn ng_expect_word(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, wanted: text) -> trit:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    match token.kind <=> 1:
+        -1:
+            return -1
+        0:
+            match ng_token_spells(source, token, wanted):
+                -1:
+                    discard ng_advance(cursor)
+                    return 0
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+fn ng_append_node(nodes: &mut vector<NgAstNode>, node: NgAstNode) -> i64:
+    mut node_id: i64 = vector_len<NgAstNode>(&*nodes)
+    discard vector_push<NgAstNode>(nodes, node)
+    return node_id
+
+fn ng_token_indent(source: &bytes, token: NgToken) -> i64:
+    return token.indent
+
+fn ng_build_statement_links(statement_ids: &vector<i64>, index: i64, nodes: &mut vector<NgAstNode>) -> i64:
+    mut statement_id: i64 = -1
+    mut statement: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut next: i64 = -1
+    match index < vector_len<i64>(statement_ids):
+        -1:
+            next = ng_build_statement_links(statement_ids, index + 1, nodes)
+            statement_id = vector_get<i64>(statement_ids, index)
+            statement = vector_get<NgAstNode>(&*nodes, statement_id)
+            return ng_append_node(nodes, NgAstNode(kind=11, start=statement.start, end=statement.end, left=statement_id, right=next, operation=0))
+        0:
+            return -1
+        1:
+            return -1
+
+fn ng_parse_declaration(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, name: NgToken, mutable: i64, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut type_kind: i64 = 0
+    mut expression: i64 = -1
+    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    match ng_expect_kind(tokens, cursor, 358):
+        -1:
+            return -1
+        0:
+            discard ng_advance(cursor)
+            type_kind = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
+            match type_kind > 0:
+                -1:
+                    token = ng_token_at(tokens, cursor)
+                    match token.kind <=> 361:
+                        -1:
+                            return -1
+                        0:
+                            discard ng_advance(cursor)
+                            expression = ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+                            match expression <=> -1:
+                                -1:
+                                    return -1
+                                0:
+                                    return -1
+                                1:
+                                    return ng_append_node(nodes, NgAstNode(kind=7, start=name.start, end=name.end, left=expression, right=-1, operation=type_kind * (1 - mutable * 2)))
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+fn ng_parse_dereference_assignment(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, operator: NgToken) -> i64:
+    mut target_id: i64 = -1
+    mut target: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut following: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut value_id: i64 = -1
+    mut value: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    target_id = ng_parse_dereference(source, tokens, cursor, nodes, types, module_start, module_end, operator)
+    match target_id >= 0:
+        -1:
+            target = vector_get<NgAstNode>(&*nodes, target_id)
+            following = ng_token_at(tokens, cursor)
+            match following.kind == 361:
+                -1:
+                    discard ng_advance(cursor)
+                    value_id = ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+                    match value_id >= 0:
+                        -1:
+                            value = vector_get<NgAstNode>(&*nodes, value_id)
+                            return ng_append_node(nodes, NgAstNode(kind=8, start=target.start, end=value.end, left=value_id, right=target_id, operation=361))
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+fn ng_parse_statement(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    mut name: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut following: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut expression: i64 = -1
+    mut body: i64 = -1
+    mut mutable: i64 = 0
+    mut expression_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut target_node_id: i64 = -1
+    mut target_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut field: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut scanning_target: i64 = 0
+    match token.kind == 342:
+        -1:
+            return ng_parse_dereference_assignment(source, tokens, cursor, nodes, types, module_start, module_end, token)
+        0:
+            token = token
+        1:
+            return -1
+    match ng_token_spells(source, token, text_from_static("discard")):
+        -1:
+            discard ng_advance(cursor)
+            expression = ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+            match expression <=> -1:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    expression_node = vector_get<NgAstNode>(&*nodes, expression)
+                    return ng_append_node(nodes, NgAstNode(kind=15, start=token.start, end=expression_node.end, left=expression, right=-1, operation=0))
+        0:
+            token = token
+        1:
+            return -1
+    match ng_token_spells(source, token, text_from_static("break")):
+        -1:
+            discard ng_advance(cursor)
+            return ng_append_node(nodes, NgAstNode(kind=21, start=token.start, end=token.end, left=-1, right=-1, operation=0))
+        0:
+            token = token
+        1:
+            return -1
+    match ng_token_spells(source, token, text_from_static("while")):
+        -1:
+            discard ng_advance(cursor)
+            expression = ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+            match expression <=> -1:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    match ng_expect_kind(tokens, cursor, 358):
+                        -1:
+                            return -1
+                        0:
+                            discard ng_advance(cursor)
+                            body = ng_parse_block(source, tokens, cursor, nodes, ng_token_indent(source, token), types, module_start, module_end)
+                            match body <=> -1:
+                                -1:
+                                    return -1
+                                0:
+                                    return -1
+                                1:
+                                    expression_node = vector_get<NgAstNode>(&*nodes, body)
+                                    return ng_append_node(nodes, NgAstNode(kind=17, start=token.start, end=expression_node.end, left=expression, right=body, operation=0))
+                        1:
+                            return -1
+        0:
+            token = token
+        1:
+            return -1
+    match ng_token_spells(source, token, text_from_static("match")):
+        -1:
+            return ng_parse_match_statement(source, tokens, cursor, nodes, token, types, module_start, module_end)
+        0:
+            match ng_token_spells(source, token, text_from_static("return")):
+                -1:
+                    discard ng_advance(cursor)
+                    expression = ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+                    match expression <=> -1:
+                        -1:
+                            return -1
+                        0:
+                            return -1
+                        1:
+                            expression_node = vector_get<NgAstNode>(&*nodes, expression)
+                            return ng_append_node(nodes, NgAstNode(kind=9, start=token.start, end=expression_node.end, left=expression, right=-1, operation=0))
+                0:
+                    match ng_token_spells(source, token, text_from_static("mut")):
+                        -1:
+                            mutable = 1
+                            discard ng_advance(cursor)
+                            name = ng_token_at(tokens, cursor)
+                            match ng_expect_kind(tokens, cursor, 1):
+                                -1:
+                                    return -1
+                                0:
+                                    discard ng_advance(cursor)
+                                    return ng_parse_declaration(source, tokens, cursor, nodes, name, mutable, types, module_start, module_end)
+                                1:
+                                    return -1
+                        0:
+                            match token.kind <=> 1:
+                                -1:
+                                    return -1
+                                0:
+                                    name = token
+                                    discard ng_advance(cursor)
+                                    following = ng_token_at(tokens, cursor)
+                                    match following.kind == 358:
+                                        -1:
+                                            return ng_parse_declaration(source, tokens, cursor, nodes, name, 0, types, module_start, module_end)
+                                        0:
+                                            target_node_id = ng_append_node(nodes, NgAstNode(kind=2, start=name.start, end=name.end, left=-1, right=-1, operation=0))
+                                            scanning_target = 1
+                                            while scanning_target == 1:
+                                                following = ng_token_at(tokens, cursor)
+                                                match following.kind <=> 346:
+                                                    -1:
+                                                        scanning_target = 0
+                                                    0:
+                                                        discard ng_advance(cursor)
+                                                        field = ng_token_at(tokens, cursor)
+                                                        match field.kind <=> 1:
+                                                            0:
+                                                                target_node = vector_get<NgAstNode>(&*nodes, target_node_id)
+                                                                target_node_id = ng_append_node(nodes, NgAstNode(kind=14, start=target_node.start, end=field.end, left=target_node_id, right=-1, operation=field.start))
+                                                                discard ng_advance(cursor)
+                                                            -1:
+                                                                return -1
+                                                            1:
+                                                                return -1
+                                                    1:
+                                                        scanning_target = 0
+                                            following = ng_token_at(tokens, cursor)
+                                            match following.kind == 361:
+                                                -1:
+                                                    discard ng_advance(cursor)
+                                                    body = ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+                                                    match body <=> -1:
+                                                        -1:
+                                                            return -1
+                                                        0:
+                                                            return -1
+                                                        1:
+                                                            target_node = vector_get<NgAstNode>(&*nodes, target_node_id)
+                                                            match target_node.kind <=> 14:
+                                                                0:
+                                                                    return ng_append_node(nodes, NgAstNode(kind=8, start=target_node.start, end=target_node.end, left=body, right=target_node_id, operation=361))
+                                                                -1:
+                                                                    return ng_append_node(nodes, NgAstNode(kind=8, start=name.start, end=name.end, left=body, right=-1, operation=361))
+                                                                1:
+                                                                    return -1
+                                                0:
+                                                    return -1
+                                                1:
+                                                    return -1
+                                        1:
+                                            return -1
+                                1:
+                                    return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+fn ng_parse_block(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, parent_indent: i64, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    mut block_indent: i64 = ng_token_indent(source, token)
+    mut token_indent: i64 = 0
+    mut statement_id: i64 = -1
+    mut statement_ids: vector<i64> = vector_new<i64>(vector_len<NgToken>(tokens))
+    mut scanning: i64 = 1
+    match block_indent <=> parent_indent:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            while scanning == 1:
+                token = ng_token_at(tokens, cursor)
+                match token.kind > 0:
+                    -1:
+                        token_indent = ng_token_indent(source, token)
+                        match token_indent < 0:
+                            -1:
+                                return -1
+                            0:
+                                token_indent = token_indent
+                            1:
+                                token_indent = token_indent
+                        match token_indent < block_indent:
+                            -1:
+                                scanning = 0
+                            0:
+                                match token_indent < 0:
+                                    -1:
+                                        scanning = 0
+                                    0:
+                                        statement_id = ng_parse_statement(source, tokens, cursor, nodes, types, module_start, module_end)
+                                        match statement_id <=> -1:
+                                            -1:
+                                                return -1
+                                            0:
+                                                return -1
+                                            1:
+                                                discard vector_push<i64>(&mut statement_ids, statement_id)
+                                                token = ng_token_at(tokens, cursor)
+                                                match token.kind > 0:
+                                                    -1:
+                                                        token_indent = ng_token_indent(source, token)
+                                                        match token_indent > block_indent:
+                                                            -1:
+                                                                return -1
+                                                            0:
+                                                                scanning = 1
+                                                            1:
+                                                                return -1
+                                                    0:
+                                                        scanning = 0
+                                                    1:
+                                                        scanning = 0
+                                    1:
+                                        scanning = 0
+                            1:
+                                return -1
+                    0:
+                        scanning = 0
+                    1:
+                        scanning = 0
+            match vector_len<i64>(&statement_ids) <=> 0:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return ng_build_statement_links(&statement_ids, 0, nodes)
+
+fn ng_build_match_arm_links(arm_ids: &vector<i64>, index: i64, nodes: &mut vector<NgAstNode>) -> i64:
+    mut arm_id: i64 = -1
+    mut arm: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut next: i64 = -1
+    match index < vector_len<i64>(arm_ids):
+        -1:
+            next = ng_build_match_arm_links(arm_ids, index + 1, nodes)
+            arm_id = vector_get<i64>(arm_ids, index)
+            arm = vector_get<NgAstNode>(&*nodes, arm_id)
+            return ng_append_node(nodes, NgAstNode(kind=13, start=arm.start, end=arm.end, left=arm.left, right=next, operation=arm.operation))
+        0:
+            return -1
+        1:
+            return -1
+
+fn ng_parse_match_arm(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, arm_indent: i64, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut label_token: NgToken = ng_token_at(tokens, cursor)
+    mut digit_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut label_start: i64 = label_token.start
+    mut label_value: i64 = 0
+    mut digit: i64 = 0
+    mut body: i64 = -1
+    mut body_link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    match label_token.kind == 345:
+        -1:
+            label_start = label_token.start
+            discard ng_advance(cursor)
+            digit_token = ng_token_at(tokens, cursor)
+            match digit_token.kind <=> 2:
+                -1:
+                    return -1
+                0:
+                    match digit_token.end - digit_token.start <=> 1:
+                        -1:
+                            return -1
+                        0:
+                            digit = to_i64(bytes_get(source, digit_token.start))
+                            match digit <=> 49:
+                                -1:
+                                    return -1
+                                0:
+                                    label_value = -1
+                                    discard ng_advance(cursor)
+                                1:
+                                    return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        0:
+            match label_token.kind <=> 2:
+                -1:
+                    return -1
+                0:
+                    match label_token.end - label_token.start <=> 1:
+                        -1:
+                            return -1
+                        0:
+                            digit = to_i64(bytes_get(source, label_token.start))
+                            match digit <=> 48:
+                                -1:
+                                    return -1
+                                0:
+                                    label_value = 0
+                                    discard ng_advance(cursor)
+                                1:
+                                    match digit <=> 49:
+                                        -1:
+                                            label_value = 1
+                                            discard ng_advance(cursor)
+                                        0:
+                                            label_value = 1
+                                            discard ng_advance(cursor)
+                                        1:
+                                            return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        1:
+            return -1
+    match ng_expect_kind(tokens, cursor, 358):
+        -1:
+            return -1
+        0:
+            discard ng_advance(cursor)
+            body = ng_parse_block(source, tokens, cursor, nodes, arm_indent, types, module_start, module_end)
+            match body <=> -1:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    body_link = vector_get<NgAstNode>(&*nodes, body)
+                    return ng_append_node(nodes, NgAstNode(kind=13, start=label_start, end=body_link.end, left=body, right=-1, operation=label_value))
+        1:
+            return -1
+
+fn ng_parse_match_statement(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, start_token: NgToken, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut selector: i64 = -1
+    mut parent_indent: i64 = ng_token_indent(source, start_token)
+    mut arm_indent: i64 = -1
+    mut current_indent: i64 = 0
+    mut arm_id: i64 = -1
+    mut arm_head: i64 = -1
+    mut arm_count: i64 = 0
+    mut scanning: i64 = 1
+    mut arm_ids: vector<i64> = vector_new<i64>(3)
+    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut last_arm: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    discard ng_advance(cursor)
+    selector = ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+    match selector <=> -1:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            match ng_expect_kind(tokens, cursor, 358):
+                -1:
+                    return -1
+                0:
+                    discard ng_advance(cursor)
+                1:
+                    return -1
+    while scanning == 1:
+        token = ng_token_at(tokens, cursor)
+        match token.kind > 0:
+            -1:
+                current_indent = ng_token_indent(source, token)
+                match current_indent <=> parent_indent:
+                    -1:
+                        scanning = 0
+                    0:
+                        scanning = 0
+                    1:
+                        match arm_indent < 0:
+                            -1:
+                                arm_indent = current_indent
+                            0:
+                                match current_indent <=> arm_indent:
+                                    -1:
+                                        return -1
+                                    0:
+                                        arm_indent = arm_indent
+                                    1:
+                                        return -1
+                            1:
+                                arm_indent = current_indent
+                        arm_id = ng_parse_match_arm(source, tokens, cursor, nodes, arm_indent, types, module_start, module_end)
+                        match arm_id <=> -1:
+                            -1:
+                                return -1
+                            0:
+                                return -1
+                            1:
+                                discard vector_push<i64>(&mut arm_ids, arm_id)
+                                arm_count = arm_count + 1
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    match arm_count <=> 0:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            arm_head = ng_build_match_arm_links(&arm_ids, 0, nodes)
+            last_arm = vector_get<NgAstNode>(&*nodes, vector_get<i64>(&arm_ids, arm_count - 1))
+            return ng_append_node(nodes, NgAstNode(kind=12, start=start_token.start, end=last_arm.end, left=selector, right=arm_head, operation=0))
+
+fn ng_build_argument_nodes(argument_ids: &vector<i64>, index: i64, nodes: &mut vector<NgAstNode>) -> i64:
+    mut argument_id: i64 = -1
+    mut argument_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut next: i64 = -1
+    match index < vector_len<i64>(argument_ids):
+        -1:
+            next = ng_build_argument_nodes(argument_ids, index + 1, nodes)
+            argument_id = vector_get<i64>(argument_ids, index)
+            argument_node = vector_get<NgAstNode>(&*nodes, argument_id)
+            return ng_append_node(nodes, NgAstNode(kind=6, start=argument_node.start, end=argument_node.end, left=argument_id, right=next, operation=0))
+        0:
+            return -1
+        1:
+            return -1
+
+fn ng_parse_call_argument(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut name: NgToken = ng_token_at(tokens, cursor)
+    mut equals: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut cursor_index: i64 = vector_get<i64>(&*cursor, 0)
+    mut value_id: i64 = -1
+    match name.kind <=> 1:
+        0:
+            match cursor_index + 1 < vector_len<NgToken>(tokens):
+                -1:
+                    equals = vector_get<NgToken>(tokens, cursor_index + 1)
+                    match equals.kind <=> 361:
+                        0:
+                            discard ng_advance(cursor)
+                            discard ng_advance(cursor)
+                            value_id = ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+                            match value_id <=> -1:
+                                -1:
+                                    return -1
+                                0:
+                                    return -1
+                                1:
+                                    return ng_append_node(nodes, NgAstNode(kind=16, start=name.start, end=name.end, left=value_id, right=-1, operation=0))
+                        -1:
+                            return ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+                        1:
+                            return ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+                0:
+                    return ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+                1:
+                    return ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+        -1:
+            return ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+        1:
+            return ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+
+fn ng_parse_group(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut opening: NgToken = ng_token_at(tokens, cursor)
+    mut closing: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut nested: i64 = -1
+    match ng_expect_kind(tokens, cursor, 340):
+        -1:
+            return -1
+        0:
+            discard ng_advance(cursor)
+            nested = ng_parse_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+            match nested <=> -1:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    closing = ng_token_at(tokens, cursor)
+                    match ng_expect_kind(tokens, cursor, 341):
+                        -1:
+                            return -1
+                        0:
+                            discard ng_advance(cursor)
+                            return ng_append_node(nodes, NgAstNode(kind=3, start=opening.start, end=closing.end, left=nested, right=-1, operation=0))
+                        1:
+                            return -1
+        1:
+            return -1
+
+fn ng_parse_call(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, name: NgToken, generic_type_id: i64) -> i64:
+    mut argument_ids: vector<i64> = vector_new<i64>(vector_len<NgToken>(tokens))
+    mut argument_id: i64 = -1
+    mut argument_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut closing: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut scanning: i64 = 1
+    mut list_head: i64 = -1
+    discard ng_advance(cursor)
+    token = ng_token_at(tokens, cursor)
+    match token.kind <=> 341:
+        -1:
+            scanning = 1
+        0:
+            discard ng_advance(cursor)
+            scanning = 0
+        1:
+            scanning = 1
+    while scanning == 1:
+        argument_id = ng_parse_call_argument(source, tokens, cursor, nodes, types, module_start, module_end)
+        match argument_id <=> -1:
+            -1:
+                return -1
+            0:
+                return -1
+            1:
+                discard vector_push<i64>(&mut argument_ids, argument_id)
+                token = ng_token_at(tokens, cursor)
+                match token.kind <=> 341:
+                    -1:
+                        return -1
+                    0:
+                        discard ng_advance(cursor)
+                        scanning = 0
+                    1:
+                        match token.kind <=> 344:
+                            -1:
+                                return -1
+                            0:
+                                discard ng_advance(cursor)
+                                token = ng_token_at(tokens, cursor)
+                                match token.kind <=> 341:
+                                    -1:
+                                        scanning = 1
+                                    0:
+                                        return -1
+                                    1:
+                                        scanning = 1
+                            1:
+                                return -1
+    closing = vector_get<NgToken>(tokens, vector_get<i64>(&*cursor, 0) - 1)
+    list_head = ng_build_argument_nodes(&argument_ids, 0, nodes)
+    return ng_append_node(nodes, NgAstNode(kind=5, start=name.start, end=closing.end, left=list_head, right=generic_type_id, operation=name.end))
+
+fn ng_is_type_descriptor_ahead(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>) -> trit:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    mut following: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    match token.kind <=> 338:
+        0:
+            discard ng_advance(cursor)
+            following = ng_token_at(tokens, cursor)
+            match ng_token_spells(source, following, text_from_static("mut")):
+                -1:
+                    discard ng_advance(cursor)
+                0:
+                    following = following
+                1:
+                    return 0
+            return ng_is_type_descriptor_ahead(source, tokens, cursor)
+        -1:
+            match token.kind <=> 1:
+                0:
+                    discard ng_advance(cursor)
+                    match ng_token_spells(source, token, text_from_static("vector")):
+                        -1:
+                            following = ng_token_at(tokens, cursor)
+                            match following.kind <=> 360:
+                                0:
+                                    discard ng_advance(cursor)
+                                    match ng_is_type_descriptor_ahead(source, tokens, cursor):
+                                        -1:
+                                            following = ng_token_at(tokens, cursor)
+                                            match following.kind <=> 362:
+                                                0:
+                                                    discard ng_advance(cursor)
+                                                    return -1
+                                                -1:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        0:
+                                            return 0
+                                        1:
+                                            return 0
+                                -1:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return -1
+                        1:
+                            return -1
+                -1:
+                    return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn ng_is_generic_call_ahead(source: &bytes, tokens: &vector<NgToken>, cursor: &vector<i64>) -> trit:
+    mut lookahead: vector<i64> = vector_new<i64>(1)
+    mut following: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    discard vector_push<i64>(&mut lookahead, vector_get<i64>(cursor, 0) + 1)
+    match ng_is_type_descriptor_ahead(source, tokens, &mut lookahead):
+        -1:
+            following = ng_token_at(tokens, &mut lookahead)
+            match following.kind <=> 362:
+                0:
+                    discard ng_advance(&mut lookahead)
+                    following = ng_token_at(tokens, &mut lookahead)
+                    match following.kind <=> 340:
+                        0:
+                            return -1
+                        -1:
+                            return 0
+                        1:
+                            return 0
+                -1:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn ng_local_nominal_type_id(source: &bytes, types: &vector<NgTypeDescriptor>, module_start: i64, module_end: i64, name: NgToken) -> i64:
+    mut index: i64 = 6
+    mut module_length: i64 = module_end - module_start
+    mut descriptor_module_length: i64 = 0
+    mut name_length: i64 = name.end - name.start
+    mut descriptor_name_length: i64 = 0
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    while index < vector_len<NgTypeDescriptor>(types):
+        descriptor = vector_get<NgTypeDescriptor>(types, index)
+        match descriptor.kind <=> 7:
+            0:
+                descriptor_module_length = descriptor.module_end - descriptor.module_start
+                match module_length <=> descriptor_module_length:
+                    -1:
+                        index = index + 1
+                    0:
+                        match ng_spans_equal(source, descriptor.module_start, descriptor.module_end, module_start, module_end):
+                            -1:
+                                descriptor_name_length = descriptor.name_end - descriptor.name_start
+                                match name_length <=> descriptor_name_length:
+                                    0:
+                                        match ng_spans_equal(source, descriptor.name_start, descriptor.name_end, name.start, name.end):
+                                            -1:
+                                                return index + 1
+                                            0:
+                                                index = index + 1
+                                            1:
+                                                index = index + 1
+                                    -1:
+                                        index = index + 1
+                                    1:
+                                        index = index + 1
+                            0:
+                                index = index + 1
+                            1:
+                                index = index + 1
+                    1:
+                        index = index + 1
+            -1:
+                index = index + 1
+            1:
+                index = index + 1
+    return -1
+
+fn ng_parse_identifier_or_call(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, name: NgToken) -> i64:
+    mut following: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut generic_type_id: i64 = -1
+    discard ng_advance(cursor)
+    following = ng_token_at(tokens, cursor)
+    match following.kind <=> 360:
+        -1:
+            match following.kind <=> 340:
+                0:
+                    generic_type_id = ng_local_nominal_type_id(source, &*types, module_start, module_end, name)
+                    match generic_type_id > 0:
+                        -1:
+                            return ng_parse_call(source, tokens, cursor, nodes, types, module_start, module_end, name, generic_type_id)
+                        0:
+                            return ng_parse_call(source, tokens, cursor, nodes, types, module_start, module_end, name, -1)
+                        1:
+                            return ng_parse_call(source, tokens, cursor, nodes, types, module_start, module_end, name, -1)
+                -1:
+                    return ng_append_node(nodes, NgAstNode(kind=2, start=name.start, end=name.end, left=-1, right=-1, operation=0))
+                1:
+                    return ng_append_node(nodes, NgAstNode(kind=2, start=name.start, end=name.end, left=-1, right=-1, operation=0))
+        0:
+            match ng_is_generic_call_ahead(source, tokens, &*cursor):
+                -1:
+                    discard ng_advance(cursor)
+                    generic_type_id = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
+                    match generic_type_id > 0:
+                        -1:
+                            match ng_expect_kind(tokens, cursor, 362):
+                                -1:
+                                    return -1
+                                0:
+                                    discard ng_advance(cursor)
+                                    following = ng_token_at(tokens, cursor)
+                                    match following.kind <=> 340:
+                                        0:
+                                            return ng_parse_call(source, tokens, cursor, nodes, types, module_start, module_end, name, generic_type_id)
+                                        -1:
+                                            return -1
+                                        1:
+                                            return -1
+                                1:
+                                    return -1
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return ng_append_node(nodes, NgAstNode(kind=2, start=name.start, end=name.end, left=-1, right=-1, operation=0))
+                1:
+                    return ng_append_node(nodes, NgAstNode(kind=2, start=name.start, end=name.end, left=-1, right=-1, operation=0))
+        1:
+            return ng_append_node(nodes, NgAstNode(kind=2, start=name.start, end=name.end, left=-1, right=-1, operation=0))
+
+fn ng_parse_address_of(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, operator: NgToken) -> i64:
+    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut operand_id: i64 = -1
+    mut operand: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut mutable: i64 = 0
+    discard ng_advance(cursor)
+    token = ng_token_at(tokens, cursor)
+    match ng_token_spells(source, token, text_from_static("mut")):
+        -1:
+            mutable = 1
+            discard ng_advance(cursor)
+        0:
+            mutable = 0
+        1:
+            return -1
+    operand_id = ng_parse_primary(source, tokens, cursor, nodes, types, module_start, module_end)
+    match operand_id >= 0:
+        -1:
+            operand_id = ng_parse_postfix_field(source, tokens, cursor, nodes, operand_id)
+            match operand_id >= 0:
+                -1:
+                    operand = vector_get<NgAstNode>(&*nodes, operand_id)
+                    return ng_append_node(nodes, NgAstNode(kind=18, start=operator.start, end=operand.end, left=operand_id, right=-1, operation=mutable))
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+fn ng_parse_dereference(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, operator: NgToken) -> i64:
+    mut operand_id: i64 = -1
+    mut operand: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    discard ng_advance(cursor)
+    operand_id = ng_parse_primary(source, tokens, cursor, nodes, types, module_start, module_end)
+    match operand_id >= 0:
+        -1:
+            operand_id = ng_parse_postfix_field(source, tokens, cursor, nodes, operand_id)
+            match operand_id >= 0:
+                -1:
+                    operand = vector_get<NgAstNode>(&*nodes, operand_id)
+                    return ng_append_node(nodes, NgAstNode(kind=19, start=operator.start, end=operand.end, left=operand_id, right=-1, operation=0))
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+fn ng_parse_negation(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, operator: NgToken) -> i64:
+    mut operand_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut operand_id: i64 = -1
+    mut operand: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    discard ng_advance(cursor)
+    operand_token = ng_token_at(tokens, cursor)
+    match operand_token.kind == 2:
+        -1:
+            discard ng_advance(cursor)
+            return ng_append_node(nodes, NgAstNode(kind=1, start=operator.start, end=operand_token.end, left=-1, right=-1, operation=0))
+        0:
+            operand_id = ng_parse_primary(source, tokens, cursor, nodes, types, module_start, module_end)
+            match operand_id >= 0:
+                -1:
+                    operand_id = ng_parse_postfix_field(source, tokens, cursor, nodes, operand_id)
+                    match operand_id >= 0:
+                        -1:
+                            operand = vector_get<NgAstNode>(&*nodes, operand_id)
+                            return ng_append_node(nodes, NgAstNode(kind=22, start=operator.start, end=operand.end, left=operand_id, right=-1, operation=0))
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+fn ng_parse_primary(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    mut signed_start: i64 = 0
+    match token.kind <=> 345:
+        -1:
+            match token.kind <=> 338:
+                -1:
+                    match token.kind <=> 2:
+                        -1:
+                            match token.kind <=> 1:
+                                -1:
+                                    return -1
+                                0:
+                                    return ng_parse_identifier_or_call(source, tokens, cursor, nodes, types, module_start, module_end, token)
+                                1:
+                                    return -1
+                        0:
+                            discard ng_advance(cursor)
+                            return ng_append_node(nodes, NgAstNode(kind=1, start=token.start, end=token.end, left=-1, right=-1, operation=0))
+                        1:
+                            match token.kind <=> 3:
+                                0:
+                                    discard ng_advance(cursor)
+                                    signed_start = ng_intern_string_type(types)
+                                    match signed_start > 0:
+                                        -1:
+                                            return ng_append_node(nodes, NgAstNode(kind=20, start=token.start, end=token.end, left=-1, right=signed_start, operation=0))
+                                        0:
+                                            return -1
+                                        1:
+                                            return -1
+                                -1:
+                                    return -1
+                                1:
+                                    return -1
+                0:
+                    return ng_parse_address_of(source, tokens, cursor, nodes, types, module_start, module_end, token)
+                1:
+                    match token.kind <=> 340:
+                        -1:
+                            return -1
+                        0:
+                            return ng_parse_group(source, tokens, cursor, nodes, types, module_start, module_end)
+                        1:
+                            match token.kind <=> 342:
+                                -1:
+                                    return -1
+                                0:
+                                    return ng_parse_dereference(source, tokens, cursor, nodes, types, module_start, module_end, token)
+                                1:
+                                    return -1
+        0:
+            return ng_parse_negation(source, tokens, cursor, nodes, types, module_start, module_end, token)
+        1:
+            return -1
+
+fn ng_parse_postfix_field(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, expression_id: i64) -> i64:
+    mut current_id: i64 = expression_id
+    mut current: NgAstNode = vector_get<NgAstNode>(&*nodes, current_id)
+    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut field: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match vector_get<i64>(&*cursor, 0) < vector_len<NgToken>(tokens):
+            -1:
+                token = ng_token_at(tokens, cursor)
+                match token.kind <=> 346:
+                    -1:
+                        scanning = 0
+                    0:
+                        match ng_expression_operator_same_line(source, &*nodes, current_id, token):
+                            -1:
+                                discard ng_advance(cursor)
+                                match vector_get<i64>(&*cursor, 0) < vector_len<NgToken>(tokens):
+                                    -1:
+                                        field = ng_token_at(tokens, cursor)
+                                        match field.kind <=> 1:
+                                            -1:
+                                                return -1
+                                            0:
+                                                current = vector_get<NgAstNode>(&*nodes, current_id)
+                                                current_id = ng_append_node(nodes, NgAstNode(kind=14, start=current.start, end=field.end, left=current_id, right=-1, operation=field.start))
+                                                discard ng_advance(cursor)
+                                            1:
+                                                return -1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+                            0:
+                                scanning = 0
+                            1:
+                                scanning = 0
+                    1:
+                        scanning = 0
+            0:
+                scanning = 0
+            1:
+                return -1
+    return current_id
+
+fn ng_append_binary_node(nodes: &mut vector<NgAstNode>, left_id: i64, right_id: i64, operator_token: NgToken) -> i64:
+    mut left_node: NgAstNode = vector_get<NgAstNode>(&*nodes, left_id)
+    mut right_node: NgAstNode = vector_get<NgAstNode>(&*nodes, right_id)
+    return ng_append_node(nodes, NgAstNode(kind=4, start=left_node.start, end=right_node.end, left=left_id, right=right_id, operation=operator_token.kind))
+
+fn ng_expression_operator_same_line(source: &bytes, nodes: &vector<NgAstNode>, left_id: i64, operator_token: NgToken) -> trit:
+    mut left_node: NgAstNode = vector_get<NgAstNode>(nodes, left_id)
+    mut index: i64 = left_node.end
+    while index < operator_token.start:
+        match to_i64(bytes_get(source, index)) <=> 10:
+            -1:
+                index = index + 1
+            0:
+                return 0
+            1:
+                index = index + 1
+    return -1
+
+fn ng_parse_term_step(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, left_id: i64, operator_token: NgToken) -> i64:
+    mut right_id: i64 = -1
+    discard ng_advance(cursor)
+    right_id = ng_parse_primary(source, tokens, cursor, nodes, types, module_start, module_end)
+    match right_id <=> -1:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            right_id = ng_parse_postfix_field(source, tokens, cursor, nodes, right_id)
+            match right_id <=> -1:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    right_id = right_id
+            return ng_append_binary_node(nodes, left_id, right_id, operator_token)
+
+fn ng_parse_term(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut left_id: i64 = ng_parse_primary(source, tokens, cursor, nodes, types, module_start, module_end)
+    mut operator_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut next_left: i64 = -1
+    mut scanning: i64 = 1
+    match left_id <=> -1:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            left_id = ng_parse_postfix_field(source, tokens, cursor, nodes, left_id)
+            match left_id <=> -1:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    left_id = left_id
+            while scanning == 1:
+                operator_token = ng_token_at(tokens, cursor)
+                match ng_expression_operator_same_line(source, &*nodes, left_id, operator_token):
+                    -1:
+                        match operator_token.kind <=> 342:
+                            -1:
+                                scanning = 0
+                            0:
+                                next_left = ng_parse_term_step(source, tokens, cursor, nodes, types, module_start, module_end, left_id, operator_token)
+                                match next_left <=> -1:
+                                    -1:
+                                        return -1
+                                    0:
+                                        return -1
+                                    1:
+                                        left_id = next_left
+                            1:
+                                match operator_token.kind <=> 347:
+                                    -1:
+                                        scanning = 0
+                                    0:
+                                        next_left = ng_parse_term_step(source, tokens, cursor, nodes, types, module_start, module_end, left_id, operator_token)
+                                        match next_left <=> -1:
+                                            -1:
+                                                return -1
+                                            0:
+                                                return -1
+                                            1:
+                                                left_id = next_left
+                                    1:
+                                        scanning = 0
+                    0:
+                        scanning = 0
+                    1:
+                        scanning = 0
+            return left_id
+
+fn ng_parse_expression_step(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, left_id: i64, operator_token: NgToken) -> i64:
+    mut right_id: i64 = -1
+    discard ng_advance(cursor)
+    right_id = ng_parse_term(source, tokens, cursor, nodes, types, module_start, module_end)
+    match right_id <=> -1:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            return ng_append_binary_node(nodes, left_id, right_id, operator_token)
+
+fn ng_parse_additive_expression(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut left_id: i64 = ng_parse_term(source, tokens, cursor, nodes, types, module_start, module_end)
+    mut operator_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut next_left: i64 = -1
+    mut scanning: i64 = 1
+    match left_id <=> -1:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            while scanning == 1:
+                operator_token = ng_token_at(tokens, cursor)
+                match ng_expression_operator_same_line(source, &*nodes, left_id, operator_token):
+                    -1:
+                        match operator_token.kind <=> 343:
+                            -1:
+                                scanning = 0
+                            0:
+                                next_left = ng_parse_expression_step(source, tokens, cursor, nodes, types, module_start, module_end, left_id, operator_token)
+                                match next_left <=> -1:
+                                    -1:
+                                        return -1
+                                    0:
+                                        return -1
+                                    1:
+                                        left_id = next_left
+                            1:
+                                match operator_token.kind <=> 345:
+                                    -1:
+                                        scanning = 0
+                                    0:
+                                        next_left = ng_parse_expression_step(source, tokens, cursor, nodes, types, module_start, module_end, left_id, operator_token)
+                                        match next_left <=> -1:
+                                            -1:
+                                                return -1
+                                            0:
+                                                return -1
+                                            1:
+                                                left_id = next_left
+                                    1:
+                                        scanning = 0
+                    0:
+                        scanning = 0
+                    1:
+                        scanning = 0
+            return left_id
+
+export fn ng_relational_operator_code(kind: i64) -> i64:
+    match kind == 203:
+        -1:
+            return 0
+        0:
+            match kind == 204:
+                -1:
+                    return 1
+                0:
+                    match kind == 360:
+                        -1:
+                            return 2
+                        0:
+                            match kind == 205:
+                                -1:
+                                    return 3
+                                0:
+                                    match kind == 362:
+                                        -1:
+                                            return 4
+                                        0:
+                                            match kind == 206:
+                                                -1:
+                                                    return 5
+                                                0:
+                                                    return -1
+                                                1:
+                                                    return -1
+                                        1:
+                                            return -1
+                                1:
+                                    return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+export fn ng_is_relational_operator(kind: i64) -> trit:
+    match ng_relational_operator_code(kind) < 0:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            return 0
+
+fn ng_parse_compare_expression(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut left_id: i64 = ng_parse_additive_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+    mut operator_token: NgToken = ng_token_at(tokens, cursor)
+    mut right_id: i64 = -1
+    mut same_line: trit = 0
+    mut scanning: i64 = 1
+    match left_id <=> -1:
+        -1:
+            return left_id
+        0:
+            return left_id
+        1:
+            left_id = left_id
+    while scanning == 1:
+        operator_token = ng_token_at(tokens, cursor)
+        same_line = ng_expression_operator_same_line(source, &*nodes, left_id, operator_token)
+        match same_line:
+            -1:
+                match operator_token.kind <=> 202:
+                    -1:
+                        scanning = 0
+                    0:
+                        discard ng_advance(cursor)
+                        right_id = ng_parse_additive_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+                        match right_id <=> -1:
+                            -1:
+                                return right_id
+                            0:
+                                return right_id
+                            1:
+                                left_id = ng_append_binary_node(nodes, left_id, right_id, operator_token)
+                    1:
+                        scanning = 0
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    return left_id
+
+fn ng_parse_expression(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut left_id: i64 = ng_parse_compare_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+    mut operator_token: NgToken = ng_token_at(tokens, cursor)
+    mut right_id: i64 = -1
+    mut same_line: trit = 0
+    mut scanning: i64 = 1
+    match left_id <=> -1:
+        -1:
+            return left_id
+        0:
+            return left_id
+        1:
+            left_id = left_id
+    while scanning == 1:
+        operator_token = ng_token_at(tokens, cursor)
+        same_line = ng_expression_operator_same_line(source, &*nodes, left_id, operator_token)
+        match same_line:
+            -1:
+                match ng_is_relational_operator(operator_token.kind):
+                    -1:
+                        discard ng_advance(cursor)
+                        right_id = ng_parse_compare_expression(source, tokens, cursor, nodes, types, module_start, module_end)
+                        match right_id <=> -1:
+                            -1:
+                                return right_id
+                            0:
+                                return right_id
+                            1:
+                                left_id = ng_append_binary_node(nodes, left_id, right_id, operator_token)
+                    0:
+                        scanning = 0
+                    1:
+                        scanning = 0
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    return left_id
+
+fn ng_parse_parameter(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, parameters: &mut vector<NgParameter>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut name: NgToken = ng_token_at(tokens, cursor)
+    mut type_kind: i64 = 0
+    match ng_expect_kind(tokens, cursor, 1):
+        -1:
+            return -1
+        0:
+            discard ng_advance(cursor)
+        1:
+            return -1
+    name = vector_get<NgToken>(tokens, vector_get<i64>(&*cursor, 0) - 1)
+    match ng_expect_kind(tokens, cursor, 358):
+        -1:
+            return -1
+        0:
+            discard ng_advance(cursor)
+            type_kind = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
+            match type_kind > 0:
+                -1:
+                    discard vector_push<NgParameter>(parameters, NgParameter(name_start=name.start, name_end=name.end, name_fingerprint=ng_span_fingerprint(source, name.start, name.end), type_kind=type_kind))
+                    return 0
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+fn ng_parse_parameters(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, parameters: &mut vector<NgParameter>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> trit:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    mut status: i64 = 0
+    while token.kind != 341:
+        status = ng_parse_parameter(source, tokens, cursor, parameters, types, module_start, module_end)
+        match status <=> -1:
+            -1:
+                return -1
+            0:
+                return -1
+            1:
+                token = ng_token_at(tokens, cursor)
+                match token.kind <=> 344:
+                    -1:
+                        return 0
+                    0:
+                        discard ng_advance(cursor)
+                        token = ng_token_at(tokens, cursor)
+                    1:
+                        return 0
+    return 0
+
+fn ng_parse_function(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>, functions: &mut vector<NgFunction>, module_index: i64, exported: i64, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+    mut start: NgToken = ng_token_at(tokens, cursor)
+    mut name: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut first_parameter: i64 = 0
+    mut parameter_count: i64 = 0
+    mut return_type: i64 = 0
+    mut first_node: i64 = 0
+    mut body_node: i64 = -1
+    mut body: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut last_body_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    match ng_expect_word(source, tokens, cursor, text_from_static("fn")):
+        -1:
+            return -1
+        0:
+            name = ng_token_at(tokens, cursor)
+            match ng_expect_kind(tokens, cursor, 1):
+                -1:
+                    return -1
+                0:
+                    discard ng_advance(cursor)
+                1:
+                    return -1
+            match ng_expect_kind(tokens, cursor, 340):
+                -1:
+                    return -1
+                0:
+                    discard ng_advance(cursor)
+                1:
+                    return -1
+            first_parameter = vector_len<NgParameter>(&*parameters)
+            match ng_parse_parameters(source, tokens, cursor, parameters, types, module_start, module_end):
+                -1:
+                    return -1
+                0:
+                    parameter_count = vector_len<NgParameter>(&*parameters) - first_parameter
+                1:
+                    return -1
+            match ng_expect_kind(tokens, cursor, 341):
+                -1:
+                    return -1
+                0:
+                    discard ng_advance(cursor)
+                1:
+                    return -1
+            match ng_expect_kind(tokens, cursor, 201):
+                -1:
+                    return -1
+                0:
+                    discard ng_advance(cursor)
+                1:
+                    return -1
+            return_type = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
+            match return_type > 0:
+                -1:
+                    match ng_expect_kind(tokens, cursor, 358):
+                        -1:
+                            return -1
+                        0:
+                            discard ng_advance(cursor)
+                            first_node = vector_len<NgAstNode>(&*nodes)
+                            body_node = ng_parse_block(source, tokens, cursor, nodes, ng_token_indent(source, start), types, module_start, module_end)
+                            match body_node <=> -1:
+                                -1:
+                                    return -1
+                                0:
+                                    return -1
+                                1:
+                                    body = vector_get<NgAstNode>(&*nodes, body_node)
+                                    last_body_token = vector_get<NgToken>(tokens, vector_get<i64>(&*cursor, 0) - 1)
+                                    discard vector_push<NgFunction>(functions, NgFunction(start=start.start, end=last_body_token.end, name_start=name.start, name_end=name.end, local_name_start=name.start, local_name_end=name.end, first_parameter=first_parameter, parameter_count=parameter_count, return_type=return_type, first_node=first_node, body_node=body_node, module_index=module_index, exported=exported, name_fingerprint=ng_span_fingerprint(source, name.start, name.end), local_name_fingerprint=ng_span_fingerprint(source, name.start, name.end)))
+                                    return 0
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+export fn ng_parse_program(source: &bytes, tokens: &vector<NgToken>, functions: &mut vector<NgFunction>, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>) -> i64:
+    mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(bytes_len(source) + 6)
+    match ng_initialize_type_table(&mut types) <=> 0:
+        0:
+            return ng_parse_program_typed(source, tokens, &mut types, -1, -1, functions, parameters, nodes)
+        -1:
+            return -1
+        1:
+            return -1
+
+export fn ng_parse_program_typed(source: &bytes, tokens: &vector<NgToken>, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64, functions: &mut vector<NgFunction>, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>) -> i64:
+    mut cursor: vector<i64> = vector_new<i64>(1)
+    mut current: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut status: i64 = 0
+    mut scanning: i64 = 1
+    discard vector_push<i64>(&mut cursor, 0)
+    while scanning == 1:
+        current = ng_token_at(tokens, &mut cursor)
+        match current.kind <=> 0:
+            -1:
+                return -1
+            0:
+                scanning = 0
+            1:
+                status = ng_parse_function(source, tokens, &mut cursor, parameters, nodes, functions, 0, 0, types, module_start, module_end)
+                match status <=> 0:
+                    -1:
+                        return -1
+                    0:
+                        status = 0
+                    1:
+                        return -1
+    match vector_len<NgFunction>(&*functions) <=> 0:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            return 0
+
+fn ng_module_identifier_start(value: i64) -> trit:
+    match value == 95:
+        -1:
+            return -1
+        0:
+            match value < 65:
+                -1:
+                    return 0
+                0:
+                    match value < 91:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    match value < 97:
+                        -1:
+                            return 0
+                        0:
+                            match value < 123:
+                                -1:
+                                    return -1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+        1:
+            return 0
+
+fn ng_module_identifier_continue(value: i64) -> trit:
+    match ng_module_identifier_start(value):
+        -1:
+            return -1
+        0:
+            match value < 48:
+                -1:
+                    return 0
+                0:
+                    match value < 58:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return -1
+
+fn ng_append_module_path_part(source: &mut bytes, part_start: i64, part_end: i64, part_count: i64) -> i64:
+    mut character: i64 = 0
+    mut octet: tryte = 0
+    mut part_index: i64 = 0
+    match part_end == part_start:
+        -1:
+            return part_count
+        0:
+            character = to_i64(bytes_get(&*source, part_start))
+        1:
+            return -1
+    match part_end - part_start == 1:
+        -1:
+            match character == 46:
+                -1:
+                    return part_count
+                0:
+                    character = character
+                1:
+                    character = character
+        0:
+            match part_end - part_start == 2:
+                -1:
+                    match character == 46:
+                        -1:
+                            match to_i64(bytes_get(&*source, part_start + 1)) == 46:
+                                -1:
+                                    return -1
+                                0:
+                                    character = character
+                                1:
+                                    character = character
+                        0:
+                            character = character
+                        1:
+                            character = character
+                0:
+                    character = character
+                1:
+                    character = character
+        1:
+            character = character
+    part_index = 0
+    while part_index < part_end - part_start:
+        character = to_i64(bytes_get(&*source, part_start + part_index))
+        match part_index == 0:
+            -1:
+                match ng_module_identifier_start(character):
+                    -1:
+                        character = character
+                    0:
+                        return -1
+                    1:
+                        return -1
+            0:
+                match ng_module_identifier_continue(character):
+                    -1:
+                        character = character
+                    0:
+                        return -1
+                    1:
+                        return -1
+            1:
+                match ng_module_identifier_continue(character):
+                    -1:
+                        character = character
+                    0:
+                        return -1
+                    1:
+                        return -1
+        part_index = part_index + 1
+    match part_count > 0:
+        -1:
+            discard bytes_push(source, 46)
+        0:
+            part_index = 0
+        1:
+            part_index = 0
+    part_index = 0
+    while part_index < part_end - part_start:
+        octet = bytes_get(&*source, part_start + part_index)
+        discard bytes_push(source, octet)
+        part_index = part_index + 1
+    return part_count + 1
+
+fn ng_derive_module_name(source: &mut bytes, path_start: i64, path_end: i64) -> NgSpan:
+    mut path_length: i64 = path_end - path_start
+    mut effective_end: i64 = path_end
+    mut index: i64 = path_start
+    mut segment_start: i64 = path_start
+    mut part_count: i64 = 0
+    mut separator: i64 = 0
+    mut result_start: i64 = bytes_len(&*source)
+    mut part_result: i64 = 0
+    match path_length > 0:
+        -1:
+            return NgSpan(start=-1, end=-1)
+        0:
+            return NgSpan(start=-1, end=-1)
+        1:
+            path_length = path_length
+    match to_i64(bytes_get(&*source, path_start)) == 47:
+        -1:
+            return NgSpan(start=-1, end=-1)
+        0:
+            match to_i64(bytes_get(&*source, path_start)) == 92:
+                -1:
+                    return NgSpan(start=-1, end=-1)
+                0:
+                    separator = 0
+                1:
+                    return NgSpan(start=-1, end=-1)
+        1:
+            return NgSpan(start=-1, end=-1)
+    match path_length >= 3:
+        -1:
+            match to_i64(bytes_get(&*source, path_end - 3)) == 46:
+                -1:
+                    match to_i64(bytes_get(&*source, path_end - 2)) == 115:
+                        -1:
+                            match to_i64(bytes_get(&*source, path_end - 1)) == 51:
+                                -1:
+                                    effective_end = path_end - 3
+                                0:
+                                    effective_end = path_end
+                                1:
+                                    effective_end = path_end
+                        0:
+                            effective_end = path_end
+                        1:
+                            effective_end = path_end
+                0:
+                    effective_end = path_end
+                1:
+                    effective_end = path_end
+        0:
+            effective_end = path_end
+        1:
+            effective_end = path_end
+    index = path_start
+    segment_start = path_start
+    while index <= effective_end:
+        match index == effective_end:
+            -1:
+                separator = 1
+            0:
+                separator = 0
+            1:
+                separator = 0
+        match separator == 0:
+            -1:
+                match to_i64(bytes_get(&*source, index)) == 47:
+                    -1:
+                        separator = 1
+                    0:
+                        match to_i64(bytes_get(&*source, index)) == 92:
+                            -1:
+                                separator = 1
+                            0:
+                                index = index + 1
+                            1:
+                                separator = 1
+                    1:
+                        separator = 1
+            0:
+                separator = separator
+            1:
+                separator = separator
+        match separator == 1:
+            -1:
+                part_result = ng_append_module_path_part(source, segment_start, index, part_count)
+                match part_result < 0:
+                    -1:
+                        return NgSpan(start=-1, end=-1)
+                    0:
+                        part_result = part_result
+                    1:
+                        part_count = part_result
+                segment_start = index + 1
+                separator = 0
+                index = index + 1
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    match part_count > 0:
+        -1:
+            return NgSpan(start=result_start, end=bytes_len(&*source))
+        0:
+            return NgSpan(start=-1, end=-1)
+        1:
+            return NgSpan(start=-1, end=-1)
+fn ng_parse_module_name_span(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>) -> NgSpan:
+    mut first: NgToken = ng_token_at(tokens, cursor)
+    mut last_end: i64 = first.end
+    mut current: NgToken = first
+    mut scan_index: i64 = 0
+    mut next_cursor: i64 = 0
+    mut token_count: i64 = vector_len<NgToken>(tokens)
+    match ng_expect_kind(tokens, cursor, 1):
+        -1:
+            return NgSpan(start=-1, end=-1)
+        0:
+            discard ng_advance(cursor)
+        1:
+            return NgSpan(start=-1, end=-1)
+    current = ng_token_at(tokens, cursor)
+    scan_index = vector_get<i64>(&*cursor, 0)
+    next_cursor = scan_index
+    while scan_index < token_count:
+        current = vector_get<NgToken>(tokens, scan_index)
+        match current.kind <=> 346:
+            -1:
+                next_cursor = scan_index
+                scan_index = token_count
+            0:
+                scan_index = scan_index + 1
+                match scan_index < token_count:
+                    -1:
+                        current = vector_get<NgToken>(tokens, scan_index)
+                        match current.kind <=> 1:
+                            -1:
+                                return NgSpan(start=-1, end=-1)
+                            0:
+                                last_end = current.end
+                                scan_index = scan_index + 1
+                                next_cursor = scan_index
+                            1:
+                                return NgSpan(start=-1, end=-1)
+                    0:
+                        return NgSpan(start=-1, end=-1)
+                    1:
+                        return NgSpan(start=-1, end=-1)
+            1:
+                next_cursor = scan_index
+                scan_index = token_count
+    discard vector_set<i64>(&mut *cursor, 0, next_cursor)
+    return NgSpan(start=first.start, end=last_end)
+
+fn ng_module_error(module_index: i64, source_start: i64, source_end: i64, path_start: i64, path_end: i64, first_import: i64) -> NgModule:
+    return NgModule(source_index=module_index, source_start=source_start, source_end=source_end, path_start=path_start, path_end=path_end, name_start=-1, name_end=-1, body_token_index=-1, first_function=0, function_count=0, first_import=first_import, import_count=0)
+
+fn ng_import_continuation_valid(source: &bytes, separator_end: i64, next_start: i64) -> trit:
+    mut cursor: i64 = separator_end
+    mut character: i64 = 0
+    while cursor < next_start:
+        character = to_i64(bytes_get(source, cursor))
+        match character == 10:
+            -1:
+                return 0
+            0:
+                match character == 13:
+                    -1:
+                        return 0
+                    0:
+                        cursor = cursor + 1
+                    1:
+                        return 0
+            1:
+                return 0
+    return -1
+
+export fn ng_parse_module_header(source: &mut bytes, tokens: &vector<NgToken>, module_index: i64, source_start: i64, source_end: i64, path_start: i64, path_end: i64, imports: &mut vector<NgImport>) -> NgModule:
+    mut cursor: vector<i64> = vector_new<i64>(1)
+    mut current: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut module_name: NgSpan = NgSpan(start=-1, end=-1)
+    mut module_name_start: i64 = -1
+    mut module_name_end: i64 = -1
+    mut target: NgSpan = NgSpan(start=-1, end=-1)
+    mut symbol: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut alias_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut local_start: i64 = 0
+    mut local_end: i64 = 0
+    mut first_import: i64 = vector_len<NgImport>(&*imports)
+    mut imported: NgImport = NgImport(module_index=module_index, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
+    mut import_pending: trit = 0
+    mut symbol_pending: trit = 0
+    mut separator_end: i64 = 0
+    discard vector_push<i64>(&mut cursor, 0)
+    current = ng_token_at(tokens, &mut cursor)
+    match ng_token_spells(&*source, current, text_from_static("module")):
+        -1:
+            discard ng_advance(&mut cursor)
+            module_name = ng_parse_module_name_span(&*source, tokens, &mut cursor)
+            match module_name.start < 0:
+                -1:
+                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                0:
+                    module_name_start = module_name.start
+                    module_name_end = module_name.end
+                1:
+                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+        0:
+            module_name = ng_derive_module_name(source, path_start, path_end)
+            match module_name.start < 0:
+                -1:
+                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                0:
+                    module_name_start = module_name.start
+                    module_name_end = module_name.end
+                1:
+                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+        1:
+            return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+    current = ng_token_at(tokens, &mut cursor)
+    import_pending = ng_token_spells(&*source, current, text_from_static("from"))
+    while import_pending == -1:
+        discard ng_advance(&mut cursor)
+        target = ng_parse_module_name_span(&*source, tokens, &mut cursor)
+        match target.start < 0:
+            -1:
+                return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+            0:
+                target = target
+            1:
+                return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+        match ng_expect_word(&*source, tokens, &mut cursor, text_from_static("import")):
+            -1:
+                return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+            0:
+                symbol_pending = -1
+                while symbol_pending == -1:
+                    symbol = ng_token_at(tokens, &mut cursor)
+                    match ng_expect_kind(tokens, &mut cursor, 1):
+                        -1:
+                            return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                        0:
+                            discard ng_advance(&mut cursor)
+                        1:
+                            return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                    local_start = symbol.start
+                    local_end = symbol.end
+                    current = ng_token_at(tokens, &mut cursor)
+                    match ng_token_spells(&*source, current, text_from_static("as")):
+                        -1:
+                            discard ng_advance(&mut cursor)
+                            alias_token = ng_token_at(tokens, &mut cursor)
+                            local_start = alias_token.start
+                            local_end = alias_token.end
+                            match ng_expect_kind(tokens, &mut cursor, 1):
+                                -1:
+                                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                                0:
+                                    discard ng_advance(&mut cursor)
+                                1:
+                                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                        0:
+                            local_start = local_start
+                            local_end = local_end
+                        1:
+                            return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                    imported = NgImport(module_index=module_index, target_start=target.start, target_end=target.end, symbol_start=symbol.start, symbol_end=symbol.end, local_start=local_start, local_end=local_end)
+                    discard vector_push<NgImport>(imports, imported)
+                    current = ng_token_at(tokens, &mut cursor)
+                    symbol_pending = ng_token_spells(&*source, current, text_from_static(","))
+                    match symbol_pending:
+                        -1:
+                            separator_end = current.end
+                            discard ng_advance(&mut cursor)
+                            current = ng_token_at(tokens, &mut cursor)
+                            match ng_import_continuation_valid(&*source, separator_end, current.start):
+                                -1:
+                                    current = current
+                                0:
+                                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                                1:
+                                    return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+                        0:
+                            symbol_pending = 0
+                        1:
+                            return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+            1:
+                return ng_module_error(module_index, source_start, source_end, path_start, path_end, first_import)
+        current = ng_token_at(tokens, &mut cursor)
+        import_pending = ng_token_spells(&*source, current, text_from_static("from"))
+    return NgModule(source_index=module_index, source_start=source_start, source_end=source_end, path_start=path_start, path_end=path_end, name_start=module_name_start, name_end=module_name_end, body_token_index=vector_get<i64>(&cursor, 0), first_function=0, function_count=0, first_import=first_import, import_count=vector_len<NgImport>(&*imports) - first_import)
+
+fn ng_parse_record_declaration(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, module_item: NgModule, types: &mut vector<NgTypeDescriptor>, records: &mut vector<NgRecord>, fields: &mut vector<NgField>, exported: i64) -> i64:
+    mut record_token: NgToken = ng_token_at(tokens, cursor)
+    mut name: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut field_token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut current: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut prior_record: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
+    mut prior_field: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut index: i64 = 0
+    mut field_indent: i64 = -1
+    mut current_indent: i64 = 0
+    mut declaration_indent: i64 = ng_token_indent(source, record_token)
+    mut first_field: i64 = vector_len<NgField>(&*fields)
+    mut record_index: i64 = vector_len<NgRecord>(&*records)
+    mut type_id: i64 = -1
+    mut field_type: i64 = -1
+    match ng_expect_word(source, tokens, cursor, text_from_static("record")):
+        0:
+            name = ng_token_at(tokens, cursor)
+            match ng_expect_kind(tokens, cursor, 1):
+                -1:
+                    return -1
+                0:
+                    discard ng_advance(cursor)
+                1:
+                    return -1
+        -1:
+            return -1
+        1:
+            return -1
+    name = vector_get<NgToken>(tokens, vector_get<i64>(&*cursor, 0) - 1)
+    index = 0
+    while index < vector_len<NgRecord>(&*records):
+        prior_record = vector_get<NgRecord>(&*records, index)
+        match prior_record.module_index <=> module_item.source_index:
+            0:
+                match ng_spans_equal(source, prior_record.name_start, prior_record.name_end, name.start, name.end):
+                    -1:
+                        return -3
+                    0:
+                        index = index + 1
+                    1:
+                        return -3
+            -1:
+                index = index + 1
+            1:
+                index = index + 1
+    match ng_expect_kind(tokens, cursor, 358):
+        -1:
+            return -1
+        0:
+            discard ng_advance(cursor)
+        1:
+            return -1
+    type_id = ng_intern_nominal_type(source, types, module_item.name_start, module_item.name_end, name.start, name.end)
+    match type_id > 0:
+        -1:
+            type_id = type_id
+        0:
+            return -1
+        1:
+            return -1
+    while ng_token_kind_at(tokens, cursor) > 0:
+        current = ng_token_at(tokens, cursor)
+        current_indent = ng_token_indent(source, current)
+        match current_indent > declaration_indent:
+            -1:
+                match field_indent < 0:
+                    -1:
+                        field_indent = current_indent
+                    0:
+                        match current_indent <=> field_indent:
+                            0:
+                                current = current
+                            -1:
+                                return -31
+                            1:
+                                return -31
+                    1:
+                        return -1
+                match ng_expect_kind(tokens, cursor, 1):
+                    -1:
+                        return -32
+                    0:
+                        field_token = vector_get<NgToken>(tokens, vector_get<i64>(&*cursor, 0))
+                        discard ng_advance(cursor)
+                    1:
+                        return -32
+                match ng_expect_kind(tokens, cursor, 358):
+                    -1:
+                        return -1
+                    0:
+                        discard ng_advance(cursor)
+                    1:
+                        return -1
+                field_type = ng_parse_type_descriptor(source, tokens, cursor, types, module_item.name_start, module_item.name_end)
+                match field_type > 0:
+                    -1:
+                        index = first_field
+                        while index < vector_len<NgField>(&*fields):
+                            prior_field = vector_get<NgField>(&*fields, index)
+                            match ng_spans_equal(source, prior_field.name_start, prior_field.name_end, field_token.start, field_token.end):
+                                -1:
+                                    return -4
+                                0:
+                                    index = index + 1
+                                1:
+                                    return -4
+                        discard vector_push<NgField>(fields, NgField(record_index=record_index, name_start=field_token.start, name_end=field_token.end, type_id=field_type, order=vector_len<NgField>(&*fields) - first_field))
+                    0:
+                        return -34
+                    1:
+                        return -34
+            0:
+                current = current
+                break
+            1:
+                current = current
+                break
+    match vector_len<NgField>(&*fields) - first_field > 0:
+        -1:
+            descriptor = vector_get<NgTypeDescriptor>(&*types, type_id - 1)
+            descriptor.first_field = first_field
+            descriptor.field_count = vector_len<NgField>(&*fields) - first_field
+            discard vector_set<NgTypeDescriptor>(&mut *types, type_id - 1, descriptor)
+            discard vector_push<NgRecord>(records, NgRecord(module_index=module_item.source_index, name_start=name.start, name_end=name.end, type_id=type_id, first_field=first_field, field_count=vector_len<NgField>(&*fields) - first_field, exported=exported))
+            return 0
+        0:
+            return -1
+        1:
+            return -1
+
+export fn ng_validate_nominal_types(source: &bytes, types: &vector<NgTypeDescriptor>, modules: &vector<NgModule>, records: &vector<NgRecord>) -> i64:
+    mut type_index: i64 = 6
+    mut record_index: i64 = 0
+    mut found: i64 = 0
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut record_item: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
+    mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
+    while type_index < vector_len<NgTypeDescriptor>(types):
+        descriptor = vector_get<NgTypeDescriptor>(types, type_index)
+        match descriptor.kind <=> 7:
+            0:
+                found = 0
+                record_index = 0
+                while record_index < vector_len<NgRecord>(records):
+                    record_item = vector_get<NgRecord>(records, record_index)
+                    module_item = vector_get<NgModule>(modules, record_item.module_index)
+                    match ng_spans_equal(source, descriptor.module_start, descriptor.module_end, module_item.name_start, module_item.name_end):
+                        -1:
+                            match ng_spans_equal(source, descriptor.name_start, descriptor.name_end, record_item.name_start, record_item.name_end):
+                                -1:
+                                    found = 1
+                                    record_index = record_index + 1
+                                0:
+                                    record_index = record_index + 1
+                                1:
+                                    record_index = record_index + 1
+                        0:
+                            record_index = record_index + 1
+                        1:
+                            record_index = record_index + 1
+                match found <=> 1:
+                    -1:
+                        return -5
+                    0:
+                        type_index = type_index + 1
+                    1:
+                        return -5
+            -1:
+                type_index = type_index + 1
+            1:
+                type_index = type_index + 1
+    return 0
+
+export fn ng_parse_module_functions(source: &bytes, tokens: &vector<NgToken>, module_item: NgModule, types: &mut vector<NgTypeDescriptor>, records: &mut vector<NgRecord>, fields: &mut vector<NgField>, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>, functions: &mut vector<NgFunction>) -> i64:
+    mut cursor: vector<i64> = vector_new<i64>(1)
+    mut current: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
+    mut current_kind: i64 = 0
+    mut exported: i64 = 0
+    mut status: i64 = 0
+    discard vector_push<i64>(&mut cursor, module_item.body_token_index)
+    current_kind = ng_token_kind_at(tokens, &mut cursor)
+    while current_kind > 0:
+        exported = 0
+        match ng_token_spells_at(source, tokens, &mut cursor, text_from_static("export")):
+            -1:
+                exported = 1
+                discard ng_advance(&mut cursor)
+            0:
+                exported = 0
+            1:
+                return -1
+        current = ng_token_at(tokens, &mut cursor)
+        match ng_token_spells(source, current, text_from_static("record")):
+            -1:
+                status = ng_parse_record_declaration(source, tokens, &mut cursor, module_item, types, records, fields, exported)
+                match status <=> 0:
+                    -1:
+                        return status
+                    0:
+                        current_kind = ng_token_kind_at(tokens, &mut cursor)
+                    1:
+                        return status
+            0:
+                status = ng_parse_function(source, tokens, &mut cursor, parameters, nodes, functions, module_item.source_index, exported, types, module_item.name_start, module_item.name_end)
+                match status <=> 0:
+                    -1:
+                        return status
+                    0:
+                        current_kind = ng_token_kind_at(tokens, &mut cursor)
+                    1:
+                        return status
+            1:
+                return -1
+    return 0

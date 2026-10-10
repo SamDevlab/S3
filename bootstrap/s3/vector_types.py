@@ -47,9 +47,19 @@ def composite_vector_runtime_name(
     cell_type_codes: tuple[str, ...],
     operation: str,
 ) -> str:
-    encoded = base64.urlsafe_b64encode(type_key(element_type).encode("utf-8")).decode(
-        "ascii"
-    ).rstrip("=")
+    return composite_vector_runtime_name_from_key(
+        type_key(element_type), cell_type_codes, operation
+    )
+
+
+def composite_vector_runtime_name_from_key(
+    element_key: str,
+    cell_type_codes: tuple[str, ...],
+    operation: str,
+) -> str:
+    """Build the runtime symbol from an already-resolved serialized type key."""
+
+    encoded = base64.urlsafe_b64encode(element_key.encode("utf-8")).decode("ascii").rstrip("=")
     cells = "-".join(cell_type_codes) or "empty"
     return f"{COMPOSITE_VECTOR_BUILTIN_PREFIX}{encoded}__{cells}__{operation}"
 

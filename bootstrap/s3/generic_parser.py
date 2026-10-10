@@ -115,7 +115,7 @@ class GenericParser:
             self._skip_newlines()
 
         while self._check(TokenKind.FROM):
-            children.append(self._parse_import_declaration())
+            children.extend(self._parse_import_declarations())
             self._skip_newlines()
 
         while not self._check(TokenKind.EOF):
@@ -159,29 +159,35 @@ class GenericParser:
             payload=DeclarationPayload(self._symbol(name), -1, 0),
         )
 
-    def _parse_import_declaration(self) -> int:
+    def _parse_import_declarations(self) -> list[int]:
         start = self._consume(TokenKind.FROM, "expected 'from'")
         module_name = self._parse_module_name()
         self._consume(TokenKind.IMPORT, "expected 'import' after module name")
-        symbol = self._consume(TokenKind.IDENTIFIER, "expected imported symbol")
-        alias: TokenRecord | None = None
-        if self._match(TokenKind.AS):
-            alias = self._consume(TokenKind.IDENTIFIER, "expected import alias")
+        imports: list[int] = []
+        while True:
+            symbol = self._consume(TokenKind.IDENTIFIER, "expected imported symbol")
+            alias: TokenRecord | None = None
+            if self._match(TokenKind.AS):
+                alias = self._consume(TokenKind.IDENTIFIER, "expected import alias")
+            module_node = self._identifier(module_name, start)
+            symbol_node = self._identifier(symbol.text, symbol)
+            child_nodes = [module_node, symbol_node]
+            flags = 0
+            if alias is not None:
+                flags = 1
+                child_nodes.append(self._identifier(alias.text, alias))
+            imports.append(
+                self._append(
+                    NodeKind.IMPORT_DECLARATION,
+                    start,
+                    payload=DeclarationPayload(self._symbol(module_name), -1, flags),
+                    children=tuple(child_nodes),
+                )
+            )
+            if not self._match(TokenKind.COMMA):
+                break
         self._consume_statement_newline("expected newline after import declaration")
-
-        module_node = self._identifier(module_name, start)
-        symbol_node = self._identifier(symbol.text, symbol)
-        child_nodes = [module_node, symbol_node]
-        flags = 0
-        if alias is not None:
-            flags = 1
-            child_nodes.append(self._identifier(alias.text, alias))
-        return self._append(
-            NodeKind.IMPORT_DECLARATION,
-            start,
-            payload=DeclarationPayload(self._symbol(module_name), -1, flags),
-            children=tuple(child_nodes),
-        )
+        return imports
 
     def _parse_module_name(self) -> str:
         parts = [self._consume(TokenKind.IDENTIFIER, "expected module name").text]

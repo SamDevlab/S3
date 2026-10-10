@@ -46,7 +46,7 @@ from .dynamic import (
     DynamicTextMap,
     DynamicVector,
 )
-from .host_services import SourceResourceRuntime
+from .host_services import HostExecutionContext
 from .ir import DYNAMIC_BUILTIN_SIGNATURES, IRType, composite_vector_runtime_signature
 from .ir_emulator import ReferenceValue, _execute_dynamic_builtin
 
@@ -153,6 +153,7 @@ class Emulator(AssemblyVerifier):
         entry: str = "main",
         *,
         capture_memory: list[dict[int, list[AssemblyValue | None]]] | None = None,
+        host_context: HostExecutionContext | None = None,
     ) -> AssemblyValue:
         functions = self._validate_program(program)
         try:
@@ -171,7 +172,9 @@ class Emulator(AssemblyVerifier):
             for function in program.functions
         }
         static_strings = {item.id: item.value for item in program.static_strings}
-        resource_runtime = SourceResourceRuntime()
+        host_context = HostExecutionContext() if host_context is None else host_context
+        if not isinstance(host_context, HostExecutionContext):
+            raise EmulatorError("host_context must be a HostExecutionContext")
         stack = [self._create_frame(entry_function)]
         executed = 0
         if self.metrics:
@@ -452,7 +455,7 @@ class Emulator(AssemblyVerifier):
                         result = _execute_dynamic_builtin(
                             instruction.callee,
                             runtime_arguments,
-                            runtime=resource_runtime,
+                            runtime=host_context.resources,
                         )
                         values = (
                             result

@@ -3632,12 +3632,15 @@ class SemanticAnalyzer:
             expression.location,
             f"operator '{expression.operator.value}' is not supported for string values",
         )
+        checked_operand_type = (
+            expected if expected is not None else operand_type
+        )
         if (
             expression.operator in (
                 ast.BinaryOperator.MULTIPLY,
                 ast.BinaryOperator.DIVIDE,
             )
-            and operand_type not in (ast.TypeName.I64, ast.TypeName.F64)
+            and checked_operand_type not in (ast.TypeName.I64, ast.TypeName.F64)
         ):
             raise SemanticError(
                 f"operator '{expression.operator.value}' requires i64 or f64 operands",
@@ -3645,7 +3648,7 @@ class SemanticAnalyzer:
             )
         if (
             expression.operator in (ast.BinaryOperator.MINIMUM, ast.BinaryOperator.MAXIMUM)
-            and operand_type in (ast.TypeName.I64, ast.TypeName.F64)
+            and checked_operand_type in (ast.TypeName.I64, ast.TypeName.F64)
         ):
             raise SemanticError(
                 f"operator '{expression.operator.value}' is balanced-ternary only",
