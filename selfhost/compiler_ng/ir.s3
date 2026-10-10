@@ -83,17 +83,7 @@ fn ng_parameter_register(source: &bytes, parameters: &vector<NgParameter>, first
 
 fn ng_ir_variable_index(source: &bytes, variables: &vector<NgIRVariable>, name_start: i64, name_end: i64) -> i64:
     mut index: i64 = vector_len<NgIRVariable>(variables)
-    mut name_length: i64 = name_end - name_start
-    mut variable_name_length: i64 = 0
-    mut name_fingerprint: i64 = 0
     mut variable: NgIRVariable = NgIRVariable(name_start=0, name_end=0, name_fingerprint=0, type_kind=0, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1)
-    match name_length >= 8:
-        -1:
-            name_fingerprint = ng_span_fingerprint(source, name_start, name_end)
-        0:
-            name_fingerprint = 0
-        1:
-            name_fingerprint = 0
     while index > 0:
         index = index - 1
         variable = vector_get<NgIRVariable>(variables, index)
@@ -107,24 +97,11 @@ fn ng_ir_variable_index(source: &bytes, variables: &vector<NgIRVariable>, name_s
                     1:
                         return -14
             0:
-                match name_length < 8:
+                match name_end - name_start <=> variable.name_end - variable.name_start:
                     -1:
-                        variable_name_length = variable.name_end - variable.name_start
-                        match name_length <=> variable_name_length:
-                            0:
-                                match ng_spans_equal(source, name_start, name_end, variable.name_start, variable.name_end):
-                                    -1:
-                                        return index
-                                    0:
-                                        index = index
-                                    1:
-                                        index = index
-                            -1:
-                                index = index
-                            1:
-                                index = index
+                        index = index
                     0:
-                        match ng_named_spans_equal(source, name_start, name_end, name_fingerprint, variable.name_start, variable.name_end, variable.name_fingerprint):
+                        match ng_spans_equal(source, name_start, name_end, variable.name_start, variable.name_end):
                             -1:
                                 return index
                             0:
@@ -132,13 +109,7 @@ fn ng_ir_variable_index(source: &bytes, variables: &vector<NgIRVariable>, name_s
                             1:
                                 index = index
                     1:
-                        match ng_named_spans_equal(source, name_start, name_end, name_fingerprint, variable.name_start, variable.name_end, variable.name_fingerprint):
-                            -1:
-                                return index
-                            0:
-                                index = index
-                            1:
-                                index = index
+                        index = index
             1:
                 return -14
     return -12
