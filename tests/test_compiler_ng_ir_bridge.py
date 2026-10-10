@@ -3229,6 +3229,24 @@ def test_ng_ir_v11_lowers_bytes_from_text_dynamic_builtin() -> None:
     assert execute_ir(ng_ir) == execute_ir(reference_ir) == 2
 
 
+def test_ng_ir_v11_lowers_text_len_dynamic_builtin() -> None:
+    source = "\n".join(
+        (
+            "fn main() -> i64:",
+            '    mut message: text = text_from_static("s3")',
+            "    return text_len(&message)",
+        )
+    )
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+    cells = _emit_ng_events(source)
+    ng_ir = decode_ng_ir_events(source.encode("utf-8"), cells)
+    verify_ir(ng_ir)
+
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 2
+
+
 def test_ng_ir_v11_lowers_bytes_concat_dynamic_builtin() -> None:
     source = "\n".join(
         (
@@ -3263,6 +3281,20 @@ def test_ng_source_set_rejects_bytes_builtin_argument_type_mismatch() -> None:
             "    return bytes_get(data, data)\n"
             "fn main() -> i64:\n"
             "    return 0\n"
+        ),
+    }
+    status, _, events = _run_ng_source_set_events(sources, entry_module="app")
+    assert status < 0
+    assert events == []
+
+
+def test_ng_source_set_rejects_text_len_non_text_reference() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "fn main() -> i64:\n"
+            "    mut data: bytes = bytes_new(1)\n"
+            "    return text_len(&data)\n"
         ),
     }
     status, _, events = _run_ng_source_set_events(sources, entry_module="app")

@@ -751,7 +751,13 @@ export fn ng_builtin_call_kind(source: &bytes, name_start: i64, name_end: i64) -
                                 -1:
                                     return 3
                                 0:
-                                    return -13
+                                    match ng_span_matches_text(source, name_start, name_end, text_from_static("text_len")):
+                                        -1:
+                                            return 13
+                                        0:
+                                            return -13
+                                        1:
+                                            return -13
                                 1:
                                     return -13
                         -1:
@@ -926,7 +932,13 @@ export fn ng_builtin_result_type(builtin_kind: i64) -> i64:
                                                                                                 -1:
                                                                                                     return -13
                                                                                                 1:
-                                                                                                    return -13
+                                                                                                    match builtin_kind <=> 13:
+                                                                                                        0:
+                                                                                                            return 1
+                                                                                                        -1:
+                                                                                                            return -13
+                                                                                                        1:
+                                                                                                            return -13
 
 export fn ng_builtin_argument_type(builtin_kind: i64, argument_index: i64) -> i64:
     match builtin_kind <=> 3:
@@ -1171,7 +1183,38 @@ fn ng_builtin_dynamic_call_type(source: &bytes, types: &vector<NgTypeDescriptor>
                         -1:
                             return -13
                         1:
-                            return -13
+                            match builtin_kind <=> 13:
+                                0:
+                                    return ng_text_len_call_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, argument_count)
+                                -1:
+                                    return -13
+                                1:
+                                    return -13
+
+fn ng_text_len_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, argument_count: i64) -> i64:
+    mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut argument_type: i64 = -1
+    match argument_count <=> 1:
+        0:
+            argument = vector_get<NgAstNode>(nodes, call_node.left)
+            match argument.right <=> -1:
+                0:
+                    argument_type = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, argument.left)
+                    match ng_builtin_reference_matches(source, types, argument_type, 6, 0) <=> -1:
+                        0:
+                            return 1
+                        -1:
+                            return -14
+                        1:
+                            return -14
+                -1:
+                    return -14
+                1:
+                    return -14
+        -1:
+            return -14
+        1:
+            return -14
 
 fn ng_bytes_from_text_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, argument_count: i64) -> i64:
     mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
