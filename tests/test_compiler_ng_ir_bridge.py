@@ -2862,6 +2862,41 @@ def test_ng_self_compiles_real_parser_module_with_field_assignment() -> None:
     assert execute_ir(ng_ir) == execute_ir(reference) == 0
 
 
+def test_ng_self_compiles_real_semantic_module() -> None:
+    sources = {
+        "app.s3": "module app\nfn main() -> i64:\n    return 0\n",
+        "character_classes.s3": (_ROOT / "selfhost/compiler_ng/character_classes.s3").read_text(
+            encoding="utf-8"
+        ),
+        "lexer.s3": (_ROOT / "selfhost/compiler_ng/lexer.s3").read_text(
+            encoding="utf-8"
+        ),
+        "types.s3": (_ROOT / "selfhost/compiler_ng/types.s3").read_text(
+            encoding="utf-8"
+        ),
+        "parser.s3": (_ROOT / "selfhost/compiler_ng/parser.s3").read_text(
+            encoding="utf-8"
+        ),
+        "semantic.s3": (_ROOT / "selfhost/compiler_ng/semantic.s3").read_text(
+            encoding="utf-8"
+        ),
+    }
+    reference = compile_sources(sources, entry_module="app").ir
+    assert reference is not None
+
+    source, cells = _emit_ng_source_set_events(
+        sources, entry_module="app", max_steps=1_000_000_000
+    )
+    ng_ir = decode_ng_ir_events(source, cells)
+    verify_ir(ng_ir)
+    actual_structure = _canonical_structure(ng_ir)
+    expected_structure = _canonical_structure(reference)
+    assert actual_structure == expected_structure, _first_structure_difference(
+        actual_structure, expected_structure, "semantic_self_compile"
+    )
+    assert execute_ir(ng_ir) == execute_ir(reference) == 0
+
+
 @pytest.mark.s3_native
 @pytest.mark.skipif(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
