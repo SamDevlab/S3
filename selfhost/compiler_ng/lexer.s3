@@ -603,33 +603,38 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
         0:
             prefix_open = vector_get<i64>(&*state, 1)
             while skipping_space == 1:
-                match unit <=> 10:
+                match unit <=> 32:
                     -1:
-                        match prefix_open <=> 1:
-                            0:
-                                indent = -1
-                                prefix_open = 0
+                        match unit <=> 10:
                             -1:
-                                prefix_open = prefix_open
-                            1:
-                                prefix_open = prefix_open
-                    0:
-                        indent = 0
-                        prefix_open = 1
-                    1:
-                        match prefix_open <=> 1:
-                            0:
-                                match unit <=> 32:
-                                    -1:
-                                        prefix_open = 0
+                                match prefix_open <=> 1:
                                     0:
-                                        indent = indent + 1
+                                        prefix_open = 0
+                                    -1:
+                                        prefix_open = prefix_open
                                     1:
                                         prefix_open = prefix_open
+                            0:
+                                indent = 0
+                                prefix_open = 1
+                            1:
+                                match prefix_open <=> 1:
+                                    0:
+                                        prefix_open = 0
+                                    -1:
+                                        prefix_open = prefix_open
+                                    1:
+                                        prefix_open = prefix_open
+                    0:
+                        match prefix_open <=> 1:
+                            0:
+                                indent = indent + 1
                             -1:
                                 prefix_open = prefix_open
                             1:
                                 prefix_open = prefix_open
+                    1:
+                        prefix_open = prefix_open
                 next = next + 1
                 match next < length:
                     -1:

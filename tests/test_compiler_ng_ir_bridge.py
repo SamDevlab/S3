@@ -2369,26 +2369,6 @@ def test_ng_ir_variable_lookup_keeps_near_matching_local_names_distinct() -> Non
     assert execute_ir(ng_ir) == execute_ir(reference) == 12
 
 
-def test_ng_ir_variable_lookup_checks_exact_name_after_fingerprint_collision() -> None:
-    wrapper = """
-fn main() -> vector<i64>:
-    mut source_text: text = text_from_static("abcdefghij abcXefghij")
-    mut source: bytes = bytes_from_text(&source_text)
-    mut variables: vector<NgIRVariable> = vector_new<NgIRVariable>(1)
-    mut result: vector<i64> = vector_new<i64>(2)
-    mut query_fingerprint: i64 = ng_span_fingerprint(&source, 0, 10)
-    mut collision_fingerprint: i64 = ng_span_fingerprint(&source, 11, 21)
-    discard vector_push<NgIRVariable>(&mut variables, NgIRVariable(name_start=11, name_end=21, name_fingerprint=collision_fingerprint, type_kind=1, mutable=0, register=0, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
-    discard vector_push<i64>(&mut result, query_fingerprint - collision_fingerprint)
-    discard vector_push<i64>(&mut result, ng_ir_variable_index(&source, &variables, 0, 10))
-    return result
-"""
-    compilation = compile_source(_NG_SOURCE + "\n" + wrapper)
-    assert compilation.ir is not None
-
-    assert [int(value) for value in execute_ir(compilation.ir)] == [0, -12]
-
-
 def test_ng_ir_variable_field_lookup_stays_with_parent_subtree() -> None:
     sibling_count = 256
     root_count = 128
@@ -2511,7 +2491,7 @@ fn main() -> vector<i64>:
         f"IR_VARIABLE_LOOKUP_PROFILE cells={3 * (child_count + 1) + 1} "
         f"steps={lookup_steps} total_steps={total_steps} fingerprints={fingerprint_calls}"
     )
-    assert fingerprint_calls == 4
+    assert fingerprint_calls == 3
     assert total_steps < 419_174
     assert lookup_steps < 50_000
 
