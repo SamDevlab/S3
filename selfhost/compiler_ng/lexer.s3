@@ -666,16 +666,15 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
     mut token_start: i64 = cursor
     mut unit: i64 = to_i64(bytes_get(source, cursor))
     mut character_class: i64 = 0
-    mut skipping_space: i64 = 1
     mut indent: i64 = vector_get<i64>(&*state, 0)
     mut prefix_open: i64 = 0
     character_class = vector_get<i64>(classes, unit)
     match character_class <=> 4:
         -1:
-            skipping_space = 0
+            character_class = character_class
         0:
             prefix_open = vector_get<i64>(&*state, 1)
-            while skipping_space == 1:
+            while character_class == 4:
                 match unit <=> 10:
                     -1:
                         indent = indent
@@ -695,19 +694,16 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
                     -1:
                         unit = to_i64(bytes_get(source, next))
                         character_class = vector_get<i64>(classes, unit)
-                        match character_class <=> 4:
-                            -1:
-                                skipping_space = 0
-                            0:
-                                skipping_space = 1
-                            1:
-                                skipping_space = 0
                     0:
-                        skipping_space = 0
+                        discard vector_set<i64>(&mut *state, 0, indent)
+                        discard vector_set<i64>(&mut *state, 1, prefix_open)
+                        return next
                     1:
-                        skipping_space = 0
+                        discard vector_set<i64>(&mut *state, 0, indent)
+                        discard vector_set<i64>(&mut *state, 1, prefix_open)
+                        return next
         1:
-            skipping_space = 0
+            character_class = character_class
     match next > cursor:
         -1:
             discard vector_set<i64>(&mut *state, 0, indent)
