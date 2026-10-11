@@ -673,8 +673,6 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
     mut prefix_open: i64 = 0
     character_class = vector_get<i64>(classes, unit)
     match character_class <=> 4:
-        -1:
-            character_class = character_class
         0:
             prefix_open = vector_get<i64>(&*state, 1)
             while character_class == 4:
@@ -705,93 +703,73 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
                         discard vector_set<i64>(&mut *state, 0, indent)
                         discard vector_set<i64>(&mut *state, 1, prefix_open)
                         return next
-        1:
-            character_class = character_class
-    match next > cursor:
-        -1:
             discard vector_set<i64>(&mut *state, 0, indent)
             discard vector_set<i64>(&mut *state, 1, prefix_open)
-            match next < length:
-                -1:
-                    token_start = next
-                0:
-                    discard vector_set<i64>(&mut *state, 1, prefix_open)
-                    return next
-                1:
-                    discard vector_set<i64>(&mut *state, 1, prefix_open)
-                    return next
-        0:
-            unit = unit
+            token_start = next
+        -1:
+            token_start = cursor
         1:
             token_start = cursor
     match character_class < 4:
         -1:
             match character_class <=> 1:
                 -1:
-                    next = ng_scan_symbol(source, token_start, length, tokens, indent, base)
+                    discard vector_set<i64>(&mut *state, 1, 0)
+                    return ng_scan_symbol(source, token_start, length, tokens, indent, base)
                 0:
-                    next = ng_scan_integer(source, token_start, length, classes, tokens, indent, base)
+                    discard vector_set<i64>(&mut *state, 1, 0)
+                    return ng_scan_integer(source, token_start, length, classes, tokens, indent, base)
                 1:
-                    next = ng_scan_identifier(source, token_start, length, classes, tokens, indent, base)
-            discard vector_set<i64>(&mut *state, 1, 0)
-            return next
+                    discard vector_set<i64>(&mut *state, 1, 0)
+                    return ng_scan_identifier(source, token_start, length, classes, tokens, indent, base)
         0:
-            unit = unit
+            character_class = character_class
         1:
-            unit = unit
-    match character_class <=> 7:
+            character_class = character_class
+    match character_class <=> 8:
         -1:
-            match character_class <=> 5:
+            match character_class <=> 6:
                 -1:
-                    next = ng_scan_symbol(source, token_start, length, tokens, indent, base)
-                0:
                     discard vector_set<i64>(&mut *state, 1, 0)
                     return ng_skip_line_comment(source, token_start + 1, length)
-                1:
-                    match character_class <=> 6:
+                0:
+                    discard vector_set<i64>(&mut *state, 1, 0)
+                    match token_start + 1 < length:
                         -1:
-                            next = ng_scan_symbol(source, token_start, length, tokens, indent, base)
-                        0:
-                            match token_start + 1 < length:
+                            match to_i64(bytes_get(source, token_start + 1)) == 47:
                                 -1:
-                                    match to_i64(bytes_get(source, token_start + 1)) == 47:
-                                        -1:
-                                            discard vector_set<i64>(&mut *state, 1, 0)
-                                            return ng_skip_line_comment(source, token_start + 2, length)
-                                        0:
-                                            next = ng_scan_symbol(source, token_start, length, tokens, indent, base)
-                                        1:
-                                            next = ng_scan_symbol(source, token_start, length, tokens, indent, base)
+                                    return ng_skip_line_comment(source, token_start + 2, length)
                                 0:
-                                    next = ng_scan_symbol(source, token_start, length, tokens, indent, base)
+                                    return ng_scan_symbol(source, token_start, length, tokens, indent, base)
                                 1:
-                                    next = ng_scan_symbol(source, token_start, length, tokens, indent, base)
+                                    return ng_scan_symbol(source, token_start, length, tokens, indent, base)
+                        0:
+                            return ng_scan_symbol(source, token_start, length, tokens, indent, base)
                         1:
-                            next = ng_scan_symbol(source, token_start, length, tokens, indent, base)
-        0:
-            next = ng_scan_string(source, token_start, length, tokens, indent, base)
-        1:
-            match character_class <=> 9:
-                -1:
-                    next = ng_scan_symbol(source, token_start, length, tokens, indent, base)
-                0:
-                    next = ng_emit_at(tokens, 300 + unit, token_start, token_start + 1, indent, base)
+                            return ng_scan_symbol(source, token_start, length, tokens, indent, base)
                 1:
-                    next = ng_scan_symbol(source, token_start, length, tokens, indent, base)
-    match next >= 0:
-        -1:
-            match unit <=> 34:
-                0:
-                    discard ng_advance_line_indent(source, token_start, next, indent, prefix_open, state)
+                    next = ng_scan_string(source, token_start, length, tokens, indent, base)
+                    match next < 0:
+                        -1:
+                            return -1
+                        0:
+                            discard ng_advance_line_indent(source, token_start, next, indent, prefix_open, state)
+                            return next
+                        1:
+                            discard ng_advance_line_indent(source, token_start, next, indent, prefix_open, state)
+                            return next
+        0:
+            discard vector_set<i64>(&mut *state, 1, 0)
+            return ng_scan_symbol(source, token_start, length, tokens, indent, base)
+        1:
+            match character_class < 10:
                 -1:
                     discard vector_set<i64>(&mut *state, 1, 0)
+                    return ng_scan_symbol(source, token_start, length, tokens, indent, base)
+                0:
+                    return -1
                 1:
-                    discard vector_set<i64>(&mut *state, 1, 0)
-        0:
-            next = next
-        1:
-            next = next
-    return next
+                    return -1
 
 export fn ng_lex(source: &bytes, tokens: &mut vector<NgToken>) -> i64:
     return ng_lex_at(source, tokens, 0)
