@@ -346,25 +346,42 @@ fn ng_order_modules(source: &bytes, modules: &vector<NgModule>, imports: &vector
                 return -6
     return 0
 
-fn ng_find_local_import(source: &bytes, imports: &vector<NgImport>, module_index: i64, name_start: i64, name_end: i64) -> i64:
-    mut index: i64 = 0
+fn ng_find_local_import(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, module_index: i64, name_start: i64, name_end: i64) -> i64:
+    mut index: i64 = -1
+    mut import_limit: i64 = 0
+    mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
     mut imported: NgImport = NgImport(module_index=0, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
-    while index < vector_len<NgImport>(imports):
-        imported = vector_get<NgImport>(imports, index)
-        match imported.module_index <=> module_index:
-            0:
-                match ng_spans_equal(source, name_start, name_end, imported.local_start, imported.local_end):
-                    -1:
-                        return index
-                    0:
-                        index = index + 1
-                    1:
-                        index = index + 1
-            -1:
-                index = index + 1
-            1:
-                index = index + 1
-    return -1
+    match module_index < 0:
+        -1:
+            return -1
+        0:
+            match module_index < vector_len<NgModule>(modules):
+                -1:
+                    module_item = vector_get<NgModule>(modules, module_index)
+                    index = module_item.first_import
+                    import_limit = module_item.first_import + module_item.import_count
+                    while index < import_limit:
+                        imported = vector_get<NgImport>(imports, index)
+                        match imported.module_index <=> module_index:
+                            0:
+                                match ng_spans_equal(source, name_start, name_end, imported.local_start, imported.local_end):
+                                    -1:
+                                        return index
+                                    0:
+                                        index = index + 1
+                                    1:
+                                        index = index + 1
+                            -1:
+                                index = index + 1
+                            1:
+                                index = index + 1
+                    return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
 
 fn ng_append_internal_name(source: &mut bytes, module_item: NgModule, function: NgFunction, entry_module: &bytes, main_name: &bytes) -> NgSpan:
     mut start: i64 = bytes_len(&*source)
@@ -494,7 +511,7 @@ fn ng_rewrite_imported_nominal_types(source: &bytes, modules: &vector<NgModule>,
                     -1:
                         type_index = type_index
                     0:
-                        import_index = ng_find_local_import(source, imports, module_index, descriptor.name_start, descriptor.name_end)
+                        import_index = ng_find_local_import(source, modules, imports, module_index, descriptor.name_start, descriptor.name_end)
                         match import_index < 0:
                             -1:
                                 import_index = import_index
@@ -725,7 +742,7 @@ fn ng_mark_record_constructor_call(nodes: &mut vector<NgAstNode>, node_index: i6
 
 fn ng_resolve_imported_record_constructor(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, records: &vector<NgRecord>, caller: NgFunction, nodes: &mut vector<NgAstNode>, node_index: i64) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
-    mut import_index: i64 = ng_find_local_import(source, imports, caller.module_index, node.start, node.operation)
+    mut import_index: i64 = ng_find_local_import(source, modules, imports, caller.module_index, node.start, node.operation)
     mut imported: NgImport = NgImport(module_index=0, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
     mut target_module: i64 = -1
     mut record_index: i64 = -1
@@ -794,7 +811,7 @@ fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vec
                 -1:
                     return -4
                 0:
-                    import_index = ng_find_local_import(source, imports, caller.module_index, node.start, node.operation)
+                    import_index = ng_find_local_import(source, modules, imports, caller.module_index, node.start, node.operation)
                     match import_index < 0:
                         -1:
                             discard ng_mark_unresolved_builtin_call(source, &mut *nodes, node_index)

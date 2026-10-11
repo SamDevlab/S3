@@ -2238,6 +2238,42 @@ def test_ng_source_set_function_lookup_checks_fingerprint_collisions() -> None:
     assert execute_ir(ng_ir) == execute_ir(reference_ir) == 3
 
 
+def test_ng_source_set_local_import_lookup_is_module_scoped() -> None:
+    sources = {
+        "main.s3": (
+            "module main\n"
+            "from first_library import value as selected\n"
+            "from worker import call_worker\n"
+            "fn main() -> i64:\n"
+            "    return selected() + call_worker()\n"
+        ),
+        "worker.s3": (
+            "module worker\n"
+            "from second_library import value as selected\n"
+            "export fn call_worker() -> i64:\n"
+            "    return selected()\n"
+        ),
+        "first_library.s3": (
+            "module first_library\n"
+            "export fn value() -> i64:\n"
+            "    return 1\n"
+        ),
+        "second_library.s3": (
+            "module second_library\n"
+            "export fn value() -> i64:\n"
+            "    return 2\n"
+        ),
+    }
+    reference_ir = compile_sources(sources, entry_module="main").ir
+    assert reference_ir is not None
+    source, events = _emit_ng_source_set_events(sources, entry_module="main")
+    ng_ir = decode_ng_ir_events(source, events)
+
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 3
+
+
 def test_ng_internal_name_reserves_exact_buffer_capacity() -> None:
     source_text = "module library\nexport fn transform() -> i64:\n    return 1\n"
     function_name_start = source_text.index("transform")
