@@ -760,53 +760,56 @@ fn ng_ir_vector_new_builtin_id(types: &vector<NgTypeDescriptor>, fields: &vector
 
 fn ng_ir_call_vector_element(types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, registers: &vector<NgIRRegister>, call_arguments: &vector<i64>, argument_pool_index: i64) -> i64:
     mut argument_register: i64 = -1
-    mut argument_info: NgIRRegister = NgIRRegister(type_kind=0)
-    mut reference_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
-    mut vector_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     match argument_pool_index >= 0:
         -1:
             match argument_pool_index < vector_len<i64>(call_arguments):
                 -1:
                     argument_register = vector_get<i64>(call_arguments, argument_pool_index)
-                    match argument_register >= 0:
+                    return ng_ir_vector_element_from_register(types, fields, registers, argument_register)
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+fn ng_ir_vector_element_from_register(types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, registers: &vector<NgIRRegister>, argument_register: i64) -> i64:
+    mut argument_info: NgIRRegister = NgIRRegister(type_kind=0)
+    mut reference_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut vector_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    match argument_register >= 0:
+        -1:
+            match argument_register < vector_len<NgIRRegister>(registers):
+                -1:
+                    argument_info = vector_get<NgIRRegister>(registers, argument_register)
+                    match argument_info.type_kind > 0:
                         -1:
-                            match argument_register < vector_len<NgIRRegister>(registers):
+                            match argument_info.type_kind <= vector_len<NgTypeDescriptor>(types):
                                 -1:
-                                    argument_info = vector_get<NgIRRegister>(registers, argument_register)
-                                    match argument_info.type_kind > 0:
-                                        -1:
-                                            match argument_info.type_kind <= vector_len<NgTypeDescriptor>(types):
+                                    reference_type = vector_get<NgTypeDescriptor>(types, argument_info.type_kind - 1)
+                                    match reference_type.kind <=> 9:
+                                        0:
+                                            match reference_type.target_type > 0:
                                                 -1:
-                                                    reference_type = vector_get<NgTypeDescriptor>(types, argument_info.type_kind - 1)
-                                                    match reference_type.kind <=> 9:
-                                                        0:
-                                                            match reference_type.target_type > 0:
-                                                                -1:
-                                                                    match reference_type.target_type <= vector_len<NgTypeDescriptor>(types):
+                                                    match reference_type.target_type <= vector_len<NgTypeDescriptor>(types):
+                                                        -1:
+                                                            vector_type = vector_get<NgTypeDescriptor>(types, reference_type.target_type - 1)
+                                                            match vector_type.kind <=> 8:
+                                                                0:
+                                                                    match ng_ir_vector_new_builtin_id(types, fields, vector_type.element_type) > 0:
                                                                         -1:
-                                                                            vector_type = vector_get<NgTypeDescriptor>(types, reference_type.target_type - 1)
-                                                                            match vector_type.kind <=> 8:
-                                                                                0:
-                                                                                    match ng_ir_vector_new_builtin_id(types, fields, vector_type.element_type) > 0:
-                                                                                        -1:
-                                                                                            return vector_type.element_type
-                                                                                        0:
-                                                                                            return -1
-                                                                                        1:
-                                                                                            return -1
-                                                                                -1:
-                                                                                    return -1
-                                                                                1:
-                                                                                    return -1
+                                                                            return vector_type.element_type
                                                                         0:
                                                                             return -1
                                                                         1:
                                                                             return -1
-                                                                0:
+                                                                -1:
                                                                     return -1
                                                                 1:
                                                                     return -1
-                                                        -1:
+                                                        0:
                                                             return -1
                                                         1:
                                                             return -1
@@ -814,7 +817,7 @@ fn ng_ir_call_vector_element(types: &vector<NgTypeDescriptor>, fields: &vector<N
                                                     return -1
                                                 1:
                                                     return -1
-                                        0:
+                                        -1:
                                             return -1
                                         1:
                                             return -1
@@ -1843,7 +1846,7 @@ fn ng_emit_vector_get_scalar_expression(source: &bytes, types: &vector<NgTypeDes
                                                                         0:
                                                                             first_argument = vector_len<i64>(&*call_arguments)
                                                                             discard vector_push<i64>(call_arguments, reference_register)
-                                                                            element_type = ng_ir_call_vector_element(types, fields, &*registers, &*call_arguments, first_argument)
+                                                                            element_type = ng_ir_vector_element_from_register(types, fields, &*registers, reference_register)
                                                                             match ng_type_equal(source, types, element_type, node.right) <=> -1:
                                                                                 0:
                                                                                     builtin_id = ng_ir_vector_new_builtin_id(types, fields, element_type)
@@ -1953,7 +1956,7 @@ fn ng_emit_vector_get_record_expression(source: &bytes, types: &vector<NgTypeDes
                                                                                                 0:
                                                                                                     first_argument = vector_len<i64>(&*call_arguments)
                                                                                                     discard vector_push<i64>(call_arguments, reference_register)
-                                                                                                    element_type = ng_ir_call_vector_element(types, fields, &*registers, &*call_arguments, first_argument)
+                                                                                                    element_type = ng_ir_vector_element_from_register(types, fields, &*registers, reference_register)
                                                                                                     match ng_type_equal(source, types, element_type, node.right) <=> -1:
                                                                                                         0:
                                                                                                             discard vector_push<i64>(call_arguments, index_register)
@@ -2238,9 +2241,7 @@ fn ng_emit_vector_set_scalar_expression(source: &bytes, types: &vector<NgTypeDes
                                                                                                             index_info = vector_get<NgIRRegister>(&*registers, index_register)
                                                                                                             match index_info.type_kind <=> 1:
                                                                                                                 0:
-                                                                                                                    first_argument = vector_len<i64>(&*call_arguments)
-                                                                                                                    discard vector_push<i64>(call_arguments, reference_register)
-                                                                                                                    element_type = ng_ir_call_vector_element(types, fields, &*registers, &*call_arguments, first_argument)
+                                                                                                                    element_type = ng_ir_vector_element_from_register(types, fields, &*registers, reference_register)
                                                                                                                     match ng_type_equal(source, types, element_type, node.right) <=> -1:
                                                                                                                         0:
                                                                                                                             builtin_id = ng_ir_vector_new_builtin_id(types, fields, element_type)
@@ -2253,6 +2254,8 @@ fn ng_emit_vector_set_scalar_expression(source: &bytes, types: &vector<NgTypeDes
                                                                                                                                             value_info = vector_get<NgIRRegister>(&*registers, value_register)
                                                                                                                                             match ng_type_equal(source, types, value_info.type_kind, node.right) <=> -1:
                                                                                                                                                 0:
+                                                                                                                                                    first_argument = vector_len<i64>(&*call_arguments)
+                                                                                                                                                    discard vector_push<i64>(call_arguments, reference_register)
                                                                                                                                                     discard vector_push<i64>(call_arguments, index_register)
                                                                                                                                                     discard vector_push<i64>(call_arguments, value_register)
                                                                                                                                                     result_register = vector_len<NgIRRegister>(&*registers)

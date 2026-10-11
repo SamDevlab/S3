@@ -120,7 +120,17 @@ def execute_ir(
     )
 
 
-def _execute_function(functions, function, arguments, caller, static_strings, host_context):
+def _execute_function(
+    functions,
+    function,
+    arguments,
+    caller,
+    static_strings,
+    host_context,
+    execution_observer=None,
+):
+    if execution_observer is not None:
+        execution_observer.function_call(caller, function)
     registers = {r.index: _Cell(mutable=True) for r in function.registers}
     memory = {
         obj.index: [_Cell(mutable=obj.mutable) for _ in range(obj.length)]
@@ -132,6 +142,8 @@ def _execute_function(functions, function, arguments, caller, static_strings, ho
         frame.registers[parameter.register].initialized = True
     blocks = {block.name: block for block in function.blocks}
     while True:
+        if execution_observer is not None:
+            execution_observer.instruction(function, frame.block, frame.index)
         block = blocks[frame.block]
         instruction = block.instructions[frame.index]
         op = instruction.opcode
@@ -327,6 +339,7 @@ def _execute_function(functions, function, arguments, caller, static_strings, ho
                     frame,
                     static_strings,
                     host_context,
+                    execution_observer,
                 )
             if instruction.results:
                 values = result if isinstance(result, tuple) and len(instruction.results) > 1 else (result,)

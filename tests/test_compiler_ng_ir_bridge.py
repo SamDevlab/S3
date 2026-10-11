@@ -4,7 +4,6 @@ import json
 import platform
 from pathlib import Path
 import subprocess
-import sys
 from collections import Counter
 
 import pytest
@@ -93,112 +92,33 @@ def _execute_ir_with_step_budget(
         raise AssertionError(f"compiler harness is missing entry function {entry!r}")
     static_strings = {item.id: item.value for item in module.static_strings}
     target_code = ir_emulator._execute_function.__code__
-    steps = 0
-    calls: Counter[str] = Counter()
-    call_edges: Counter[tuple[str, str]] = Counter()
-    line_counts: Counter[str] = Counter()
-    previous_trace = sys.gettrace()
 
-    def trace(frame, event, _argument):
-        nonlocal steps
-        if frame.f_code is target_code:
-            function = frame.f_locals.get("function")
-            if event == "call" and function is not None:
-                calls[function.name] += 1
-                parent = frame.f_back
-                if parent is not None and parent.f_code is target_code:
-                    caller = parent.f_locals.get("function")
-                    if caller is not None:
-                        call_edges[(caller.name, function.name)] += 1
-            if event == "line":
-                steps += 1
-                if function is not None:
-                    line_counts[function.name] += 1
-                if steps > max_steps:
-                    execution = frame.f_locals.get("frame")
-                    function = frame.f_locals.get("function")
-                    if execution is None or function is None:
-                        return trace
-                    if any(
-                        not execution.registers[parameter.register].initialized
-                        for parameter in function.parameters
-                    ):
-                        return trace
-                    arguments = []
-                    for parameter in function.parameters:
-                        cell = execution.registers[parameter.register]
-                        value = cell.value
-                        reference_cell = getattr(value, "cell", None)
-                        owner = reference_cell.value if reference_cell is not None else value
-                        owner = getattr(owner, "owner", owner)
-                        length = getattr(owner, "length", None)
-                        capacity = getattr(owner, "capacity", None)
-                        arguments.append(
-                            f"{parameter.name}={type(owner).__name__}"
-                            f"(length={length},capacity={capacity})"
-                        )
-                    registers = []
-                    for register in execution.function.registers:
-                        cell = execution.registers[register.index]
-                        if not cell.initialized:
-                            continue
-                        value = cell.value
-                        reference_cell = getattr(value, "cell", None)
-                        owner = reference_cell.value if reference_cell is not None else value
-                        owner = getattr(owner, "owner", owner)
-                        registers.append(
-                            f"r{register.index}={type(owner).__name__}"
-                            f"({getattr(owner, 'length', owner)})"
-                        )
-                    caller_frame = frame.f_back
-                    caller_state = None
-                    if caller_frame is not None and caller_frame.f_code is target_code:
-                        caller_execution = caller_frame.f_locals["frame"]
-                        caller_function = caller_frame.f_locals["function"]
-                        caller_block = next(
-                            item for item in caller_function.blocks
-                            if item.name == caller_execution.block
-                        )
-                        caller_instruction = caller_block.instructions[caller_execution.index]
-                        location = caller_instruction.location
-                        source_line = None
-                        if location is not None:
-                            lines = source_text.splitlines()
-                            if 0 < location.line <= len(lines):
-                                source_line = lines[location.line - 1].strip()
-                        caller_registers = []
-                        for register in caller_function.registers:
-                            cell = caller_execution.registers[register.index]
-                            if not cell.initialized:
-                                continue
-                            value = cell.value
-                            reference_cell = getattr(value, "cell", None)
-                            owner = reference_cell.value if reference_cell is not None else value
-                            owner = getattr(owner, "owner", owner)
-                            if type(owner).__name__ in {"DynamicVector", "DynamicBytes"}:
-                                caller_registers.append(
-                                    f"r{register.index}={type(owner).__name__}"
-                                    f"(length={getattr(owner, 'length', None)})"
-                                )
-                        caller_state = (
-                            f"{caller_function.name}:{caller_execution.block}"
-                            f"[{caller_execution.index}] {caller_instruction.opcode.value}; "
-                            f"location={location}; source={source_line!r}; "
-                            f"vectors={caller_registers}"
-                        )
-                    raise AssertionError(
-                        f"IR execution exceeded {max_steps} steps in "
-                        f"{function.name}:{execution.block}[{execution.index}]; "
-                        f"arguments={arguments}; registers={registers}; "
-                        f"hot_functions={line_counts.most_common(12)}; "
-                        f"calls={calls.most_common(12)}; "
-                        f"call_edges={call_edges.most_common(12)}; "
-                        f"caller={caller_state}"
-                    )
-            return trace
-        return None
+    class ExecutionObserver:
+        def __init__(self) -> None:
+            self.steps = 0
+            self.calls: Counter[str] = Counter()
+            self.call_edges: Counter[tuple[str, str]] = Counter()
+            self.instruction_counts: Counter[str] = Counter()
 
-    sys.settrace(trace)
+        def function_call(self, caller, function) -> None:
+            self.calls[function.name] += 1
+            caller_function = getattr(caller, "function", None)
+            if caller_function is not None:
+                self.call_edges[(caller_function.name, function.name)] += 1
+
+        def instruction(self, function, block: str, index: int) -> None:
+            self.steps += 1
+            self.instruction_counts[function.name] += 1
+            if self.steps > max_steps:
+                raise AssertionError(
+                    f"IR execution exceeded {max_steps} instructions in "
+                    f"{function.name}:{block}[{index}]; "
+                    f"hot_functions={self.instruction_counts.most_common(12)}; "
+                    f"calls={self.calls.most_common(12)}; "
+                    f"call_edges={self.call_edges.most_common(12)}"
+                )
+
+    observer = ExecutionObserver()
     try:
         try:
             return ir_emulator._execute_function(
@@ -208,6 +128,7 @@ def _execute_ir_with_step_budget(
                 (),
                 static_strings,
                 HostExecutionContext(),
+                observer,
             )
         except Exception as exc:
             traceback = exc.__traceback__
@@ -279,13 +200,38 @@ def _execute_ir_with_step_budget(
         if metrics is not None:
             metrics.update(
                 {
-                    "steps": steps,
-                    "calls": dict(calls),
-                    "call_edges": dict(call_edges),
-                    "line_counts": dict(line_counts),
+                    "steps": observer.steps,
+                    "calls": dict(observer.calls),
+                    "call_edges": dict(observer.call_edges),
+                    "instruction_counts": dict(observer.instruction_counts),
                 }
             )
-        sys.settrace(previous_trace)
+
+
+def test_ir_step_budget_counts_dispatched_instructions() -> None:
+    source = "fn main() -> i64:\n    return 7\n"
+    compilation = compile_source(source)
+    assert compilation.ir is not None
+    entry = next(function for function in compilation.ir.functions if function.name == "main")
+    expected_steps = sum(len(block.instructions) for block in entry.blocks)
+    metrics: dict[str, object] = {}
+
+    assert _execute_ir_with_step_budget(
+        compilation.ir,
+        source_text=source,
+        max_steps=expected_steps,
+        metrics=metrics,
+    ) == 7
+    assert metrics["steps"] == expected_steps
+    assert metrics["instruction_counts"] == {"main": expected_steps}
+    assert metrics["calls"] == {"main": 1}
+
+    with pytest.raises(AssertionError, match="IR execution exceeded 1 instructions"):
+        _execute_ir_with_step_budget(
+            compilation.ir,
+            source_text=source,
+            max_steps=1,
+        )
 
 
 def _emit_ng_events(source: str) -> list[int]:
@@ -414,11 +360,13 @@ def _emit_ng_source_set_events(
     *,
     entry_module: str = "main",
     max_steps: int = 10_000_000,
+    metrics: dict[str, object] | None = None,
 ) -> tuple[bytes, list[int]]:
     status, source, cells = _run_ng_source_set_events(
         sources,
         entry_module=entry_module,
         max_steps=max_steps,
+        metrics=metrics,
     )
     if status != 0:
         raise AssertionError(
@@ -2368,6 +2316,23 @@ def test_ng_source_set_grows_type_table_for_generic_references() -> None:
     assert execute_ir(ng_ir) == execute_ir(reference) == 0
 
 
+def test_ng_vector_set_nested_value_call_keeps_call_pool_contiguous() -> None:
+    source = (
+        "fn identity(value: i64) -> i64:\n"
+        "    return value\n"
+        "fn main() -> i64:\n"
+        "    mut values: vector<i64> = vector_new<i64>(1)\n"
+        "    discard vector_push<i64>(&mut values, 0)\n"
+        "    discard vector_set<i64>(&mut values, identity(0), identity(41))\n"
+        "    return vector_get<i64>(&values, 0)\n"
+    )
+
+    cells = _emit_ng_events(source)
+    ng_ir = decode_ng_ir_events(source.encode("utf-8"), cells)
+    verify_ir(ng_ir)
+    assert execute_ir(ng_ir) == 41
+
+
 def test_ng_record_parameter_preallocates_flattened_variable_and_register_capacity() -> None:
     fields = "\n".join(f"    field_{index:02d}: i64" for index in range(48))
     sources = {
@@ -2554,17 +2519,17 @@ fn main() -> i64:
         metrics=metrics,
     )
     assert result == -comparison_count
-    line_counts = metrics["line_counts"]
-    assert isinstance(line_counts, dict)
-    equality_events = int(line_counts.get("ng_spans_equal", 0))
+    instruction_counts = metrics["instruction_counts"]
+    assert isinstance(instruction_counts, dict)
+    equality_steps = int(instruction_counts.get("ng_spans_equal", 0))
     calls = metrics["calls"]
     assert isinstance(calls, dict)
     equality_calls = int(calls.get("ng_spans_equal", 0))
     print(
         "SPAN_EQUALITY_PROFILE "
         f"calls={equality_calls} "
-        f"ir_steps={equality_events} "
-        f"steps_per_call={equality_events // equality_calls}"
+        f"ir_steps={equality_steps} "
+        f"steps_per_call={equality_steps // equality_calls}"
     )
 
 
@@ -2670,9 +2635,9 @@ fn main() -> vector<i64>:
 
     assert hasattr(result, "element_type")
     assert [int(result.get(index)) for index in range(result.length)] == [5, 4, -12, 7, -14]
-    line_counts = metrics["line_counts"]
-    assert isinstance(line_counts, dict)
-    lookup_steps = int(line_counts.get("ng_ir_variable_field_index", 0))
+    instruction_counts = metrics["instruction_counts"]
+    assert isinstance(instruction_counts, dict)
+    lookup_steps = int(instruction_counts.get("ng_ir_variable_field_index", 0))
     print(f"IR_FIELD_LOOKUP_PROFILE variables={9 + sibling_count + root_count} steps={lookup_steps}")
     assert lookup_steps < 25_000
 
@@ -2728,11 +2693,11 @@ fn main() -> vector<i64>:
 
     assert hasattr(result, "element_type")
     assert [int(result.get(index)) for index in range(result.length)] == [child_count + 1, -12, -14]
-    line_counts = metrics["line_counts"]
-    assert isinstance(line_counts, dict)
+    instruction_counts = metrics["instruction_counts"]
+    assert isinstance(instruction_counts, dict)
     calls = metrics["calls"]
     assert isinstance(calls, dict)
-    lookup_steps = int(line_counts.get("ng_ir_variable_index", 0))
+    lookup_steps = int(instruction_counts.get("ng_ir_variable_index", 0))
     fingerprint_calls = int(calls.get("ng_span_fingerprint", 0))
     total_steps = int(metrics["steps"])
     print(
@@ -2829,7 +2794,7 @@ def test_ng_self_compiles_real_span_fingerprint_function() -> None:
         metrics=metrics,
     )
     assert status == 0, (
-        f"NG status={status}; line_counts={metrics.get('line_counts')}; "
+        f"NG status={status}; instruction_counts={metrics.get('instruction_counts')}; "
         f"event_tail={cells[-32:]}"
     )
     ng_ir = decode_ng_ir_events(source, cells)
@@ -3132,8 +3097,9 @@ def test_ng_self_compiles_real_semantic_module() -> None:
     reference = compile_sources(sources, entry_module="app").ir
     assert reference is not None
 
+    metrics: dict[str, object] = {}
     source, cells = _emit_ng_source_set_events(
-        sources, entry_module="app", max_steps=1_000_000_000
+        sources, entry_module="app", max_steps=1_000_000_000, metrics=metrics
     )
     ng_ir = decode_ng_ir_events(source, cells)
     verify_ir(ng_ir)
@@ -3143,6 +3109,16 @@ def test_ng_self_compiles_real_semantic_module() -> None:
         actual_structure, expected_structure, "semantic_self_compile"
     )
     assert execute_ir(ng_ir) == execute_ir(reference) == 0
+    instruction_counts = metrics["instruction_counts"]
+    assert isinstance(instruction_counts, dict)
+    calls = metrics["calls"]
+    assert isinstance(calls, dict)
+    print(
+        "SEMANTIC_SELF_COMPILE_IR_PROFILE "
+        f"steps={metrics['steps']} "
+        f"hot_functions={Counter(instruction_counts).most_common(12)} "
+        f"calls={Counter(calls).most_common(12)}"
+    )
 
 
 @pytest.mark.s3_native
