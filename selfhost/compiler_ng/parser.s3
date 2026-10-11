@@ -1917,6 +1917,9 @@ fn ng_import_continuation_valid(source: &bytes, separator_end: i64, next_start: 
     return -1
 
 export fn ng_parse_module_header(source: &mut bytes, tokens: &vector<NgToken>, module_index: i64, source_start: i64, source_end: i64, path_start: i64, path_end: i64, imports: &mut vector<NgImport>) -> NgModule:
+    return ng_parse_module_header_at(source, tokens, module_index, 0, source_start, source_end, path_start, path_end, imports)
+
+export fn ng_parse_module_header_at(source: &mut bytes, tokens: &vector<NgToken>, module_index: i64, token_base_index: i64, source_start: i64, source_end: i64, path_start: i64, path_end: i64, imports: &mut vector<NgImport>) -> NgModule:
     mut cursor: vector<i64> = vector_new<i64>(1)
     mut current: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut module_name: NgSpan = NgSpan(start=-1, end=-1)
@@ -1932,7 +1935,7 @@ export fn ng_parse_module_header(source: &mut bytes, tokens: &vector<NgToken>, m
     mut import_pending: trit = 0
     mut symbol_pending: trit = 0
     mut separator_end: i64 = 0
-    discard vector_push<i64>(&mut cursor, 0)
+    discard vector_push<i64>(&mut cursor, token_base_index)
     current = ng_token_at(tokens, &mut cursor)
     match ng_token_spells(&*source, current, text_from_static("module"), 109):
         -1:
