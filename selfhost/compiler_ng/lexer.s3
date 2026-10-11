@@ -148,11 +148,11 @@ export fn ng_spans_equal(source: &bytes, left_start: i64, left_end: i64, right_s
         1:
             return 0
 
-fn ng_advance_line_indent(source: &bytes, start: i64, end: i64, state: &mut vector<i64>) -> i64:
+fn ng_advance_line_indent(source: &bytes, start: i64, end: i64, initial_indent: i64, initial_prefix_open: i64, state: &mut vector<i64>) -> i64:
     mut cursor: i64 = start
     mut unit: i64 = 0
-    mut indent: i64 = vector_get<i64>(&*state, 0)
-    mut prefix_open: i64 = vector_get<i64>(&*state, 1)
+    mut indent: i64 = initial_indent
+    mut prefix_open: i64 = initial_prefix_open
     while cursor < end:
         unit = to_i64(bytes_get(source, cursor))
         match unit <=> 10:
@@ -712,8 +712,10 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
                 -1:
                     token_start = next
                 0:
+                    discard vector_set<i64>(&mut *state, 1, prefix_open)
                     return next
                 1:
+                    discard vector_set<i64>(&mut *state, 1, prefix_open)
                     return next
         0:
             unit = unit
@@ -777,7 +779,7 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
         -1:
             match unit <=> 34:
                 0:
-                    discard ng_advance_line_indent(source, token_start, next, state)
+                    discard ng_advance_line_indent(source, token_start, next, indent, prefix_open, state)
                 -1:
                     discard vector_set<i64>(&mut *state, 1, 0)
                 1:
