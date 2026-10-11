@@ -765,7 +765,7 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
             match character_class < 10:
                 -1:
                     discard vector_set<i64>(&mut *state, 1, 0)
-                    return ng_scan_symbol(source, token_start, length, tokens, indent, base)
+                    return ng_emit_at(tokens, 300 + unit, token_start, token_start + 1, indent, base)
                 0:
                     return -1
                 1:
