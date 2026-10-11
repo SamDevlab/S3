@@ -204,6 +204,50 @@ def test_nextgen_runtime_lexer_records_line_indentation_once() -> None:
     assert _nextgen_conformance_result(source, _python_tokens(source)) == 0
 
 
+def test_nextgen_runtime_lexer_supports_global_source_offsets() -> None:
+    source = "alpha + 7"
+    base = 37
+    wrapper = f"""
+fn main() -> i64:
+    mut source_text: text = text_from_static({json.dumps(source)})
+    mut source_bytes: bytes = bytes_from_text(&source_text)
+    mut tokens: vector<NgToken> = vector_new<NgToken>(16)
+    mut status: i64 = ng_lex_at(&source_bytes, &mut tokens, {base})
+    match status <=> 0:
+        -1:
+            return -1
+        0:
+            mut first: NgToken = vector_get<NgToken>(&tokens, 0)
+            mut last: NgToken = vector_get<NgToken>(&tokens, vector_len<NgToken>(&tokens) - 1)
+            match first.start <=> {base}:
+                -1:
+                    return 1
+                0:
+                    status = status
+                1:
+                    return 1
+            match first.end <=> {base + len("alpha")}:
+                -1:
+                    return 2
+                0:
+                    status = status
+                1:
+                    return 2
+            match last.start <=> {base + len(source)}:
+                -1:
+                    return 3
+                0:
+                    return 0
+                1:
+                    return 3
+        1:
+            return -1
+"""
+    compilation = compile_source(_LEXER_SOURCE + "\n" + wrapper)
+    assert compilation.ir is not None
+    assert int(execute_ir(compilation.ir)) == 0
+
+
 def test_nextgen_runtime_lexer_preserves_indentation_after_multiline_string() -> None:
     source = 'alpha\n    "first line\n  second line"\n  omega'
     string_start = source.index('"')

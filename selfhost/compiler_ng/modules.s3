@@ -1,6 +1,6 @@
 module selfhost.compiler_ng.modules
 
-from selfhost.compiler_ng.lexer import NgToken, ng_lex, ng_span_fingerprint, ng_spans_equal
+from selfhost.compiler_ng.lexer import NgToken, ng_lex_at, ng_span_fingerprint, ng_spans_equal
 from selfhost.compiler_ng.parser import NgFunction, NgImport, NgModule, NgSpan, NgAstNode, NgParameter, NgRecord, NgField, ng_parse_module_header_at, ng_parse_module_functions, ng_validate_nominal_types
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table
 from selfhost.compiler_ng.semantic import ng_builtin_call_kind, ng_encode_resolved_call_function, ng_function_index_for_node, ng_named_spans_equal, ng_resolve_semantic_nodes, ng_resolved_builtin_call_marker
@@ -814,7 +814,6 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
     mut unit: NgSourceUnit = NgSourceUnit(path=text_from_static(""), contents=bytes_new(1))
     mut path_bytes: bytes = bytes_new(1)
     mut tokens: vector<NgToken> = vector_new<NgToken>(1)
-    mut unit_tokens: vector<NgToken> = vector_new<NgToken>(1)
     mut modules: vector<NgModule> = vector_new<NgModule>(unit_count + 1)
     mut imports: vector<NgImport> = vector_new<NgImport>(1)
     mut functions: vector<NgFunction> = vector_new<NgFunction>(1)
@@ -829,9 +828,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
     mut main_text: text = text_from_static("main")
     mut main_bytes: bytes = bytes_from_text(&main_text)
     mut function_index: i64 = 0
-    mut token_copy_index: i64 = 0
     mut token_base_index: i64 = 0
-    mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut target_module: i64 = -1
     mut entry_function: i64 = -1
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
@@ -885,20 +882,12 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
         discard ng_append_bytes(source, &path_bytes)
         path_end = bytes_len(&*source)
         discard bytes_push(source, 10)
-        unit_tokens = vector_new<NgToken>(bytes_len(&unit.contents) + 1)
-        status = ng_lex(&unit.contents, &mut unit_tokens)
+        token_base_index = vector_len<NgToken>(&tokens)
+        status = ng_lex_at(&unit.contents, &mut tokens, source_start)
         match status <=> 0:
             -1:
                 return -1
             0:
-                token_base_index = vector_len<NgToken>(&tokens)
-                token_copy_index = 0
-                while token_copy_index < vector_len<NgToken>(&unit_tokens):
-                    token = vector_get<NgToken>(&unit_tokens, token_copy_index)
-                    token.start = token.start + source_start
-                    token.end = token.end + source_start
-                    discard vector_push<NgToken>(&mut tokens, token)
-                    token_copy_index = token_copy_index + 1
                 module_item = ng_parse_module_header_at(source, &tokens, source_index, token_base_index, source_start, source_end, path_start, path_end, &mut imports)
                 match module_item.name_start < 0:
                     -1:
