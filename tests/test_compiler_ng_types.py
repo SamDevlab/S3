@@ -118,3 +118,31 @@ def test_ng_type_table_interns_composite_and_nominal_types_deterministically() -
         1, 5, 6, -1, 1, -1, 13, 14, 13, 0, -1,
         -1, -1, -1, -1, -1, 0, 14, 14, -1, 1, 0, 14,
     ]
+
+
+def test_ng_type_span_equality_preserves_all_byte_mismatch_positions() -> None:
+    wrapper = '''\
+fn main() -> vector<i64>:
+    mut text_value: text = text_from_static("alpha bravo alxha alphb")
+    mut source: bytes = bytes_from_text(&text_value)
+    mut result: vector<i64> = vector_new<i64>(5)
+    discard vector_push<i64>(&mut result, to_i64(ng_type_bytes_equal(&source, 0, 5, 0, 5)))
+    discard vector_push<i64>(&mut result, to_i64(ng_type_bytes_equal(&source, 0, 5, 6, 11)))
+    discard vector_push<i64>(&mut result, to_i64(ng_type_bytes_equal(&source, 0, 5, 12, 17)))
+    discard vector_push<i64>(&mut result, to_i64(ng_type_bytes_equal(&source, 0, 5, 18, 23)))
+    discard vector_push<i64>(&mut result, to_i64(ng_type_bytes_equal(&source, 3, 3, 9, 9)))
+    return result
+'''
+    compiler_source = "\n".join(
+        _module_body(path)
+        for path in (
+            "selfhost/compiler_ng/character_classes.s3",
+            "selfhost/compiler_ng/lexer.s3",
+            "selfhost/compiler_ng/types.s3",
+        )
+    )
+    compilation = compile_source(compiler_source + "\n" + wrapper)
+    assert compilation.ir is not None
+    output = execute_ir(compilation.ir)
+    assert isinstance(output, DynamicVector)
+    assert [int(value) for value in output] == [-1, 0, 0, 0, -1]

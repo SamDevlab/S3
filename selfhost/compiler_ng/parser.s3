@@ -879,16 +879,18 @@ fn ng_local_nominal_type_id(source: &bytes, types: &vector<NgTypeDescriptor>, mo
         descriptor = vector_get<NgTypeDescriptor>(types, index)
         match descriptor.kind <=> 7:
             0:
-                descriptor_module_length = descriptor.module_end - descriptor.module_start
-                match module_length <=> descriptor_module_length:
+                descriptor_name_length = descriptor.name_end - descriptor.name_start
+                match name_length <=> descriptor_name_length:
                     -1:
                         index = index + 1
                     0:
-                        match ng_spans_equal(source, descriptor.module_start, descriptor.module_end, module_start, module_end):
+                        descriptor_module_length = descriptor.module_end - descriptor.module_start
+                        match module_length <=> descriptor_module_length:
                             -1:
-                                descriptor_name_length = descriptor.name_end - descriptor.name_start
-                                match name_length <=> descriptor_name_length:
-                                    0:
+                                index = index + 1
+                            0:
+                                match ng_spans_equal(source, descriptor.module_start, descriptor.module_end, module_start, module_end):
+                                    -1:
                                         match ng_spans_equal(source, descriptor.name_start, descriptor.name_end, name.start, name.end):
                                             -1:
                                                 return index + 1
@@ -896,12 +898,10 @@ fn ng_local_nominal_type_id(source: &bytes, types: &vector<NgTypeDescriptor>, mo
                                                 index = index + 1
                                             1:
                                                 index = index + 1
-                                    -1:
+                                    0:
                                         index = index + 1
                                     1:
                                         index = index + 1
-                            0:
-                                index = index + 1
                             1:
                                 index = index + 1
                     1:
