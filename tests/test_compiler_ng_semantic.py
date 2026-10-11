@@ -593,6 +593,22 @@ def test_nextgen_semantic_checks_generic_vector_push_element_and_mutability() ->
     assert _ng_module_semantic_statuses([immutable_container, mismatched_element]) == [-14, -14]
 
 
+def test_nextgen_vector_len_accepts_records_with_non_scalar_fields() -> None:
+    source = (
+        "module app\n"
+        "record SourceUnit:\n"
+        "    path: text\n"
+        "    contents: bytes\n"
+        "fn source_count(units: &vector<SourceUnit>) -> i64:\n"
+        "    return vector_len<SourceUnit>(units)\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+
+    assert compile_source(source).ir is not None
+    assert _ng_module_semantic_statuses([source]) == [0]
+
+
 def test_nextgen_semantic_checks_generic_vector_get_and_set_descriptors() -> None:
     valid = (
         "module app\n"

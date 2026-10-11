@@ -151,6 +151,48 @@ def _execute_ir_with_step_budget(
                     callsite = f"node={node_id} span={node[1]}:{node[2]} callee={call_name!r}"
                 except (AttributeError, IndexError, TypeError, ValueError):
                     callsite = f"node={node_id!r}"
+            elif (
+                function.name == "ng_generic_vector_len_type"
+                and caller_function is not None
+                and caller_function.name == "ng_generic_call_type"
+            ):
+                parameter_registers = {
+                    parameter.name: parameter.register
+                    for parameter in caller_function.parameters
+                }
+
+                def parameter_value(name: str):
+                    register = parameter_registers.get(name)
+                    cell = caller.registers.get(register) if register is not None else None
+                    value = getattr(cell, "value", None)
+                    reference_cell = getattr(value, "cell", None)
+                    if reference_cell is not None:
+                        value = reference_cell.value
+                    return getattr(value, "owner", value)
+
+                try:
+                    source = parameter_value("source").to_bytes()
+                    nodes = parameter_value("nodes")
+                    call_node = {
+                        field: parameter_value(f"call_node__{field}")
+                        for field in ("kind", "start", "end", "left", "right", "operation")
+                    }
+                    argument_list = nodes.get(call_node["left"])
+                    argument = nodes.get(argument_list[3])
+                    call_text = source[call_node["start"] : call_node["end"]].decode(
+                        "utf-8", errors="replace"
+                    )
+                    argument_text = source[argument[1] : argument[2]].decode(
+                        "utf-8", errors="replace"
+                    )
+                    callsite = (
+                        f"span={call_node['start']}:{call_node['end']} call={call_text!r} "
+                        f"type_id={call_node['right']} argument_kind={argument[0]} "
+                        f"argument_span={argument[1]}:{argument[2]} "
+                        f"argument={argument_text!r}"
+                    )
+                except (AttributeError, IndexError, TypeError, ValueError):
+                    callsite = "vector_len callsite unavailable"
             self.status_returns.append(
                 (
                     result,

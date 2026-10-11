@@ -669,10 +669,9 @@ export fn ng_find_function(source: &bytes, functions: &vector<NgFunction>, name_
                 index = index + 1
     return -13
 
-fn ng_vector_reference_matches(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, reference_type_id: i64, element_type_id: i64) -> trit:
+fn ng_vector_reference_element_type_matches(source: &bytes, types: &vector<NgTypeDescriptor>, reference_type_id: i64, element_type_id: i64) -> trit:
     mut reference_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut vector_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
-    mut element_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     match reference_type_id > 0:
         -1:
             match reference_type_id <= vector_len<NgTypeDescriptor>(types):
@@ -693,7 +692,7 @@ fn ng_vector_reference_matches(source: &bytes, types: &vector<NgTypeDescriptor>,
                                                                 -1:
                                                                     match element_type_id <= vector_len<NgTypeDescriptor>(types):
                                                                         -1:
-                                                                            return ng_vector_element_supported(types, fields, element_type_id)
+                                                                            return -1
                                                                         0:
                                                                             return 0
                                                                         1:
@@ -727,6 +726,15 @@ fn ng_vector_reference_matches(source: &bytes, types: &vector<NgTypeDescriptor>,
                 1:
                     return 0
         0:
+            return 0
+        1:
+            return 0
+
+fn ng_vector_reference_matches(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, reference_type_id: i64, element_type_id: i64) -> trit:
+    match ng_vector_reference_element_type_matches(source, types, reference_type_id, element_type_id) <=> -1:
+        0:
+            return ng_vector_element_supported(types, fields, element_type_id)
+        -1:
             return 0
         1:
             return 0
@@ -1662,7 +1670,7 @@ fn ng_generic_vector_len_type(source: &bytes, types: &vector<NgTypeDescriptor>, 
                                     match argument.right <=> -1:
                                         0:
                                             argument_type = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, argument.left)
-                                            match ng_vector_reference_matches(source, types, fields, argument_type, call_node.right) <=> -1:
+                                            match ng_vector_reference_element_type_matches(source, types, argument_type, call_node.right) <=> -1:
                                                 0:
                                                     match ng_expected_i64_compatible(expected_type) <=> -1:
                                                         0:
