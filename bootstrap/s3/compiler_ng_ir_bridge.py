@@ -41,6 +41,8 @@ V18 adds opcode 20 for type-preserving unary negation, mapped to canonical
 INVERT semantics for i64, f64, trit, and tryte register types.
 V19 adds opcode 21 for writes through a typed mutable reference. Its target
 type and mutability are derived from the reference register's descriptor.
+V20 adds typed ``vector_pop<T>`` CALL targets. Scalar targets use kind 25;
+record targets extend kind 19 operation ID 6 and carry ordered kind 20 fields.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
@@ -70,7 +72,7 @@ from .static_text import StaticTextDecodeError, decode_static_text
 from .vector_types import composite_vector_runtime_name_from_key
 
 
-NG_IR_FORMAT_VERSION = 19
+NG_IR_FORMAT_VERSION = 20
 NG_IR_RECORD_WIDTH = 8
 
 _V5_VECTOR_NEW_BUILTINS = {
@@ -92,6 +94,11 @@ _V16_VECTOR_ACCESS_BUILTINS = {
     1: {1: "i64_vector_get", 2: "i64_vector_set"},
     3: {1: "tryte_vector_get", 2: "tryte_vector_set"},
     4: {1: "f64_vector_get", 2: "f64_vector_set"},
+}
+_V20_VECTOR_POP_BUILTINS = {
+    1: "i64_vector_pop",
+    3: "tryte_vector_pop",
+    4: "f64_vector_pop",
 }
 
 _TYPE_CODES_V1 = {
@@ -205,7 +212,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -707,6 +714,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                             version >= 11 and operand0 == -7
                             or version >= 14 and operand0 >= 0
                             or version >= 16 and operand0 in {-8, -9}
+                            or version >= 20 and operand0 in {-10, -11}
                         )
                     )
                 ):
@@ -843,12 +851,16 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     and operand0 in {-8, -9}
                     and cursor < len(records)
                     and records[cursor][0] == 19
+                    or version >= 20
+                    and operand0 == -10
+                    and cursor < len(records)
+                    and records[cursor][0] == 19
                 ):
                     target = take(19, "V9 composite vector CALL target")
                     _, target_owner, target_instruction, builtin_id, element_type_id, key_start, key_end, field_count = target
                     if (target_owner, target_instruction) != (function_index, instruction_index):
                         raise NGIRDecodeError("malformed V9 composite vector target identity")
-                    expected_builtin_id = {-4: 1, -5: 2, -6: 3, -8: 4, -9: 5}[operand0]
+                    expected_builtin_id = {-4: 1, -5: 2, -6: 3, -8: 4, -9: 5, -10: 6}[operand0]
                     if builtin_id != expected_builtin_id:
                         raise NGIRDecodeError("malformed V9 composite vector operation metadata")
                     if operand0 in {-4, -5, -6} and immediate != 0:
@@ -884,7 +896,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                             raise NGIRDecodeError("V9 composite vector uses an unsupported field type")
                         field_type_ids.append(field_type_id)
 
-                    operation = {-4: "new", -5: "len", -6: "push", -8: "get", -9: "set"}[operand0]
+                    operation = {-4: "new", -5: "len", -6: "push", -8: "get", -9: "set", -10: "pop"}[operand0]
                     field_codes = tuple(
                         type_for(field_type_id, "V9 composite vector field").value
                         for field_type_id in field_type_ids
@@ -1008,6 +1020,32 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                         for register, field_type_id in zip(call_arguments[2:], field_type_ids, strict=True):
                             if not 0 <= register < len(register_type_ids) or register_type_ids[register] != field_type_id:
                                 raise NGIRDecodeError("V16 composite vector_set value cells disagree with its record layout")
+                    elif operand0 == -10:
+                        if immediate != field_count or operand_count != 1 or len(call_arguments) != 1 or result is None:
+                            raise NGIRDecodeError("V20 composite vector_pop result width disagrees with its record")
+                        if result < 0 or result + field_count > len(register_type_ids):
+                            raise NGIRDecodeError("V20 composite vector_pop result range is outside the register table")
+                        reference_register = call_arguments[0]
+                        if not 0 <= reference_register < len(register_type_ids):
+                            raise NGIRDecodeError("V20 composite vector_pop references a missing argument register")
+                        reference_descriptor = type_descriptors.get(register_type_ids[reference_register])
+                        vector_descriptor = (
+                            type_descriptors.get(reference_descriptor.target_type)
+                            if reference_descriptor is not None and reference_descriptor.kind == 9
+                            else None
+                        )
+                        if (
+                            reference_descriptor is None
+                            or reference_descriptor.kind != 9
+                            or reference_descriptor.mutable != 1
+                            or vector_descriptor is None
+                            or vector_descriptor.kind != 8
+                            or vector_descriptor.element_type != element_type_id
+                        ):
+                            raise NGIRDecodeError("V20 composite vector_pop metadata disagrees with its reference")
+                        if tuple(register_type_ids[result : result + field_count]) != tuple(field_type_ids):
+                            raise NGIRDecodeError("V20 composite vector_pop result cells disagree with its record layout")
+                        instruction_results = tuple(range(result, result + field_count))
                     else:
                         if operand_count != field_count + 1 or len(call_arguments) != operand_count:
                             raise NGIRDecodeError("V9 vector_push argument count disagrees with its record layout")
@@ -1103,6 +1141,49 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                             or result_type.kind != 3
                         ):
                             raise NGIRDecodeError("V16 vector_set value or result type disagrees with its signature")
+                    callee_index = None
+                    callee_builtin = builtin_name
+                elif version >= 20 and operand0 == -11:
+                    target = take(25, "V20 scalar vector_pop CALL target")
+                    _, target_owner, target_instruction, builtin_id, element_type_id, *reserved = target
+                    if (
+                        (target_owner, target_instruction) != (function_index, instruction_index)
+                        or any(reserved)
+                        or immediate != element_type_id
+                    ):
+                        raise NGIRDecodeError("malformed V20 scalar vector_pop target identity")
+                    element_type = type_descriptors.get(element_type_id)
+                    builtin_name = _V20_VECTOR_POP_BUILTINS.get(
+                        element_type.kind if element_type is not None else -1
+                    )
+                    if (
+                        builtin_id != 2
+                        or builtin_name is None
+                        or result is None
+                        or not 0 <= result < len(register_type_ids)
+                        or operand_count != 1
+                        or len(call_arguments) != 1
+                    ):
+                        raise NGIRDecodeError("V20 scalar vector_pop has unsupported metadata or argument count")
+                    reference_register = call_arguments[0]
+                    if not 0 <= reference_register < len(register_type_ids):
+                        raise NGIRDecodeError("V20 scalar vector_pop reference register is missing")
+                    reference_type = type_descriptors.get(register_type_ids[reference_register])
+                    vector_type = (
+                        type_descriptors.get(reference_type.target_type)
+                        if reference_type is not None and reference_type.kind == 9
+                        else None
+                    )
+                    if (
+                        reference_type is None
+                        or reference_type.kind != 9
+                        or reference_type.mutable != 1
+                        or vector_type is None
+                        or vector_type.kind != 8
+                        or vector_type.element_type != element_type_id
+                        or register_type_ids[result] != element_type_id
+                    ):
+                        raise NGIRDecodeError("V20 scalar vector_pop metadata disagrees with its registers")
                     callee_index = None
                     callee_builtin = builtin_name
                 elif version >= 11 and operand0 == -7:

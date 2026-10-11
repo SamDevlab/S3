@@ -349,7 +349,10 @@ def _execute_function(
                     _write(frame, register, value)
         elif op is IROpcode.RETURN:
             values = tuple(_read(frame, register) for register in instruction.operands)
-            return values if len(values) > 1 else values[0]
+            result = values if len(values) > 1 else values[0]
+            if execution_observer is not None:
+                execution_observer.function_return(caller, function, result)
+            return result
         elif op is IROpcode.JUMP:
             frame.block, frame.index = instruction.targets[0], 0; continue
         elif op is IROpcode.BRANCH3:

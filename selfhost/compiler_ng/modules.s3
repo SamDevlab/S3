@@ -928,24 +928,8 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
         unit = vector_get<NgSourceUnit>(units, source_index)
         total_source_bytes = total_source_bytes + bytes_len(&unit.contents)
         source_index = source_index + 1
-    pool_capacity = total_source_bytes + 1
     # A function declaration needs multiple source bytes; avoid sizing its wide record vector by every byte.
     function_capacity = total_source_bytes / 8 + 1
-    types = vector_new<NgTypeDescriptor>(pool_capacity)
-    status = ng_initialize_type_table(&mut types)
-    match status <=> 0:
-        -1:
-            return status
-        0:
-            status = status
-        1:
-            return status
-    imports = vector_new<NgImport>(pool_capacity)
-    functions = vector_new<NgFunction>(function_capacity)
-    records = vector_new<NgRecord>(pool_capacity)
-    fields = vector_new<NgField>(pool_capacity)
-    parameters = vector_new<NgParameter>(pool_capacity)
-    nodes = vector_new<NgAstNode>(pool_capacity)
     tokens = vector_new<NgToken>(total_source_bytes + unit_count + 1)
     source_index = 0
     while source_index < unit_count:
@@ -965,14 +949,38 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
             -1:
                 return -1
             0:
-                module_item = ng_parse_module_header_at(source, &tokens, source_index, token_base_index, source_start, source_end, path_start, path_end, &mut imports)
-                match module_item.name_start < 0:
-                    -1:
-                        return -1
-                    0:
-                        discard vector_push<NgModule>(&mut modules, module_item)
-                    1:
-                        return -1
+                module_item = NgModule(source_index=source_index, source_start=source_start, source_end=source_end, path_start=path_start, path_end=path_end, name_start=0, name_end=0, body_token_index=token_base_index, first_function=0, function_count=0, first_import=0, import_count=0)
+                discard vector_push<NgModule>(&mut modules, module_item)
+            1:
+                return -1
+        source_index = source_index + 1
+    # Source bytes bound token storage, but over-reserve wide semantic records.
+    # Each pooled semantic entry originates from at least one lexical token.
+    pool_capacity = vector_len<NgToken>(&tokens) + 16
+    imports = vector_new<NgImport>(pool_capacity)
+    types = vector_new<NgTypeDescriptor>(pool_capacity)
+    status = ng_initialize_type_table(&mut types)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            status = status
+        1:
+            return status
+    functions = vector_new<NgFunction>(function_capacity)
+    records = vector_new<NgRecord>(pool_capacity)
+    fields = vector_new<NgField>(pool_capacity)
+    parameters = vector_new<NgParameter>(pool_capacity)
+    nodes = vector_new<NgAstNode>(pool_capacity)
+    source_index = 0
+    while source_index < unit_count:
+        module_item = vector_get<NgModule>(&modules, source_index)
+        module_item = ng_parse_module_header_at(source, &tokens, module_item.source_index, module_item.body_token_index, module_item.source_start, module_item.source_end, module_item.path_start, module_item.path_end, &mut imports)
+        match module_item.name_start < 0:
+            -1:
+                return -1
+            0:
+                discard vector_set<NgModule>(&mut modules, source_index, module_item)
             1:
                 return -1
         source_index = source_index + 1

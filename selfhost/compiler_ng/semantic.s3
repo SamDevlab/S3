@@ -485,7 +485,7 @@ fn ng_contextual_expression_type(source: &bytes, types: &vector<NgTypeDescriptor
             base = vector_get<NgAstNode>(nodes, node.left)
             match base.kind <=> 5:
                 0:
-                    constructor_type = ng_record_constructor_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, base, base.right)
+                    constructor_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left, base.right)
                     match constructor_type <=> base.right:
                         0:
                             return node.right
@@ -1572,6 +1572,81 @@ fn ng_expected_i64_compatible(expected_type: i64) -> trit:
                 1:
                     return 0
 
+fn ng_generic_vector_pop_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64) -> i64:
+    mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut reference_type_id: i64 = -1
+    mut reference_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    match call_node.right > 0:
+        -1:
+            match call_node.right <= vector_len<NgTypeDescriptor>(types):
+                -1:
+                    match ng_vector_element_supported(types, fields, call_node.right):
+                        -1:
+                            match call_node.left >= 0:
+                                -1:
+                                    argument = vector_get<NgAstNode>(nodes, call_node.left)
+                                    match argument.kind <=> 6:
+                                        0:
+                                            match argument.right <=> -1:
+                                                0:
+                                                    reference_type_id = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, argument.left)
+                                                    match reference_type_id < 0:
+                                                        -1:
+                                                            return reference_type_id
+                                                        0:
+                                                            match ng_vector_reference_matches(source, types, fields, reference_type_id, call_node.right) <=> -1:
+                                                                0:
+                                                                    reference_type = vector_get<NgTypeDescriptor>(types, reference_type_id - 1)
+                                                                    match reference_type.mutable <=> 1:
+                                                                        0:
+                                                                            match expected_type > 0:
+                                                                                -1:
+                                                                                    match ng_type_equal(source, types, expected_type, call_node.right) <=> -1:
+                                                                                        0:
+                                                                                            return call_node.right
+                                                                                        -1:
+                                                                                            return -14
+                                                                                        1:
+                                                                                            return -14
+                                                                                0:
+                                                                                    return call_node.right
+                                                                                1:
+                                                                                    return call_node.right
+                                                                        -1:
+                                                                            return -14
+                                                                        1:
+                                                                            return -14
+                                                                -1:
+                                                                    return -14
+                                                                1:
+                                                                    return -14
+                                                        1:
+                                                            return -14
+                                                -1:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        -1:
+                                            return -14
+                                        1:
+                                            return -14
+                                0:
+                                    return -14
+                                1:
+                                    return -14
+                        0:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+        0:
+            return -14
+        1:
+            return -14
+
 fn ng_generic_vector_len_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64) -> i64:
     mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut argument_type: i64 = -1
@@ -2016,19 +2091,25 @@ fn ng_generic_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields
                 1:
                     return -14
         0:
-            match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_push")):
+            match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_pop")):
                 -1:
-                    return ng_generic_vector_push_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type)
+                    return ng_generic_vector_pop_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type)
                 0:
-                    match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_get")):
+                    match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_push")):
                         -1:
-                            return ng_generic_vector_get_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type)
+                            return ng_generic_vector_push_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type)
                         0:
-                            match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_set")):
+                            match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_get")):
                                 -1:
-                                    return ng_generic_vector_set_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type)
+                                    return ng_generic_vector_get_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type)
                                 0:
-                                    return -13
+                                    match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_set")):
+                                        -1:
+                                            return ng_generic_vector_set_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type)
+                                        0:
+                                            return -13
+                                        1:
+                                            return -13
                                 1:
                                     return -13
                         1:
@@ -2509,6 +2590,27 @@ fn ng_record_index_for_type(source: &bytes, types: &vector<NgTypeDescriptor>, re
                 record_index = record_index + 1
     return -1
 
+export fn ng_generic_call_result_type_argument(source: &bytes, call_node: NgAstNode) -> i64:
+    match call_node.right > 0:
+        -1:
+            match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_get")):
+                -1:
+                    return call_node.right
+                0:
+                    match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_pop")):
+                        -1:
+                            return call_node.right
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
 fn ng_resolve_record_field_node(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, function: NgFunction, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>, declaration_indices: &vector<i64>, node_scope_ids: &vector<i64>, scope_parents: &vector<i64>, record_index_by_type: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>, node_index: i64) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
     mut target: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -2517,6 +2619,7 @@ fn ng_resolve_record_field_node(source: &bytes, types: &vector<NgTypeDescriptor>
     mut record_item: NgRecord = NgRecord(module_index=0, name_start=0, name_end=0, type_id=0, first_field=0, field_count=0, exported=0)
     mut field: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
     mut target_type_id: i64 = -1
+    mut generic_result_type_id: i64 = 0
     mut owner_type_id: i64 = -1
     mut declaration_index: i64 = -1
     mut declaration: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -2542,7 +2645,14 @@ fn ng_resolve_record_field_node(source: &bytes, types: &vector<NgTypeDescriptor>
                                                 -1:
                                                     target_type_id = target.right
                                                 0:
-                                                    return -14
+                                                    generic_result_type_id = ng_generic_call_result_type_argument(source, target)
+                                                    match generic_result_type_id > 0:
+                                                        -1:
+                                                            target_type_id = generic_result_type_id
+                                                        0:
+                                                            return -14
+                                                        1:
+                                                            return -14
                                                 1:
                                                     return -14
                                         -1:
@@ -3390,6 +3500,134 @@ fn ng_resolve_reborrow_addresses(types: &mut vector<NgTypeDescriptor>, nodes: &m
         node_index = node_index + 1
     return 0
 
+fn ng_address_field_root_node(nodes: &vector<NgAstNode>, node_index: i64) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_index)
+    match node.kind <=> 14:
+        0:
+            match node.left >= 0:
+                -1:
+                    return ng_address_field_root_node(nodes, node.left)
+                0:
+                    return -1
+                1:
+                    return -1
+        -1:
+            return node_index
+        1:
+            return node_index
+
+fn ng_address_field_root_writable(source: &bytes, types: &vector<NgTypeDescriptor>, parameters: &vector<NgParameter>, nodes: &vector<NgAstNode>, function: NgFunction, address: NgAstNode, address_index: i64, field_node_id: i64, node_scope_ids: &vector<i64>, scope_parents: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>) -> trit:
+    mut root_node_id: i64 = ng_address_field_root_node(nodes, field_node_id)
+    mut root: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut declaration_index: i64 = -1
+    mut declaration: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut type_id: i64 = -1
+    mut parameter_type: i64 = -1
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut lookup_result: NgLocalLookupResult = NgLocalLookupResult(index=-1, probes=0)
+    match root_node_id >= 0:
+        -1:
+            root = vector_get<NgAstNode>(nodes, root_node_id)
+        0:
+            return 0
+        1:
+            return 0
+    match root.kind <=> 2:
+        0:
+            parameter_type = ng_parameter_type(source, parameters, function.first_parameter, function.parameter_count, root.start, root.end)
+            match parameter_type > 0:
+                -1:
+                    type_id = parameter_type
+                    match type_id <= vector_len<NgTypeDescriptor>(types):
+                        -1:
+                            descriptor = vector_get<NgTypeDescriptor>(types, type_id - 1)
+                            match descriptor.kind <=> 9:
+                                0:
+                                    return descriptor.mutable == 1
+                                -1:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    lookup_result = ng_prior_local_declaration(source, nodes, function, address, address_index, root, node_scope_ids, scope_parents, local_symbols, local_buckets, local_offsets, local_occurrences)
+                    declaration_index = lookup_result.index
+                    match declaration_index >= 0:
+                        -1:
+                            declaration = vector_get<NgAstNode>(nodes, declaration_index)
+                            type_id = declaration.operation
+                            match type_id < 0:
+                                -1:
+                                    type_id = 0 - type_id
+                                0:
+                                    type_id = type_id
+                                1:
+                                    type_id = type_id
+                            match type_id > 0:
+                                -1:
+                                    match type_id <= vector_len<NgTypeDescriptor>(types):
+                                        -1:
+                                            descriptor = vector_get<NgTypeDescriptor>(types, type_id - 1)
+                                            match descriptor.kind <=> 9:
+                                                0:
+                                                    return descriptor.mutable == 1
+                                                -1:
+                                                    match declaration.operation < 0:
+                                                        -1:
+                                                            return -1
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                1:
+                                                    return 0
+                                        0:
+                                            return 0
+                                        1:
+                                            return 0
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        -1:
+            return 0
+        1:
+            match root.kind <=> 19:
+                0:
+                    match root.operation > 0:
+                        -1:
+                            match root.operation <= vector_len<NgTypeDescriptor>(types):
+                                -1:
+                                    descriptor = vector_get<NgTypeDescriptor>(types, root.operation - 1)
+                                    match descriptor.kind <=> 9:
+                                        0:
+                                            return descriptor.mutable == 1
+                                        -1:
+                                            return 0
+                                        1:
+                                            return 0
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
+                -1:
+                    return 0
+                1:
+                    return 0
+
 fn ng_resolve_address_nodes_indexed(source: &bytes, types: &mut vector<NgTypeDescriptor>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>, declaration_indices: &vector<i64>, node_scope_ids: &vector<i64>, scope_parents: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>) -> i64:
     mut node_index: i64 = 0
     mut function_index: i64 = 0
@@ -3423,6 +3661,99 @@ fn ng_resolve_address_nodes_indexed(source: &bytes, types: &mut vector<NgTypeDes
             return resolution_status
         1:
             return resolution_status
+    while node_index < vector_len<NgAstNode>(&*nodes):
+        node = vector_get<NgAstNode>(&*nodes, node_index)
+        match node.kind <=> 18:
+            0:
+                match node.right < 0:
+                    -1:
+                        target_node_id = node.left
+                        match target_node_id >= 0:
+                            -1:
+                                match target_node_id < vector_len<NgAstNode>(&*nodes):
+                                    -1:
+                                        target = vector_get<NgAstNode>(&*nodes, target_node_id)
+                                        match target.kind <=> 14:
+                                            0:
+                                                owner_index = ng_function_index_for_node(functions, node_index)
+                                                match owner_index >= 0:
+                                                    -1:
+                                                        function = vector_get<NgFunction>(functions, owner_index)
+                                                        target_type = target.right
+                                                        match target_type > 0:
+                                                            -1:
+                                                                match target_type <= vector_len<NgTypeDescriptor>(&*types):
+                                                                    -1:
+                                                                        descriptor = vector_get<NgTypeDescriptor>(&*types, target_type - 1)
+                                                                        match descriptor.kind <= 6:
+                                                                            -1:
+                                                                                descriptor = descriptor
+                                                                            0:
+                                                                                match descriptor.kind <=> 8:
+                                                                                    0:
+                                                                                        descriptor = descriptor
+                                                                                    -1:
+                                                                                        return -14
+                                                                                    1:
+                                                                                        return -14
+                                                                            1:
+                                                                                return -14
+                                                                        match node.operation <=> 1:
+                                                                            0:
+                                                                                match ng_address_field_root_writable(source, &*types, parameters, &*nodes, function, node, node_index, target_node_id, node_scope_ids, scope_parents, local_symbols, local_buckets, local_offsets, local_occurrences) <=> -1:
+                                                                                    0:
+                                                                                        local_mutable = 1
+                                                                                    -1:
+                                                                                        return -14
+                                                                                    1:
+                                                                                        return -14
+                                                                            -1:
+                                                                                local_mutable = 0
+                                                                            1:
+                                                                                return -14
+                                                                        reference_type = ng_intern_reference_type(types, target_type, node.operation)
+                                                                        match reference_type > 0:
+                                                                            -1:
+                                                                                node.right = reference_type
+                                                                                discard vector_set<NgAstNode>(&mut *nodes, node_index, node)
+                                                                            0:
+                                                                                return -14
+                                                                            1:
+                                                                                return -14
+                                                                    0:
+                                                                        return -14
+                                                                    1:
+                                                                        return -14
+                                                            0:
+                                                                return -14
+                                                            1:
+                                                                return -14
+                                                    0:
+                                                        return -12
+                                                    1:
+                                                        return -12
+                                            -1:
+                                                node = node
+                                            1:
+                                                node = node
+                                    0:
+                                        return -14
+                                    1:
+                                        return -14
+                            0:
+                                return -14
+                            1:
+                                return -14
+                    0:
+                        node = node
+                    1:
+                        return -14
+            -1:
+                node = node
+            1:
+                node = node
+        node_index = node_index + 1
+    node_index = 0
     while node_index < vector_len<NgAstNode>(&*nodes):
         node = vector_get<NgAstNode>(&*nodes, node_index)
         match node.kind <=> 18:
