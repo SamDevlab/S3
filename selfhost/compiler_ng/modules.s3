@@ -95,76 +95,133 @@ fn ng_find_module_by_name(source: &bytes, modules: &vector<NgModule>, name_start
                 index = index + 1
     return -1
 
-fn ng_find_function_in_module(source: &bytes, modules: &vector<NgModule>, functions: &vector<NgFunction>, module_index: i64, name_start: i64, name_end: i64) -> i64:
-    mut index: i64 = -1
-    mut name_length: i64 = name_end - name_start
-    mut candidate_length: i64 = 0
-    mut fingerprint: i64 = 0
-    mut fingerprint_ready: i64 = 0
-    mut candidate_fingerprint: i64 = 0
-    mut compare_required: i64 = 1
+fn ng_function_lookup_bucket(module_index: i64, fingerprint: i64, bucket_count: i64) -> i64:
+    mut bucket: i64 = 0
+    mut adjacent_bytes: i64 = 0
+    mut module_bucket: i64 = 0
+    match bucket_count > 0:
+        -1:
+            bucket = fingerprint - (fingerprint / bucket_count) * bucket_count
+            adjacent_bytes = fingerprint / 256
+            adjacent_bytes = adjacent_bytes - (adjacent_bytes / bucket_count) * bucket_count
+            module_bucket = module_index - (module_index / bucket_count) * bucket_count
+            bucket = bucket + adjacent_bytes * 17 + module_bucket
+            bucket = bucket - (bucket / bucket_count) * bucket_count
+            return bucket
+        0:
+            return 0
+        1:
+            return 0
+
+fn ng_build_function_lookup_index(functions: &vector<NgFunction>, bucket_slots: &mut vector<i64>) -> i64:
+    mut function_index: i64 = 0
+    mut bucket_count: i64 = vector_len<i64>(&*bucket_slots)
+    mut bucket: i64 = 0
+    mut probes: i64 = 0
+    mut entry: i64 = 0
+    mut inserted: i64 = 0
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
-    mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
+    match bucket_count > vector_len<NgFunction>(functions):
+        -1:
+            function_index = 0
+        0:
+            return -20
+        1:
+            return -20
+    while function_index < vector_len<NgFunction>(functions):
+        function = vector_get<NgFunction>(functions, function_index)
+        bucket = ng_function_lookup_bucket(function.module_index, function.local_name_fingerprint, bucket_count)
+        probes = 0
+        inserted = 0
+        while probes < bucket_count:
+            entry = vector_get<i64>(&*bucket_slots, bucket)
+            match entry <=> 0:
+                0:
+                    discard vector_set<i64>(&mut *bucket_slots, bucket, function_index + 1)
+                    inserted = 1
+                -1:
+                    bucket = bucket + 1
+                1:
+                    bucket = bucket + 1
+            match bucket <=> bucket_count:
+                0:
+                    bucket = 0
+                -1:
+                    bucket = bucket
+                1:
+                    bucket = 0
+            probes = probes + 1
+            match inserted <=> 1:
+                0:
+                    probes = bucket_count
+                -1:
+                    probes = probes
+                1:
+                    probes = probes
+        match inserted <=> 1:
+            0:
+                function_index = function_index + 1
+            -1:
+                return -20
+            1:
+                return -20
+    return 0
+
+fn ng_find_function_in_module(source: &bytes, modules: &vector<NgModule>, functions: &vector<NgFunction>, bucket_slots: &vector<i64>, module_index: i64, name_start: i64, name_end: i64) -> i64:
+    mut bucket_count: i64 = vector_len<i64>(bucket_slots)
+    mut bucket: i64 = 0
+    mut probes: i64 = 0
+    mut function_index: i64 = -1
+    mut entry: i64 = 0
+    mut fingerprint: i64 = 0
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
     match module_index < 0:
         -1:
             return -1
         0:
             match module_index < vector_len<NgModule>(modules):
                 -1:
-                    module_item = vector_get<NgModule>(modules, module_index)
-                    index = module_item.first_function
-                    while index < module_item.first_function + module_item.function_count:
-                        function = vector_get<NgFunction>(functions, index)
-                        candidate_length = function.local_name_end - function.local_name_start
-                        match name_length <=> candidate_length:
-                            -1:
-                                index = index + 1
-                            0:
-                                match fingerprint_ready <=> 0:
+                    match bucket_count > 0:
+                        -1:
+                            fingerprint = ng_span_fingerprint(source, name_start, name_end)
+                            bucket = ng_function_lookup_bucket(module_index, fingerprint, bucket_count)
+                            while probes < bucket_count:
+                                entry = vector_get<i64>(bucket_slots, bucket)
+                                match entry <=> 0:
                                     0:
-                                        fingerprint = ng_span_fingerprint(source, name_start, name_end)
-                                        fingerprint_ready = 1
+                                        return -1
                                     -1:
-                                        fingerprint_ready = fingerprint_ready
+                                        return -1
                                     1:
-                                        fingerprint_ready = fingerprint_ready
-                                candidate_fingerprint = function.local_name_fingerprint
-                                compare_required = 1
-                                match fingerprint > 0:
-                                    -1:
-                                        match candidate_fingerprint > 0:
-                                            -1:
-                                                match fingerprint <=> candidate_fingerprint:
+                                        function_index = entry - 1
+                                        function = vector_get<NgFunction>(functions, function_index)
+                                        match function.module_index <=> module_index:
+                                            0:
+                                                match ng_named_spans_equal(source, name_start, name_end, fingerprint, function.local_name_start, function.local_name_end, function.local_name_fingerprint):
                                                     -1:
-                                                        compare_required = 0
+                                                        return function_index
                                                     0:
-                                                        compare_required = 1
+                                                        probes = probes
                                                     1:
-                                                        compare_required = 0
-                                            0:
-                                                compare_required = 1
-                                            1:
-                                                compare_required = 1
-                                    0:
-                                        compare_required = 1
-                                    1:
-                                        compare_required = 1
-                                match compare_required <=> 1:
-                                    0:
-                                        match ng_named_spans_equal(source, name_start, name_end, fingerprint, function.local_name_start, function.local_name_end, candidate_fingerprint):
+                                                        probes = probes
                                             -1:
-                                                return index
-                                            0:
-                                                index = index + 1
+                                                probes = probes
                                             1:
-                                                index = index + 1
-                                    -1:
-                                        index = index + 1
-                                    1:
-                                        index = index + 1
-                            1:
-                                index = index + 1
-                    return -1
+                                                probes = probes
+                                        bucket = bucket + 1
+                                        match bucket <=> bucket_count:
+                                            0:
+                                                bucket = 0
+                                            -1:
+                                                bucket = bucket
+                                            1:
+                                                bucket = 0
+                                        probes = probes + 1
+                            return -1
+                        0:
+                            return -1
+                        1:
+                            return -1
                 0:
                     return -1
                 1:
@@ -415,7 +472,7 @@ fn ng_validate_functions(source: &bytes, modules: &vector<NgModule>, functions: 
         left_index = left_index + 1
     return 0
 
-fn ng_rewrite_imported_nominal_types(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, records: &vector<NgRecord>, types: &mut vector<NgTypeDescriptor>) -> i64:
+fn ng_rewrite_imported_nominal_types(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, function_lookup: &vector<i64>, records: &vector<NgRecord>, types: &mut vector<NgTypeDescriptor>) -> i64:
     mut type_index: i64 = 6
     mut module_index: i64 = -1
     mut import_index: i64 = -1
@@ -449,7 +506,7 @@ fn ng_rewrite_imported_nominal_types(source: &bytes, modules: &vector<NgModule>,
                                         return -3
                                     0:
                                         record_index = ng_find_record_in_module(source, records, target_index, imported.symbol_start, imported.symbol_end)
-                                        function_index = ng_find_function_in_module(source, modules, functions, target_index, imported.symbol_start, imported.symbol_end)
+                                        function_index = ng_find_function_in_module(source, modules, functions, function_lookup, target_index, imported.symbol_start, imported.symbol_end)
                                         match record_index < 0:
                                             -1:
                                                 return -5
@@ -505,7 +562,7 @@ fn ng_rewrite_imported_nominal_types(source: &bytes, modules: &vector<NgModule>,
         type_index = type_index + 1
     return 0
 
-fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, records: &vector<NgRecord>) -> i64:
+fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, function_lookup: &vector<i64>, records: &vector<NgRecord>) -> i64:
     mut import_index: i64 = 0
     mut prior_index: i64 = 0
     mut target_index: i64 = -1
@@ -536,7 +593,7 @@ fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vec
                 target_index = target_index
             1:
                 target_index = target_index
-        function_index = ng_find_function_in_module(source, modules, functions, target_index, imported.symbol_start, imported.symbol_end)
+        function_index = ng_find_function_in_module(source, modules, functions, function_lookup, target_index, imported.symbol_start, imported.symbol_end)
         record_index = ng_find_record_in_module(source, records, target_index, imported.symbol_start, imported.symbol_end)
         match function_index < 0:
             -1:
@@ -608,7 +665,7 @@ fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vec
             0:
                 match ng_spans_equal(source, imported.local_start, imported.local_end, imported.symbol_start, imported.symbol_end):
                     -1:
-                        local_function = ng_find_function_in_module(source, modules, functions, imported.module_index, imported.local_start, imported.local_end)
+                        local_function = ng_find_function_in_module(source, modules, functions, function_lookup, imported.module_index, imported.local_start, imported.local_end)
                         local_record = ng_find_record_in_module(source, records, imported.module_index, imported.local_start, imported.local_end)
                         match local_function < 0:
                             -1:
@@ -628,7 +685,7 @@ fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vec
                     1:
                         return -8
             -1:
-                local_function = ng_find_function_in_module(source, modules, functions, imported.module_index, imported.local_start, imported.local_end)
+                local_function = ng_find_function_in_module(source, modules, functions, function_lookup, imported.module_index, imported.local_start, imported.local_end)
                 match local_function < 0:
                     -1:
                         local_function = local_function
@@ -724,13 +781,13 @@ fn ng_mark_unresolved_builtin_call(source: &bytes, nodes: &mut vector<NgAstNode>
         1:
             return 0
 
-fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, records: &vector<NgRecord>, caller: NgFunction, nodes: &mut vector<NgAstNode>, node_index: i64) -> i64:
+fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, function_lookup: &vector<i64>, records: &vector<NgRecord>, caller: NgFunction, nodes: &mut vector<NgAstNode>, node_index: i64) -> i64:
     mut function_index: i64 = -1
     mut import_index: i64 = -1
     mut imported: NgImport = NgImport(module_index=0, target_start=0, target_end=0, symbol_start=0, symbol_end=0, local_start=0, local_end=0)
     mut target_module: i64 = -1
     mut node: NgAstNode = vector_get<NgAstNode>(&*nodes, node_index)
-    function_index = ng_find_function_in_module(source, modules, functions, caller.module_index, node.start, node.operation)
+    function_index = ng_find_function_in_module(source, modules, functions, function_lookup, caller.module_index, node.start, node.operation)
     match function_index < 0:
         -1:
             match ng_resolve_record_constructor_call(source, modules, imports, records, caller, &mut *nodes, node_index) <=> 0:
@@ -745,7 +802,7 @@ fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vec
                         0:
                             imported = vector_get<NgImport>(imports, import_index)
                             target_module = ng_find_import_target(source, modules, imports, import_index)
-                            function_index = ng_find_function_in_module(source, modules, functions, target_module, imported.symbol_start, imported.symbol_end)
+                            function_index = ng_find_function_in_module(source, modules, functions, function_lookup, target_module, imported.symbol_start, imported.symbol_end)
                             match function_index < 0:
                                 -1:
                                     return -4
@@ -765,7 +822,7 @@ fn ng_resolve_one_call(source: &bytes, modules: &vector<NgModule>, imports: &vec
     discard vector_set<NgAstNode>(&mut *nodes, node_index, node)
     return 0
 
-fn ng_resolve_module_calls(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, records: &vector<NgRecord>, nodes: &mut vector<NgAstNode>) -> i64:
+fn ng_resolve_module_calls(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, function_lookup: &vector<i64>, records: &vector<NgRecord>, nodes: &mut vector<NgAstNode>) -> i64:
     mut node_index: i64 = 0
     mut function_index: i64 = -1
     mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=0, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
@@ -779,7 +836,7 @@ fn ng_resolve_module_calls(source: &bytes, modules: &vector<NgModule>, imports: 
                 match function_index >= 0:
                     -1:
                         function = vector_get<NgFunction>(functions, function_index)
-                        status = ng_resolve_one_call(source, modules, imports, functions, records, function, &mut *nodes, node_index)
+                        status = ng_resolve_one_call(source, modules, imports, functions, function_lookup, records, function, &mut *nodes, node_index)
                         match status <=> 0:
                             -1:
                                 return status
@@ -823,11 +880,14 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
     mut nodes: vector<NgAstNode> = vector_new<NgAstNode>(1)
     mut types: vector<NgTypeDescriptor> = vector_new<NgTypeDescriptor>(16)
     mut order: vector<i64> = vector_new<i64>(unit_count + 1)
+    mut function_lookup: vector<i64> = vector_new<i64>(1)
     mut status: i64 = 0
     mut entry_bytes: bytes = bytes_from_text(&entry_module)
     mut main_text: text = text_from_static("main")
     mut main_bytes: bytes = bytes_from_text(&main_text)
     mut function_index: i64 = 0
+    mut function_lookup_index: i64 = 0
+    mut function_lookup_capacity: i64 = 0
     mut token_base_index: i64 = 0
     mut target_module: i64 = -1
     mut entry_function: i64 = -1
@@ -946,7 +1006,20 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
             1:
                 return status
         order_index = order_index + 1
-    status = ng_rewrite_imported_nominal_types(&*source, &modules, &imports, &functions, &records, &mut types)
+    function_lookup_capacity = vector_len<NgFunction>(&functions) * 2 + 1
+    function_lookup = vector_new<i64>(function_lookup_capacity)
+    while function_lookup_index < function_lookup_capacity:
+        discard vector_push<i64>(&mut function_lookup, 0)
+        function_lookup_index = function_lookup_index + 1
+    status = ng_build_function_lookup_index(&functions, &mut function_lookup)
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            status = status
+        1:
+            return status
+    status = ng_rewrite_imported_nominal_types(&*source, &modules, &imports, &functions, &function_lookup, &records, &mut types)
     match status <=> 0:
         -1:
             return status
@@ -965,7 +1038,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
         -1:
             return status
         0:
-            status = ng_validate_imports(&*source, &modules, &imports, &functions, &records)
+            status = ng_validate_imports(&*source, &modules, &imports, &functions, &function_lookup, &records)
         1:
             return status
     match status <=> 0:
@@ -1014,7 +1087,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
                 function.name_fingerprint = ng_span_fingerprint(&*source, internal_name.start, internal_name.end)
                 discard vector_set<NgFunction>(&mut functions, function_index, function)
                 function_index = function_index + 1
-            status = ng_resolve_module_calls(&*source, &modules, &imports, &functions, &records, &mut nodes)
+            status = ng_resolve_module_calls(&*source, &modules, &imports, &functions, &function_lookup, &records, &mut nodes)
             match status <=> 0:
                 -1:
                     return status

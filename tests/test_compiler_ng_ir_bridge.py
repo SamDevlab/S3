@@ -2202,6 +2202,42 @@ def test_ng_source_set_imports_exported_function_and_matches_reference() -> None
     assert "function" in translate_verified_ir(ng_ir)
 
 
+def test_ng_source_set_function_lookup_checks_fingerprint_collisions() -> None:
+    first_name = "abcdefghijkL"
+    second_name = "abcdXfghijkL"
+    sampled_positions = (0, 1, 3, 6, 9, 10, 11)
+    assert first_name != second_name
+    assert len(first_name) == len(second_name) == 12
+    assert tuple(first_name[index] for index in sampled_positions) == tuple(
+        second_name[index] for index in sampled_positions
+    )
+
+    sources = {
+        "main.s3": (
+            "module main\n"
+            f"from library import {first_name} as first\n"
+            f"from library import {second_name} as second\n"
+            "fn main() -> i64:\n"
+            "    return first() + second()\n"
+        ),
+        "library.s3": (
+            "module library\n"
+            f"export fn {first_name}() -> i64:\n"
+            "    return 1\n"
+            f"export fn {second_name}() -> i64:\n"
+            "    return 2\n"
+        ),
+    }
+    reference_ir = compile_sources(sources, entry_module="main").ir
+    assert reference_ir is not None
+    source, events = _emit_ng_source_set_events(sources, entry_module="main")
+    ng_ir = decode_ng_ir_events(source, events)
+
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 3
+
+
 def test_ng_internal_name_reserves_exact_buffer_capacity() -> None:
     source_text = "module library\nexport fn transform() -> i64:\n    return 1\n"
     function_name_start = source_text.index("transform")
@@ -2329,7 +2365,9 @@ fn main() -> i64:
     mut source: bytes = bytes_from_text(&source_text)
     mut functions: vector<NgFunction> = vector_new<NgFunction>({function_count})
     mut modules: vector<NgModule> = vector_new<NgModule>(1)
+    mut bucket_slots: vector<i64> = vector_new<i64>({function_count * 2 + 1})
     mut index: i64 = 0
+    mut bucket_index: i64 = 0
     mut name_start: i64 = 0
     mut name_end: i64 = 0
     mut fingerprint: i64 = 0
@@ -2337,6 +2375,7 @@ fn main() -> i64:
     mut module_total: i64 = 0
     mut missing_function_index: i64 = -1
     mut missing_module_index: i64 = -1
+    mut build_status: i64 = 0
     while index < {function_count}:
         name_start = index * 6
         name_end = name_start + 5
@@ -2344,17 +2383,28 @@ fn main() -> i64:
         discard vector_push<NgFunction>(&mut functions, NgFunction(start=0, end=0, name_start=name_start, name_end=name_end, local_name_start=name_start, local_name_end=name_end, first_parameter=0, parameter_count=0, return_type=1, first_node=0, body_node=0, module_index=0, exported=0, name_fingerprint=fingerprint, local_name_fingerprint=fingerprint))
         index = index + 1
     discard vector_push<NgModule>(&mut modules, NgModule(source_index=0, source_start=0, source_end=bytes_len(&source), path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count={function_count}, first_import=0, import_count=0))
+    while bucket_index < {function_count * 2 + 1}:
+        discard vector_push<i64>(&mut bucket_slots, 0)
+        bucket_index = bucket_index + 1
+    build_status = ng_build_function_lookup_index(&functions, &mut bucket_slots)
+    match build_status <=> 0:
+        0:
+            build_status = build_status
+        -1:
+            return -1
+        1:
+            return -1
     index = 0
     while index < {function_count}:
         name_start = index * 6
         name_end = name_start + 5
         total = total + ng_find_function(&source, &functions, name_start, name_end)
-        module_total = module_total + ng_find_function_in_module(&source, &modules, &functions, 0, name_start, name_end)
+        module_total = module_total + ng_find_function_in_module(&source, &modules, &functions, &bucket_slots, 0, name_start, name_end)
         index = index + 1
     name_start = {function_count * 6}
     name_end = name_start + 12
     missing_function_index = ng_find_function(&source, &functions, name_start, name_end)
-    missing_module_index = ng_find_function_in_module(&source, &modules, &functions, 0, name_start, name_end)
+    missing_module_index = ng_find_function_in_module(&source, &modules, &functions, &bucket_slots, 0, name_start, name_end)
     match missing_function_index <=> -13:
         0:
             match missing_module_index <=> -1:
@@ -2388,7 +2438,7 @@ fn main() -> i64:
     fingerprint_calls = int(calls.get("ng_span_fingerprint", 0))
     assert named_comparisons <= 2 * function_count
     assert named_comparisons < 2 * baseline_linear_name_comparisons // 8
-    assert fingerprint_calls == 3 * function_count
+    assert fingerprint_calls == 3 * function_count + 1
 
 
 def test_ng_parameter_lookups_fingerprint_before_exact_span_comparison() -> None:
