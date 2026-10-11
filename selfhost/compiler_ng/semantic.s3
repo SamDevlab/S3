@@ -2396,16 +2396,6 @@ fn ng_scope_has_right_child(kind: i64) -> trit:
         1:
             return 0
 
-fn ng_scope_push_task(node_index: i64, scope_id: i64, create_scope: i64, pending_tasks: &mut vector<NgScopeTask>) -> i64:
-    match node_index >= 0:
-        -1:
-            discard vector_push<NgScopeTask>(pending_tasks, NgScopeTask(node_index=node_index, scope_id=scope_id, create_scope=create_scope))
-            return 0
-        0:
-            return 0
-        1:
-            return 0
-
 fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, node_scope_ids: &mut vector<i64>, scope_parents: &mut vector<i64>) -> i64:
     mut node_count: i64 = vector_len<NgAstNode>(nodes)
     mut function_index: i64 = 0
@@ -2429,7 +2419,13 @@ fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAs
         function = vector_get<NgFunction>(functions, function_index)
         scope_id = vector_len<i64>(&*scope_parents)
         discard vector_push<i64>(scope_parents, -1)
-        discard ng_scope_push_task(function.body_node, scope_id, 0, &mut pending_tasks)
+        match function.body_node >= 0:
+            -1:
+                discard vector_push<NgScopeTask>(&mut pending_tasks, NgScopeTask(node_index=function.body_node, scope_id=scope_id, create_scope=0))
+            0:
+                function = function
+            1:
+                function = function
         function_index = function_index + 1
     while pending_index < vector_len<NgScopeTask>(&pending_tasks):
         pending_task = vector_get<NgScopeTask>(&pending_tasks, pending_index)
@@ -2464,7 +2460,7 @@ fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAs
                                         return -14
                                 match node.left >= 0:
                                     -1:
-                                        discard ng_scope_push_task(node.left, pending_scope, child_scope, &mut pending_tasks)
+                                        discard vector_push<NgScopeTask>(&mut pending_tasks, NgScopeTask(node_index=node.left, scope_id=pending_scope, create_scope=child_scope))
                                     0:
                                         node = node
                                     1:
@@ -2481,7 +2477,7 @@ fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAs
                                     -1:
                                         match ng_scope_has_right_child(node.kind):
                                             -1:
-                                                discard ng_scope_push_task(node.right, pending_scope, child_scope, &mut pending_tasks)
+                                                discard vector_push<NgScopeTask>(&mut pending_tasks, NgScopeTask(node_index=node.right, scope_id=pending_scope, create_scope=child_scope))
                                             0:
                                                 node = node
                                             1:

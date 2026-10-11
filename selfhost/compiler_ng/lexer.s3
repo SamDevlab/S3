@@ -44,27 +44,6 @@ export fn ng_span_fingerprint(source: &bytes, start: i64, end: i64) -> i64:
         1:
             return 0
 
-fn ng_span_samples_equal(source: &bytes, left_start: i64, right_start: i64, span_length: i64) -> trit:
-    match to_i64(bytes_get(source, left_start + span_length / 4)) <=> to_i64(bytes_get(source, right_start + span_length / 4)):
-        -1:
-            return 0
-        0:
-            match to_i64(bytes_get(source, left_start + span_length / 2)) <=> to_i64(bytes_get(source, right_start + span_length / 2)):
-                -1:
-                    return 0
-                0:
-                    match to_i64(bytes_get(source, left_start + span_length * 3 / 4)) <=> to_i64(bytes_get(source, right_start + span_length * 3 / 4)):
-                        -1:
-                            return 0
-                        0:
-                            return -1
-                        1:
-                            return 0
-                1:
-                    return 0
-        1:
-            return 0
-
 export fn ng_spans_equal(source: &bytes, left_start: i64, left_end: i64, right_start: i64, right_end: i64) -> trit:
     mut left: i64 = left_start
     mut right: i64 = right_start
@@ -134,19 +113,6 @@ export fn ng_spans_equal(source: &bytes, left_start: i64, left_end: i64, right_s
                                                                 -1:
                                                                     return 0
                                                                 0:
-                                                                    match span_length > 15:
-                                                                        -1:
-                                                                            match ng_span_samples_equal(source, left_start, right_start, span_length):
-                                                                                -1:
-                                                                                    span_length = span_length
-                                                                                0:
-                                                                                    return 0
-                                                                                1:
-                                                                                    return 0
-                                                                        0:
-                                                                            span_length = span_length
-                                                                        1:
-                                                                            span_length = span_length
                                                                     left = left_start + 2
                                                                     right = right_start + 2
                                                                     last_left = last_left - 1
