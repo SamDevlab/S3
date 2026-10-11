@@ -25,7 +25,6 @@ export record NgLocalLookupResult:
 record NgScopeTask:
     node_index: i64
     scope_id: i64
-    create_scope: i64
 
 export fn ng_named_spans_equal(source: &bytes, left_start: i64, left_end: i64, left_fingerprint: i64, right_start: i64, right_end: i64, right_fingerprint: i64) -> trit:
     match left_fingerprint > 0:
@@ -2405,10 +2404,9 @@ fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAs
     mut pending_capacity: i64 = node_count * 2 + vector_len<NgFunction>(functions) + 1
     mut pending_tasks: vector<NgScopeTask> = vector_new<NgScopeTask>(pending_capacity)
     mut pending_index: i64 = 0
-    mut pending_task: NgScopeTask = NgScopeTask(node_index=-1, scope_id=-1, create_scope=0)
+    mut pending_task: NgScopeTask = NgScopeTask(node_index=-1, scope_id=-1)
     mut pending_node: i64 = -1
     mut pending_scope: i64 = -1
-    mut create_scope: i64 = 0
     mut child_scope: i64 = 0
     mut scope_id: i64 = -1
     mut existing_scope: i64 = -1
@@ -2421,7 +2419,7 @@ fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAs
         discard vector_push<i64>(scope_parents, -1)
         match function.body_node >= 0:
             -1:
-                discard vector_push<NgScopeTask>(&mut pending_tasks, NgScopeTask(node_index=function.body_node, scope_id=scope_id, create_scope=0))
+                discard vector_push<NgScopeTask>(&mut pending_tasks, NgScopeTask(node_index=function.body_node, scope_id=scope_id))
             0:
                 function = function
             1:
@@ -2431,53 +2429,44 @@ fn ng_build_node_scope_index(functions: &vector<NgFunction>, nodes: &vector<NgAs
         pending_task = vector_get<NgScopeTask>(&pending_tasks, pending_index)
         pending_node = pending_task.node_index
         pending_scope = pending_task.scope_id
-        create_scope = pending_task.create_scope
         pending_index = pending_index + 1
         match pending_node < node_count:
             -1:
                 match pending_node >= 0:
                     -1:
-                        match create_scope == 1:
-                            -1:
-                                scope_id = vector_len<i64>(&*scope_parents)
-                                discard vector_push<i64>(&mut *scope_parents, pending_scope)
-                                pending_scope = scope_id
-                            0:
-                                pending_scope = pending_scope
-                            1:
-                                return -14
                         existing_scope = vector_get<i64>(&*node_scope_ids, pending_node)
                         match existing_scope < 0:
                             -1:
                                 discard vector_set<i64>(&mut *node_scope_ids, pending_node, pending_scope)
                                 node = vector_get<NgAstNode>(nodes, pending_node)
-                                match node.kind == 13:
-                                    -1:
-                                        child_scope = 1
-                                    0:
-                                        child_scope = 0
-                                    1:
-                                        return -14
                                 match node.left >= 0:
                                     -1:
-                                        discard vector_push<NgScopeTask>(&mut pending_tasks, NgScopeTask(node_index=node.left, scope_id=pending_scope, create_scope=child_scope))
+                                        match node.kind == 13:
+                                            -1:
+                                                child_scope = vector_len<i64>(&*scope_parents)
+                                                discard vector_push<i64>(&mut *scope_parents, pending_scope)
+                                            0:
+                                                child_scope = pending_scope
+                                            1:
+                                                return -14
+                                        discard vector_push<NgScopeTask>(&mut pending_tasks, NgScopeTask(node_index=node.left, scope_id=child_scope))
                                     0:
                                         node = node
-                                    1:
-                                        return -14
-                                child_scope = 0
-                                match node.kind == 17:
-                                    -1:
-                                        child_scope = 1
-                                    0:
-                                        child_scope = 0
                                     1:
                                         return -14
                                 match node.right >= 0:
                                     -1:
                                         match ng_scope_has_right_child(node.kind):
                                             -1:
-                                                discard vector_push<NgScopeTask>(&mut pending_tasks, NgScopeTask(node_index=node.right, scope_id=pending_scope, create_scope=child_scope))
+                                                match node.kind == 17:
+                                                    -1:
+                                                        child_scope = vector_len<i64>(&*scope_parents)
+                                                        discard vector_push<i64>(&mut *scope_parents, pending_scope)
+                                                    0:
+                                                        child_scope = pending_scope
+                                                    1:
+                                                        return -14
+                                                discard vector_push<NgScopeTask>(&mut pending_tasks, NgScopeTask(node_index=node.right, scope_id=child_scope))
                                             0:
                                                 node = node
                                             1:
