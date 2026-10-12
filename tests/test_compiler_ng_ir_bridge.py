@@ -581,6 +581,55 @@ def _first_structure_difference(left: object, right: object, path: str = "root")
     return f"{path}: {left_text[:240]} != {right_text[:240]}"
 
 
+def _compiler_function_difference(left: tuple[object, ...], right: tuple[object, ...]) -> str:
+    left_functions = left[0]
+    right_functions = right[0]
+    assert isinstance(left_functions, tuple)
+    assert isinstance(right_functions, tuple)
+    for index, (left_function, right_function) in enumerate(zip(left_functions, right_functions)):
+        if left_function == right_function:
+            continue
+        assert isinstance(left_function, tuple)
+        assert isinstance(right_function, tuple)
+        field_differences = [
+            _first_structure_difference(left_field, right_field, f"field[{field_index}]")
+            for field_index, (left_field, right_field) in enumerate(
+                zip(left_function, right_function)
+            )
+            if left_field != right_field
+        ]
+        left_blocks = left_function[6]
+        right_blocks = right_function[6]
+        assert isinstance(left_blocks, tuple)
+        assert isinstance(right_blocks, tuple)
+        left_instruction_count = sum(len(block[1]) for block in left_blocks)
+        right_instruction_count = sum(len(block[1]) for block in right_blocks)
+        block_instruction_deltas = [
+            (
+                block_index,
+                len(left_block[1]),
+                len(right_block[1]),
+                _first_structure_difference(
+                    left_block[1], right_block[1], f"block[{block_index}].instructions"
+                ),
+                left_block[1][4:],
+                right_block[1][4:],
+            )
+            for block_index, (left_block, right_block) in enumerate(zip(left_blocks, right_blocks))
+            if left_block[1] != right_block[1]
+        ]
+        return (
+            f"function[{index}]={left_function[0]}; "
+            f"registers={len(left_function[4])}/{len(right_function[4])}; "
+            f"blocks={len(left_blocks)}/{len(right_blocks)}; "
+            f"instructions={left_instruction_count}/{right_instruction_count}; "
+            f"register_tail={left_function[4][-16:]}/{right_function[4][-16:]}; "
+            f"block_instruction_deltas={block_instruction_deltas}; "
+            f"field_differences={field_differences}"
+        )
+    return "no differing function entry found"
+
+
 def _event_records(cells: list[int]) -> list[list[int]]:
     assert len(cells) % 8 == 0
     return [cells[index : index + 8] for index in range(0, len(cells), 8)]
@@ -2971,6 +3020,82 @@ fn main() -> i64:
     assert exact_span_comparisons * 16 < linear_scan_reference_comparisons
 
 
+def test_ng_prior_local_declaration_lookup_scales_with_indexed_candidates() -> None:
+    def profile(declaration_count: int) -> tuple[int, int, dict[str, object]]:
+        names = " ".join(f"v{index:04d}" for index in range(declaration_count))
+        source_text = names + " v0000"
+        query_start = declaration_count * 6
+        wrapper = f'''\
+fn main() -> i64:
+    mut source_text: text = text_from_static({json.dumps(source_text)})
+    mut source: bytes = bytes_from_text(&source_text)
+    mut functions: vector<NgFunction> = vector_new<NgFunction>(1)
+    mut nodes: vector<NgAstNode> = vector_new<NgAstNode>({declaration_count + 1})
+    mut declaration_indices: vector<i64> = vector_new<i64>({declaration_count})
+    mut node_scope_ids: vector<i64> = vector_new<i64>({declaration_count + 1})
+    mut scope_parents: vector<i64> = vector_new<i64>(1)
+    mut symbols: vector<NgLocalLookupSymbol> = vector_new<NgLocalLookupSymbol>({declaration_count})
+    mut bucket_slots: vector<i64> = vector_new<i64>({declaration_count * 2 + 1})
+    mut symbol_offsets: vector<i64> = vector_new<i64>({declaration_count + 1})
+    mut occurrence_nodes: vector<i64> = vector_new<i64>({declaration_count})
+    mut index: i64 = 0
+    mut status: i64 = 0
+    mut lookup: NgLocalLookupResult = NgLocalLookupResult(index=-1, probes=0)
+    mut function: NgFunction = NgFunction(start=0, end=0, name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=1, first_node=0, body_node={declaration_count}, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0)
+    mut before_node: NgAstNode = NgAstNode(kind=2, start={query_start}, end={query_start + 5}, left=-1, right=-1, operation=0)
+    mut target: NgAstNode = NgAstNode(kind=2, start={query_start}, end={query_start + 5}, left=-1, right=-1, operation=0)
+    while index < {declaration_count}:
+        discard vector_push<NgAstNode>(&mut nodes, NgAstNode(kind=7, start=index * 6, end=index * 6 + 5, left=-1, right=-1, operation=-1))
+        discard vector_push<i64>(&mut declaration_indices, index)
+        discard vector_push<i64>(&mut node_scope_ids, 0)
+        index = index + 1
+    discard vector_push<NgAstNode>(&mut nodes, before_node)
+    discard vector_push<i64>(&mut node_scope_ids, 0)
+    discard vector_push<i64>(&mut scope_parents, -1)
+    discard vector_push<NgFunction>(&mut functions, function)
+    status = ng_build_local_declaration_lookup(&source, &functions, &nodes, &declaration_indices, &node_scope_ids, &mut symbols, &mut bucket_slots, &mut symbol_offsets, &mut occurrence_nodes)
+    match status <=> 0:
+        0:
+            lookup = ng_prior_local_declaration(&source, &nodes, function, before_node, {declaration_count}, target, &node_scope_ids, &scope_parents, &mut symbols, &mut bucket_slots, &mut symbol_offsets, &mut occurrence_nodes)
+        -1:
+            return -1
+        1:
+            return -1
+    return lookup.index * {declaration_count + 1} + lookup.probes
+'''
+        harness_source = _NG_SOURCE + "\n" + wrapper
+        compilation = compile_source(harness_source)
+        assert compilation.ir is not None
+        metrics: dict[str, object] = {}
+        packed_result = _execute_ir_with_step_budget(
+            compilation.ir,
+            source_text=harness_source,
+            max_steps=20_000_000,
+            metrics=metrics,
+        )
+        assert isinstance(packed_result, int)
+        declaration_index, probes = divmod(packed_result, declaration_count + 1)
+        return declaration_index, probes, metrics
+
+    small_index, small_probes, small_metrics = profile(64)
+    large_index, large_probes, large_metrics = profile(256)
+    assert small_index == large_index == 0
+
+    for declaration_count, metrics in ((64, small_metrics), (256, large_metrics)):
+        calls = metrics["calls"]
+        assert isinstance(calls, dict)
+        assert calls.get("ng_prior_local_declaration", 0) == 1
+        assert calls.get("ng_local_symbol_slot", 0) == declaration_count + 1
+
+    print(
+        "LOCAL_DECLARATION_LOOKUP_PROFILE "
+        f"declarations=64/256 lookup_calls=1/1 probes={small_probes}/{large_probes}"
+    )
+    assert small_probes > 0
+    assert large_probes <= small_probes + 8
+    assert large_probes < 32
+
+
 def test_ng_span_equality_cost_profile_baseline() -> None:
     comparison_count = 32
     wrapper = f'''\
@@ -3632,13 +3757,42 @@ def test_ng_self_compiles_dependency_closed_compiler_module_graph() -> None:
         f"hot_functions={Counter(metrics.get('instruction_counts', {})).most_common(12)}; "
         f"status_returns={metrics.get('status_returns', [])[-24:]}"
     )
-    ng_ir = decode_ng_ir_events(source, cells)
+    try:
+        ng_ir = decode_ng_ir_events(source, cells)
+    except NGIRDecodeError as error:
+        context: dict[str, object] = {}
+        traceback = error.__traceback__
+        while traceback is not None:
+            frame = traceback.tb_frame
+            local_values = frame.f_locals
+            if frame.f_code.co_name == "decode_ng_ir_events" and "reference_descriptor" in local_values:
+                register_type_ids = local_values["register_type_ids"]
+                operand0 = local_values["operand0"]
+                operand1 = local_values["operand1"]
+                type_descriptors = local_values["type_descriptors"]
+                reference_descriptor = local_values["reference_descriptor"]
+                context = {
+                    "function": local_values.get("function_name"),
+                    "function_index": local_values.get("function_index"),
+                    "instruction_index": local_values.get("instruction_index"),
+                    "record_cursor": local_values.get("cursor"),
+                    "reference_register": operand0,
+                    "value_register": operand1,
+                    "reference_type_id": register_type_ids[operand0],
+                    "reference_descriptor": reference_descriptor,
+                    "value_type_id": register_type_ids[operand1],
+                    "target_descriptor": type_descriptors.get(reference_descriptor.target_type),
+                    "value_descriptor": type_descriptors.get(register_type_ids[operand1]),
+                }
+                break
+            traceback = traceback.tb_next
+        raise AssertionError(f"NG IR decoding failed: {error}; context={context}") from error
     verify_ir(ng_ir)
     actual_structure = _canonical_structure(ng_ir)
     expected_structure = _canonical_structure(reference)
     assert actual_structure == expected_structure, _first_structure_difference(
         actual_structure, expected_structure, "dependency_closed_compiler_self_compile"
-    )
+    ) + "; " + _compiler_function_difference(actual_structure, expected_structure)
     assert execute_ir(ng_ir) == execute_ir(reference) == 0
     instruction_counts = metrics["instruction_counts"]
     assert isinstance(instruction_counts, dict)
@@ -3959,6 +4113,156 @@ def test_ng_ir_v11_lowers_text_len_dynamic_builtin() -> None:
 
     assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
     assert execute_ir(ng_ir) == execute_ir(reference_ir) == 2
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        (
+            "fn main() -> i64:\n"
+            "    mut values: vector<i64> = vector_new<i64>(1)\n"
+            "    discard vector_push<i64>(&mut values, 11)\n"
+            "    values = vector_new<i64>(2)\n"
+            "    discard vector_push<i64>(&mut values, 22)\n"
+            "    return vector_get<i64>(&values, 0)\n",
+            22,
+        ),
+        (
+            "fn main() -> i64:\n"
+            "    mut data: bytes = bytes_new(1)\n"
+            "    data = bytes_new(4)\n"
+            "    return bytes_capacity(&data)\n",
+            4,
+        ),
+        (
+            "fn main() -> i64:\n"
+            '    mut message: text = text_from_static("a")\n'
+            '    message = text_from_static("abcd")\n'
+            "    return text_len(&message)\n",
+            4,
+        ),
+    ],
+    ids=("vector", "bytes", "text"),
+)
+def test_ng_dynamic_value_assignment_preserves_stable_binding(
+    source: str, expected: int
+) -> None:
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+
+    events = _emit_ng_events(source)
+    ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
+    verify_ir(ng_ir)
+
+    ng_structure = _canonical_structure(ng_ir)
+    reference_structure = _canonical_structure(reference_ir)
+    assert ng_structure == reference_structure, _first_structure_difference(
+        ng_structure, reference_structure, "dynamic_assignment"
+    ) + "; " + _compiler_function_difference(ng_structure, reference_structure)
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == expected
+
+
+def test_ng_vector_record_reassignment_preserves_element_identity() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "record Item:\n"
+            "    value: i64\n"
+            "fn main() -> i64:\n"
+            "    mut values: vector<Item> = vector_new<Item>(1)\n"
+            "    discard vector_push<Item>(&mut values, Item(value=11))\n"
+            "    values = vector_new<Item>(2)\n"
+            "    discard vector_push<Item>(&mut values, Item(value=22))\n"
+            "    mut selected: Item = vector_get<Item>(&values, 0)\n"
+            "    return selected.value\n"
+        ),
+    }
+    reference_ir = compile_sources(sources, entry_module="app").ir
+    assert reference_ir is not None
+
+    source, events = _emit_ng_source_set_events(sources, entry_module="app")
+    ng_ir = decode_ng_ir_events(source, events)
+    verify_ir(ng_ir)
+
+    ng_structure = _canonical_structure(ng_ir)
+    reference_structure = _canonical_structure(reference_ir)
+    assert ng_structure == reference_structure, _first_structure_difference(
+        ng_structure, reference_structure, "vector_record_reassignment"
+    )
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 22
+
+
+def test_ng_imported_record_vector_reassignment_preserves_element_identity() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "from model import Item\n"
+            "fn main() -> i64:\n"
+            "    mut values: vector<Item> = vector_new<Item>(1)\n"
+            "    discard vector_push<Item>(&mut values, Item(value=11))\n"
+            "    values = vector_new<Item>(2)\n"
+            "    discard vector_push<Item>(&mut values, Item(value=22))\n"
+            "    mut selected: Item = vector_get<Item>(&values, 0)\n"
+            "    return selected.value\n"
+        ),
+        "model.s3": (
+            "module model\n"
+            "export record Item:\n"
+            "    value: i64\n"
+            "export fn marker() -> i64:\n"
+            "    return 0\n"
+        ),
+    }
+    reference_ir = compile_sources(sources, entry_module="app").ir
+    assert reference_ir is not None
+
+    source, events = _emit_ng_source_set_events(sources, entry_module="app")
+    ng_ir = decode_ng_ir_events(source, events)
+    verify_ir(ng_ir)
+
+    ng_structure = _canonical_structure(ng_ir)
+    reference_structure = _canonical_structure(reference_ir)
+    assert ng_structure == reference_structure, _first_structure_difference(
+        ng_structure, reference_structure, "imported_vector_record_reassignment"
+    )
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 22
+
+
+def test_ng_imported_vector_return_assignment_preserves_descriptor_identity() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "from model import Item\n"
+            "from model import make_items\n"
+            "fn main() -> i64:\n"
+            "    mut items: vector<Item> = vector_new<Item>(1)\n"
+            "    items = make_items()\n"
+            "    mut selected: Item = vector_get<Item>(&items, 0)\n"
+            "    return selected.value\n"
+        ),
+        "model.s3": (
+            "module model\n"
+            "export record Item:\n"
+            "    value: i64\n"
+            "export fn make_items() -> vector<Item>:\n"
+            "    mut items: vector<Item> = vector_new<Item>(1)\n"
+            "    discard vector_push<Item>(&mut items, Item(value=22))\n"
+            "    return items\n"
+        ),
+    }
+    reference_ir = compile_sources(sources, entry_module="app").ir
+    assert reference_ir is not None
+
+    source, events = _emit_ng_source_set_events(sources, entry_module="app")
+    ng_ir = decode_ng_ir_events(source, events)
+    verify_ir(ng_ir)
+
+    ng_structure = _canonical_structure(ng_ir)
+    reference_structure = _canonical_structure(reference_ir)
+    assert ng_structure == reference_structure, _first_structure_difference(
+        ng_structure, reference_structure, "imported_vector_return_assignment"
+    )
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 22
 
 
 def test_ng_ir_v11_lowers_bytes_concat_dynamic_builtin() -> None:

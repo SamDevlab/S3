@@ -4264,6 +4264,53 @@ fn ng_emit_dereference_assignment(source: &bytes, types: &vector<NgTypeDescripto
         1:
             return -14
 
+fn ng_ir_dynamic_assignment_type(kind: i64) -> trit:
+    match kind <=> 5:
+        0:
+            return -1
+        -1:
+            return 0
+        1:
+            match kind <=> 6:
+                0:
+                    return -1
+                -1:
+                    return 0
+                1:
+                    match kind <=> 8:
+                        0:
+                            return -1
+                        -1:
+                            return 0
+                        1:
+                            return 0
+
+fn ng_ir_mutable_reference_type_id(types: &vector<NgTypeDescriptor>, target_type: i64) -> i64:
+    mut index: i64 = 0
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    while index < vector_len<NgTypeDescriptor>(types):
+        descriptor = vector_get<NgTypeDescriptor>(types, index)
+        match descriptor.kind <=> 9:
+            0:
+                match descriptor.target_type <=> target_type:
+                    0:
+                        match descriptor.mutable <=> 1:
+                            0:
+                                return index + 1
+                            -1:
+                                index = index + 1
+                            1:
+                                index = index + 1
+                    -1:
+                        index = index + 1
+                    1:
+                        index = index + 1
+            -1:
+                index = index + 1
+            1:
+                index = index + 1
+    return -14
+
 fn ng_emit_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, function: NgFunction, statement: NgAstNode, variables: &mut vector<NgIRVariable>, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, block: i64) -> i64:
     mut variable_index: i64 = -1
     mut target: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -4272,6 +4319,8 @@ fn ng_emit_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
     mut value_info: NgIRRegister = NgIRRegister(type_kind=0)
     mut variable_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut index_register: i64 = -1
+    mut reference_type_id: i64 = -1
+    mut reference_register: i64 = -1
     match statement.right >= 0:
         -1:
             target = vector_get<NgAstNode>(nodes, statement.right)
@@ -4324,8 +4373,24 @@ fn ng_emit_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                                                 0:
                                                     return -14
                                                 1:
-                                                    variable.register = value_register
-                                                    discard vector_set<NgIRVariable>(&mut *variables, variable_index, variable)
+                                                    match ng_ir_dynamic_assignment_type(variable_type.kind) <=> -1:
+                                                        0:
+                                                            reference_type_id = ng_ir_mutable_reference_type_id(types, value_info.type_kind)
+                                                            match reference_type_id > 0:
+                                                                -1:
+                                                                    reference_register = vector_len<NgIRRegister>(&*registers)
+                                                                    discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=reference_type_id))
+                                                                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=16, result=reference_register, operand_count=1, operand0=variable.register, operand1=-1, immediate=0, memory=-1, initialization=0, block=block, target0=-1, target1=-1, target2=-1))
+                                                                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=21, result=-1, operand_count=2, operand0=reference_register, operand1=value_register, immediate=0, memory=-1, initialization=0, block=block, target0=-1, target1=-1, target2=-1))
+                                                                0:
+                                                                    return reference_type_id
+                                                                1:
+                                                                    return reference_type_id
+                                                        -1:
+                                                            return -14
+                                                        1:
+                                                            variable.register = value_register
+                                                            discard vector_set<NgIRVariable>(&mut *variables, variable_index, variable)
                                         1:
                                             index_register = vector_len<NgIRRegister>(&*registers)
                                             discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=3))

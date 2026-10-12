@@ -3665,6 +3665,27 @@ fn ng_address_field_root_writable(source: &bytes, types: &vector<NgTypeDescripto
                 1:
                     return 0
 
+fn ng_semantic_dynamic_assignment_type(kind: i64) -> trit:
+    match kind <=> 5:
+        0:
+            return -1
+        -1:
+            return 0
+        1:
+            match kind <=> 6:
+                0:
+                    return -1
+                -1:
+                    return 0
+                1:
+                    match kind <=> 8:
+                        0:
+                            return -1
+                        -1:
+                            return 0
+                        1:
+                            return 0
+
 fn ng_resolve_address_nodes_indexed(source: &bytes, types: &mut vector<NgTypeDescriptor>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>, declaration_indices: &vector<i64>, node_scope_ids: &vector<i64>, scope_parents: &vector<i64>, local_symbols: &mut vector<NgLocalLookupSymbol>, local_buckets: &mut vector<i64>, local_offsets: &mut vector<i64>, local_occurrences: &mut vector<i64>) -> i64:
     mut node_index: i64 = 0
     mut function_index: i64 = 0
@@ -3683,6 +3704,11 @@ fn ng_resolve_address_nodes_indexed(source: &bytes, types: &mut vector<NgTypeDes
     mut reference_type: i64 = -1
     mut resolution_status: i64 = 0
     mut lookup_result: NgLocalLookupResult = NgLocalLookupResult(index=-1, probes=0)
+    mut assignment_type_count: i64 = 0
+    mut assignment_target_index: i64 = 0
+    mut candidate_type_index: i64 = 0
+    mut assignment_target_types: vector<i64> = vector_new<i64>(1)
+    mut candidate_descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     resolution_status = ng_resolve_dereference_nodes(source, &*types, functions, parameters, &mut *nodes, declaration_indices, node_scope_ids, scope_parents, local_symbols, local_buckets, local_offsets, local_occurrences)
     match resolution_status <=> 0:
         0:
@@ -3790,6 +3816,11 @@ fn ng_resolve_address_nodes_indexed(source: &bytes, types: &mut vector<NgTypeDes
             1:
                 node = node
         node_index = node_index + 1
+    assignment_type_count = vector_len<NgTypeDescriptor>(&*types)
+    assignment_target_types = vector_new<i64>(assignment_type_count)
+    while assignment_target_index < assignment_type_count:
+        discard vector_push<i64>(&mut assignment_target_types, 0)
+        assignment_target_index = assignment_target_index + 1
     node_index = 0
     while node_index < vector_len<NgAstNode>(&*nodes):
         node = vector_get<NgAstNode>(&*nodes, node_index)
@@ -3909,6 +3940,107 @@ fn ng_resolve_address_nodes_indexed(source: &bytes, types: &mut vector<NgTypeDes
             1:
                 node_index = node_index
         node_index = node_index + 1
+    node_index = 0
+    while node_index < vector_len<NgAstNode>(&*nodes):
+        node = vector_get<NgAstNode>(&*nodes, node_index)
+        match node.kind <=> 8:
+            0:
+                match node.right < 0:
+                    -1:
+                        owner_index = ng_function_index_for_node(functions, node_index)
+                        match owner_index >= 0:
+                            -1:
+                                function = vector_get<NgFunction>(functions, owner_index)
+                                target = NgAstNode(kind=2, start=node.start, end=node.end, left=-1, right=-1, operation=0)
+                                lookup_result = ng_prior_local_declaration(source, &*nodes, function, node, node_index, target, node_scope_ids, scope_parents, local_symbols, local_buckets, local_offsets, local_occurrences)
+                                declaration_index = lookup_result.index
+                                match declaration_index >= 0:
+                                    -1:
+                                        declaration = vector_get<NgAstNode>(&*nodes, declaration_index)
+                                        match declaration.operation < 0:
+                                            -1:
+                                                target_type = 0 - declaration.operation
+                                                match target_type > 0:
+                                                    -1:
+                                                        match target_type <= vector_len<NgTypeDescriptor>(&*types):
+                                                            -1:
+                                                                descriptor = vector_get<NgTypeDescriptor>(&*types, target_type - 1)
+                                                                match ng_semantic_dynamic_assignment_type(descriptor.kind) <=> -1:
+                                                                    0:
+                                                                        discard vector_set<i64>(&mut assignment_target_types, target_type - 1, 1)
+                                                                    -1:
+                                                                        reference_type = 1
+                                                                    1:
+                                                                        reference_type = 1
+                                                            0:
+                                                                return -14
+                                                            1:
+                                                                return -14
+                                                    0:
+                                                        return -14
+                                                    1:
+                                                        return -14
+                                            0:
+                                                reference_type = reference_type
+                                            1:
+                                                reference_type = reference_type
+                                    0:
+                                        return -12
+                                    1:
+                                        return -12
+                            0:
+                                return -12
+                            1:
+                                return -12
+                    0:
+                        node = node
+                    1:
+                        node = node
+            -1:
+                node = node
+            1:
+                node = node
+        node_index = node_index + 1
+    assignment_target_index = 1
+    while assignment_target_index <= assignment_type_count:
+        match vector_get<i64>(&assignment_target_types, assignment_target_index - 1) <=> 1:
+            0:
+                reference_type = ng_intern_reference_type(types, assignment_target_index, 1)
+                match reference_type > 0:
+                    -1:
+                        candidate_type_index = 1
+                        while candidate_type_index <= assignment_type_count:
+                            candidate_descriptor = vector_get<NgTypeDescriptor>(&*types, candidate_type_index - 1)
+                            match ng_semantic_dynamic_assignment_type(candidate_descriptor.kind) <=> -1:
+                                0:
+                                    match ng_type_equal(source, &*types, assignment_target_index, candidate_type_index) <=> -1:
+                                        0:
+                                            reference_type = ng_intern_reference_type(types, candidate_type_index, 1)
+                                            match reference_type > 0:
+                                                -1:
+                                                    reference_type = reference_type
+                                                    candidate_type_index = candidate_type_index + 1
+                                                0:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        -1:
+                                            return -14
+                                        1:
+                                            candidate_type_index = candidate_type_index + 1
+                                -1:
+                                    candidate_type_index = candidate_type_index + 1
+                                1:
+                                    candidate_type_index = candidate_type_index + 1
+                        assignment_target_index = assignment_target_index + 1
+                    0:
+                        return -14
+                    1:
+                        return -14
+            -1:
+                assignment_target_index = assignment_target_index + 1
+            1:
+                assignment_target_index = assignment_target_index + 1
     return 0
 
 export fn ng_resolve_address_nodes(source: &bytes, types: &mut vector<NgTypeDescriptor>, functions: &vector<NgFunction>, parameters: &vector<NgParameter>, nodes: &mut vector<NgAstNode>) -> i64:
