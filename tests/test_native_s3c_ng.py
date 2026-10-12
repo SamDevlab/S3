@@ -237,7 +237,7 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     verify_ir(generation_c)
     assert len(compiler_sources) == 8
     assert compiler_source_bytes > 0
-    assert len(generation_c.functions) == 293
+    assert len(generation_c.functions) == len(compiler_ir.functions)
     assert _canonical_structure(generation_c) == _canonical_structure(compiler_ir)
     assert _source_location_structure(generation_c) == _source_location_structure(
         compiler_ir
