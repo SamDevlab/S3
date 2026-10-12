@@ -4803,6 +4803,10 @@ fn ng_emit_relation_value(source: &bytes, types: &vector<NgTypeDescriptor>, fiel
 
 fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &mut vector<NgIRVariable>, memories: &mut vector<NgIRMemory>, function: NgFunction, statement: NgAstNode, loop_exit_block: i64, call_arguments: &mut vector<i64>, return_values: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, blocks: &mut vector<NgIRBlock>, current_block: &mut i64) -> i64:
     mut selector_first_instruction: i64 = vector_len<NgIRInstruction>(&*instructions)
+    mut selector_first_register: i64 = vector_len<NgIRRegister>(&*registers)
+    mut selector_first_memory: i64 = vector_len<NgIRMemory>(&*memories)
+    mut selector_first_block: i64 = vector_len<NgIRBlock>(&*blocks)
+    mut selector_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut selector_register: i64 = -1
     mut selector_expanded: i64 = 0
     mut block_index: i64 = 0
@@ -4834,7 +4838,12 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
     mut value_register: i64 = -1
     mut index_register: i64 = -1
     mut status: i64 = 0
+    selector_node = vector_get<NgAstNode>(nodes, statement.left)
     selector_register = ng_emit_relation_value(source, types, fields, functions, nodes, parameters, &*variables, function, statement.left, memories, call_arguments, registers, instructions, blocks, current_block, &mut selector_expanded)
+    discard ng_ir_assign_register_sources(registers, selector_first_register, selector_node.start)
+    discard ng_ir_assign_instruction_sources(instructions, selector_first_instruction, selector_node.start)
+    discard ng_ir_assign_memory_sources(memories, selector_first_memory, selector_node.start)
+    discard ng_ir_assign_block_sources(blocks, selector_first_block, selector_node.start)
     match selector_register < 0:
         -1:
             return selector_register
@@ -4942,7 +4951,7 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
             discard ng_mark_instruction_block(instructions, selector_first_instruction, *current_block)
         1:
             selector_expanded = selector_expanded
-    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=11, result=-1, operand_count=1, operand0=selector_register, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=first_arm_block, target1=first_arm_block + 1, target2=first_arm_block + 2, source_start=-1))
+    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=11, result=-1, operand_count=1, operand0=selector_register, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=first_arm_block, target1=first_arm_block + 1, target2=first_arm_block + 2, source_start=selector_node.start))
     block_index = first_arm_block
     while block_index < arm_end_block:
         arm_label = block_index - first_arm_block - 1

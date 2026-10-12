@@ -61,6 +61,21 @@ export fn choose(value: i64) -> i64:
             return 3
 """,
 }
+_RELATIONAL_MATCH_SOURCES = {
+    "app.s3": """\
+module app
+fn classify(value: i64) -> i64:
+    match value > 0:
+        -1:
+            return 10
+        0:
+            return 20
+        1:
+            return 30
+fn main() -> i64:
+    return classify(2)
+""",
+}
 
 
 def _canonical_structure(module: IRModule) -> tuple[object, ...]:
@@ -215,6 +230,12 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     b_small = _assert_native_compile(
         artifact_b, small, expected_result=42, tmp_path=tmp_path
     )
+    b_relational_match = _assert_native_compile(
+        artifact_b,
+        _RELATIONAL_MATCH_SOURCES,
+        expected_result=10,
+        tmp_path=tmp_path,
+    )
 
     b_multimodule = _assert_native_compile(
         artifact_b,
@@ -247,6 +268,12 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     c_small = _assert_native_compile(
         artifact_c, small, expected_result=42, tmp_path=tmp_path
     )
+    c_relational_match = _assert_native_compile(
+        artifact_c,
+        _RELATIONAL_MATCH_SOURCES,
+        expected_result=10,
+        tmp_path=tmp_path,
+    )
     c_multimodule = _assert_native_compile(
         artifact_c,
         _MULTIMODULE_SOURCES,
@@ -255,6 +282,11 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     )
     _assert_native_outputs_equal(
         b_small, c_small, workload="B/C small program"
+    )
+    _assert_native_outputs_equal(
+        b_relational_match,
+        c_relational_match,
+        workload="B/C relational match control-flow program",
     )
     _assert_native_outputs_equal(
         b_multimodule,
