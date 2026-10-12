@@ -173,7 +173,7 @@ fn ng_build_statement_links(statement_ids: &vector<i64>, index: i64, nodes: &mut
         1:
             return -1
 
-fn ng_parse_declaration(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, name: NgToken, mutable: i64, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
+fn ng_parse_declaration(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vector<i64>, nodes: &mut vector<NgAstNode>, name: NgToken, declaration_start: i64, mutable: i64, types: &mut vector<NgTypeDescriptor>, module_start: i64, module_end: i64) -> i64:
     mut type_kind: i64 = 0
     mut expression: i64 = -1
     mut token: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
@@ -198,7 +198,7 @@ fn ng_parse_declaration(source: &bytes, tokens: &vector<NgToken>, cursor: &mut v
                                 0:
                                     return -1
                                 1:
-                                    return ng_append_node(nodes, NgAstNode(kind=7, start=name.start, end=name.end, left=expression, right=-1, operation=type_kind * (1 - mutable * 2)))
+                                    return ng_append_node(nodes, NgAstNode(kind=7, start=name.start, end=name.end, left=expression, right=declaration_start, operation=type_kind * (1 - mutable * 2)))
                         1:
                             return -1
                 0:
@@ -340,7 +340,7 @@ fn ng_parse_statement(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vec
                                     return -1
                                 0:
                                     discard ng_advance(cursor)
-                                    return ng_parse_declaration(source, tokens, cursor, nodes, name, mutable, types, module_start, module_end)
+                                    return ng_parse_declaration(source, tokens, cursor, nodes, name, token.start, mutable, types, module_start, module_end)
                                 1:
                                     return -1
                         0:
@@ -353,7 +353,7 @@ fn ng_parse_statement(source: &bytes, tokens: &vector<NgToken>, cursor: &mut vec
                                     following = ng_token_at(tokens, cursor)
                                     match following.kind == 358:
                                         -1:
-                                            return ng_parse_declaration(source, tokens, cursor, nodes, name, 0, types, module_start, module_end)
+                                            return ng_parse_declaration(source, tokens, cursor, nodes, name, name.start, 0, types, module_start, module_end)
                                         0:
                                             target_node_id = ng_append_node(nodes, NgAstNode(kind=2, start=name.start, end=name.end, left=-1, right=-1, operation=0))
                                             scanning_target = 1
@@ -1151,9 +1151,8 @@ fn ng_parse_postfix_field(source: &bytes, tokens: &vector<NgToken>, cursor: &mut
     return current_id
 
 fn ng_append_binary_node(nodes: &mut vector<NgAstNode>, left_id: i64, right_id: i64, operator_token: NgToken) -> i64:
-    mut left_node: NgAstNode = vector_get<NgAstNode>(&*nodes, left_id)
     mut right_node: NgAstNode = vector_get<NgAstNode>(&*nodes, right_id)
-    return ng_append_node(nodes, NgAstNode(kind=4, start=left_node.start, end=right_node.end, left=left_id, right=right_id, operation=operator_token.kind))
+    return ng_append_node(nodes, NgAstNode(kind=4, start=operator_token.start, end=right_node.end, left=left_id, right=right_id, operation=operator_token.kind))
 
 fn ng_expression_operator_same_line(source: &bytes, nodes: &vector<NgAstNode>, left_id: i64, operator_token: NgToken) -> trit:
     mut left_node: NgAstNode = vector_get<NgAstNode>(nodes, left_id)

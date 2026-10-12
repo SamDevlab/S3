@@ -140,6 +140,9 @@ def _assert_native_compile(
     actual = decode_ng_ir_events(result.source, result.events)
     verify_ir(actual)
     assert _canonical_structure(actual) == _canonical_structure(reference)
+    assert serialize_ir(actual) == serialize_ir(reference), (
+        "native S3C-NG output differs from reference IR including SourceLocation"
+    )
 
     assembly = generate_native_assembly(generate_assembly(actual))
     executable = NativeToolchain.detect().build(
@@ -201,6 +204,9 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     assert compiler_source_bytes > 0
     assert len(generation_c.functions) == 293
     assert _canonical_structure(generation_c) == _canonical_structure(compiler_ir)
+    assert serialize_ir(generation_c) == serialize_ir(compiler_ir), (
+        "native B→C canonical IR differs from the reference including SourceLocation"
+    )
 
     artifact_c = build_native_s3c(generation_c, tmp_path / "native-c", label="s3c-ng-c")
     _assert_native_compile(artifact_c, small, expected_result=42, tmp_path=tmp_path)
@@ -223,6 +229,7 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     verify_ir(generation_d)
     assert _canonical_structure(generation_d) == _canonical_structure(generation_c)
     assert serialize_ir(generation_d) == serialize_ir(generation_c)
+    assert serialize_ir(generation_c) == serialize_ir(compiler_ir)
     assert native_c_to_d.output_envelope_sha256 == native_b_to_c.output_envelope_sha256
     assert native_c_to_d.output_envelope_bytes == native_b_to_c.output_envelope_bytes
 
@@ -261,6 +268,10 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     print(f"HOSTED_REFERENCE_SOURCE_LOCATIONS={_source_location_count(compiler_ir)}")
     print(f"NATIVE_C_SOURCE_LOCATIONS={_source_location_count(generation_c)}")
     print(f"HOSTED_NATIVE_SERIALIZED_IR_EQUAL={hosted_serialized == native_serialized}")
+    print(
+        "B_C_SOURCE_LOCATION_AND_CANONICAL_SERIALIZATION_EQUAL="
+        f"{hosted_serialized == native_serialized}"
+    )
     print(f"NATIVE_B_TO_C_SECONDS={native_b_to_c.elapsed_seconds:.6f}")
     print(f"NATIVE_C_TO_D_SECONDS={native_c_to_d.elapsed_seconds:.6f}")
     print(f"B_REPEAT_ASSEMBLY_OBJECT_ELF_EQUAL=True")
@@ -268,4 +279,16 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     print(f"ASSEMBLY_SHA256_EQUAL={assembly_equal}")
     print(f"OBJECT_SHA256_EQUAL={object_equal}")
     print(f"ELF_SHA256_EQUAL={elf_equal}")
+    print(
+        "B_C_ASSEMBLY_TEXT_BYTE_IDENTICAL="
+        f"{artifact_b.assembly.encode() == artifact_c.assembly.encode()}"
+    )
+    print(
+        "B_C_OBJECT_BYTE_IDENTICAL="
+        f"{artifact_b.object_path.read_bytes() == artifact_c.object_path.read_bytes()}"
+    )
+    print(
+        "B_C_ELF_BYTE_IDENTICAL="
+        f"{artifact_b.executable.read_bytes() == artifact_c.executable.read_bytes()}"
+    )
     print("ASSEMBLY_DIFFERENCE_CLASS=SOURCE_LOCATION_DIAGNOSTIC_METADATA")

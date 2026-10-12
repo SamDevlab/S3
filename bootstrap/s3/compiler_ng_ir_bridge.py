@@ -43,6 +43,11 @@ V19 adds opcode 21 for writes through a typed mutable reference. Its target
 type and mutability are derived from the reference register's descriptor.
 V20 adds typed ``vector_pop<T>`` CALL targets. Scalar targets use kind 25;
 record targets extend kind 19 operation ID 6 and carry ordered kind 20 fields.
+V21 adds source-unit descriptors (kind 27) and explicit source-location
+records (kind 26) keyed to functions, flattened parameters, registers,
+instructions, memories, and blocks. Locations carry a source-unit index and
+absolute byte offset; the structural decoder converts that offset to the
+canonical zero-based code-point offset and one-based line/column.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
@@ -69,10 +74,11 @@ from .ir import (
     IRType,
 )
 from .static_text import StaticTextDecodeError, decode_static_text
+from .diagnostics import SourceLocation
 from .vector_types import composite_vector_runtime_name_from_key
 
 
-NG_IR_FORMAT_VERSION = 20
+NG_IR_FORMAT_VERSION = 21
 NG_IR_RECORD_WIDTH = 8
 
 _V5_VECTOR_NEW_BUILTINS = {
@@ -176,6 +182,7 @@ class _InstructionRecord:
     static_string_value: str | None = None
     static_string_offset: int | None = None
     results: tuple[int, ...] = ()
+    location: SourceLocation | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,12 +220,62 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
         raise NGIRDecodeError("unsupported or malformed NG IR format header")
     type_codes = _TYPE_CODES_BY_VERSION.get(version, {})
+
+    source_spans: dict[int, tuple[int, int]] = {}
+    location_offsets: dict[tuple[int, int, int], tuple[int, int, int]] = {}
+    if version >= 21:
+        semantic_records = [records[0]]
+        for record in records[1:]:
+            kind = record[0]
+            if kind == 27:
+                _, source_unit, start, end, _path_start, _path_end, _name_start, _name_end = record
+                if source_unit < 0 or start < 0 or end < start or end > len(source) or source_unit in source_spans:
+                    raise NGIRDecodeError("malformed or duplicate source-unit descriptor")
+                source_spans[source_unit] = (start, end)
+            elif kind == 26:
+                _, entity, owner, index, source_unit, offset, reserved0, reserved1 = record
+                if entity not in {1, 2, 3, 4, 7, 9} or owner < 0 or index < 0 or source_unit < 0 or offset < 0 or reserved0 or reserved1:
+                    raise NGIRDecodeError("malformed source-location record")
+                key = (entity, owner, index)
+                if key in location_offsets:
+                    raise NGIRDecodeError("duplicate source-location identity")
+                location_offsets[key] = (source_unit, offset, len(location_offsets))
+            else:
+                semantic_records.append(record)
+        records = semantic_records
+        if not source_spans:
+            source_spans[0] = (0, len(source))
+
+    source_locations: dict[tuple[int, int, int], SourceLocation] = {}
+    for identity, (source_unit, absolute_offset, _order) in location_offsets.items():
+        span = source_spans.get(source_unit)
+        if span is None:
+            raise NGIRDecodeError("source-location record references an unknown source unit")
+        start, end = span
+        if not start <= absolute_offset <= end:
+            raise NGIRDecodeError("source-location offset is outside its source unit")
+        try:
+            prefix = source[start:absolute_offset].decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise NGIRDecodeError("source-location offset is not a UTF-8 boundary") from exc
+        line = prefix.count("\n") + 1
+        column = len(prefix.rsplit("\n", 1)[-1]) + 1
+        source_locations[identity] = SourceLocation(len(prefix), line, column)
+
+    used_source_locations: set[tuple[int, int, int]] = set()
+
+    def source_location(entity: int, owner: int, index: int) -> SourceLocation | None:
+        identity = (entity, owner, index)
+        location = source_locations.get(identity)
+        if location is not None:
+            used_source_locations.add(identity)
+        return location
 
     cursor = 1
     raw_functions: list[dict[str, object]] = []
@@ -537,6 +594,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     parameter_name,
                     register,
                     type_for(type_code, f"parameter {parameter_index} of {function_name}"),
+                    location=source_location(2, function_index, parameter_index),
                     reference_target=reference_target,
                     reference_mutable=reference_mutable,
                     reference_aggregate=reference_aggregate,
@@ -557,6 +615,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 IRRegister(
                     register_index,
                     type_for(type_code, f"register {register_index} of {function_name}"),
+                    location=source_location(3, function_index, register_index),
                     reference_target=reference_target,
                     reference_mutable=reference_mutable,
                     reference_aggregate=reference_aggregate,
@@ -572,7 +631,15 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 raise NGIRDecodeError("memory identities must be contiguous with zero reserved fields")
             if mutable not in (0, 1):
                 raise NGIRDecodeError("memory mutability must be encoded as 0 or 1")
-            memories.append(IRMemoryObject(memory_index, type_for(type_code, f"memory {memory_index} of {function_name}"), length, bool(mutable)))
+            memories.append(
+                IRMemoryObject(
+                    memory_index,
+                    type_for(type_code, f"memory {memory_index} of {function_name}"),
+                    length,
+                    bool(mutable),
+                    source_location(7, function_index, memory_index),
+                )
+            )
 
         block_ids: list[int] = []
         while cursor < len(records) and records[cursor][0] == 9:
@@ -1406,6 +1473,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     static_string_value=static_string_value,
                     static_string_offset=static_string_offset,
                     results=instruction_results,
+                    location=source_location(4, function_index, instruction_index),
                 )
             )
 
@@ -1520,6 +1588,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     targets=tuple(block_names[target] for target in record.targets),
                     memory=record.memory,
                     initialization=record.initialization,
+                    location=record.location,
                     results=record.results,
                     reference_target=record.reference_target,
                     reference_mutable=record.reference_mutable,
@@ -1541,13 +1610,24 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 return_type=return_type,
                 registers=raw["registers"],
                 blocks=tuple(
-                    IRBasicBlock(block_names[block_id], tuple(by_block[block_id]))
+                    IRBasicBlock(
+                        block_names[block_id],
+                        tuple(by_block[block_id]),
+                        source_location(9, function_index, block_id),
+                    )
                     for block_id in block_ids
                 ),
+                location=source_location(1, function_index, 0),
                 memory_objects=raw["memories"],
                 result_types=raw["result_types"],
                 external=raw["external"],
                 exported=raw["exported"],
             )
+        )
+    unused_source_locations = source_locations.keys() - used_source_locations
+    if unused_source_locations:
+        identity = min(unused_source_locations)
+        raise NGIRDecodeError(
+            f"source-location record references unknown entity identity {identity}"
         )
     return IRModule(tuple(functions), tuple(static_strings))

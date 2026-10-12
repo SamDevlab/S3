@@ -4,7 +4,7 @@ from selfhost.compiler_ng.lexer import NgToken, ng_lex_at, ng_span_fingerprint, 
 from selfhost.compiler_ng.parser import NgFunction, NgImport, NgModule, NgSpan, NgAstNode, NgParameter, NgRecord, NgField, ng_parse_module_header_at, ng_parse_module_functions, ng_validate_nominal_types
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_type_table
 from selfhost.compiler_ng.semantic import ng_builtin_call_kind, ng_encode_resolved_call_function, ng_function_index_for_node, ng_named_spans_equal, ng_resolve_semantic_nodes, ng_resolved_builtin_call_marker
-from selfhost.compiler_ng.ir import ng_emit_program
+from selfhost.compiler_ng.ir import ng_emit_program_with_modules
 
 export record NgSourceUnit:
     path: text
@@ -1122,7 +1122,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
                         -1:
                             return status
                         0:
-                            status = ng_emit_program(&*source, &types, &records, &fields, &functions, &parameters, &mut nodes, events)
+                            status = ng_emit_program_with_modules(&*source, &types, &records, &fields, &functions, &parameters, &modules, &mut nodes, events)
                             return status
                         1:
                             return status
