@@ -777,7 +777,7 @@ def test_ng_ir_v12_dereference_and_reborrow_match_reference_ir() -> None:
     assert mutable_load.reference_target is IRType.I64
     assert mutable_load.reference_mutable is False
 
-    legacy = [record.copy() for record in records if record[0] != 22]
+    legacy = [record.copy() for record in records if record[0] not in {22, 26, 27}]
     legacy[0][1] = 11
     with pytest.raises(NGIRDecodeError, match="REFERENCE_LOAD opcode requires NG IR V12"):
         decode_ng_ir_events(source.encode("utf-8"), _flatten(legacy))
@@ -824,7 +824,7 @@ def test_ng_ir_v19_mutable_dereference_assignment_matches_reference_ir() -> None
     assert store.reference_target is IRType.I64
     assert store.reference_mutable is True
 
-    legacy = [record.copy() for record in records]
+    legacy = [record.copy() for record in records if record[0] not in {26, 27}]
     legacy[0][1] = 18
     with pytest.raises(NGIRDecodeError, match="REFERENCE_STORE opcode requires NG IR format V19"):
         decode_ng_ir_events(source.encode("utf-8"), _flatten(legacy))
@@ -4280,6 +4280,7 @@ def test_ng_ir_v18_rejects_unary_negation_opcode_in_older_streams() -> None:
     source = "fn negate(value: i64) -> i64:\n    return -value\n"
     records = _event_records(_emit_ng_events(source))
     assert any(record[0] == 4 and record[2] == 20 for record in records)
+    records = [record for record in records if record[0] not in {26, 27}]
     records[0][1] = 17
     with pytest.raises(NGIRDecodeError, match="INVERT opcode requires NG IR format V18"):
         decode_ng_ir_events(source.encode("utf-8"), _flatten(records))

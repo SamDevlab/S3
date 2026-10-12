@@ -208,6 +208,57 @@ def _assert_native_outputs_equal(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
     reason="native S3C-NG qualification requires Linux x86-64",
 )
+def test_native_s3c_ng_preserves_record_parameter_and_while_locations(
+    tmp_path: Path,
+) -> None:
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    sources = {
+        "app.s3": """\
+module app
+from model import Pair
+fn inspect(pair: Pair, limit: i64) -> i64:
+    mut index: i64 = 0
+    while index < limit:
+        index = index + 1
+    match index <=> limit:
+        -1:
+            match index <=> 0:
+                -1:
+                    return pair.left
+                0:
+                    index = index
+                1:
+                    index = index
+        0:
+            index = index
+        1:
+            index = index
+    return pair.left + pair.inner.value + index
+fn relation_result(value: i64) -> trit:
+    return value == 1
+fn main() -> i64:
+    return 0
+""",
+        "model.s3": """\
+module model
+export record Inner:
+    value: i64
+export record Pair:
+    left: i64
+    inner: Inner
+export fn model_value() -> i64:
+    return 0
+""",
+    }
+    _assert_native_compile(artifact, sources, expected_result=0, tmp_path=tmp_path)
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG qualification requires Linux x86-64",
+)
 def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> None:
     compiler_ir = compile_reference_b_ir(_ROOT)
     artifact_b = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")

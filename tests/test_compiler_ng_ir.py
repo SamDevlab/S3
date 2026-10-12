@@ -81,6 +81,20 @@ def _source_name_span(source: str, name: str, character_offset: int, *, search_l
     return byte_start, byte_end
 
 
+def _source_location_record(
+    source: str,
+    event: object,
+    entity: int,
+    owner: int,
+    index: int,
+    location: object | None,
+) -> None:
+    if location is None:
+        return
+    byte_offset = len(source[: location.offset].encode("utf-8"))
+    event(26, entity, owner, index, 0, byte_offset, 0, 0)
+
+
 def _reference_events(program: object, source: str) -> list[int]:
     events: list[int] = []
     function_indices = {function.name: index for index, function in enumerate(program.functions)}
@@ -111,6 +125,7 @@ def _reference_events(program: object, source: str) -> list[int]:
             function.result_width,
             int(function.external) | (int(function.exported) << 1),
         )
+        _source_location_record(source, event, 1, function_index, 0, function.location)
         for result_ordinal, result_type in enumerate(function.result_types):
             event(22, function_index, result_ordinal, _TYPE_CODES[result_type], 0, 0, 0, 0)
         for parameter_index, parameter in enumerate(function.parameters):
@@ -128,6 +143,7 @@ def _reference_events(program: object, source: str) -> list[int]:
                 parameter_name_end,
                 0,
             )
+            _source_location_record(source, event, 2, function_index, parameter_index, parameter.location)
         for register in function.registers:
             event(
                 3,
@@ -139,6 +155,7 @@ def _reference_events(program: object, source: str) -> list[int]:
                 0,
                 0,
             )
+            _source_location_record(source, event, 3, function_index, register.index, register.location)
         for memory in function.memory_objects:
             event(
                 7,
@@ -150,8 +167,10 @@ def _reference_events(program: object, source: str) -> list[int]:
                 0,
                 0,
             )
+            _source_location_record(source, event, 7, function_index, memory.index, memory.location)
         for block_index, block in enumerate(function.blocks):
             event(9, function_index, block_index, 0, 0, 0, 0, 0)
+            _source_location_record(source, event, 9, function_index, block_index, block.location)
         instruction_index = 0
         for block_index, block in enumerate(function.blocks):
             for instruction in block.instructions:
@@ -222,6 +241,7 @@ def _reference_events(program: object, source: str) -> list[int]:
                 if opcode in {"branch3", "jump"}:
                     targets = tuple(block_indices[target] for target in instruction.targets)
                     event(11, function_index, instruction_index, *targets, *(0 for _ in range(5 - len(targets))))
+                _source_location_record(source, event, 4, function_index, instruction_index, instruction.location)
                 instruction_index += 1
         event(5, function_index, 0, 0, 0, 0, 0, 0)
     return events
