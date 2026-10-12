@@ -4951,7 +4951,7 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
             discard ng_mark_instruction_block(instructions, selector_first_instruction, *current_block)
         1:
             selector_expanded = selector_expanded
-    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=11, result=-1, operand_count=1, operand0=selector_register, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=first_arm_block, target1=first_arm_block + 1, target2=first_arm_block + 2, source_start=selector_node.start))
+    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=11, result=-1, operand_count=1, operand0=selector_register, operand1=-1, immediate=0, memory=-1, initialization=0, block=*current_block, target0=first_arm_block, target1=first_arm_block + 1, target2=first_arm_block + 2, source_start=-1))
     block_index = first_arm_block
     while block_index < arm_end_block:
         arm_label = block_index - first_arm_block - 1
