@@ -2070,30 +2070,36 @@ __s3_builtin_resource_close:
 """.strip("\n").splitlines()
 
 
-def render_runtime() -> str:
+def render_runtime(*, include_standalone_entry: bool = True) -> str:
     """Return deterministic Intel-syntax GNU assembly for the native runtime."""
 
     prefix = "program returned: "
     lines = [
         ".section .text",
-        ".globl _start",
-        ".type _start, @function",
-        "_start:",
-        "    and rsp, -16",
-        "    call s3_main",
-        "    mov r12, rax",
-        "    mov eax, 1",
-        "    mov edi, 1",
-        "    lea rsi, [rip + .L__s3_result_prefix]",
-        f"    mov edx, {len(prefix)}",
-        "    syscall",
-        "    mov rdi, r12",
-        "    call __s3_print_i64",
-        "    mov eax, 60",
-        "    xor edi, edi",
-        "    syscall",
-        "    ud2",
-        ".size _start, .-_start",
+        *(
+            [
+                ".globl _start",
+                ".type _start, @function",
+                "_start:",
+                "    and rsp, -16",
+                "    call s3_main",
+                "    mov r12, rax",
+                "    mov eax, 1",
+                "    mov edi, 1",
+                "    lea rsi, [rip + .L__s3_result_prefix]",
+                f"    mov edx, {len(prefix)}",
+                "    syscall",
+                "    mov rdi, r12",
+                "    call __s3_print_i64",
+                "    mov eax, 60",
+                "    xor edi, edi",
+                "    syscall",
+                "    ud2",
+                ".size _start, .-_start",
+            ]
+            if include_standalone_entry
+            else []
+        ),
         "",
         ".type __s3_print_i64, @function",
         "__s3_print_i64:",
