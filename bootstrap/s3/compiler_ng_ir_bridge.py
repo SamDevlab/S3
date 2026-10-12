@@ -126,6 +126,7 @@ _TYPE_KINDS_V3 = {
     9: IRType.REFERENCE,
     10: IRType.STRING,
 }
+_COMPOSITE_VECTOR_FIELD_KINDS = frozenset(_TYPE_KINDS_V3) - {9}
 _OPCODE_CODES = {
     1: IROpcode.CONST,
     2: IROpcode.ADD,
@@ -892,7 +893,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                         ):
                             raise NGIRDecodeError("malformed V9 composite vector field metadata")
                         field_type = type_descriptors.get(field_type_id)
-                        if field_type is None or field_type.kind not in {1, 2, 3, 4}:
+                        if field_type is None or field_type.kind not in _COMPOSITE_VECTOR_FIELD_KINDS:
                             raise NGIRDecodeError("V9 composite vector uses an unsupported field type")
                         field_type_ids.append(field_type_id)
 

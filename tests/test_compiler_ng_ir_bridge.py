@@ -152,7 +152,7 @@ def _execute_ir_with_step_budget(
                 except (AttributeError, IndexError, TypeError, ValueError):
                     callsite = f"node={node_id!r}"
             elif (
-                function.name == "ng_generic_vector_len_type"
+                function.name in {"ng_generic_vector_len_type", "ng_generic_vector_get_type"}
                 and caller_function is not None
                 and caller_function.name == "ng_generic_call_type"
             ):
@@ -192,7 +192,7 @@ def _execute_ir_with_step_budget(
                         f"argument={argument_text!r}"
                     )
                 except (AttributeError, IndexError, TypeError, ValueError):
-                    callsite = "vector_len callsite unavailable"
+                    callsite = f"{function.name} callsite unavailable"
             self.status_returns.append(
                 (
                     result,
@@ -1450,6 +1450,47 @@ def test_ng_ir_v16_vector_record_get_set_and_local_assignment_preserve_cells() -
     assert len(vector_get_calls) == 3
     assert all(len(instruction.results) == 2 for instruction in vector_get_calls)
     assert execute_ir(ng_ir) == execute_ir(reference_ir) == 120
+
+
+def test_ng_ir_v9_composite_vector_round_trips_non_scalar_record_cells() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "record SourceUnit:\n"
+            "    path: text\n"
+            "    contents: bytes\n"
+            "fn main() -> i64:\n"
+            "    mut units: vector<SourceUnit> = vector_new<SourceUnit>(1)\n"
+            "    mut path: text = text_from_static(\"u.s3\")\n"
+            "    mut contents_text: text = text_from_static(\"abc\")\n"
+            "    mut contents: bytes = bytes_from_text(&contents_text)\n"
+            "    discard vector_push<SourceUnit>(&mut units, SourceUnit(path=path, contents=contents))\n"
+            "    mut loaded: SourceUnit = vector_get<SourceUnit>(&units, 0)\n"
+            "    return text_len(&loaded.path) + bytes_len(&loaded.contents)\n"
+        ),
+    }
+    reference_ir = compile_sources(sources, entry_module="app").ir
+    assert reference_ir is not None
+
+    metrics: dict[str, object] = {}
+    status, source, events = _run_ng_source_set_events(
+        sources,
+        entry_module="app",
+        metrics=metrics,
+    )
+    assert status == 0, f"NG source-set status={status}; status_returns={metrics['status_returns']}"
+    records = _event_records(events)
+    field_types = {
+        record[4]
+        for record in records
+        if record[0] == 20
+    }
+    assert {5, 6}.issubset(field_types)
+
+    ng_ir = decode_ng_ir_events(source, events)
+    verify_ir(ng_ir)
+    assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 7
 
 
 def test_ng_ir_v16_record_local_vector_get_uses_exact_aggregate_capacity() -> None:

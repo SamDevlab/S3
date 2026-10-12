@@ -1,7 +1,7 @@
 module selfhost.compiler_ng.ir
 
 from selfhost.compiler_ng.parser import NgAstNode, NgField, NgFunction, NgParameter, NgRecord, ng_relational_operator_code
-from selfhost.compiler_ng.semantic import ng_builtin_argument_type, ng_builtin_call_kind, ng_builtin_result_type, ng_check_program_typed, ng_find_function, ng_generic_call_result_type_argument, ng_is_resolved_builtin_call, ng_named_spans_equal, ng_resolved_call_function_index
+from selfhost.compiler_ng.semantic import ng_builtin_argument_type, ng_builtin_call_kind, ng_builtin_result_type, ng_check_program_typed, ng_composite_vector_cell_type_supported, ng_find_function, ng_generic_call_result_type_argument, ng_is_resolved_builtin_call, ng_named_spans_equal, ng_resolved_call_function_index
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_type_equal
 from selfhost.compiler_ng.lexer import ng_span_fingerprint, ng_spans_equal
 
@@ -667,7 +667,6 @@ fn ng_ir_record_value_type_relation(source: &bytes, types: &vector<NgTypeDescrip
 
 fn ng_ir_vector_record_cells_supported(types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, descriptor: NgTypeDescriptor) -> trit:
     mut field: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
-    mut field_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut field_index: i64 = descriptor.first_field
     match descriptor.field_count > 0:
         -1:
@@ -681,11 +680,10 @@ fn ng_ir_vector_record_cells_supported(types: &vector<NgTypeDescriptor>, fields:
                                     -1:
                                         match field.type_id <= vector_len<NgTypeDescriptor>(types):
                                             -1:
-                                                field_type = vector_get<NgTypeDescriptor>(types, field.type_id - 1)
-                                                match field_type.kind <= 4:
-                                                    -1:
-                                                        field_index = field_index + 1
+                                                match ng_composite_vector_cell_type_supported(types, field.type_id) <=> -1:
                                                     0:
+                                                        field_index = field_index + 1
+                                                    -1:
                                                         return 0
                                                     1:
                                                         return 0

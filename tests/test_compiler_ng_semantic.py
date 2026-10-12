@@ -599,8 +599,26 @@ def test_nextgen_vector_len_accepts_records_with_non_scalar_fields() -> None:
         "record SourceUnit:\n"
         "    path: text\n"
         "    contents: bytes\n"
+        "    label: string\n"
         "fn source_count(units: &vector<SourceUnit>) -> i64:\n"
         "    return vector_len<SourceUnit>(units)\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+
+    assert compile_source(source).ir is not None
+    assert _ng_module_semantic_statuses([source]) == [0]
+
+
+def test_nextgen_vector_get_accepts_records_with_non_scalar_fields() -> None:
+    source = (
+        "module app\n"
+        "record SourceUnit:\n"
+        "    path: text\n"
+        "    contents: bytes\n"
+        "    label: string\n"
+        "fn source_at(units: &vector<SourceUnit>, index: i64) -> SourceUnit:\n"
+        "    return vector_get<SourceUnit>(units, index)\n"
         "fn main() -> i64:\n"
         "    return 0\n"
     )
