@@ -19,7 +19,9 @@ from bootstrap.s3.diagnostics import SemanticError
 from bootstrap.s3.dynamic import (
     DynamicCompositeVector,
     DynamicBytes,
+    DynamicText,
     DynamicVector,
+    bytes_from_text,
     f64_vector_new,
     i64_vector_new,
     tryte_vector_new,
@@ -3802,6 +3804,99 @@ def test_ng_self_compiles_dependency_closed_compiler_module_graph() -> None:
         f"functions={len(ng_ir.functions)} "
         f"steps={metrics['steps']} "
         f"hot_functions={Counter(instruction_counts).most_common(12)}"
+    )
+
+    source_capacity = max(
+        32768,
+        sum(
+            len(path.encode("utf-8")) + len(contents.encode("utf-8"))
+            for path, contents in sources.items()
+        )
+        + 8192,
+    )
+    units = DynamicCompositeVector("NgSourceUnit", ("text", "bytes"), len(sources))
+    for path, contents in sources.items():
+        units.push(
+            (
+                DynamicText.from_static(path),
+                bytes_from_text(DynamicText.from_static(contents)),
+            )
+        )
+    source_buffer = DynamicBytes(source_capacity)
+    event_buffer = i64_vector_new(source_capacity * 8)
+    units_cell = ir_emulator._Cell(value=units, initialized=True, mutable=False)
+    source_cell = ir_emulator._Cell(value=source_buffer, initialized=True)
+    events_cell = ir_emulator._Cell(value=event_buffer, initialized=True)
+    compiled_functions = {function.name: function for function in ng_ir.functions}
+    compiler_entry = next(
+        function
+        for function in ng_ir.functions
+        if function.name.endswith("ng_emit_source_set")
+    )
+    static_strings = {item.id: item.value for item in ng_ir.static_strings}
+
+    class BootstrapObserver:
+        def __init__(self) -> None:
+            self.steps = 0
+            self.instruction_counts: Counter[str] = Counter()
+
+        def function_call(self, caller, function) -> None:
+            return None
+
+        def instruction(self, function, block: str, index: int) -> None:
+            self.steps += 1
+            self.instruction_counts[function.name] += 1
+            assert self.steps <= 1_000_000_000, (
+                "compiled B exceeded its existing instruction budget while compiling C; "
+                f"steps={self.steps}; "
+                f"hot_functions={self.instruction_counts.most_common(12)}"
+            )
+
+        def function_return(self, caller, function, result) -> None:
+            return None
+
+    bootstrap_observer = BootstrapObserver()
+    b_status = ir_emulator._execute_function(
+        compiled_functions,
+        compiler_entry,
+        (
+            ir_emulator.ReferenceValue(units_cell, 0, False),
+            DynamicText.from_static("app"),
+            ir_emulator.ReferenceValue(source_cell, 0, True),
+            ir_emulator.ReferenceValue(events_cell, 0, True),
+        ),
+        None,
+        static_strings,
+        HostExecutionContext(),
+        bootstrap_observer,
+    )
+    assert b_status == 0, (
+        f"compiled B could not compile the dependency-closed graph; status={b_status}; "
+        f"steps={bootstrap_observer.steps}; "
+        f"hot_functions={bootstrap_observer.instruction_counts.most_common(12)}"
+    )
+    c_source_value = source_cell.value
+    c_event_value = events_cell.value
+    assert isinstance(c_source_value, DynamicBytes)
+    assert isinstance(c_event_value, DynamicVector)
+    c_source = c_source_value.to_bytes()
+    c_cells = [int(value) for value in c_event_value]
+    assert c_source == source
+    assert c_cells == cells
+    c_ir = decode_ng_ir_events(c_source, c_cells)
+    verify_ir(c_ir)
+    c_structure = _canonical_structure(c_ir)
+    b_structure = _canonical_structure(ng_ir)
+    assert c_structure == b_structure, _first_structure_difference(
+        c_structure, b_structure, "compiled_B_self_compile"
+    )
+    assert execute_ir(c_ir) == execute_ir(ng_ir) == execute_ir(reference) == 0
+    print(
+        "COMPILER_SOURCE_GRAPH_B_TO_C_PROFILE "
+        f"modules={len(sources)} "
+        f"functions={len(c_ir.functions)} "
+        f"steps={bootstrap_observer.steps} "
+        f"hot_functions={bootstrap_observer.instruction_counts.most_common(12)}"
     )
 
 
