@@ -32,6 +32,7 @@ from bootstrap.s3.ir_emulator import ReferenceValue, execute_ir
 from bootstrap.s3 import ir_emulator
 from bootstrap.s3.host_services import HostExecutionContext
 from bootstrap.s3.pipeline import compile_source, compile_sources
+from bootstrap.s3.ir_serialization import serialize_ir
 from bootstrap.s3.verifier import verify_ir
 from tests.test_compiler_ng_ir import _NG_SOURCE
 from tools.qbe_oracle import QBETranslationError, translate_verified_ir
@@ -1918,6 +1919,7 @@ def test_ng_v21_preserves_utf8_source_locations_through_lowering() -> None:
     actual = decode_ng_ir_events(source.encode("utf-8"), events)
 
     assert _source_location_structure(actual) == _source_location_structure(reference)
+    assert serialize_ir(actual) == serialize_ir(reference)
     assert execute_ir(actual) == execute_ir(reference) == 43
 
 

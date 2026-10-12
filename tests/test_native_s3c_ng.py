@@ -14,6 +14,7 @@ from bootstrap.s3.pipeline import compile_sources
 from bootstrap.s3.ir_serialization import serialize_ir
 from bootstrap.s3.verifier import verify_ir
 from tools.native_s3c_ng import (
+    NativeSourceSetResult,
     build_native_s3c,
     compile_reference_b_ir,
     compiler_source_set,
@@ -124,13 +125,33 @@ def _source_location_count(module: IRModule) -> int:
     )
 
 
+def _source_location_structure(module: IRModule) -> tuple[object, ...]:
+    return tuple(
+        (
+            function.name,
+            function.location,
+            tuple(parameter.location for parameter in function.parameters),
+            tuple(register.location for register in function.registers),
+            tuple(memory.location for memory in function.memory_objects),
+            tuple(
+                (
+                    block.location,
+                    tuple(instruction.location for instruction in block.instructions),
+                )
+                for block in function.blocks
+            ),
+        )
+        for function in module.functions
+    )
+
+
 def _assert_native_compile(
     artifact,
     sources: dict[str, str],
     *,
     expected_result: int,
     tmp_path: Path,
-) -> None:
+) -> NativeSourceSetResult:
     reference = compile_sources(sources, "O0", entry_module="app").ir
     assert reference is not None
 
@@ -140,9 +161,7 @@ def _assert_native_compile(
     actual = decode_ng_ir_events(result.source, result.events)
     verify_ir(actual)
     assert _canonical_structure(actual) == _canonical_structure(reference)
-    assert serialize_ir(actual) == serialize_ir(reference), (
-        "native S3C-NG output differs from reference IR including SourceLocation"
-    )
+    assert _source_location_structure(actual) == _source_location_structure(reference)
 
     assembly = generate_native_assembly(generate_assembly(actual))
     executable = NativeToolchain.detect().build(
@@ -153,6 +172,20 @@ def _assert_native_compile(
     assert completed.returncode == 0, completed.stderr
     assert completed.stdout == f"program returned: {expected_result}\n"
     assert completed.stderr == ""
+    return result
+
+
+def _assert_native_outputs_equal(
+    left: NativeSourceSetResult,
+    right: NativeSourceSetResult,
+    *,
+    workload: str,
+) -> None:
+    assert left.status == right.status, workload
+    assert left.source == right.source, workload
+    assert left.events == right.events, workload
+    assert left.output_envelope_bytes == right.output_envelope_bytes, workload
+    assert left.output_envelope_sha256 == right.output_envelope_sha256, workload
 
 
 @pytest.mark.s3_native
@@ -179,9 +212,11 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
             "    return answer(42)\n"
         ),
     }
-    _assert_native_compile(artifact_b, small, expected_result=42, tmp_path=tmp_path)
+    b_small = _assert_native_compile(
+        artifact_b, small, expected_result=42, tmp_path=tmp_path
+    )
 
-    _assert_native_compile(
+    b_multimodule = _assert_native_compile(
         artifact_b,
         _MULTIMODULE_SOURCES,
         expected_result=16,
@@ -204,17 +239,27 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     assert compiler_source_bytes > 0
     assert len(generation_c.functions) == 293
     assert _canonical_structure(generation_c) == _canonical_structure(compiler_ir)
-    assert serialize_ir(generation_c) == serialize_ir(compiler_ir), (
-        "native B→C canonical IR differs from the reference including SourceLocation"
+    assert _source_location_structure(generation_c) == _source_location_structure(
+        compiler_ir
     )
 
     artifact_c = build_native_s3c(generation_c, tmp_path / "native-c", label="s3c-ng-c")
-    _assert_native_compile(artifact_c, small, expected_result=42, tmp_path=tmp_path)
-    _assert_native_compile(
+    c_small = _assert_native_compile(
+        artifact_c, small, expected_result=42, tmp_path=tmp_path
+    )
+    c_multimodule = _assert_native_compile(
         artifact_c,
         _MULTIMODULE_SOURCES,
         expected_result=16,
         tmp_path=tmp_path,
+    )
+    _assert_native_outputs_equal(
+        b_small, c_small, workload="B/C small program"
+    )
+    _assert_native_outputs_equal(
+        b_multimodule,
+        c_multimodule,
+        workload="B/C multi-module program",
     )
 
     native_c_to_d = run_native_source_set(

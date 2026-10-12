@@ -1581,7 +1581,11 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             by_block[record.block].append(
                 IRInstruction(
                     opcode=record.opcode,
-                    result=(None if record.opcode is IROpcode.CALL and record.results else record.result),
+                    result=(
+                        None
+                        if record.opcode is IROpcode.CALL and len(record.results) > 1
+                        else record.result
+                    ),
                     operands=record.operands,
                     immediate=record.immediate,
                     callee=callee,
