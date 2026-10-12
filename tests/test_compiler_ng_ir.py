@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
+from bootstrap.s3.compiler_ng_ir_bridge import NG_IR_FORMAT_VERSION, decode_ng_ir_events
 from bootstrap.s3.dynamic import DynamicVector
 from bootstrap.s3.ir import IRType
 from bootstrap.s3.ir_emulator import execute_ir
@@ -89,7 +89,7 @@ def _reference_events(program: object, source: str) -> list[int]:
         assert len(fields) == 7
         events.extend((kind, *fields))
 
-    event(0, 19, 8, 0, 0, 0, 0, 0)
+    event(0, NG_IR_FORMAT_VERSION, 8, 0, 0, 0, 0, 0)
     for type_id in range(1, 7):
         event(12, type_id, type_id, -1, -1, -1, -1, -1)
         event(13, type_id, -1, 0, 0, 0, 0, 0)

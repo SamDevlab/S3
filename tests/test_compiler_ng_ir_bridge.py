@@ -845,7 +845,7 @@ def test_ng_ir_v13_static_strings_match_reference_ir_and_fail_closed() -> None:
         decode_ng_ir_events(source.encode("utf-8"), _flatten(wrong_type))
 
 
-def test_ng_ir_v7_relational_opcode_executes_and_is_not_valid_in_v6() -> None:
+def test_ng_ir_v7_f64_relational_opcode_executes_and_is_not_valid_in_v6() -> None:
     cases = (
         ("i64", 2, "==", 2, -1),
         ("i64", 2, "!=", 3, -1),
@@ -871,7 +871,8 @@ def test_ng_ir_v7_relational_opcode_executes_and_is_not_valid_in_v6() -> None:
     records = _event_records(_emit_ng_events(source))
     assert records[0] == [0, 20, 8, 0, 0, 0, 0, 0]
     relation_records = [record for record in records if record[0] == 4 and record[2] == 15]
-    assert len(relation_records) == len(cases)
+    assert len(relation_records) == len(cases) // 2
+    assert all(6 <= record[1] < 12 for record in relation_records)
     assert {record[7] for record in relation_records} == set(range(6))
 
     encoded = _flatten(records)
@@ -935,6 +936,48 @@ def test_ng_ir_v7_relational_match_selector_preserves_distinct_arms() -> None:
             {},
             HostExecutionContext(),
         ) == expected
+
+
+def test_ng_integer_relation_returns_use_canonical_compare_lowering() -> None:
+    source = (
+        "fn equal_one(value: i64) -> trit:\n"
+        "    return value == 1\n"
+        "fn less_than_one(value: i64) -> trit:\n"
+        "    return value < 1\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+    reference = compile_source(source).ir
+    assert reference is not None
+    actual = decode_ng_ir_events(source.encode(), _emit_ng_events(source))
+    verify_ir(actual)
+    assert _canonical_structure(actual) == _canonical_structure(reference)
+
+    functions = {function.name: function for function in actual.functions}
+    for name, cases in (
+        ("equal_one", ((0, 0), (1, -1), (2, 0))),
+        ("less_than_one", ((0, -1), (1, 0), (2, 0))),
+    ):
+        function = functions[name]
+        assert any(
+            instruction.opcode is IROpcode.COMPARE
+            for block in function.blocks
+            for instruction in block.instructions
+        )
+        assert not any(
+            instruction.opcode is IROpcode.RELATE
+            for block in function.blocks
+            for instruction in block.instructions
+        )
+        for value, expected in cases:
+            assert ir_emulator._execute_function(
+                functions,
+                function,
+                (value,),
+                (),
+                {},
+                HostExecutionContext(),
+            ) == expected
 
 
 def test_ng_ir_v7_relational_match_contextualizes_trit_literal() -> None:

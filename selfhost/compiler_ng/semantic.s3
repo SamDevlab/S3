@@ -2961,7 +2961,7 @@ fn ng_collect_local_declaration_indices(nodes: &vector<NgAstNode>, declaration_i
         node_index = node_index + 1
     return 0
 
-fn ng_local_name_bucket(source: &bytes, function_first_node: i64, name_start: i64, name_end: i64, bucket_count: i64) -> i64:
+fn ng_local_name_bucket(source: &bytes, function_first_node: i64, scope_id: i64, name_start: i64, name_end: i64, bucket_count: i64) -> i64:
     mut name_index: i64 = name_start
     mut hash_value: i64 = 0
     match bucket_count > 0:
@@ -2970,7 +2970,9 @@ fn ng_local_name_bucket(source: &bytes, function_first_node: i64, name_start: i6
                 hash_value = hash_value * 31 + to_i64(bytes_get(source, name_index))
                 hash_value = hash_value - (hash_value / bucket_count) * bucket_count
                 name_index = name_index + 1
-            hash_value = hash_value + function_first_node
+            hash_value = hash_value * 31 + scope_id
+            hash_value = hash_value - (hash_value / bucket_count) * bucket_count
+            hash_value = hash_value * 31 + function_first_node
             hash_value = hash_value - (hash_value / bucket_count) * bucket_count
             return hash_value
         0:
@@ -3001,7 +3003,7 @@ fn ng_local_symbol_slot(source: &bytes, symbols: &mut vector<NgLocalLookupSymbol
     mut symbol: NgLocalLookupSymbol = NgLocalLookupSymbol(function_first_node=0, scope_id=0, name_start=0, name_end=0, first_occurrence=0, occurrence_count=0)
     match bucket_count > 0:
         -1:
-            slot = ng_local_name_bucket(source, function_first_node, name_start, name_end, bucket_count)
+            slot = ng_local_name_bucket(source, function_first_node, scope_id, name_start, name_end, bucket_count)
             while probes < bucket_count:
                 probes = probes + 1
                 symbol_id = vector_get<i64>(&*bucket_slots, slot)

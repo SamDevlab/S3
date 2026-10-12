@@ -4347,17 +4347,40 @@ fn ng_emit_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
         1:
             return -12
 
-fn ng_emit_function_return(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, function: NgFunction, statement: NgAstNode, first_instruction: i64, block: i64, call_arguments: &mut vector<i64>, return_values: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
+fn ng_emit_function_return(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, memories: &mut vector<NgIRMemory>, function: NgFunction, statement: NgAstNode, first_instruction: i64, call_arguments: &mut vector<i64>, return_values: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, blocks: &mut vector<NgIRBlock>, current_block: &mut i64) -> i64:
     mut result_count: i64 = ng_ir_value_cell_count(types, fields, function.return_type)
     mut result_registers: vector<i64> = vector_new<i64>(0)
     mut result_register: i64 = -1
     mut return_pool_start: i64 = 0
     mut cell_index: i64 = 0
     mut status: i64 = 0
+    mut expression_expanded: i64 = 0
+    mut expression: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     match result_count > 0:
         -1:
             result_registers = vector_new<i64>(result_count)
-            status = ng_ir_emit_value_cells(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, function.return_type, statement.left, call_arguments, registers, instructions, &mut result_registers)
+            expression = vector_get<NgAstNode>(nodes, statement.left)
+            match result_count <=> 1:
+                0:
+                    match expression.kind <=> 4:
+                        0:
+                            result_register = ng_emit_relation_value(source, types, fields, functions, nodes, parameters, variables, function, statement.left, memories, call_arguments, registers, instructions, blocks, current_block, &mut expression_expanded)
+                            match result_register >= 0:
+                                -1:
+                                    discard vector_push<i64>(&mut result_registers, result_register)
+                                    status = 0
+                                0:
+                                    return result_register
+                                1:
+                                    return result_register
+                        -1:
+                            status = ng_ir_emit_value_cells(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, function.return_type, statement.left, call_arguments, registers, instructions, &mut result_registers)
+                        1:
+                            status = ng_ir_emit_value_cells(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, function.return_type, statement.left, call_arguments, registers, instructions, &mut result_registers)
+                -1:
+                    status = ng_ir_emit_value_cells(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, function.return_type, statement.left, call_arguments, registers, instructions, &mut result_registers)
+                1:
+                    status = ng_ir_emit_value_cells(source, types, fields, functions, nodes, parameters, variables, function.first_parameter, function.parameter_count, function.return_type, statement.left, call_arguments, registers, instructions, &mut result_registers)
             match status <=> 0:
                 -1:
                     return status
@@ -4370,8 +4393,14 @@ fn ng_emit_function_return(source: &bytes, types: &vector<NgTypeDescriptor>, fie
                             while cell_index < result_count:
                                 discard vector_push<i64>(return_values, vector_get<i64>(&result_registers, cell_index))
                                 cell_index = cell_index + 1
-                            discard ng_mark_instruction_block(instructions, first_instruction, block)
-                            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=6, result=-1, operand_count=result_count, operand0=result_register, operand1=return_pool_start, immediate=0, memory=-1, initialization=0, block=block, target0=-1, target1=-1, target2=-1))
+                            match expression_expanded <=> 0:
+                                0:
+                                    discard ng_mark_instruction_block(instructions, first_instruction, *current_block)
+                                -1:
+                                    expression_expanded = expression_expanded
+                                1:
+                                    expression_expanded = expression_expanded
+                            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=6, result=-1, operand_count=result_count, operand0=result_register, operand1=return_pool_start, immediate=0, memory=-1, initialization=0, block=*current_block, target0=-1, target1=-1, target2=-1))
                             return 0
                         -1:
                             return -14
@@ -4778,7 +4807,7 @@ fn ng_emit_match_arms(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                                         1:
                                             return -17
                                     first_instruction = vector_len<NgIRInstruction>(&*instructions)
-                                    status = ng_emit_function_return(source, types, fields, functions, nodes, parameters, &*variables, function, body_statement, first_instruction, *current_block, call_arguments, return_values, registers, instructions)
+                                    status = ng_emit_function_return(source, types, fields, functions, nodes, parameters, &*variables, memories, function, body_statement, first_instruction, call_arguments, return_values, registers, instructions, blocks, current_block)
                                     match status <=> 0:
                                         0:
                                             *current_block = -1
@@ -4985,7 +5014,7 @@ fn ng_emit_while(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vect
                                     -1:
                                         return -17
                                     0:
-                                        status = ng_emit_function_return(source, types, fields, functions, nodes, parameters, &*variables, function, body_statement, first_instruction, *current_block, call_arguments, return_values, registers, instructions)
+                                        status = ng_emit_function_return(source, types, fields, functions, nodes, parameters, &*variables, memories, function, body_statement, first_instruction, call_arguments, return_values, registers, instructions, blocks, current_block)
                                         match status <=> 0:
                                             0:
                                                 *current_block = -1
@@ -5399,7 +5428,7 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
                         0:
                             match statement.kind == 9:
                                 -1:
-                                    status = ng_emit_function_return(source, types, fields, functions, &*nodes, parameters, &variables, function, statement, statement_first_instruction, current_block, &mut call_arguments, &mut return_values, &mut registers, &mut instructions)
+                                    status = ng_emit_function_return(source, types, fields, functions, &*nodes, parameters, &variables, &mut memories, function, statement, statement_first_instruction, &mut call_arguments, &mut return_values, &mut registers, &mut instructions, &mut blocks, &mut current_block)
                                     match status <=> 0:
                                         -1:
                                             return status
@@ -5454,19 +5483,25 @@ export fn ng_emit_program(source: &bytes, types: &vector<NgTypeDescriptor>, reco
                             return -16
                 1:
                     return -16
-            match statement.kind == 17:
+            match statement.kind == 9:
                 -1:
                     statement_first_instruction = statement_first_instruction
                 0:
-                    match statement.kind <=> 12:
+                    match statement.kind == 17:
                         -1:
-                            discard ng_mark_instruction_block(&mut instructions, statement_first_instruction, current_block)
-                        0:
                             statement_first_instruction = statement_first_instruction
+                        0:
+                            match statement.kind <=> 12:
+                                -1:
+                                    discard ng_mark_instruction_block(&mut instructions, statement_first_instruction, current_block)
+                                0:
+                                    statement_first_instruction = statement_first_instruction
+                                1:
+                                    discard ng_mark_instruction_block(&mut instructions, statement_first_instruction, current_block)
                         1:
-                            discard ng_mark_instruction_block(&mut instructions, statement_first_instruction, current_block)
+                            return -16
                 1:
-                    return -16
+                    statement_first_instruction = statement_first_instruction
             link_id = link.right
         result_cell_count = ng_ir_value_cell_count(types, fields, function.return_type)
         match result_cell_count > 0:

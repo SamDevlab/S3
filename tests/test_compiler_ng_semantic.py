@@ -341,7 +341,7 @@ fn main() -> vector<i64>:
     mut functions: vector<NgFunction> = vector_new<NgFunction>(1)
     mut declarations: vector<i64> = vector_new<i64>({declaration_count + 1})
     mut scope_ids: vector<i64> = vector_new<i64>({declaration_count + lookup_count + 1})
-    mut scope_parents: vector<i64> = vector_new<i64>(1)
+    mut scope_parents: vector<i64> = vector_new<i64>(2)
     mut symbols: vector<NgLocalLookupSymbol> = vector_new<NgLocalLookupSymbol>({declaration_count + 1})
     mut buckets: vector<i64> = vector_new<i64>({(declaration_count + 1) * 2 + 1})
     mut offsets: vector<i64> = vector_new<i64>({declaration_count + 2})
@@ -355,8 +355,15 @@ fn main() -> vector<i64>:
     mut probes_total: i64 = 0
     discard vector_push<NgFunction>(&mut functions, NgFunction(start=0, end=bytes_len(&source), name_start=0, name_end=0, local_name_start=0, local_name_end=0, first_parameter=0, parameter_count=0, return_type=1, first_node=0, body_node={declaration_count + lookup_count + 1}, module_index=0, exported=0, name_fingerprint=0, local_name_fingerprint=0))
     discard vector_push<i64>(&mut scope_parents, -1)
+    discard vector_push<i64>(&mut scope_parents, 0)
     while index < {declaration_count + lookup_count + 1}:
-        discard vector_push<i64>(&mut scope_ids, 0)
+        match index < {declaration_count}:
+            -1:
+                discard vector_push<i64>(&mut scope_ids, 0)
+            0:
+                discard vector_push<i64>(&mut scope_ids, 1)
+            1:
+                discard vector_push<i64>(&mut scope_ids, 1)
         index = index + 1
     index = 0
     while index < {declaration_count}:
@@ -403,6 +410,7 @@ fn main() -> vector<i64>:
     print(
         "LOCAL_LOOKUP_CHARACTERIZATION "
         f"ast_declarations={declaration_count + 1} "
+        "scope_depth=2 "
         f"field_base_lookups={lookup_count} "
         f"lookup_calls={lookup_count} "
         f"indexed_probes={indexed_probes} "
