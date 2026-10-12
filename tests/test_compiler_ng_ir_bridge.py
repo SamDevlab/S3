@@ -193,6 +193,52 @@ def _execute_ir_with_step_budget(
                     )
                 except (AttributeError, IndexError, TypeError, ValueError):
                     callsite = f"{function.name} callsite unavailable"
+            elif (
+                function.name == "ng_check_assignment"
+                and caller_function is not None
+                and caller_function.name == "ng_check_control_statement"
+            ):
+                parameter_registers = {
+                    parameter.name: parameter.register
+                    for parameter in caller_function.parameters
+                }
+
+                def parameter_value(name: str):
+                    register = parameter_registers.get(name)
+                    cell = caller.registers.get(register) if register is not None else None
+                    value = getattr(cell, "value", None)
+                    reference_cell = getattr(value, "cell", None)
+                    if reference_cell is not None:
+                        value = reference_cell.value
+                    return getattr(value, "owner", value)
+
+                try:
+                    raw_source = parameter_value("source").to_bytes()
+                    nodes = parameter_value("nodes")
+                    fields = {
+                        name: parameter_value(f"statement__{name}")
+                        for name in ("kind", "start", "end", "left", "right", "operation")
+                    }
+
+                    def expression_summary(node_id):
+                        if not isinstance(node_id, int) or node_id < 0:
+                            return repr(node_id)
+                        node = nodes.get(node_id)
+                        start, end = node[1], node[2]
+                        preview = raw_source[start:end][:160].decode(
+                            "utf-8", errors="replace"
+                        )
+                        return f"id={node_id} node={node!r} text={preview!r}"
+
+                    callsite = (
+                        f"statement_kind={fields['kind']} span={fields['start']}:{fields['end']} "
+                        f"target_span={fields['start']}:{fields['end']} "
+                        f"target_text={raw_source[fields['start']:fields['end']][:160]!r} "
+                        f"value={expression_summary(fields['left'])} "
+                        f"target_expression={expression_summary(fields['right'])}"
+                    )
+                except (AttributeError, IndexError, TypeError, ValueError):
+                    callsite = "assignment callsite unavailable"
             self.status_returns.append(
                 (
                     result,
@@ -1897,6 +1943,47 @@ def test_ng_source_set_resolves_one_imported_record_identity_across_modules() ->
     verify_ir(ng_ir)
     assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
     assert execute_ir(ng_ir) == execute_ir(reference_ir) == 18
+
+
+def test_ng_source_set_assigns_imported_record_constructor_inside_match() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "from model import Item\n"
+            "fn selector() -> i64:\n"
+            "    return 0\n"
+            "fn main() -> i64:\n"
+            "    mut item: Item = Item(value=1)\n"
+            "    match selector() <=> 0:\n"
+            "        -1:\n"
+            "            return -1\n"
+            "        0:\n"
+            "            item = Item(value=42)\n"
+            "            return item.value\n"
+            "        1:\n"
+            "            return -1\n"
+        ),
+        "model.s3": (
+            "module model\n"
+            "export record Item:\n"
+            "    value: i64\n"
+            "export fn marker() -> i64:\n"
+            "    return 0\n"
+        ),
+    }
+    reference_ir = compile_sources(sources, entry_module="app").ir
+    assert reference_ir is not None
+
+    source, events = _emit_ng_source_set_events(sources, entry_module="app")
+    ng_ir = decode_ng_ir_events(source, events)
+    verify_ir(ng_ir)
+
+    ng_structure = _canonical_structure(ng_ir)
+    reference_structure = _canonical_structure(reference_ir)
+    assert ng_structure == reference_structure, _first_structure_difference(
+        ng_structure, reference_structure, "imported_record_constructor_assignment"
+    )
+    assert execute_ir(ng_ir) == execute_ir(reference_ir) == 42
 
 
 def test_ng_source_set_keeps_same_named_records_from_different_modules_distinct() -> None:

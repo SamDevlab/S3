@@ -4096,11 +4096,11 @@ fn ng_check_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields:
                                     return target_type
                         0:
                             value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left, local_binding.type_kind)
-                            match value_type <=> local_binding.type_kind:
-                                0:
-                                    return 0
+                            match ng_type_equal(source, types, value_type, local_binding.type_kind) <=> -1:
                                 -1:
                                     return -14
+                                0:
+                                    return 0
                                 1:
                                     return -14
                         1:
