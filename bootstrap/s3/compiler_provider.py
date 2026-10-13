@@ -55,6 +55,17 @@ class NativeCompilationResult:
 CompilationOutput = CompilationResult | NativeCompilationResult
 
 
+def compilation_requires_ir_execution(compilation: CompilationOutput) -> bool:
+    """Select the hosted executor from the compiled value model, not its frontend."""
+
+    if isinstance(compilation, NativeCompilationResult):
+        return _requires_conservative_optimization(compilation.ir)
+    return bool(
+        compilation.semantic_model.contains_references
+        or compilation.semantic_model.contains_dynamic
+    )
+
+
 def compile_with_provider(
     source: str,
     optimization: OptimizationLevel | str = OptimizationLevel.O0,

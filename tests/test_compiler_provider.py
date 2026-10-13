@@ -10,7 +10,12 @@ import pytest
 
 import bootstrap.s3.compiler_provider as compiler_provider
 import bootstrap.s3.native_compiler as native_compiler
-from bootstrap.s3.compiler_provider import CompilerKind, compile_source_set_with_provider
+from bootstrap.s3.compiler_provider import (
+    CompilerKind,
+    NativeCompilationResult,
+    compilation_requires_ir_execution,
+    compile_source_set_with_provider,
+)
 from bootstrap.s3.ir import IRBasicBlock, IRFunction, IRInstruction, IRModule, IROpcode, IRRegister, IRType
 from bootstrap.s3.native_compiler import (
     NativeS3CTransportError,
@@ -167,6 +172,32 @@ def test_ir_provider_uses_conservative_optimizer_for_reference_and_dynamic_ir() 
         )
     )
     assert compiler_provider._requires_conservative_optimization(dynamic_ir)
+
+
+def test_hosted_executor_selection_uses_native_ir_value_model() -> None:
+    scalar = compile_source("fn main() -> i64:\n    return 7\n")
+    assert scalar.ir is not None
+    assert not compilation_requires_ir_execution(scalar)
+
+    reference_ir = IRModule(
+        (
+            IRFunction(
+                "reference_case",
+                (),
+                IRType.I64,
+                (IRRegister(0, IRType.REFERENCE),),
+                (IRBasicBlock("entry", ()),),
+            ),
+        )
+    )
+    native_reference = NativeCompilationResult(
+        reference_ir,
+        scalar.assembly,
+        SimpleNamespace(),
+    )
+    assert compilation_requires_ir_execution(native_reference)
+    native_scalar = NativeCompilationResult(scalar.ir, scalar.assembly, SimpleNamespace())
+    assert not compilation_requires_ir_execution(native_scalar)
 
 
 def test_candidate_manifest_is_deterministic_and_discloses_reference_seed(

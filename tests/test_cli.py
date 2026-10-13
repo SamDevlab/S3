@@ -24,6 +24,116 @@ def _json_stderr(capsys: pytest.CaptureFixture[str]) -> dict[str, object]:
     return json.loads(captured.err)
 
 
+def test_container_plan_forwards_compiler_selection_into_runtime_command(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write_source(tmp_path / "src" / "main.s3", "module main\nfn main() -> i64:\n    return 7\n")
+    (tmp_path / "s3.toml").write_text(
+        "[project]\nname='app'\nversion='1'\nentrypoint='main'\n"
+        "source_roots=['src']\nprofile='hosted'\n",
+        encoding="ascii",
+    )
+    captured: list[tuple[str, ...]] = []
+
+    class RecordingDockerProvider:
+        def plan(self, spec):
+            captured.append(spec.command)
+            return {"command": spec.command}
+
+    monkeypatch.setattr(cli, "DockerProvider", RecordingDockerProvider)
+
+    assert cli.main(
+        [
+            "container", "plan", str(tmp_path), "--image", "s3/runtime:1.38",
+            "--compiler", "s3c-ng", "--s3c-ng-executable", "/opt/s3/s3c-ng",
+        ]
+    ) == 0
+    assert captured == [
+        (
+            "s3", "run", "/app/main.s3", "--compiler", "s3c-ng",
+            "--s3c-ng-executable", "/opt/s3/s3c-ng",
+        )
+    ]
+    assert json.loads(capsys.readouterr().out)["command"] == list(captured[0])
+
+
+def test_container_run_forwards_compiler_selection_to_docker_command(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write_source(tmp_path / "src" / "main.s3", "module main\nfn main() -> i64:\n    return 7\n")
+    (tmp_path / "s3.toml").write_text(
+        "[project]\nname='app'\nversion='1'\nentrypoint='main'\n"
+        "source_roots=['src']\nprofile='hosted'\n",
+        encoding="ascii",
+    )
+    captured: list[tuple[str, ...]] = []
+
+    class Result:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def fake_run(_provider, spec):
+        captured.append(spec.command)
+        return Result()
+
+    monkeypatch.setattr(cli.DockerProvider, "run", fake_run)
+
+    assert cli.main(
+        [
+            "container", "run", str(tmp_path), "--image", "s3/runtime:1.38",
+            "--compiler", "s3c-ng", "--s3c-ng-executable", "/opt/s3/s3c-ng",
+        ]
+    ) == 0
+    assert captured == [
+        (
+            "s3", "run", "/app/main.s3", "--compiler", "s3c-ng",
+            "--s3c-ng-executable", "/opt/s3/s3c-ng",
+        )
+    ]
+    assert capsys.readouterr().out == ""
+
+
+def test_container_build_embeds_compiler_selection_in_image_entrypoint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write_source(tmp_path / "src" / "main.s3", "module main\nfn main() -> i64:\n    return 7\n")
+    (tmp_path / "s3.toml").write_text(
+        "[project]\nname='app'\nversion='1'\nentrypoint='main'\n"
+        "source_roots=['src']\nprofile='hosted'\n",
+        encoding="ascii",
+    )
+    dockerfiles: list[str] = []
+
+    class Result:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def fake_build(_provider, context, _tag):
+        dockerfiles.append((context / "Dockerfile").read_text(encoding="utf-8"))
+        return Result()
+
+    monkeypatch.setattr(cli.DockerProvider, "build", fake_build)
+
+    assert cli.main(
+        [
+            "container", "build", str(tmp_path), "--image", "s3/app:1",
+            "--compiler", "s3c-ng", "--s3c-ng-executable", "/opt/s3/s3c-ng",
+        ]
+    ) == 0
+    assert len(dockerfiles) == 1
+    assert '"--compiler","s3c-ng"' in dockerfiles[0]
+    assert '"--s3c-ng-executable","/opt/s3/s3c-ng"' in dockerfiles[0]
+    assert capsys.readouterr().out == ""
+
+
 def test_native_policy_is_explicitly_forwarded_by_native_asm_cli(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

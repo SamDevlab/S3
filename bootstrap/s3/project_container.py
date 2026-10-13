@@ -9,6 +9,13 @@ from pathlib import Path
 from dataclasses import dataclass
 from enum import Enum
 
+from .compiler_provider import (
+    DEFAULT_COMPILER,
+    CompilerKind,
+    compilation_requires_ir_execution,
+    compile_source_set_with_provider,
+)
+
 
 class ProjectContainerError(ValueError):
     """Raised when a project container violates its structural contract."""
@@ -102,10 +109,20 @@ def parse_manifest(path: Path) -> ProjectManifest:
 class ProjectTooling:
     """Public daemonless project check/build/run/inspect/plan operations."""
 
-    def __init__(self, root: Path) -> None:
+    def __init__(
+        self,
+        root: Path,
+        *,
+        compiler: CompilerKind | str = DEFAULT_COMPILER,
+        executable: Path | None = None,
+        container_executable: str | None = None,
+    ) -> None:
         self.root = Path(root).resolve()
         self.manifest_path = self.root / "s3.toml"
         self.manifest = parse_manifest(self.manifest_path)
+        self.compiler = CompilerKind(compiler)
+        self.executable = executable
+        self.container_executable = container_executable
 
     def check(self) -> ProjectManifest:
         sources = self._sources()
@@ -129,16 +146,22 @@ class ProjectTooling:
         }
 
     def build(self):
-        from .pipeline import compile_sources
-
         self.check()
-        return compile_sources(self._sources(), entry_module="main")
+        return compile_source_set_with_provider(
+            self._sources(),
+            compiler=self.compiler,
+            executable=self.executable,
+            entry_module="main",
+        )
 
     def run(self) -> int:
         from .emulator import Emulator
+        from .ir_emulator import execute_ir
 
         compilation = self.build()
-        _, assembly = compilation.require_ordinary_artifacts()
+        ir, assembly = compilation.require_ordinary_artifacts()
+        if compilation_requires_ir_execution(compilation):
+            return execute_ir(ir, self.manifest.entrypoint)
         return Emulator().execute(assembly, entry=self.manifest.entrypoint)
 
     def container_plan(self) -> dict[str, object]:
@@ -157,6 +180,14 @@ class ProjectTooling:
             "external_executables": self.manifest.external_executables,
         }
 
+    def container_run_command(self) -> tuple[str, ...]:
+        command = ["s3", "run", f"/app/{self.manifest.entrypoint}.s3"]
+        if self.compiler is CompilerKind.S3C_NG:
+            command.extend(("--compiler", self.compiler.value))
+        if self.container_executable is not None:
+            command.extend(("--s3c-ng-executable", self.container_executable))
+        return tuple(command)
+
     def docker_context(
         self,
         provider,
@@ -172,7 +203,7 @@ class ProjectTooling:
         """
 
         self.check()
-        entrypoint = ("s3", "run", f"/app/{self.manifest.entrypoint}.s3")
+        entrypoint = self.container_run_command()
         return provider.project_build_context(
             self._sources(),
             image=image,

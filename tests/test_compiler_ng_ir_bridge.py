@@ -9,6 +9,8 @@ from collections import Counter
 import pytest
 
 from bootstrap.s3.compiler_ng_ir_bridge import (
+    _InstructionRecord,
+    _ordered_static_string_occurrences,
     NGIRDecodeError,
     decode_ng_ir_events,
 )
@@ -49,6 +51,7 @@ from decision import choose as choose_value
 fn selector() -> i64:
     return 0
 fn main() -> i64:
+    mut marker: text = text_from_static("app")
     mut total: i64 = increment(1)
     total = total + augment(2)
     total = total + choose_value(selector())
@@ -57,6 +60,7 @@ fn main() -> i64:
     "math.s3": """\
 module math
 export fn transform(value: i64) -> i64:
+    mut marker: text = text_from_static("math")
     mut result: i64 = value
     result = result + 1
     return result
@@ -64,11 +68,13 @@ export fn transform(value: i64) -> i64:
     "policy.s3": """\
 module policy
 export fn transform(value: i64) -> i64:
+    mut marker: text = text_from_static("policy")
     return value + 10
 """,
     "decision.s3": """\
 module decision
 export fn choose(value: i64) -> i64:
+    mut marker: text = text_from_static("decision")
     match value <=> 0:
         -1:
             return 1
@@ -1047,6 +1053,35 @@ def test_ng_ir_v13_static_strings_match_reference_ir_and_fail_closed() -> None:
     register[3] = 6
     with pytest.raises(NGIRDecodeError, match="CONST_STR result must use the STRING type descriptor"):
         decode_ng_ir_events(source.encode("utf-8"), _flatten(wrong_type))
+
+
+def test_static_string_order_uses_function_order_before_cross_unit_offsets() -> None:
+    def occurrence(value: str, offset: int) -> _InstructionRecord:
+        return _InstructionRecord(
+            opcode=IROpcode.CONST_STR,
+            result=0,
+            operands=(),
+            immediate=None,
+            memory=None,
+            initialization=False,
+            block=0,
+            targets=(),
+            static_string_value=value,
+            static_string_offset=offset,
+        )
+
+    # The first function belongs to a later source unit, so its absolute
+    # offsets follow the second function's. IDs must still follow function order.
+    functions = (
+        (occurrence("topology-first", 800), occurrence("same-function-next", 900)),
+        (occurrence("earlier-buffer-offset", 100),),
+    )
+
+    assert _ordered_static_string_occurrences(functions) == (
+        (800, "topology-first"),
+        (900, "same-function-next"),
+        (100, "earlier-buffer-offset"),
+    )
 
 
 def test_ng_ir_v7_f64_relational_opcode_executes_and_is_not_valid_in_v6() -> None:

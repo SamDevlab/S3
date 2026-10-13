@@ -7,6 +7,7 @@ import pytest
 from bootstrap.s3.cli import main as cli_main
 from bootstrap.s3.test_runner import (
     S3TestManifest,
+    S3TestRunner,
     TestRunnerError,
     render_test_report,
     run_test_manifest,
@@ -76,7 +77,9 @@ expected = 2
         report.pop("duration_ms")
     assert first_for_identity == second_for_identity
     assert [case["name"] for case in first["tests"]] == ["a_case", "z_case"]
-    assert first["schema_version"] == "s3.test-report.v1"
+    assert first["schema_version"] == "s3.test-report.v2"
+    assert first["compiler"] == "python"
+    assert first["entry_module"] == "main"
     assert first["summary"] == {
         "status": "PASS",
         "passed": 2,
@@ -110,6 +113,99 @@ expected = 2
     output = capsys.readouterr().out
     assert json.loads(output)["schema"] == "s3-test-report"
     assert report_path.read_text(encoding="utf-8") == output
+
+
+def test_cli_test_forwards_explicit_compiler_and_candidate_path(
+    tmp_path,
+    capsys,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = _manifest(
+        tmp_path,
+        """\
+[runner]
+mode = "hosted"
+
+[[test]]
+name = "main"
+source = "case.s3"
+expected = 2
+""",
+    )
+    candidate = tmp_path / "s3c-ng"
+    received: list[dict[str, object]] = []
+
+    def fake_run_test_manifest(path, **kwargs):
+        received.append({"path": path, **kwargs})
+        return {"summary": {"status": "PASS"}}
+
+    monkeypatch.setattr("bootstrap.s3.cli.run_test_manifest", fake_run_test_manifest)
+
+    assert cli_main(
+        [
+            "test",
+            str(manifest),
+            "--compiler",
+            "s3c-ng",
+            "--s3c-ng-executable",
+            str(candidate),
+        ]
+    ) == 0
+    assert received == [
+        {
+            "path": manifest,
+            "mode": None,
+            "compiler": "s3c-ng",
+            "executable": candidate,
+            "entry_module": "main",
+        }
+    ]
+    assert capsys.readouterr().out
+
+
+def test_test_runner_compiles_through_selected_provider(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manifest = S3TestManifest.load(
+        _manifest(
+            tmp_path,
+            '[runner]\nmode = "hosted"\n'
+            '[[test]]\nname = "main"\nsource = "case.s3"\nexpected = 2\n',
+        )
+    )
+    source = "module main\nfn main() -> i64:\n    return 2\n"
+    executable = tmp_path / "s3c-ng"
+    calls: list[dict[str, object]] = []
+    expected = object()
+
+    def fake_compile(sources, optimization, **kwargs):
+        calls.append(
+            {"sources": sources, "optimization": optimization, **kwargs}
+        )
+        return expected
+
+    monkeypatch.setattr(
+        "bootstrap.s3.test_runner.compile_source_set_with_provider",
+        fake_compile,
+    )
+    runner = S3TestRunner(
+        manifest,
+        compiler="s3c-ng",
+        executable=executable,
+        entry_module="main",
+    )
+
+    assert runner._compile_sources({"case.s3": source}, "O1", "main") is expected
+    assert calls == [
+        {
+            "sources": {"main.s3": source},
+            "optimization": "O1",
+            "compiler": "s3c-ng",
+            "executable": executable,
+            "entry_module": "main",
+        }
+    ]
 
 
 def test_expected_value_mismatch_is_a_failure(tmp_path) -> None:

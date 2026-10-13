@@ -195,6 +195,18 @@ def _parser() -> argparse.ArgumentParser:
         default="main",
         help="entry module for source directories (default: main)",
     )
+    container_compiler_parent = argparse.ArgumentParser(add_help=False)
+    container_compiler_parent.add_argument(
+        "--compiler",
+        choices=tuple(compiler.value for compiler in CompilerKind),
+        default=DEFAULT_COMPILER.value,
+        help=f"compiler selected by the S3 process inside the container (default: {DEFAULT_COMPILER.value})",
+    )
+    container_compiler_parent.add_argument(
+        "--s3c-ng-executable",
+        type=str,
+        help="S3C-NG ELF path inside the container image",
+    )
 
     subparsers = parser.add_subparsers(
         dest="command",
@@ -211,7 +223,10 @@ def _parser() -> argparse.ArgumentParser:
     )
     container_actions = container.add_subparsers(dest="container_action", required=True)
     for action in ("inspect", "plan", "build", "run"):
-        action_parser = container_actions.add_parser(action)
+        parents = []
+        if action in {"plan", "build", "run"}:
+            parents = [container_compiler_parent]
+        action_parser = container_actions.add_parser(action, parents=parents)
         action_parser.add_argument("root", type=Path, help="project root containing s3.toml")
         action_parser.add_argument("--image", required=True, help="Docker image reference")
 
@@ -267,7 +282,7 @@ def _parser() -> argparse.ArgumentParser:
                 default=argparse.SUPPRESS,
                 help="native code-generation policy",
             )
-    test_parser = subparsers.add_parser("test")
+    test_parser = subparsers.add_parser("test", parents=[compiler_parent])
     test_parser.add_argument("manifest", type=Path, help="path to an s3-test.toml manifest")
     test_parser.add_argument(
         "--mode",
@@ -471,13 +486,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             _print_targets()
             return 0
         if args.command == "container":
-            tooling = ProjectTooling(args.root)
+            tooling = ProjectTooling(
+                args.root,
+                compiler=getattr(args, "compiler", DEFAULT_COMPILER),
+                container_executable=getattr(args, "s3c_ng_executable", None),
+            )
             provider = DockerProvider()
             if args.container_action == "inspect":
                 print(json.dumps(tooling.inspect(), indent=2, sort_keys=True))
                 return 0
             if args.container_action == "plan":
-                spec = DockerSpec(args.image, ("s3", "run", f"/app/{tooling.manifest.entrypoint}.s3"))
+                spec = DockerSpec(args.image, tooling.container_run_command())
                 print(json.dumps(provider.plan(spec), indent=2, sort_keys=True))
                 return 0
             context, owner = tooling.docker_context(provider, image=args.image)
@@ -485,9 +504,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if args.container_action == "build":
                     result = provider.build(context, args.image)
                 else:
-                    result = provider.run(
-                        DockerSpec(args.image, ("s3", "run", f"/app/{tooling.manifest.entrypoint}.s3"))
-                    )
+                    result = provider.run(DockerSpec(args.image, tooling.container_run_command()))
                 if result.stdout:
                     print(result.stdout, end="")
                 if result.stderr:
@@ -496,7 +513,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             finally:
                 owner.cleanup()
         if args.command == "test":
-            report = run_test_manifest(args.manifest, mode=args.mode)
+            report = run_test_manifest(
+                args.manifest,
+                mode=args.mode,
+                compiler=args.compiler,
+                executable=args.s3c_ng_executable,
+                entry_module=args.entry_module,
+            )
             rendered = render_test_report(report)
             if args.report is not None:
                 args.report.parent.mkdir(parents=True, exist_ok=True)

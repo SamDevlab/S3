@@ -59,12 +59,13 @@ validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
 Unsupported types, opcodes, fields, or record order fail closed. Earlier streams
 carry no static-string data; V13 reconstructs only strings explicitly referenced
-by CONST_STR instructions.
+by CONST_STR instructions. Their IDs follow canonical function order, then
+source order within each function.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
 from .ir import (
@@ -206,6 +207,25 @@ class _InstructionRecord:
     results: tuple[int, ...] = ()
     call_result_field_absent: bool = False
     location: SourceLocation | None = None
+
+
+def _ordered_static_string_occurrences(
+    functions: Iterable[Iterable[_InstructionRecord]],
+) -> tuple[tuple[int | None, str], ...]:
+    """Order literals by canonical function order, then source order per function."""
+
+    ordered: list[tuple[int | None, str]] = []
+    for instructions in functions:
+        in_function = sorted(
+            (
+                (record.static_string_offset, record.static_string_value)
+                for record in instructions
+                if record.static_string_value is not None
+            ),
+            key=lambda item: -1 if item[0] is None else item[0],
+        )
+        ordered.extend((offset, value) for offset, value in in_function if value is not None)
+    return tuple(ordered)
 
 
 @dataclass(frozen=True, slots=True)
@@ -1637,14 +1657,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             if actual_types != tuple(callee["result_types"]):
                 raise NGIRDecodeError(f"CALL result cells disagree with callee signature in {function['name']}")
 
-    ordered_static_values = sorted(
-        (
-            (record.static_string_offset, record.static_string_value)
-            for raw in raw_functions
-            for record in raw["instructions"]
-            if record.static_string_value is not None
-        ),
-        key=lambda item: item[0],
+    ordered_static_values = _ordered_static_string_occurrences(
+        raw["instructions"] for raw in raw_functions
     )
     static_ids: dict[str, str] = {}
     static_strings: list[IRStaticString] = []
