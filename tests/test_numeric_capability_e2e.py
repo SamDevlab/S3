@@ -37,6 +37,44 @@ def test_i64_arithmetic_is_source_visible_end_to_end() -> None:
         assert IROpcode.COMPARE in opcodes
 
 
+def test_chained_i64_division_uses_the_contextual_domain() -> None:
+    source = (
+        "fn divide_twice(value: i64) -> i64:\n"
+        "    return value / 2 / 2\n"
+        "fn main() -> i64:\n"
+        "    return divide_twice(40)\n"
+    )
+    for optimization in ("O0", "O1"):
+        compilation = compile_program(source, optimization)
+        assert execute_ir(compilation.ir) == 10
+        assert Emulator().execute(compilation.assembly) == 10
+
+
+@pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
+def test_i64_division_preserves_a_live_dividend_natively(tmp_path: Path) -> None:
+    source = (
+        "fn remainder_like(value: i64, divisor: i64) -> i64:\n"
+        "    return value - (value / divisor) * divisor\n"
+        "fn main() -> i64:\n"
+        "    return remainder_like(17, 5)\n"
+    )
+    toolchain = NativeToolchain.detect()
+    for optimization in ("O0", "O1"):
+        compilation = compile_program(source, optimization)
+        assert execute_ir(compilation.ir) == 2
+        assert Emulator().execute(compilation.assembly) == 2
+        native_source = generate_native_assembly(compilation.assembly)
+        executable = toolchain.build(native_source, tmp_path / f"live-dividend-{optimization.lower()}")
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0, completed.stderr
+        assert completed.stderr == ""
+        assert completed.stdout.strip() == "program returned: 2"
+
+
 @pytest.mark.s3_native
 @pytest.mark.skipif(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},

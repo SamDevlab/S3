@@ -29,7 +29,7 @@ class Parser:
         self._skip_newlines()
         imports: list[ast.ImportDeclaration] = []
         while self.mode is SyntaxMode.V0_6 and self._check(TokenKind.FROM):
-            imports.append(self._parse_import_declaration())
+            imports.extend(self._parse_import_declarations())
             self._skip_newlines()
         while not self._check(TokenKind.EOF):
             self._skip_newlines()
@@ -80,22 +80,24 @@ class Parser:
         self._consume_statement_newline("expected newline after module declaration")
         return ast.ModuleDeclaration(module_name, start.location)
 
-    def _parse_import_declaration(self) -> ast.ImportDeclaration:
+    def _parse_import_declarations(self) -> list[ast.ImportDeclaration]:
         start = self._consume(TokenKind.FROM, "expected 'from'")
         module_name = self._parse_module_name()
         self._consume(TokenKind.IMPORT, "expected 'import' after module name")
-        symbol = self._consume(TokenKind.IDENTIFIER, "expected imported symbol")
-        alias = None
-        if self._match(TokenKind.AS):
-            alias_token = self._consume(TokenKind.IDENTIFIER, "expected import alias")
-            alias = alias_token.text
+        imports: list[ast.ImportDeclaration] = []
+        while True:
+            symbol = self._consume(TokenKind.IDENTIFIER, "expected imported symbol")
+            alias = None
+            if self._match(TokenKind.AS):
+                alias_token = self._consume(TokenKind.IDENTIFIER, "expected import alias")
+                alias = alias_token.text
+            imports.append(
+                ast.ImportDeclaration(module_name, symbol.text, alias, start.location)
+            )
+            if not self._match(TokenKind.COMMA):
+                break
         self._consume_statement_newline("expected newline after import declaration")
-        return ast.ImportDeclaration(
-            module_name,
-            symbol.text,
-            alias,
-            start.location,
-        )
+        return imports
 
     def _parse_module_name(self) -> str:
         parts = [

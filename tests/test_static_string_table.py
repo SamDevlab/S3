@@ -113,6 +113,20 @@ def test_static_string_literal_table_walks_nested_expressions() -> None:
     ]
 
 
+def test_static_string_literal_table_visits_while_conditions() -> None:
+    table = _table(
+        "fn main() -> i64:\n"
+        '    while text_from_static("guard") == text_from_static("open"):\n'
+        "        break\n"
+        "    return 0\n"
+    )
+
+    assert [(entry.id, entry.value) for entry in table.entries] == [
+        ("s0", "guard"),
+        ("s1", "open"),
+    ]
+
+
 def test_static_string_literal_table_deduplicates_folded_concat_with_literal() -> None:
     table = _table(
         "fn main() -> tryte:\n"

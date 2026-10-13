@@ -115,6 +115,8 @@ fn main() -> i64:
     ]
     assembly = generate_ffi_assembly(result.assembly)
     assert ".globl add" in assembly
+    assert ".globl _start" not in assembly
+    assert ".globl _start" in x86_64.generate_native_assembly(result.assembly)
     assert "call host_add" in assembly
     assert "call add" not in assembly
 

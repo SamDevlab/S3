@@ -1,0 +1,19 @@
+module selfhost.compiler_ng.character_classes
+
+fn ng_is_digit_after_lower_bound(unit: i64) -> trit:
+    match unit <=> 57:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            return 0
+
+export fn ng_is_digit(unit: i64) -> trit:
+    match unit <=> 48:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            return ng_is_digit_after_lower_bound(unit)

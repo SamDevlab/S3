@@ -173,6 +173,7 @@ class X8664Backend:
             max_frames=self.max_frames,
             max_instructions=self.max_instructions,
             register_allocation=self.register_allocation,
+            include_standalone_entry=False,
             instruction_budget_mode=self.instruction_budget_mode,
             compact_ea_by_function=(
                 {

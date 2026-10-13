@@ -46,6 +46,30 @@ def test_imported_record_value_flows_through_local_variable_parameter_return_and
     assert _run_sources(sources, OptimizationLevel.O1) == 7
 
 
+def test_imported_record_type_rewrites_inside_mutable_vector_reference() -> None:
+    sources = {
+        "main.s3": (
+            "module main\n"
+            "from lexer_types import Token\n"
+            "from lexer_types import append_token\n"
+            "fn main() -> i64:\n"
+            "    mut tokens: vector<Token> = vector_new<Token>(2)\n"
+            "    return append_token(&mut tokens)\n"
+        ),
+        "lexer_types.s3": (
+            "module lexer_types\n"
+            "export record Token:\n"
+            "    kind: i64\n"
+            "export fn append_token(tokens: &mut vector<Token>) -> i64:\n"
+            "    discard vector_push<Token>(tokens, Token(kind=7))\n"
+            "    return 1\n"
+        ),
+    }
+
+    assert _run_sources(sources, OptimizationLevel.O0) == 1
+    assert _run_sources(sources, OptimizationLevel.O1) == 1
+
+
 def test_module_qualified_record_constructor_and_type_annotation_preserve_origin_identity() -> None:
     sources = {
         "main.s3": (

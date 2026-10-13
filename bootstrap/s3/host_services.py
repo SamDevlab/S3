@@ -377,9 +377,20 @@ class SourceResourceRuntime:
         except (KeyError, TypeError) as error:
             raise ResourceClosedError("resource handle is closed") from error
 
+    @property
+    def active_count(self) -> int:
+        return len(self._active)
+
     @staticmethod
     def _raise_closed() -> None:
         raise ResourceClosedError("resource handle is closed")
+
+
+@dataclass(slots=True)
+class HostExecutionContext:
+    """Execution-local host state shared by the hosted S3 engines."""
+
+    resources: SourceResourceRuntime = field(default_factory=SourceResourceRuntime)
 
 
 class HostServiceRegistry:

@@ -151,6 +151,7 @@ class X8664Emitter:
         register_allocation: bool = False,
         compact_ea_by_function: Mapping[str, bool] | None = None,
         instruction_budget_mode: InstructionBudgetMode | str | None = None,
+        include_standalone_entry: bool = True,
     ):
         self.program = program
         self.max_frames = max_frames
@@ -160,6 +161,7 @@ class X8664Emitter:
         self.instruction_budget_mode = parse_instruction_budget_mode(
             instruction_budget_mode
         )
+        self.include_standalone_entry = include_standalone_entry
         self._budget_register_enabled = (
             self.register_allocation
             and self.instruction_budget_mode is InstructionBudgetMode.PER_INSTRUCTION
@@ -223,7 +225,9 @@ class X8664Emitter:
         lines.extend(self._render_composite_vector_metadata())
         if self._budget_register_enabled:
             lines.extend(self._render_budget_state())
-        lines.append(render_runtime().rstrip())
+        lines.append(
+            render_runtime(include_standalone_entry=self.include_standalone_entry).rstrip()
+        )
         return "\n".join(lines) + "\n"
 
     def emit_with_origins(self) -> tuple[str, tuple[dict[str, object], ...]]:
@@ -1319,8 +1323,10 @@ class X8664Emitter:
                 "    cmp r10, -1",
                 f"    je {overflow}",
                 f"{safe_label}:",
+                "    mov r11, rdx",
                 "    cqo",
                 "    idiv r10",
+                "    mov rdx, r11",
                 *self._write_register(layout, registers[0], "rax"),
             ]
         if opcode is AssemblyOpcode.TREL:

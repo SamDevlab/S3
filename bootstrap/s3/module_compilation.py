@@ -464,11 +464,25 @@ def _rewrite_type(
                 type_name.location,
                 context,
             ),
+            type_arguments=tuple(
+                _rewrite_type(argument, context)
+                for argument in type_name.type_arguments
+            ),
         )
     if isinstance(type_name, ast.ArrayType):
         return replace(
             type_name,
             element_type=_rewrite_type(type_name.element_type, context),
+        )
+    if isinstance(type_name, ast.VectorType):
+        return replace(
+            type_name,
+            element_type=_rewrite_type(type_name.element_type, context),
+        )
+    if isinstance(type_name, ast.ReferenceType):
+        return replace(
+            type_name,
+            target=_rewrite_type(type_name.target, context),
         )
     return type_name
 
@@ -694,9 +708,13 @@ def _rewrite_expression(
                 f"module '{expression.callee.name}' cannot be called",
                 expression.location,
             )
+        type_arguments = tuple(
+            _rewrite_type(argument, context)
+            for argument in expression.type_arguments
+        )
         qualified_call = _rewrite_qualified_module_call(expression, context)
         if qualified_call is not None:
-            return qualified_call
+            return replace(qualified_call, type_arguments=type_arguments)
         callee = expression.callee
         if isinstance(callee, ast.Identifier):
             callee = replace(
@@ -718,6 +736,7 @@ def _rewrite_expression(
                 )
                 for argument in expression.arguments
             ),
+            type_arguments=type_arguments,
         )
     if isinstance(expression, ast.RecordExpression):
         return replace(
