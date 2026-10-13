@@ -118,7 +118,7 @@ def test_parser_rejects_incomplete_comma_separated_imports(source: str) -> None:
     with pytest.raises(ParseError):
         parse(source, mode=SyntaxMode.V0_6)
 
-    with pytest.raises(Exception):
+    with pytest.raises(ParseError):
         GenericParser(tokenize_to_arena(source, mode=SyntaxMode.V0_6)).parse_program()
 
 
