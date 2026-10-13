@@ -911,8 +911,7 @@ def test_ng_ir_v12_dereference_and_reborrow_match_reference_ir() -> None:
     assert mutable_load.reference_target is IRType.I64
     assert mutable_load.reference_mutable is False
 
-    legacy = [record.copy() for record in records if record[0] not in {22, 26, 27}]
-    legacy[0][1] = 11
+    legacy = _legacy_event_records(records, 11)
     with pytest.raises(NGIRDecodeError, match="REFERENCE_LOAD opcode requires NG IR V12"):
         decode_ng_ir_events(source.encode("utf-8"), _flatten(legacy))
 
@@ -958,8 +957,7 @@ def test_ng_ir_v19_mutable_dereference_assignment_matches_reference_ir() -> None
     assert store.reference_target is IRType.I64
     assert store.reference_mutable is True
 
-    legacy = [record.copy() for record in records if record[0] not in {26, 27}]
-    legacy[0][1] = 18
+    legacy = _legacy_event_records(records, 18)
     with pytest.raises(NGIRDecodeError, match="REFERENCE_STORE opcode requires NG IR format V19"):
         decode_ng_ir_events(source.encode("utf-8"), _flatten(legacy))
 
@@ -1029,8 +1027,7 @@ def test_ng_ir_v13_static_strings_match_reference_ir_and_fail_closed() -> None:
     assert const_strings == ["s0", "s1", "s0"]
     assert execute_ir(decoded) == execute_ir(reference)
 
-    legacy = [record.copy() for record in records if record[0] != 22]
-    legacy[0][1] = 12
+    legacy = _legacy_event_records(records, 12)
     with pytest.raises(NGIRDecodeError, match="STRING type descriptor requires NG IR V13"):
         decode_ng_ir_events(source.encode("utf-8"), _flatten(legacy))
 
@@ -2985,9 +2982,21 @@ def test_ng_source_set_emits_and_executes_v21_composite_vector_pop() -> None:
     records = _event_records(cells)
     assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     pop_call = next(record for record in records if record[0] == 4 and record[5] == -10)
-    target_index = records.index(pop_call) + 2
+    call_position = records.index(pop_call)
+    instruction_index = sum(
+        record[0] == 4 and record[1] == pop_call[1]
+        for record in records[:call_position]
+    )
+    target_indices = [
+        index
+        for index, record in enumerate(records)
+        if record[0] == 19
+        and record[1] == pop_call[1]
+        and record[2] == instruction_index
+    ]
+    assert len(target_indices) == 1
+    target_index = target_indices[0]
     target = records[target_index]
-    assert target[0] == 19
     assert target[3] == 6
     assert target[7] == 2
     assert records[target_index + 1][0] == records[target_index + 2][0] == 20
@@ -4441,8 +4450,7 @@ def test_ng_ir_v18_rejects_unary_negation_opcode_in_older_streams() -> None:
     source = "fn negate(value: i64) -> i64:\n    return -value\n"
     records = _event_records(_emit_ng_events(source))
     assert any(record[0] == 4 and record[2] == 20 for record in records)
-    records = [record for record in records if record[0] not in {26, 27}]
-    records[0][1] = 17
+    records = _legacy_event_records(records, 17)
     with pytest.raises(NGIRDecodeError, match="INVERT opcode requires NG IR format V18"):
         decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
 
