@@ -118,8 +118,10 @@ ELF files remain local build outputs and are not committed or released.
 
 ## Current limitations
 
-- CLI selection is implemented, but core command parity has not yet been
-  qualified using an actual S3C-NG ELF on Linux.
+- Linux CI has qualified the actual S3C-NG ELF for explicit provider use,
+  representative ordinary and multi-module programs, and the maintained B/C/D
+  compiler fixed-point path. Parity across every semantic CLI command and the
+  full supported-language matrix is still unqualified.
 - `test` and ProjectTooling host-side build/run now accept compiler selection,
   but their S3C-NG parity is unqualified. The `container` CLI remains a Docker
   interoperability workflow rather than a host compiler-selection path.
@@ -130,8 +132,10 @@ ELF files remain local build outputs and are not committed or released.
   program, structured diagnostic, workload, and execution parity matrices are
   not yet qualified.
 - A Linux promotion run on the initial PR head exposed a fixed-point mismatch in
-  static-string IDs for multi-module input. The local decoder now assigns IDs
-  in canonical function order, then source order within each function; focused
-  hosted regressions pass, but this correction is not natively qualified until
-  a new exact-head Linux promotion run completes.
+  static-string IDs for multi-module input. The decoder now assigns IDs in
+  canonical function order, then source order within each function. The natural
+  Linux promotion gate passed on `5487e336ea2cc4d0fdf607d3e070766030e1e628`.
+  A follow-up change adds explicit per-module static strings to the native
+  multi-module workload; that stronger fixture still requires Linux CI on the
+  next pushed head.
 - No compiler default has been changed; no release artifact is authorized.

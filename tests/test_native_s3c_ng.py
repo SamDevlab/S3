@@ -76,6 +76,7 @@ from decision import choose as choose_value
 fn selector() -> i64:
     return 0
 fn main() -> i64:
+    mut marker: text = text_from_static("app")
     mut total: i64 = increment(1)
     total = total + augment(2)
     total = total + choose_value(selector())
@@ -84,6 +85,7 @@ fn main() -> i64:
     "math.s3": """\
 module math
 export fn transform(value: i64) -> i64:
+    mut marker: text = text_from_static("math")
     mut result: i64 = value
     result = result + 1
     return result
@@ -91,11 +93,13 @@ export fn transform(value: i64) -> i64:
     "policy.s3": """\
 module policy
 export fn transform(value: i64) -> i64:
+    mut marker: text = text_from_static("policy")
     return value + 10
 """,
     "decision.s3": """\
 module decision
 export fn choose(value: i64) -> i64:
+    mut marker: text = text_from_static("decision")
     match value <=> 0:
         -1:
             return 1

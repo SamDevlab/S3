@@ -15,23 +15,27 @@
     "ASSEMBLY_PARITY",
     "ELF_BEHAVIOR_PARITY"
   ],
+  "evidence_scope": {
+    "hosted_bridge_tests": "S3C-NG source logic is compiled into reference IR and executed by the hosted IR emulator; these tests establish focused hosted parity, not native-candidate qualification",
+    "native_candidate_tests": "Only Linux x86-64 tests marked s3c_ng_promotion exercise the actual native candidate"
+  },
   "features": [
-    {"family": "numeric literals and balanced ternary", "state": "UNTESTED", "evidence": []},
+    {"family": "numeric literals and balanced ternary", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v18_executes_typed_unary_negation", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v7_relational_match_selector_preserves_distinct_arms"]},
     {"family": "checked i64 arithmetic", "state": "UNTESTED", "evidence": []},
-    {"family": "comparisons and logical operators", "state": "UNTESTED", "evidence": []},
-    {"family": "functions, parameters, and returns", "state": "UNTESTED", "evidence": []},
-    {"family": "scopes and mutation", "state": "UNTESTED", "evidence": []},
-    {"family": "control flow, match, and loops", "state": "UNTESTED", "evidence": []},
-    {"family": "records and fields", "state": "UNTESTED", "evidence": []},
-    {"family": "references", "state": "UNTESTED", "evidence": []},
-    {"family": "vectors and generic vector operations", "state": "UNTESTED", "evidence": []},
-    {"family": "generics", "state": "UNTESTED", "evidence": []},
-    {"family": "imports and multi-module programs", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_real_multimodule_program_is_order_independent_and_matches_reference (hosted IR execution; native execution is a separate Linux-only gate)"]},
+    {"family": "comparisons and logical operators", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_v22_relation_and_match_names_match_reference_lowering", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v7_f64_relational_opcode_executes_and_is_not_valid_in_v6"]},
+    {"family": "functions, parameters, and returns", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_canonical_ir_round_trip_covers_calls_mutation_matches_and_types", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_flattens_record_argument_for_function_call", "tests/test_compiler_ng_ir_bridge.py::test_ng_aggregate_returns_inside_match_and_while_match_reference", "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point (Linux native candidate: provider, function call, multi-module calls, canonical IR, Assembly, native execution, B/C/D fixed point)"]},
+    {"family": "scopes and mutation", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_local_declarations_in_match_arms_are_scoped_per_arm", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v19_mutable_dereference_assignment_matches_reference_ir"]},
+    {"family": "control flow, match, and loops", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_emits_and_executes_while_with_nested_match_and_backedge", "tests/test_compiler_ng_ir_bridge.py::test_ng_break_in_nested_match_targets_the_nearest_loop_exit", "tests/test_compiler_ng_ir_bridge.py::test_branches_ng_output_decodes_verifies_executes_and_matches_reference", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate: while, nested match, relational match, native execution)", "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point (Linux native candidate: relational match and native execution)"]},
+    {"family": "records and fields", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_lowers_record_constructor_field_projection", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_lowers_mutable_record_field_assignment", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v4_lowers_and_executes_aggregate_reference_field_load", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate: nested records, field reads, canonical IR and native execution)"]},
+    {"family": "references", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v12_dereference_and_reborrow_match_reference_ir", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v19_mutable_dereference_assignment_matches_reference_ir", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_rejects_mutable_borrow_of_immutable_record_field", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate: reference parameters and vector reference operations)"]},
+    {"family": "vectors and generic vector operations", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_executes_composite_vector_new_push_and_len", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v16_generic_vector_get_is_explicit_and_executable", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_emits_and_executes_v21_composite_vector_pop", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate: composite vector new/push/len through native compilation and execution)"]},
+    {"family": "generics", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v7_generic_vector_new_is_explicit_and_executable", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_resolves_imported_nominal_type_inside_vector_reference"]},
+    {"family": "imports and multi-module programs", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_real_multimodule_program_is_order_independent_and_matches_reference (hosted IR execution; native execution is a separate Linux-only gate)", "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point (Linux native candidate gate)"]},
     {"family": "host/resource operations", "state": "UNTESTED", "evidence": []},
     {"family": "strings, bytes, and text", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v13_static_strings_match_reference_ir_and_fail_closed", "tests/test_compiler_ng_ir_bridge.py::test_ng_real_multimodule_program_is_order_independent_and_matches_reference (cross-module canonical string identity; hosted IR execution)"]},
     {"family": "FFI-relevant compilation", "state": "UNTESTED", "evidence": []},
-    {"family": "invalid programs and diagnostics", "state": "UNTESTED", "evidence": []},
-    {"family": "source locations and spans", "state": "UNTESTED", "evidence": []}
+    {"family": "invalid programs and diagnostics", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_rejects_invalid_module_graphs_and_calls", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_rejects_unknown_aggregate_reference_field (rejection only; diagnostic category/code/message parity is unqualified)"]},
+    {"family": "source locations and spans", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_v22_preserves_utf8_source_locations_through_lowering", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate gate)"]}
   ],
   "command_matrix_policy": {
     "meaning": "semantic_compilation classifies the command result; s3c_ng_supported_now means provider routing is implemented, not parity-qualified",

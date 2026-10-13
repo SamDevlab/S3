@@ -32,3 +32,28 @@ def test_v7_command_matrix_is_complete_and_classifies_indirect_container_run() -
     assert run["promotion_blocker_if_unsupported"] is True
     assert document["default_compiler"] == "PYTHON"
     assert document["promoted_default"] is False
+
+
+def test_v7_parity_evidence_is_scoped_and_points_to_existing_tests() -> None:
+    repository = Path(__file__).parents[1]
+    document = json.loads(
+        (repository / "docs" / "selfhost" / "V7_COMPILER_PARITY.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    scope = document["evidence_scope"]
+    assert "not native-candidate qualification" in scope["hosted_bridge_tests"]
+    assert "actual native candidate" in scope["native_candidate_tests"]
+
+    for feature in document["features"]:
+        evidence = feature["evidence"]
+        if feature["state"] == "UNTESTED":
+            assert evidence == []
+        elif feature["state"] == "PARTIAL":
+            assert evidence
+        for item in evidence:
+            selector = item.split(" (", maxsplit=1)[0]
+            path_text, test_name = selector.split("::", maxsplit=1)
+            test_path = repository / path_text
+            assert test_path.is_file(), selector
+            assert f"def {test_name}(" in test_path.read_text(encoding="utf-8"), selector
