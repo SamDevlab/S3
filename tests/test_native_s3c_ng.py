@@ -12,6 +12,7 @@ import bootstrap.s3.cli as cli
 from bootstrap.s3.backends.x86_64 import NativeToolchain, generate_native_assembly
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
+from bootstrap.s3.diagnostics import S3Error
 from bootstrap.s3.compiler_provider import compile_source_set_with_provider
 from bootstrap.s3.ir import IRModule
 from bootstrap.s3.pipeline import compile_sources
@@ -123,6 +124,23 @@ fn classify(value: i64) -> i64:
 fn main() -> i64:
     return classify(2)
 """,
+}
+_INVALID_PROVIDER_SOURCES = {
+    "missing-module": {
+        "main.s3": "module main\nfrom absent import value\nfn main() -> i64:\n    return value()\n",
+    },
+    "missing-symbol": {
+        "main.s3": "module main\nfrom math import missing\nfn main() -> i64:\n    return missing()\n",
+        "math.s3": "module math\nexport fn present() -> i64:\n    return 1\n",
+    },
+    "wrong-arity": {
+        "main.s3": "module main\nfrom math import value\nfn main() -> i64:\n    return value()\n",
+        "math.s3": "module math\nexport fn value(argument: i64) -> i64:\n    return argument\n",
+    },
+    "wrong-argument-type": {
+        "main.s3": "module main\nfrom math import value\nfn flag() -> trit:\n    return 1\nfn main() -> i64:\n    return value(flag())\n",
+        "math.s3": "module math\nexport fn value(argument: i64) -> i64:\n    return argument\n",
+    },
 }
 
 
@@ -343,6 +361,31 @@ export fn model_value() -> i64:
 """,
     }
     _assert_native_compile(artifact, sources, expected_result=0, tmp_path=tmp_path)
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
+    tmp_path: Path,
+) -> None:
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+
+    for case, sources in _INVALID_PROVIDER_SOURCES.items():
+        with pytest.raises(S3Error):
+            compile_sources(sources, entry_module="main")
+
+        with pytest.raises(NativeS3CTransportError, match="rejected the source set"):
+            compile_source_set_with_provider(
+                sources,
+                compiler="s3c-ng",
+                executable=artifact.executable,
+                entry_module="main",
+            )
 
 
 @pytest.mark.s3_native
