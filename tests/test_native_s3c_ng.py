@@ -254,11 +254,12 @@ def _assert_native_compile(
     *,
     expected_result: int,
     tmp_path: Path,
+    entry_module: str = "app",
 ) -> NativeSourceSetResult:
-    reference = compile_sources(sources, "O0", entry_module="app").ir
+    reference = compile_sources(sources, "O0", entry_module=entry_module).ir
     assert reference is not None
 
-    result = run_native_source_set(artifact, sources, entry_module="app")
+    result = run_native_source_set(artifact, sources, entry_module=entry_module)
     assert result.returncode == 0, result.stderr.decode(errors="replace")
     assert result.status == 0
     actual = decode_ng_ir_events(result.source, result.events)
@@ -290,6 +291,31 @@ def _assert_native_outputs_equal(
     assert left.events == right.events, workload
     assert left.output_envelope_bytes == right.output_envelope_bytes, workload
     assert left.output_envelope_sha256 == right.output_envelope_sha256, workload
+
+
+def _write_candidate_manifest(artifact, compiler_sources: dict[str, str]) -> None:
+    source_commit = subprocess.run(
+        ["git", "-C", str(_ROOT), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    ).stdout.strip()
+    toolchain_version = subprocess.run(
+        [artifact.toolchain.compiler, "--version"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    ).stdout.splitlines()[0]
+    write_s3c_ng_candidate_manifest(
+        artifact,
+        artifact.executable.with_suffix(".manifest.json"),
+        source_commit=source_commit,
+        source_graph_sha256=compiler_source_graph_sha256(compiler_sources),
+        toolchain_version=toolchain_version,
+        bootstrap_parent_ir_sha256=artifact.compiler_ir_sha256,
+    )
 
 
 @pytest.mark.s3_native
@@ -374,6 +400,7 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
 ) -> None:
     compiler_ir = compile_reference_b_ir(_ROOT)
     artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
 
     for case, sources in _INVALID_PROVIDER_SOURCES.items():
         with pytest.raises(S3Error):
@@ -417,28 +444,7 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(
         ),
     }
     compiler_sources = compiler_source_set(_ROOT)
-    source_commit_result = subprocess.run(
-        ["git", "-C", str(_ROOT), "rev-parse", "HEAD"],
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=15,
-    )
-    version_result = subprocess.run(
-        [artifact_b.toolchain.compiler, "--version"],
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=15,
-    )
-    write_s3c_ng_candidate_manifest(
-        artifact_b,
-        artifact_b.executable.with_suffix(".manifest.json"),
-        source_commit=source_commit_result.stdout.strip(),
-        source_graph_sha256=compiler_source_graph_sha256(compiler_sources),
-        toolchain_version=version_result.stdout.splitlines()[0],
-        bootstrap_parent_ir_sha256=artifact_b.compiler_ir_sha256,
-    )
+    _write_candidate_manifest(artifact_b, compiler_sources)
 
     provider_output = compile_source_set_with_provider(
         small,
@@ -523,6 +529,26 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(
         expected_result=16,
         tmp_path=tmp_path,
     )
+    from tests.test_language_maturity_workloads import _ordering_program
+
+    ordering_sources = _ordering_program(
+        (29, -4, 8, 8, 17, 0),
+        (-4, 8, 17, 30),
+    )
+    b_ordering = _assert_native_compile(
+        artifact_b,
+        ordering_sources,
+        expected_result=0,
+        tmp_path=tmp_path,
+        entry_module="main",
+    )
+    c_ordering = _assert_native_compile(
+        artifact_c,
+        ordering_sources,
+        expected_result=0,
+        tmp_path=tmp_path,
+        entry_module="main",
+    )
     _assert_native_outputs_equal(
         b_small, c_small, workload="B/C small program"
     )
@@ -535,6 +561,11 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(
         b_multimodule,
         c_multimodule,
         workload="B/C multi-module program",
+    )
+    _assert_native_outputs_equal(
+        b_ordering,
+        c_ordering,
+        workload="B/C insertion-sort and binary-search maturity workload",
     )
 
     native_c_to_d = run_native_source_set(
