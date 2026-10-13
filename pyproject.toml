@@ -30,6 +30,7 @@ markers = [
     "s3_contract: explicit compiler, IR, optimizer, ABI, frame, renderer, or backend contract",
     "s3_differential: semantic comparison across execution or compilation modes",
     "s3_native: requires native compilation, assembly, linking, or native execution",
+    "s3c_ng_promotion: S3C-NG native compiler promotion and fixed-point gate",
     "s3_slow: deliberately expensive or stress-oriented correctness test",
     "s3_benchmark: s3bench infrastructure and schema correctness test",
 ]

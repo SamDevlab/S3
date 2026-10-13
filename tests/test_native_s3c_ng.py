@@ -8,9 +8,11 @@ from pathlib import Path
 
 import pytest
 
+import bootstrap.s3.cli as cli
 from bootstrap.s3.backends.x86_64 import NativeToolchain, generate_native_assembly
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
+from bootstrap.s3.compiler_provider import compile_source_set_with_provider
 from bootstrap.s3.ir import IRModule
 from bootstrap.s3.pipeline import compile_sources
 from bootstrap.s3.ir_serialization import serialize_ir
@@ -21,8 +23,10 @@ from tools.native_s3c_ng import (
     NativeS3CTransportError,
     build_native_s3c,
     compile_reference_b_ir,
+    compiler_source_graph_sha256,
     compiler_source_set,
     run_native_source_set,
+    write_s3c_ng_candidate_manifest,
 )
 
 
@@ -37,6 +41,7 @@ def test_native_source_set_reports_process_failure_before_decoding(
         executable=tmp_path / "s3c-ng",
         entry_symbol="ng_emit_source_set",
     )
+    artifact.executable.write_bytes(b"test executable placeholder")
 
     def fail_after_partial_output(command: list[str], **kwargs) -> subprocess.CompletedProcess:
         Path(command[3]).write_bytes(b"S3NGOUT1truncated")
@@ -266,6 +271,7 @@ def _assert_native_outputs_equal(
 
 
 @pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
 @pytest.mark.skipif(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
     reason="native S3C-NG qualification requires Linux x86-64",
@@ -336,11 +342,15 @@ export fn model_value() -> i64:
 
 
 @pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
 @pytest.mark.skipif(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
     reason="native S3C-NG qualification requires Linux x86-64",
 )
-def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> None:
+def test_native_s3c_ng_reaches_native_compiler_fixed_point(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     compiler_ir = compile_reference_b_ir(_ROOT)
     artifact_b = build_native_s3c(compiler_ir, tmp_path / "native-b", label="compiler")
     assert artifact_b.compiler_ir_sha256
@@ -359,6 +369,60 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
             "    return answer(42)\n"
         ),
     }
+    compiler_sources = compiler_source_set(_ROOT)
+    source_commit_result = subprocess.run(
+        ["git", "-C", str(_ROOT), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    version_result = subprocess.run(
+        [artifact_b.toolchain.compiler, "--version"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    write_s3c_ng_candidate_manifest(
+        artifact_b,
+        artifact_b.executable.with_suffix(".manifest.json"),
+        source_commit=source_commit_result.stdout.strip(),
+        source_graph_sha256=compiler_source_graph_sha256(compiler_sources),
+        toolchain_version=version_result.stdout.splitlines()[0],
+        bootstrap_parent_ir_sha256=artifact_b.compiler_ir_sha256,
+    )
+
+    provider_output = compile_source_set_with_provider(
+        small,
+        compiler="s3c-ng",
+        executable=artifact_b.executable,
+        entry_module="app",
+    )
+    reference_output = compile_sources(small, entry_module="app")
+    assert reference_output.ir is not None
+    assert serialize_ir(provider_output.ir) == serialize_ir(reference_output.ir)
+    assert provider_output.assembly.render() == generate_assembly(reference_output.ir).render()
+
+    cli_source_path = tmp_path / "provider-cli" / "main.s3"
+    cli_source_path.parent.mkdir(parents=True, exist_ok=True)
+    cli_source_path.write_text(small["app.s3"], encoding="utf-8", newline="\n")
+    assert cli.main(
+        [
+            "ir-json",
+            str(cli_source_path),
+            "--compiler",
+            "s3c-ng",
+            "--s3c-ng-executable",
+            str(artifact_b.executable),
+            "--entry-module",
+            "app",
+        ]
+    ) == 0
+    cli_capture = capsys.readouterr()
+    assert cli_capture.err == ""
+    assert cli_capture.out == serialize_ir(reference_output.ir)
+
     b_small = _assert_native_compile(
         artifact_b, small, expected_result=42, tmp_path=tmp_path
     )
@@ -376,7 +440,6 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
         tmp_path=tmp_path,
     )
 
-    compiler_sources = compiler_source_set(_ROOT)
     compiler_source_bytes = sum(len(source.encode("utf-8")) for source in compiler_sources.values())
     native_b_to_c = run_native_source_set(
         artifact_b,

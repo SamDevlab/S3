@@ -3,28 +3,29 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import platform
 import struct
 import subprocess
-import tempfile
-import time
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Mapping
 
 from bootstrap.s3.assembly import AssemblyProgram
 from bootstrap.s3.backends.x86_64 import NativeToolchain, generate_ffi_assembly
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.ir import IRModule
 from bootstrap.s3.ir_serialization import serialize_ir
+from bootstrap.s3.native_compiler import (
+    NativeS3CTransportError,
+    NativeSourceSetResult,
+    decode_output_envelope,
+    encode_source_manifest,
+    run_native_source_set,
+)
 from bootstrap.s3.pipeline import compile_sources
 from bootstrap.s3.verifier import verify_ir
 
 
-_INPUT_MAGIC = b"S3NGIN01"
-_OUTPUT_MAGIC = b"S3NGOUT1"
-_MAX_DYNAMIC_BYTES = 64 * 1024 * 1024
-_MAX_SOURCE_UNITS = 4096
 _SOURCE_MODULES = (
     "character_classes",
     "lexer",
@@ -51,23 +52,6 @@ class NativeS3CArtifact:
     toolchain: NativeToolchain
 
 
-@dataclass(frozen=True, slots=True)
-class NativeSourceSetResult:
-    status: int
-    source: bytes
-    events: tuple[int, ...]
-    returncode: int
-    stdout: bytes
-    stderr: bytes
-    output_envelope_sha256: str
-    output_envelope_bytes: int
-    elapsed_seconds: float
-
-
-class NativeS3CTransportError(RuntimeError):
-    pass
-
-
 def compiler_source_set(repository: Path) -> dict[str, str]:
     """Return the dependency-closed S3C-NG graph with an ordinary app entry."""
 
@@ -78,6 +62,65 @@ def compiler_source_set(repository: Path) -> dict[str, str]:
     for name in _SOURCE_MODULES:
         sources[f"{name}.s3"] = (module_root / f"{name}.s3").read_text(encoding="utf-8")
     return sources
+
+
+def compiler_source_graph_sha256(sources: dict[str, str]) -> str:
+    """Hash source paths and bytes using an unambiguous deterministic framing."""
+
+    digest = hashlib.sha256(b"S3C-NG-SOURCE-GRAPH-V1\0")
+    for logical_path, source in sorted(sources.items()):
+        path_bytes = logical_path.replace("\\", "/").encode("utf-8")
+        source_bytes = source.encode("utf-8")
+        digest.update(struct.pack("<Q", len(path_bytes)))
+        digest.update(path_bytes)
+        digest.update(struct.pack("<Q", len(source_bytes)))
+        digest.update(source_bytes)
+    return digest.hexdigest()
+
+
+def write_s3c_ng_candidate_manifest(
+    artifact: NativeS3CArtifact,
+    path: Path,
+    *,
+    source_commit: str,
+    source_graph_sha256: str,
+    toolchain_version: str,
+    bootstrap_parent_ir_sha256: str,
+) -> Path:
+    """Write deterministic provenance for an explicitly reference-seeded candidate."""
+
+    manifest = {
+        "schema_version": 2,
+        "target": "linux-x86_64",
+        "ng_ir_format_version": 22,
+        "entry_module": "app",
+        "entry_symbol": artifact.entry_symbol,
+        "optimization_mode": "O0",
+        "artifact_sha256": artifact.executable_sha256,
+        "artifact_bytes": artifact.executable_bytes,
+        "source_commit": source_commit,
+        "source_graph_sha256": source_graph_sha256,
+        "compiler_ir_sha256": artifact.compiler_ir_sha256,
+        "assembly_sha256": artifact.assembly_sha256,
+        "object_sha256": artifact.object_sha256,
+        "toolchain": {
+            "compiler": artifact.toolchain.compiler,
+            "version": toolchain_version,
+            "assembler": artifact.toolchain.assembler,
+            "linker": artifact.toolchain.linker,
+        },
+        "bootstrap_parent": {
+            "kind": "python-reference-stage0",
+            "canonical_ir_sha256": bootstrap_parent_ir_sha256,
+        },
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return path
 
 
 def compile_reference_b_ir(repository: Path) -> IRModule:
@@ -166,107 +209,6 @@ def build_native_s3c(
         executable_bytes=executable_path.stat().st_size,
         toolchain=toolchain,
     )
-
-
-def run_native_source_set(
-    artifact: NativeS3CArtifact,
-    sources: Mapping[str, str | bytes],
-    *,
-    entry_module: str,
-    timeout: float = 120.0,
-) -> NativeSourceSetResult:
-    """Package opaque source bytes, run native S3C-NG, and decode its envelope."""
-
-    if not sources or len(sources) > _MAX_SOURCE_UNITS:
-        raise NativeS3CTransportError("source manifest has an unsupported unit count")
-    work_directory = artifact.executable.parent
-    with tempfile.TemporaryDirectory(prefix="s3-ng-run-", dir=work_directory) as temporary:
-        manifest_path = Path(temporary) / "sources.s3ng"
-        output_path = Path(temporary) / "result.s3ng"
-        manifest_path.write_bytes(encode_source_manifest(sources, entry_module))
-        started = time.perf_counter()
-        completed = subprocess.run(
-            [
-                str(artifact.executable),
-                artifact.entry_symbol,
-                str(manifest_path),
-                str(output_path),
-            ],
-            cwd=work_directory,
-            capture_output=True,
-            check=False,
-            timeout=timeout,
-        )
-        elapsed_seconds = time.perf_counter() - started
-        if completed.returncode != 0:
-            detail = f"exit={completed.returncode}"
-            stderr = completed.stderr.decode(errors="replace").strip()
-            stdout = completed.stdout.decode(errors="replace").strip()
-            if stderr:
-                detail += f"; stderr={stderr}"
-            if stdout:
-                detail += f"; stdout={stdout}"
-            raise NativeS3CTransportError(
-                f"native compiler process failed before envelope decoding; {detail}"
-            )
-        if not output_path.is_file():
-            raise NativeS3CTransportError(
-                "native compiler produced no output envelope; "
-                f"exit={completed.returncode}; stderr={completed.stderr.decode(errors='replace')}"
-            )
-        encoded_output = output_path.read_bytes()
-        status, source, events = decode_output_envelope(encoded_output)
-        return NativeSourceSetResult(
-            status=status,
-            source=source,
-            events=events,
-            returncode=completed.returncode,
-            stdout=completed.stdout,
-            stderr=completed.stderr,
-            output_envelope_sha256=hashlib.sha256(encoded_output).hexdigest(),
-            output_envelope_bytes=len(encoded_output),
-            elapsed_seconds=elapsed_seconds,
-        )
-
-
-def encode_source_manifest(
-    sources: Mapping[str, str | bytes],
-    entry_module: str,
-) -> bytes:
-    """Encode transport fields without interpreting module or S3 semantics."""
-
-    entry = entry_module.encode("utf-8")
-    if len(entry) > 0xFFFFFFFF:
-        raise NativeS3CTransportError("entry module name exceeds transport bounds")
-    result = bytearray(_INPUT_MAGIC)
-    result.extend(struct.pack("<II", len(entry), len(sources)))
-    result.extend(entry)
-    for path, value in sources.items():
-        path_bytes = path.encode("utf-8")
-        source_bytes = value.encode("utf-8") if isinstance(value, str) else bytes(value)
-        if len(path_bytes) > 0xFFFFFFFF or len(source_bytes) > _MAX_DYNAMIC_BYTES:
-            raise NativeS3CTransportError("source unit exceeds transport bounds")
-        result.extend(struct.pack("<IQ", len(path_bytes), len(source_bytes)))
-        result.extend(path_bytes)
-        result.extend(source_bytes)
-    return bytes(result)
-
-
-def decode_output_envelope(encoded: bytes) -> tuple[int, bytes, tuple[int, ...]]:
-    """Decode the fixed transport envelope; no IR or source semantics are applied."""
-
-    header_size = 32
-    if len(encoded) < header_size or encoded[:8] != _OUTPUT_MAGIC:
-        raise NativeS3CTransportError("native compiler output envelope has an invalid header")
-    status, source_length, event_count = struct.unpack_from("<qQQ", encoded, 8)
-    expected_length = header_size + source_length + event_count * 8
-    if expected_length != len(encoded):
-        raise NativeS3CTransportError("native compiler output envelope has inconsistent lengths")
-    source_start = header_size
-    source_end = source_start + source_length
-    source = encoded[source_start:source_end]
-    events = struct.unpack_from(f"<{event_count}q", encoded, source_end) if event_count else ()
-    return status, source, tuple(events)
 
 
 def _run_tool(command: list[str], *, cwd: Path) -> None:

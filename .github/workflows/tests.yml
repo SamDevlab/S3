@@ -78,13 +78,13 @@ jobs:
         include:
           - python-version: "3.11"
             group_name: unit
-            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime)'
+            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime or s3c_ng_promotion)'
           - python-version: "3.12"
             group_name: unit
-            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime)'
+            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime or s3c_ng_promotion)'
           - python-version: "3.13"
             group_name: unit
-            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime)'
+            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime or s3c_ng_promotion)'
           - python-version: "3.13"
             group_name: renderer
             group_filter: 'renderer or adapter or fixture_output'
@@ -151,6 +151,38 @@ jobs:
           tests/test_native_x86_64_integration.py
           tests/test_instruction_limit_e3.py
           tests/test_external_jsmn_native.py
+
+  s3c-ng-promotion:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate native compiler toolchain
+        run: |
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+          cc --version
+          as --version
+          ld --version
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run S3C-NG provider, ordinary workload, and strict fixed-point gate
+        env:
+          S3_NATIVE_REQUIRED: "1"
+        run: python -m pytest -q tests/test_native_s3c_ng.py
 
   numeric-domain-closure:
     runs-on: ubuntu-24.04

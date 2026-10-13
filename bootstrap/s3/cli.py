@@ -31,12 +31,19 @@ from .diagnostics import (
 )
 from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, Emulator
 from .docs_generator import DocumentationError, render_json, render_markdown
-from .ffi import build_shared_library
+from .ffi import build_shared_library_from_assembly
 from .formatter import FormatterError, format_source
 from .ir_serialization import deserialize_ir, serialize_ir
 from .lexer import SyntaxMode
 from .optimizer import OptimizationLevel, instruction_count
-from .pipeline import CompilationResult, compile_source
+from .compiler_provider import (
+    DEFAULT_COMPILER,
+    CompilerKind,
+    CompilationOutput,
+    compile_source_set_with_provider,
+)
+from .native_compiler import inspect_s3c_ng_executable
+from .pipeline import compile_source
 from .project_container import ProjectTooling
 from .s3_docker import DockerProvider, DockerSpec
 from .targets import BUILTIN_TARGETS
@@ -122,10 +129,9 @@ def _parser() -> argparse.ArgumentParser:
         default=NativeCodegenPolicy.BASELINE.value,
         help="native code-generation policy (default: baseline)",
     )
-
     # --- Parent parser for subcommands (without defaults, so they don't overwrite) ---
     parent = argparse.ArgumentParser(add_help=False)
-    parent.add_argument("source", type=Path, help="path to an S3 source file")
+    parent.add_argument("source", type=Path, help="S3 source file or source directory")
     parent.add_argument(
         "-o",
         "--output",
@@ -172,6 +178,23 @@ def _parser() -> argparse.ArgumentParser:
         default=argparse.SUPPRESS,
         help=argparse.SUPPRESS,
     )
+    compiler_parent = argparse.ArgumentParser(add_help=False)
+    compiler_parent.add_argument(
+        "--compiler",
+        choices=tuple(compiler.value for compiler in CompilerKind),
+        default=DEFAULT_COMPILER.value,
+        help=f"source compiler (default: {DEFAULT_COMPILER.value})",
+    )
+    compiler_parent.add_argument(
+        "--s3c-ng-executable",
+        type=Path,
+        help="S3C-NG ELF path (defaults to the repository-local candidate)",
+    )
+    compiler_parent.add_argument(
+        "--entry-module",
+        default="main",
+        help="entry module for source directories (default: main)",
+    )
 
     subparsers = parser.add_subparsers(
         dest="command",
@@ -209,8 +232,13 @@ def _parser() -> argparse.ArgumentParser:
         "format",
         "docs",
     )
+    provider_commands = {
+        "check", "ir", "ir-json", "inspect", "asm", "run", "native-asm",
+        "build", "run-native", "ffi-build",
+    }
     for cmd in commands:
-        p = subparsers.add_parser(cmd, parents=[parent])
+        parents = [parent, compiler_parent] if cmd in provider_commands else [parent]
+        p = subparsers.add_parser(cmd, parents=parents)
         if cmd == "inspect":
             p.add_argument(
                 "--emit",
@@ -310,6 +338,7 @@ def _print_targets() -> None:
 
 def _print_doctor() -> None:
     registry = create_builtin_backend_registry()
+    s3c_ng = inspect_s3c_ng_executable()
     lines = [
         "S3 doctor",
         "",
@@ -320,6 +349,14 @@ def _print_doctor() -> None:
         "Host:",
         f"  system: {platform.system()}",
         f"  machine: {platform.machine()}",
+        "",
+        "Compiler:",
+        f"  default: {DEFAULT_COMPILER.value}",
+        f"  reference: {CompilerKind.PYTHON.value}",
+        "  python available: yes",
+        f"  s3c-ng available: {'yes' if s3c_ng.available else 'no'}",
+        f"  s3c-ng executable: {s3c_ng.executable}",
+        "  trusted bootstrap seed: not pinned in this checkout",
         "",
         "Targets:",
     ]
@@ -342,18 +379,20 @@ def _print_doctor() -> None:
                 f"  linker: {toolchain.linker or 'not found'}",
             )
         )
+    if s3c_ng.reason:
+        lines.append(f"  s3c-ng reason: {s3c_ng.reason}")
     print("\n".join(lines))
 
 
 def _print_inspection(
     source_path: Path,
-    compilation: CompilationResult,
+    compilation: CompilationOutput,
     *,
     syntax: str,
     optimization: OptimizationLevel,
 ) -> None:
     ir, assembly = compilation.require_ordinary_artifacts()
-    function_names = tuple(function.name for function in compilation.ast.functions)
+    function_names = tuple(function.name for function in ir.functions)
     assembly_instructions = sum(
         len(block.instructions)
         for function in assembly.functions
@@ -477,14 +516,52 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.max_frames < 1:
             raise NativeBackendError("--max-frames must be at least 1")
-        source = args.source.read_text(encoding="utf-8")
+        if args.source.is_dir():
+            source_files = sorted(args.source.rglob("*.s3"))
+            if not source_files:
+                raise FileNotFoundError(f"no .s3 source files found under {args.source}")
+            sources = {
+                path.relative_to(args.source).as_posix(): path.read_text(encoding="utf-8")
+                for path in source_files
+            }
+            source = None
+        else:
+            sources = None
+            source = args.source.read_text(encoding="utf-8")
         if args.command == "verify-ir":
+            if source is None:
+                raise _CLIUsageError("verify-ir expects an IR file, not a source directory")
             module = deserialize_ir(source)
             print(f"IR verified: {len(module.functions)} function(s)")
             return 0
         optimization = OptimizationLevel.parse(args.optimization)
         mode = _SOURCE_SYNTAX_MODES[args.source_syntax]
-        compilation = compile_source(source, optimization, mode=mode)
+        if args.command in ("tokens", "ast"):
+            if source is None:
+                raise _CLIUsageError(f"{args.command} expects one source file")
+            compilation: CompilationOutput = compile_source(source, optimization, mode=mode)
+        elif sources is not None:
+            compilation = compile_source_set_with_provider(
+                sources,
+                optimization,
+                compiler=args.compiler,
+                mode=mode,
+                executable=args.s3c_ng_executable,
+                entry_module=args.entry_module,
+            )
+        elif args.compiler == CompilerKind.S3C_NG.value:
+            assert source is not None
+            compilation = compile_source_set_with_provider(
+                {"main.s3": source},
+                optimization,
+                compiler=args.compiler,
+                mode=mode,
+                executable=args.s3c_ng_executable,
+                entry_module=args.entry_module,
+            )
+        else:
+            assert source is not None
+            compilation = compile_source(source, optimization, mode=mode)
         if args.command == "check":
             _print_check(args.source)
         elif args.command == "inspect":
@@ -574,19 +651,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             print(output)
         elif args.command == "ffi-build":
+            _, assembly = compilation.require_ordinary_artifacts()
             output = (
                 args.output
                 if args.output is not None
                 else Path("build") / f"lib{args.source.stem}.so"
             )
-            build_shared_library(
-                source,
+            build_shared_library_from_assembly(
+                assembly,
                 output,
                 keep_assembly=args.keep_assembly,
                 max_instructions=args.max_instructions,
                 native_policy=args.native_policy,
-                optimization=optimization,
-                mode=mode,
             )
             print(output)
         elif args.command == "run-native":
