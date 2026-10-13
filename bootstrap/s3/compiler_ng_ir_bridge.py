@@ -48,6 +48,12 @@ records (kind 26) keyed to functions, flattened parameters, registers,
 instructions, memories, and blocks. Locations carry a source-unit index and
 absolute byte offset; the structural decoder converts that offset to the
 canonical zero-based code-point offset and one-based line/column.
+V22 adds kind 28 block-name descriptors keyed by function and block identity.
+Each descriptor carries a stable name-template ID and explicit per-function
+counter suffix; current V22 streams require exactly one descriptor per block.
+Kind 29 marks a result-producing CALL whose canonical scalar ``result`` field
+is absent even though its result cells are transported for register identity,
+including value-projected calls whose result type has only one cell.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
@@ -78,8 +84,24 @@ from .diagnostics import SourceLocation
 from .vector_types import composite_vector_runtime_name_from_key
 
 
-NG_IR_FORMAT_VERSION = 21
+NG_IR_FORMAT_VERSION = 22
 NG_IR_RECORD_WIDTH = 8
+
+_BLOCK_NAME_PREFIXES = {
+    1: "rel_neg_",
+    2: "rel_zero_",
+    3: "rel_pos_",
+    4: "rel_cont_",
+    5: "switch_negative_",
+    6: "switch_neutral_",
+    7: "switch_positive_",
+    8: "switch_continue_",
+    9: "while_condition_",
+    10: "while_body_",
+    11: "while_exit_0_",
+    12: "while_exit_1_",
+    13: "while_exit_",
+}
 
 _V5_VECTOR_NEW_BUILTINS = {
     1: ("i64_vector_new", 1),
@@ -182,6 +204,7 @@ class _InstructionRecord:
     static_string_value: str | None = None
     static_string_offset: int | None = None
     results: tuple[int, ...] = ()
+    call_result_field_absent: bool = False
     location: SourceLocation | None = None
 
 
@@ -220,7 +243,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -229,6 +252,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
 
     source_spans: dict[int, tuple[int, int]] = {}
     location_offsets: dict[tuple[int, int, int], tuple[int, int, int]] = {}
+    block_name_descriptors: dict[tuple[int, int], tuple[int, int]] = {}
+    call_result_field_absences: set[tuple[int, int]] = set()
     if version >= 21:
         semantic_records = [records[0]]
         for record in records[1:]:
@@ -246,6 +271,35 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 if key in location_offsets:
                     raise NGIRDecodeError("duplicate source-location identity")
                 location_offsets[key] = (source_unit, offset, len(location_offsets))
+            elif kind == 28:
+                _, owner, block_id, name_kind, suffix, reserved0, reserved1, reserved2 = record
+                if (
+                    version < 22
+                    or owner < 0
+                    or block_id < 0
+                    or (name_kind != 0 and name_kind not in _BLOCK_NAME_PREFIXES)
+                    or (name_kind == 0 and (block_id != 0 or suffix != -1))
+                    or (name_kind != 0 and suffix < 0)
+                    or any((reserved0, reserved1, reserved2))
+                ):
+                    raise NGIRDecodeError("malformed or unsupported V22 block-name descriptor")
+                key = (owner, block_id)
+                if key in block_name_descriptors:
+                    raise NGIRDecodeError("duplicate block-name identity")
+                block_name_descriptors[key] = (name_kind, suffix)
+            elif kind == 29:
+                _, owner, instruction, reserved0, reserved1, reserved2, reserved3, reserved4 = record
+                if (
+                    version < 22
+                    or owner < 0
+                    or instruction < 0
+                    or any((reserved0, reserved1, reserved2, reserved3, reserved4))
+                ):
+                    raise NGIRDecodeError("malformed or unsupported V22 CALL result-field descriptor")
+                key = (owner, instruction)
+                if key in call_result_field_absences:
+                    raise NGIRDecodeError("duplicate CALL result-field descriptor")
+                call_result_field_absences.add(key)
             else:
                 semantic_records.append(record)
         records = semantic_records
@@ -648,6 +702,31 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             if owner != function_index or block_id in block_ids or block_id != len(block_ids) or any(reserved):
                 raise NGIRDecodeError("block identities must be unique, contiguous, ordered, and have zero reserved fields")
             block_ids.append(block_id)
+
+        if version >= 22:
+            expected_block_keys = {(function_index, block_id) for block_id in block_ids}
+            actual_block_keys = {
+                key for key in block_name_descriptors if key[0] == function_index
+            }
+            if actual_block_keys != expected_block_keys:
+                raise NGIRDecodeError("V22 block-name descriptors must cover exactly the declared blocks")
+            block_names: dict[int, str] = {}
+            for block_id in block_ids:
+                name_kind, suffix = block_name_descriptors[(function_index, block_id)]
+                if (block_id == 0) != (name_kind == 0):
+                    raise NGIRDecodeError("V22 entry block must use the explicit entry name descriptor")
+                if block_id > 0 and suffix != block_id - 1:
+                    raise NGIRDecodeError("V22 block-name suffix disagrees with per-function block order")
+                block_names[block_id] = (
+                    "entry" if name_kind == 0 else f"{_BLOCK_NAME_PREFIXES[name_kind]}{suffix}"
+                )
+            if len(set(block_names.values())) != len(block_names):
+                raise NGIRDecodeError("V22 block names must be unique within a function")
+        else:
+            block_names = {
+                block_id: "entry" if block_id == 0 else f"b{block_id}"
+                for block_id in block_ids
+            }
 
         instruction_records: list[_InstructionRecord] = []
         call_pool_length = 0
@@ -1473,6 +1552,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     static_string_value=static_string_value,
                     static_string_offset=static_string_offset,
                     results=instruction_results,
+                    call_result_field_absent=(function_index, instruction_index) in call_result_field_absences,
                     location=source_location(4, function_index, instruction_index),
                 )
             )
@@ -1511,6 +1591,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 "registers": tuple(registers),
                 "memories": tuple(memories),
                 "block_ids": tuple(block_ids),
+                "block_names": block_names,
                 "instructions": tuple(instruction_records),
                 "external": bool(flags & 0b01),
                 "exported": bool(flags & 0b10),
@@ -1519,6 +1600,23 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
 
     if not raw_functions:
         raise NGIRDecodeError("event stream contains no functions")
+    if version >= 22:
+        declared_block_keys = {
+            (function_index, block_id)
+            for function_index, function in enumerate(raw_functions)
+            for block_id in function["block_ids"]
+        }
+        if set(block_name_descriptors) != declared_block_keys:
+            raise NGIRDecodeError("V22 block-name descriptor references an unknown function or block")
+    for function_index, instruction_index in call_result_field_absences:
+        if function_index >= len(raw_functions):
+            raise NGIRDecodeError("V22 CALL result-field descriptor references an unknown function")
+        instructions = raw_functions[function_index]["instructions"]
+        if instruction_index >= len(instructions):
+            raise NGIRDecodeError("V22 CALL result-field descriptor references an unknown instruction")
+        instruction = instructions[instruction_index]
+        if instruction.opcode is not IROpcode.CALL or not instruction.results:
+            raise NGIRDecodeError("V22 CALL result-field descriptor requires a result-producing CALL")
     if cursor != len(records):
         raise NGIRDecodeError("trailing records after final function")
     function_names = [str(function["name"]) for function in raw_functions]
@@ -1562,10 +1660,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     for function_index, raw in enumerate(raw_functions):
         name = str(raw["name"])
         block_ids = raw["block_ids"]
-        block_names = {
-            block_id: "entry" if block_id == 0 else f"b{block_id}"
-            for block_id in block_ids
-        }
+        block_names = raw["block_names"]
         by_block: dict[int, list[IRInstruction]] = {block_id: [] for block_id in block_ids}
         for record in raw["instructions"]:
             callee = record.callee_builtin
@@ -1583,7 +1678,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     opcode=record.opcode,
                     result=(
                         None
-                        if record.opcode is IROpcode.CALL and len(record.results) > 1
+                        if record.opcode is IROpcode.CALL
+                        and (len(record.results) > 1 or record.call_result_field_absent)
                         else record.result
                     ),
                     operands=record.operands,

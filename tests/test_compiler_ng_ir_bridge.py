@@ -667,6 +667,8 @@ def _legacy_event_records(records: list[list[int]], version: int) -> list[list[i
         and not (version < 17 and record[0] == 24)
         and not (version < 20 and record[0] == 25)
         and not (version < 21 and record[0] in {26, 27})
+        and not (version < 22 and record[0] == 28)
+        and not (version < 22 and record[0] == 29)
     ]
     if version < 17:
         for record in legacy:
@@ -689,7 +691,139 @@ def test_branches_ng_output_decodes_verifies_executes_and_matches_reference() ->
 
     verify_ir(ng_canonical_ir)
     assert _canonical_structure(ng_canonical_ir) == _canonical_structure(reference_ir)
+    assert tuple(block.name for block in ng_canonical_ir.functions[0].blocks) == tuple(
+        block.name for block in reference_ir.functions[0].blocks
+    )
+    assert serialize_ir(ng_canonical_ir) == serialize_ir(reference_ir)
     assert execute_ir(reference_ir) == execute_ir(ng_canonical_ir)
+
+
+def test_v22_block_descriptors_preserve_canonical_names_and_targets() -> None:
+    source, events = _branches_events()
+    actual = decode_ng_ir_events(source.encode("utf-8"), events)
+    reference = compile_source(source).ir
+    assert reference is not None
+
+    for actual_function, reference_function in zip(actual.functions, reference.functions):
+        assert tuple(block.name for block in actual_function.blocks) == tuple(
+            block.name for block in reference_function.blocks
+        )
+        actual_targets = tuple(
+            (block.name, instruction.targets)
+            for block in actual_function.blocks
+            for instruction in block.instructions
+            if instruction.targets
+        )
+        reference_targets = tuple(
+            (block.name, instruction.targets)
+            for block in reference_function.blocks
+            for instruction in block.instructions
+            if instruction.targets
+        )
+        assert actual_targets == reference_targets
+    assert serialize_ir(actual) == serialize_ir(reference)
+
+
+def test_v22_relation_and_match_names_match_reference_lowering() -> None:
+    source = (
+        "fn classify(value: i64) -> i64:\n"
+        "    match value > 0:\n"
+        "        -1:\n"
+        "            return 10\n"
+        "        0:\n"
+        "            return 20\n"
+        "        1:\n"
+        "            return 30\n"
+        "fn main() -> i64:\n"
+        "    return classify(2)\n"
+    )
+    actual = decode_ng_ir_events(source.encode(), _emit_ng_events(source))
+    reference = compile_source(source).ir
+    assert reference is not None
+    actual_functions = {function.name: function for function in actual.functions}
+    reference_functions = {function.name: function for function in reference.functions}
+    actual_names = tuple(block.name for block in actual_functions["classify"].blocks)
+    reference_names = tuple(block.name for block in reference_functions["classify"].blocks)
+    assert actual_names == reference_names
+    assert actual_names[:7] == (
+        "entry",
+        "rel_neg_0",
+        "rel_zero_1",
+        "rel_pos_2",
+        "rel_cont_3",
+        "switch_negative_4",
+        "switch_neutral_5",
+    )
+    assert serialize_ir(actual) == serialize_ir(reference)
+
+
+def test_v22_preserves_discarded_single_result_call_field_presence() -> None:
+    source = (
+        "fn answer(value: i64) -> i64:\n"
+        "    return value\n"
+        "fn main() -> i64:\n"
+        "    discard answer(41)\n"
+        "    return answer(42)\n"
+    )
+    actual = decode_ng_ir_events(source.encode(), _emit_ng_events(source))
+    reference = compile_source(source).ir
+    assert reference is not None
+
+    actual_calls = [
+        instruction
+        for block in actual.functions[1].blocks
+        for instruction in block.instructions
+        if instruction.opcode.value == "call"
+    ]
+    reference_calls = [
+        instruction
+        for block in reference.functions[1].blocks
+        for instruction in block.instructions
+        if instruction.opcode.value == "call"
+    ]
+    assert len(actual_calls) == len(reference_calls) == 2
+    assert actual_calls[0].result is None and reference_calls[0].result is None
+    assert actual_calls[0].results == reference_calls[0].results
+    assert actual_calls[1].result is not None and reference_calls[1].result is not None
+    assert serialize_ir(actual) == serialize_ir(reference)
+
+
+def test_v22_preserves_single_cell_aggregate_call_field_absence() -> None:
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "record Box:\n"
+            "    value: i64\n"
+            "fn make() -> Box:\n"
+            "    return Box(value=7)\n"
+            "fn main() -> i64:\n"
+            "    box: Box = make()\n"
+            "    return box.value\n"
+        ),
+    }
+    reference = compile_sources(sources, entry_module="app").ir
+    assert reference is not None
+    source, events = _emit_ng_source_set_events(sources, entry_module="app")
+    actual = decode_ng_ir_events(source, events)
+
+    actual_main = next(function for function in actual.functions if function.name == "main")
+    reference_main = next(function for function in reference.functions if function.name == "main")
+    actual_call = next(
+        instruction
+        for block in actual_main.blocks
+        for instruction in block.instructions
+        if instruction.opcode.value == "call" and instruction.callee.endswith("make")
+    )
+    reference_call = next(
+        instruction
+        for block in reference_main.blocks
+        for instruction in block.instructions
+        if instruction.opcode.value == "call" and instruction.callee.endswith("make")
+    )
+
+    assert actual_call.result is None and reference_call.result is None
+    assert len(actual_call.results) == len(reference_call.results) == 1
+    assert serialize_ir(actual) == serialize_ir(reference)
 
 
 def test_ng_ir_v7_preserves_bytes_text_and_decodes_v2() -> None:
@@ -701,7 +835,7 @@ def test_ng_ir_v7_preserves_bytes_text_and_decodes_v2() -> None:
     reference_ir = compile_source(source).ir
     assert reference_ir is not None
     events = _emit_ng_events(source)
-    assert _event_records(events)[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert _event_records(events)[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
 
     verify_ir(ng_ir)
@@ -734,7 +868,7 @@ def test_ng_ir_v7_preserves_vector_and_reference_signature_categories() -> None:
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     assert any(record[0] == 12 and record[2] == 8 for record in records)
     assert any(record[0] == 12 and record[2] == 9 for record in records)
 
@@ -760,7 +894,7 @@ def test_ng_ir_v12_dereference_and_reborrow_match_reference_ir() -> None:
 
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     assert any(record[0] == 4 and record[2] == 18 for record in records)
 
     ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
@@ -806,7 +940,7 @@ def test_ng_ir_v19_mutable_dereference_assignment_matches_reference_ir() -> None
     assert reference_ir is not None
 
     records = _event_records(_emit_ng_events(source))
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     stores = [record for record in records if record[0] == 4 and record[2] == 21]
     assert len(stores) == 1
 
@@ -875,7 +1009,7 @@ def test_ng_ir_v13_static_strings_match_reference_ir_and_fail_closed() -> None:
     reference = compile_source(source).ir
     assert reference is not None
     records = _event_records(_emit_ng_events(source))
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     string_instructions = [record for record in records if record[0] == 4 and record[2] == 19]
     assert len(string_instructions) == 3
 
@@ -942,7 +1076,7 @@ def test_ng_ir_v7_f64_relational_opcode_executes_and_is_not_valid_in_v6() -> Non
     reference = compile_source(source).ir
     assert reference is not None
     records = _event_records(_emit_ng_events(source))
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     relation_records = [record for record in records if record[0] == 4 and record[2] == 15]
     assert len(relation_records) == len(cases) // 2
     assert all(6 <= record[1] < 12 for record in relation_records)
@@ -1322,7 +1456,7 @@ def test_ng_ir_v7_generic_vector_new_is_explicit_and_executable(element_type: st
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     builtin_record = next(record for record in records if record[0] == 16)
     call_instructions = [record for record in records if record[0] == 4]
     call_instruction_index = next(index for index, record in enumerate(call_instructions) if record[2] == 7)
@@ -1395,7 +1529,7 @@ def test_ng_ir_v7_generic_vector_len_is_explicit_and_executable(
     reference_ir = compile_source(source).ir
     assert reference_ir is not None
     records = _event_records(_emit_ng_events(source))
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     builtin_record = next(record for record in records if record[0] == 17)
     assert builtin_record[1:5] == [0, 0, 1, element_type_id]
 
@@ -1489,7 +1623,7 @@ def test_ng_ir_v16_generic_vector_get_is_explicit_and_executable() -> None:
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
 
     ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
     verify_ir(ng_ir)
@@ -1530,7 +1664,7 @@ def test_ng_ir_v16_generic_vector_set_is_explicit_and_executable() -> None:
     assert reference_ir is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     metadata = next(record for record in records if record[0] == 23)
     assert metadata[3:5] == [2, 1]
 
@@ -1589,7 +1723,7 @@ def test_ng_ir_v16_vector_record_get_set_and_local_assignment_preserve_cells() -
     assert reference_ir is not None
     source, events = _emit_ng_source_set_events(sources, entry_module="app")
     records = _event_records(events)
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     assert sum(record[0] == 19 and record[3] == 4 for record in records) == 3
     assert sum(record[0] == 19 and record[3] == 5 for record in records) == 1
 
@@ -1714,7 +1848,7 @@ def test_ng_ir_v8_generic_vector_push_is_explicit_and_executable(
     reference_ir = compile_source(source).ir
     assert reference_ir is not None
     records = _event_records(_emit_ng_events(source))
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     metadata = next(record for record in records if record[0] == 18)
     assert metadata[1] == 0
     assert metadata[3:5] == [1, element_type_id]
@@ -1902,7 +2036,7 @@ def test_ng_ir_v4_lowers_and_executes_aggregate_reference_field_load() -> None:
     assert result == 73
 
 
-def test_ng_v21_preserves_utf8_source_locations_through_lowering() -> None:
+def test_ng_v22_preserves_utf8_source_locations_through_lowering() -> None:
     source = (
         "# café precedes the first token\n"
         "fn inc(value: i64) -> i64:\n"
@@ -1915,12 +2049,19 @@ def test_ng_v21_preserves_utf8_source_locations_through_lowering() -> None:
     assert reference is not None
 
     events = _emit_ng_events(source)
-    assert _event_records(events)[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert _event_records(events)[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     actual = decode_ng_ir_events(source.encode("utf-8"), events)
 
     assert _source_location_structure(actual) == _source_location_structure(reference)
     assert serialize_ir(actual) == serialize_ir(reference)
     assert execute_ir(actual) == execute_ir(reference) == 43
+    inc = next(function for function in actual.functions if function.name.endswith("inc"))
+    main = next(function for function in actual.functions if function.name.endswith("main"))
+    inc_offset = source.index("fn inc")
+    main_offset = source.index("fn main")
+    assert len(source[:inc_offset].encode("utf-8")) != inc_offset
+    assert (inc.location.offset, inc.location.line, inc.location.column) == (inc_offset, 2, 1)
+    assert (main.location.offset, main.location.line, main.location.column) == (main_offset, 4, 1)
 
 
 def test_ng_ir_v20_decodes_without_source_locations() -> None:
@@ -1953,7 +2094,7 @@ def test_ng_ir_v20_decodes_without_source_locations() -> None:
     )
 
 
-def test_ng_ir_v21_rejects_source_location_for_unknown_entity() -> None:
+def test_ng_ir_v22_rejects_source_location_for_unknown_entity() -> None:
     source = "fn main() -> i64:\n    return 0\n"
     records = _event_records(_emit_ng_events(source))
     orphan = next(record for record in records if record[0] == 26 and record[1] == 3)
@@ -1963,7 +2104,7 @@ def test_ng_ir_v21_rejects_source_location_for_unknown_entity() -> None:
         decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
 
 
-def test_ng_v21_preserves_runtime_diagnostic_location() -> None:
+def test_ng_v22_preserves_runtime_diagnostic_location() -> None:
     source = (
         "fn inc(value: i64) -> i64:\n"
         "    return value + 1\n"
@@ -1984,9 +2125,14 @@ def test_ng_v21_preserves_runtime_diagnostic_location() -> None:
             diagnostic_from_exception(captured.value, file="app.s3").to_dict()
         )
     assert diagnostics[0] == diagnostics[1]
+    diagnostic = diagnostics[1]
+    assert diagnostic["code"] == "S3E_RUNTIME_FRAME_LIMIT"
+    assert diagnostic["message"] == "frame limit 1 exceeded"
+    assert diagnostic["file"] == "app.s3"
+    assert diagnostic["source"] == {"offset": 77, "line": 4, "column": 12}
 
 
-def test_ng_v21_preserves_module_local_source_locations() -> None:
+def test_ng_v22_preserves_module_local_source_locations() -> None:
     sources = {
         "app.s3": (
             "module app\n"
@@ -2290,7 +2436,7 @@ def test_ng_source_set_executes_composite_vector_new_push_and_len() -> None:
     assert reference_ir is not None
     source, events = _emit_ng_source_set_events(sources, entry_module="app")
     records = _event_records(events)
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     assert sum(row[0] == 19 and row[3] == 1 for row in records) == 1
     assert sum(row[0] == 19 and row[3] == 2 for row in records) == 1
     assert sum(row[0] == 19 and row[3] == 3 for row in records) == 1
@@ -2308,8 +2454,10 @@ def test_ng_source_set_lowers_record_return_call_into_composite_vector_push() ->
             "record Pair:\n"
             "    left: i64\n"
             "    right: i64\n"
+            "fn increment(value: i64) -> i64:\n"
+            "    return value + 1\n"
             "fn make_pair(left: i64, right: i64) -> Pair:\n"
-            "    return Pair(left=left, right=right)\n"
+            "    return Pair(left=increment(left), right=right)\n"
             "fn main() -> i64:\n"
             "    mut pairs: vector<Pair> = vector_new<Pair>(1)\n"
             "    discard vector_push<Pair>(&mut pairs, make_pair(19, 23))\n"
@@ -2323,6 +2471,19 @@ def test_ng_source_set_lowers_record_return_call_into_composite_vector_push() ->
     ng_ir = decode_ng_ir_events(source, events)
 
     verify_ir(ng_ir)
+    assert serialize_ir(ng_ir) == serialize_ir(reference_ir)
+    composite_calls = [
+        instruction
+        for function in ng_ir.functions
+        for block in function.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.CALL
+        and instruction.callee is not None
+        and instruction.callee.startswith("__s3_composite_vector__")
+    ]
+    assert composite_calls
+    assert all(instruction.result is None for instruction in composite_calls)
+    assert all(instruction.results for instruction in composite_calls)
     assert _canonical_structure(ng_ir) == _canonical_structure(reference_ir)
     assert execute_ir(ng_ir) == execute_ir(reference_ir) == 1
 
@@ -2779,7 +2940,7 @@ def test_ng_source_set_emits_and_executes_v21_scalar_vector_pop() -> None:
     status, source, cells = _run_ng_source_set_events(sources, entry_module="app")
     assert status == 0
     records = _event_records(cells)
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     pop_call = next(record for record in records if record[0] == 4 and record[5] == -11)
     assert pop_call[4] == 1
     instruction_index = sum(
@@ -2822,7 +2983,7 @@ def test_ng_source_set_emits_and_executes_v21_composite_vector_pop() -> None:
     status, source, cells = _run_ng_source_set_events(sources, entry_module="app")
     assert status == 0
     records = _event_records(cells)
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     pop_call = next(record for record in records if record[0] == 4 and record[5] == -10)
     target_index = records.index(pop_call) + 2
     target = records[target_index]
@@ -4232,7 +4393,7 @@ def test_ng_ir_v18_lowers_typed_unary_negation_to_canonical_invert() -> None:
     assert reference is not None
     events = _emit_ng_events(source)
     records = _event_records(events)
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     assert sum(record[0] == 4 and record[2] == 20 for record in records) == 5
 
     ng_ir = decode_ng_ir_events(source.encode("utf-8"), events)
@@ -4300,7 +4461,7 @@ def test_ng_ir_v11_lowers_numeric_conversions_and_dynamic_bytes_calls() -> None:
     assert reference_ir is not None
     cells = _emit_ng_events(source)
     records = _event_records(cells)
-    assert records[0] == [0, 21, 8, 0, 0, 0, 0, 0]
+    assert records[0] == [0, 22, 8, 0, 0, 0, 0, 0]
     assert sum(record[0] == 21 for record in records) == 5
     assert any(record[0] == 4 and record[2] == 17 for record in records)
 
@@ -4569,6 +4730,12 @@ def _branches_events() -> tuple[str, list[int]]:
         ("missing-register", "missing register"),
         ("missing-memory", "missing memory"),
         ("missing-target-record", "control-flow targets"),
+        ("duplicate-name-descriptor", "duplicate block-name identity"),
+        ("missing-name-descriptor", "cover exactly the declared blocks"),
+        ("unknown-name-template", "malformed or unsupported V22 block-name descriptor"),
+        ("wrong-name-suffix", "suffix disagrees with per-function block order"),
+        ("call-result-on-non-call", "requires a result-producing CALL"),
+        ("duplicate-call-result-descriptor", "duplicate CALL result-field descriptor"),
     ),
 )
 def test_ng_ir_bridge_rejects_structural_corruption(corruption: str, message: str) -> None:
@@ -4593,9 +4760,33 @@ def test_ng_ir_bridge_rejects_structural_corruption(corruption: str, message: st
     elif corruption == "missing-target-record":
         target_index = next(index for index, record in enumerate(records) if record[0] == 11)
         del records[target_index]
+    elif corruption == "duplicate-name-descriptor":
+        descriptor = next(record for record in records if record[0] == 28)
+        records.append(descriptor.copy())
+    elif corruption == "missing-name-descriptor":
+        descriptor_index = next(index for index, record in enumerate(records) if record[0] == 28)
+        del records[descriptor_index]
+    elif corruption == "unknown-name-template":
+        next(record for record in records if record[0] == 28 and record[3] != 0)[3] = 999
+    elif corruption == "wrong-name-suffix":
+        next(record for record in records if record[0] == 28 and record[2] > 0)[4] = 999
+    elif corruption == "call-result-on-non-call":
+        records.append([29, 0, 0, 0, 0, 0, 0, 0])
+    elif corruption == "duplicate-call-result-descriptor":
+        descriptor = [29, 0, 0, 0, 0, 0, 0, 0]
+        records.extend((descriptor.copy(), descriptor.copy()))
 
     with pytest.raises(NGIRDecodeError, match=message):
         decode_ng_ir_events(source.encode("utf-8"), _flatten(records))
+
+
+def test_v21_stream_without_block_names_keeps_legacy_synthetic_names() -> None:
+    source, cells = _branches_events()
+    legacy_records = _legacy_event_records(_event_records(cells), 21)
+    decoded = decode_ng_ir_events(source.encode("utf-8"), _flatten(legacy_records))
+    function = decoded.functions[0]
+    assert function.blocks[0].name == "entry"
+    assert all(block.name == f"b{index}" for index, block in enumerate(function.blocks[1:], 1))
 
 
 def test_ng_ir_bridge_rejects_invalid_call_function_and_argument_ranges() -> None:

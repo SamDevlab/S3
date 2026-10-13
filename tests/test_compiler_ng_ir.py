@@ -58,6 +58,21 @@ _OPCODE_CODES = {
     "compare": 13,
     "relate": 15,
 }
+_BLOCK_NAME_KINDS = {
+    "rel_neg_": 1,
+    "rel_zero_": 2,
+    "rel_pos_": 3,
+    "rel_cont_": 4,
+    "switch_negative_": 5,
+    "switch_neutral_": 6,
+    "switch_positive_": 7,
+    "switch_continue_": 8,
+    "while_condition_": 9,
+    "while_body_": 10,
+    "while_exit_0_": 11,
+    "while_exit_1_": 12,
+    "while_exit_": 13,
+}
 
 
 def _register_number(name: str) -> int:
@@ -170,6 +185,17 @@ def _reference_events(program: object, source: str) -> list[int]:
             _source_location_record(source, event, 7, function_index, memory.index, memory.location)
         for block_index, block in enumerate(function.blocks):
             event(9, function_index, block_index, 0, 0, 0, 0, 0)
+            if block.name == "entry":
+                name_kind, suffix = 0, -1
+            else:
+                for prefix, candidate_kind in _BLOCK_NAME_KINDS.items():
+                    if block.name.startswith(prefix):
+                        name_kind = candidate_kind
+                        suffix = int(block.name.removeprefix(prefix))
+                        break
+                else:
+                    raise AssertionError(f"unsupported canonical block name {block.name!r}")
+            event(28, function_index, block_index, name_kind, suffix, 0, 0, 0)
             _source_location_record(source, event, 9, function_index, block_index, block.location)
         instruction_index = 0
         for block_index, block in enumerate(function.blocks):
@@ -220,6 +246,8 @@ def _reference_events(program: object, source: str) -> list[int]:
                     )
                     for argument_index, argument_register in enumerate(operands):
                         event(6, function_index, instruction_index, argument_index, argument_register, 0, 0, 0)
+                    if instruction.result is None and instruction.results:
+                        event(29, function_index, instruction_index, 0, 0, 0, 0, 0)
                     call_argument_cursor += len(operands)
                 elif opcode == "load":
                     event(4, function_index, _OPCODE_CODES[opcode], -1 if instruction.result is None else instruction.result, len(operands), operands[0], instruction.memory, 0)

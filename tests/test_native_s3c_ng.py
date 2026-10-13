@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import platform
+import subprocess
+from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
@@ -13,8 +15,10 @@ from bootstrap.s3.ir import IRModule
 from bootstrap.s3.pipeline import compile_sources
 from bootstrap.s3.ir_serialization import serialize_ir
 from bootstrap.s3.verifier import verify_ir
+import tools.native_s3c_ng as native_s3c_ng
 from tools.native_s3c_ng import (
     NativeSourceSetResult,
+    NativeS3CTransportError,
     build_native_s3c,
     compile_reference_b_ir,
     compiler_source_set,
@@ -23,6 +27,41 @@ from tools.native_s3c_ng import (
 
 
 _ROOT = Path(__file__).parents[1]
+
+
+def test_native_source_set_reports_process_failure_before_decoding(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    artifact = SimpleNamespace(
+        executable=tmp_path / "s3c-ng",
+        entry_symbol="ng_emit_source_set",
+    )
+
+    def fail_after_partial_output(command: list[str], **kwargs) -> subprocess.CompletedProcess:
+        Path(command[3]).write_bytes(b"S3NGOUT1truncated")
+        return subprocess.CompletedProcess(
+            command,
+            returncode=2,
+            stdout=b"",
+            stderr=b"native S3C-NG transport: EDQUOT while writing output",
+        )
+
+    monkeypatch.setattr(native_s3c_ng.subprocess, "run", fail_after_partial_output)
+    monkeypatch.setattr(
+        native_s3c_ng,
+        "decode_output_envelope",
+        lambda _encoded: pytest.fail("a failed process envelope must not be decoded"),
+    )
+
+    with pytest.raises(NativeS3CTransportError, match="exit=2.*EDQUOT"):
+        run_native_source_set(
+            artifact,
+            {"app.s3": "module app\n"},
+            entry_module="app",
+        )
+
+
 _MULTIMODULE_SOURCES = {
     "app.s3": """\
 module app
@@ -160,6 +199,28 @@ def _source_location_structure(module: IRModule) -> tuple[object, ...]:
     )
 
 
+def _assert_exact_ir_equal(actual: IRModule, expected: IRModule, *, context: str) -> None:
+    actual_text = serialize_ir(actual)
+    expected_text = serialize_ir(expected)
+    if actual_text == expected_text:
+        return
+    difference = next(
+        (
+            index
+            for index, (actual_char, expected_char) in enumerate(zip(actual_text, expected_text))
+            if actual_char != expected_char
+        ),
+        min(len(actual_text), len(expected_text)),
+    )
+    start = max(0, difference - 48)
+    end = difference + 48
+    raise AssertionError(
+        f"{context}: canonical IR differs at character {difference}; "
+        f"actual={actual_text[start:end]!r}; expected={expected_text[start:end]!r}; "
+        f"lengths={len(actual_text)}/{len(expected_text)}"
+    )
+
+
 def _assert_native_compile(
     artifact,
     sources: dict[str, str],
@@ -177,6 +238,7 @@ def _assert_native_compile(
     verify_ir(actual)
     assert _canonical_structure(actual) == _canonical_structure(reference)
     assert _source_location_structure(actual) == _source_location_structure(reference)
+    _assert_exact_ir_equal(actual, reference, context="native compile")
 
     assembly = generate_native_assembly(generate_assembly(actual))
     executable = NativeToolchain.detect().build(
@@ -217,6 +279,9 @@ def test_native_s3c_ng_preserves_record_parameter_and_while_locations(
         "app.s3": """\
 module app
 from model import Pair
+from model import ScalarBox
+from model import classify as imported_classify
+from model import make_scalar_box
 fn inspect(pair: Pair, limit: i64) -> i64:
     mut index: i64 = 0
     while index < limit:
@@ -238,7 +303,11 @@ fn inspect(pair: Pair, limit: i64) -> i64:
 fn relation_result(value: i64) -> trit:
     return value == 1
 fn main() -> i64:
-    return 0
+    discard imported_classify(0)
+    scalar_box: ScalarBox = make_scalar_box()
+    mut boxes: vector<ScalarBox> = vector_new<ScalarBox>(1)
+    discard vector_push<ScalarBox>(&mut boxes, scalar_box)
+    return scalar_box.value - 7 + vector_len<ScalarBox>(&boxes) - 1
 """,
         "model.s3": """\
 module model
@@ -247,6 +316,18 @@ export record Inner:
 export record Pair:
     left: i64
     inner: Inner
+export record ScalarBox:
+    value: i64
+export fn classify(value: i64) -> i64:
+    match value > 0:
+        -1:
+            return 10
+        0:
+            return 20
+        1:
+            return 30
+export fn make_scalar_box() -> ScalarBox:
+    return ScalarBox(value=7)
 export fn model_value() -> i64:
     return 0
 """,
@@ -261,7 +342,7 @@ export fn model_value() -> i64:
 )
 def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> None:
     compiler_ir = compile_reference_b_ir(_ROOT)
-    artifact_b = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    artifact_b = build_native_s3c(compiler_ir, tmp_path / "native-b", label="compiler")
     assert artifact_b.compiler_ir_sha256
     assert artifact_b.assembly_sha256
     assert artifact_b.object_sha256
@@ -314,8 +395,9 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     assert _source_location_structure(generation_c) == _source_location_structure(
         compiler_ir
     )
+    _assert_exact_ir_equal(generation_c, compiler_ir, context="B-to-C compiler IR")
 
-    artifact_c = build_native_s3c(generation_c, tmp_path / "native-c", label="s3c-ng-c")
+    artifact_c = build_native_s3c(generation_c, tmp_path / "native-c", label="compiler")
     c_small = _assert_native_compile(
         artifact_c, small, expected_result=42, tmp_path=tmp_path
     )
@@ -356,20 +438,20 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     generation_d = decode_ng_ir_events(native_c_to_d.source, native_c_to_d.events)
     verify_ir(generation_d)
     assert _canonical_structure(generation_d) == _canonical_structure(generation_c)
-    assert serialize_ir(generation_d) == serialize_ir(generation_c)
-    assert serialize_ir(generation_c) == serialize_ir(compiler_ir)
+    _assert_exact_ir_equal(generation_d, generation_c, context="C-to-D fixed point")
+    _assert_exact_ir_equal(generation_c, compiler_ir, context="host-to-C fixed point")
     assert native_c_to_d.output_envelope_sha256 == native_b_to_c.output_envelope_sha256
     assert native_c_to_d.output_envelope_bytes == native_b_to_c.output_envelope_bytes
 
     artifact_b_repeat = build_native_s3c(
         compiler_ir,
         tmp_path / "native-b-repeat",
-        label="s3c-ng-b",
+        label="compiler",
     )
     artifact_c_repeat = build_native_s3c(
         generation_c,
         tmp_path / "native-c-repeat",
-        label="s3c-ng-c",
+        label="compiler",
     )
     assert artifact_b_repeat.assembly_sha256 == artifact_b.assembly_sha256
     assert artifact_b_repeat.object_sha256 == artifact_b.object_sha256
@@ -377,6 +459,10 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
     assert artifact_c_repeat.assembly_sha256 == artifact_c.assembly_sha256
     assert artifact_c_repeat.object_sha256 == artifact_c.object_sha256
     assert artifact_c_repeat.executable_sha256 == artifact_c.executable_sha256
+    assert artifact_b.object_path.name == artifact_c.object_path.name == "compiler.o"
+    assert artifact_b.assembly.encode() == artifact_c.assembly.encode()
+    assert artifact_b.object_path.read_bytes() == artifact_c.object_path.read_bytes()
+    assert artifact_b.executable.read_bytes() == artifact_c.executable.read_bytes()
 
     hosted_serialized = serialize_ir(compiler_ir).encode("utf-8")
     native_serialized = serialize_ir(generation_c).encode("utf-8")

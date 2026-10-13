@@ -198,6 +198,17 @@ def run_native_source_set(
             timeout=timeout,
         )
         elapsed_seconds = time.perf_counter() - started
+        if completed.returncode != 0:
+            detail = f"exit={completed.returncode}"
+            stderr = completed.stderr.decode(errors="replace").strip()
+            stdout = completed.stdout.decode(errors="replace").strip()
+            if stderr:
+                detail += f"; stderr={stderr}"
+            if stdout:
+                detail += f"; stdout={stdout}"
+            raise NativeS3CTransportError(
+                f"native compiler process failed before envelope decoding; {detail}"
+            )
         if not output_path.is_file():
             raise NativeS3CTransportError(
                 "native compiler produced no output envelope; "
