@@ -29,7 +29,10 @@
       {"id": "wrong-argument-type", "expected_native_status": -14},
       {"id": "private-symbol", "expected_native_status": -5},
       {"id": "duplicate-module-identity", "expected_native_status": -2},
-      {"id": "dependency-cycle", "expected_native_status": -6}
+      {"id": "dependency-cycle", "expected_native_status": -6},
+      {"id": "unknown-reference-field", "expected_native_status": -15},
+      {"id": "wrong-bytes-builtin-type", "expected_native_status": -14},
+      {"id": "wrong-resource-open-type", "expected_native_status": -14}
     ],
     "qualification_note": "Python and the native candidate both reject these cases; native status values are checked for regression, but they are not structured diagnostic category/code/span parity"
   },

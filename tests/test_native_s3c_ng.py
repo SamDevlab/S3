@@ -158,6 +158,15 @@ _INVALID_PROVIDER_SOURCES = {
         "main.s3": "module main\nfrom helper import value\nfn main() -> i64:\n    return value()\n",
         "helper.s3": "module helper\nfrom main import main as entry\nexport fn value() -> i64:\n    return entry()\n",
     },
+    "unknown-reference-field": {
+        "app.s3": "module app\nrecord TokenLike:\n    id: i64\nfn read_missing(value: &TokenLike) -> i64:\n    return value.missing\nfn main() -> i64:\n    return 0\n",
+    },
+    "wrong-bytes-builtin-type": {
+        "app.s3": "module app\nfn invalid_index(data: &bytes) -> tryte:\n    return bytes_get(data, data)\nfn main() -> i64:\n    return 0\n",
+    },
+    "wrong-resource-open-type": {
+        "app.s3": "module app\nfn main() -> i64:\n    mut handle: resource_handle = resource_open(1)\n    return 0\n",
+    },
 }
 
 
@@ -524,11 +533,27 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
         "private-symbol": -5,
         "duplicate-module-identity": -2,
         "dependency-cycle": -6,
+        "unknown-reference-field": -15,
+        "wrong-bytes-builtin-type": -14,
+        "wrong-resource-open-type": -14,
     }
 
     for case, sources in _INVALID_PROVIDER_SOURCES.items():
+        entry_module = (
+            "main"
+            if case in {
+                "missing-module",
+                "missing-symbol",
+                "wrong-arity",
+                "wrong-argument-type",
+                "private-symbol",
+                "duplicate-module-identity",
+                "dependency-cycle",
+            }
+            else "app"
+        )
         with pytest.raises(S3Error):
-            compile_sources(sources, entry_module="main")
+            compile_sources(sources, entry_module=entry_module)
 
         with pytest.raises(
             NativeS3CTransportError,
@@ -538,7 +563,7 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
                 sources,
                 compiler="s3c-ng",
                 executable=artifact.executable,
-                entry_module="main",
+                entry_module=entry_module,
             )
 
 
