@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ctypes
 import hashlib
 import platform
 import subprocess
@@ -413,6 +414,81 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
                 executable=artifact.executable,
                 entry_module="main",
             )
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG FFI qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_ffi_build_uses_selected_compiler_and_matches_reference(
+    tmp_path: Path,
+) -> None:
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
+
+    source = """\
+export fn add(a: i64, b: i64) -> i64:
+    return a + b
+export fn multiply(a: f64, b: f64) -> f64:
+    return a * b
+export fn sum(xs: &[i64]) -> i64:
+    return xs[0] + xs[1]
+export fn bump(xs: &mut [i64]) -> i64:
+    xs[0] = xs[0] + 1
+    return xs[0]
+fn main() -> i64:
+    return 0
+"""
+    source_path = tmp_path / "ffi.s3"
+    source_path.write_text(source, encoding="utf-8")
+
+    ng_library = tmp_path / "libffi-ng.so"
+    assert cli.main(
+        [
+            "ffi-build",
+            str(source_path),
+            "--compiler",
+            "s3c-ng",
+            "--s3c-ng-executable",
+            str(artifact.executable),
+            "--output",
+            str(ng_library),
+        ]
+    ) == 0
+
+    reference_library = tmp_path / "libffi-python.so"
+    reference_ir = compile_sources({"main.s3": source}, entry_module="main").ir
+    assert reference_ir is not None
+    reference_assembly = generate_assembly(reference_ir)
+    from bootstrap.s3.ffi import build_shared_library_from_assembly
+
+    build_shared_library_from_assembly(reference_assembly, reference_library)
+
+    def call_exports(path: Path) -> tuple[int, float, int, int, int]:
+        library = ctypes.CDLL(str(path))
+        library.add.argtypes = [ctypes.c_int64, ctypes.c_int64]
+        library.add.restype = ctypes.c_int64
+        library.multiply.argtypes = [ctypes.c_double, ctypes.c_double]
+        library.multiply.restype = ctypes.c_double
+        values = (ctypes.c_int64 * 2)(4, 9)
+        library.sum.argtypes = [ctypes.POINTER(ctypes.c_int64), ctypes.c_int64]
+        library.sum.restype = ctypes.c_int64
+        library.bump.argtypes = [ctypes.POINTER(ctypes.c_int64), ctypes.c_int64]
+        library.bump.restype = ctypes.c_int64
+        return (
+            library.add(2, 5),
+            library.multiply(1.5, 4.0),
+            library.sum(values, 2),
+            library.bump(values, 2),
+            values[0],
+        )
+
+    ng_results = call_exports(ng_library)
+    reference_results = call_exports(reference_library)
+    assert ng_results == reference_results == (7, 6.0, 13, 5, 5)
 
 
 @pytest.mark.s3_native

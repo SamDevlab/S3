@@ -131,6 +131,11 @@ ELF files remain local build outputs and are not committed or released.
 - The V22 event decoder is shared, but the full supported-language, invalid
   program, structured diagnostic, workload, and execution parity matrices are
   not yet qualified.
+- FFI-relevant compilation now has a Linux x86-64 promotion test that invokes
+  `ffi-build` with the explicit S3C-NG candidate, loads the resulting shared
+  library, and compares exported i64, f64, and borrowed-slice calls against a
+  library built from the Python reference IR. This is focused evidence, not
+  complete FFI or language parity.
 - A Linux promotion run on the initial PR head exposed a fixed-point mismatch in
   static-string IDs for multi-module input. The decoder now assigns IDs in
   canonical function order, then source order within each function. The natural
