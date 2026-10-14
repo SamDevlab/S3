@@ -145,6 +145,19 @@ _INVALID_PROVIDER_SOURCES = {
         "main.s3": "module main\nfrom math import value\nfn flag() -> trit:\n    return 1\nfn main() -> i64:\n    return value(flag())\n",
         "math.s3": "module math\nexport fn value(argument: i64) -> i64:\n    return argument\n",
     },
+    "private-symbol": {
+        "main.s3": "module main\nfrom math import hidden\nfn main() -> i64:\n    return hidden()\n",
+        "math.s3": "module math\nfn hidden() -> i64:\n    return 1\n",
+    },
+    "duplicate-module-identity": {
+        "main.s3": "module main\nfn main() -> i64:\n    return 1\n",
+        "first.s3": "module math\nexport fn first() -> i64:\n    return 1\n",
+        "second.s3": "module math\nexport fn second() -> i64:\n    return 2\n",
+    },
+    "dependency-cycle": {
+        "main.s3": "module main\nfrom helper import value\nfn main() -> i64:\n    return value()\n",
+        "helper.s3": "module helper\nfrom main import main as entry\nexport fn value() -> i64:\n    return entry()\n",
+    },
 }
 
 
@@ -503,12 +516,24 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
     compiler_ir = compile_reference_b_ir(_ROOT)
     artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
     _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
+    expected_statuses = {
+        "missing-module": -3,
+        "missing-symbol": -4,
+        "wrong-arity": -14,
+        "wrong-argument-type": -14,
+        "private-symbol": -5,
+        "duplicate-module-identity": -2,
+        "dependency-cycle": -6,
+    }
 
     for case, sources in _INVALID_PROVIDER_SOURCES.items():
         with pytest.raises(S3Error):
             compile_sources(sources, entry_module="main")
 
-        with pytest.raises(NativeS3CTransportError, match="rejected the source set"):
+        with pytest.raises(
+            NativeS3CTransportError,
+            match=rf"rejected the source set \(status={expected_statuses[case]}\)",
+        ):
             compile_source_set_with_provider(
                 sources,
                 compiler="s3c-ng",

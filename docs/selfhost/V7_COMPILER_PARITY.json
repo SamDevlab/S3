@@ -19,6 +19,20 @@
     "hosted_bridge_tests": "S3C-NG source logic is compiled into reference IR and executed by the hosted IR emulator; these tests establish focused hosted parity, not native-candidate qualification",
     "native_candidate_tests": "Only Linux x86-64 tests marked s3c_ng_promotion exercise the actual native candidate"
   },
+  "invalid_program_corpus": {
+    "state": "REJECTION_PARITY_ONLY_DIAGNOSTICS_UNQUALIFIED",
+    "native_test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback",
+    "cases": [
+      {"id": "missing-module", "expected_native_status": -3},
+      {"id": "missing-symbol", "expected_native_status": -4},
+      {"id": "wrong-arity", "expected_native_status": -14},
+      {"id": "wrong-argument-type", "expected_native_status": -14},
+      {"id": "private-symbol", "expected_native_status": -5},
+      {"id": "duplicate-module-identity", "expected_native_status": -2},
+      {"id": "dependency-cycle", "expected_native_status": -6}
+    ],
+    "qualification_note": "Python and the native candidate both reject these cases; native status values are checked for regression, but they are not structured diagnostic category/code/span parity"
+  },
   "native_cli_sample": {
     "state": "EVIDENCE_GATED_SAMPLE_ONLY",
     "test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point",

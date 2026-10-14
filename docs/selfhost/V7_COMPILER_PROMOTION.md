@@ -94,6 +94,13 @@ diagnostic payload, so negative-program and diagnostic parity remain
 unqualified. S3C-NG currently accepts source syntax 0.6 only and requires a
 Linux x86-64 ELF candidate.
 
+The native candidate rejection matrix now checks seven invalid source-set
+cases against the Python reference: missing module, missing symbol, wrong
+arity, wrong argument type, private symbol, duplicate module identity, and
+dependency cycle. This proves rejection and guards each current native status
+value; it does not qualify stable diagnostic categories, codes, messages, or
+source spans. Those remain an open promotion gate.
+
 Compiler selection is offered on semantic compile commands, the test-manifest
 runner, and project-test discovery API. `doctor`, `targets`, `tokens`, `ast`, `format`, and `docs`
 remain explicit Python tooling paths; they do not accept a compiler override.
