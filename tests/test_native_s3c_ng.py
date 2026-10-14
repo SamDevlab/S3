@@ -367,8 +367,8 @@ def test_native_s3c_ng_clean_checkout_bootstraps_from_exact_head_artifact(
 
     artifact_c = build_native_s3c(
         generation_c.ir,
-        tmp_path / "clean-checkout-candidate-c",
-        label="s3c-ng-c",
+        executable.parent,
+        label=executable.name,
     )
     assert artifact_c.assembly_sha256 == manifest["assembly_sha256"]
     assert artifact_c.object_sha256 == manifest["object_sha256"]
