@@ -116,6 +116,19 @@ Python reference-produced canonical IR (`python-reference-stage0`); it is not
 the pinned trusted S3C-NG bootstrap artifact required for promotion. Candidate
 ELF files remain local build outputs and are not committed or released.
 
+The maintained workflow now creates a per-exact-HEAD immutable GitHub Actions
+artifact containing the candidate and schema-2 manifest, then consumes it from
+a separate clean Linux checkout. The artifact name binds the source SHA within
+the workflow run; rerunning its seed job replaces that run-scoped artifact,
+and GitHub verifies the uploaded artifact digest on download. The clean-checkout
+gate additionally checks the executable SHA, source commit, source-graph SHA,
+canonical compiler IR, Assembly, object, and ELF against the manifest. The
+consumed seed still records
+`python-reference-stage0` as its parent. This is an ephemeral, same-workflow
+trust path, not a release asset or a durable external distribution mechanism.
+Its maintained qualification remains pending until this gate passes on the
+exact PR head.
+
 ## Current limitations
 
 - Linux CI has qualified the actual S3C-NG ELF for explicit provider use,
@@ -125,9 +138,11 @@ ELF files remain local build outputs and are not committed or released.
 - `test` and ProjectTooling host-side build/run now accept compiler selection,
   but their S3C-NG parity is unqualified. The `container` CLI remains a Docker
   interoperability workflow rather than a host compiler-selection path.
-- Bootstrap artifact distribution/trust and a clean-checkout maintained
-  bootstrap gate are not yet established; V6 fixed-point evidence remains
-  inherited, not a V7 rerun.
+- The exact-head clean-checkout artifact path is implemented, but its maintained
+  gate and exact-head result are still required. The artifact is ephemeral and
+  same-workflow; durable external bootstrap distribution remains undecided.
+- The existing V6 fixed-point evidence remains historical; the new clean
+  bootstrap gate must establish a maintained V7 fixed point independently.
 - The V23 event decoder is shared, but the full supported-language, invalid
   program, structured diagnostic, workload, and execution parity matrices are
   not yet qualified.

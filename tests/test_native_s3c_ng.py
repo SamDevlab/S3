@@ -3,6 +3,7 @@ from __future__ import annotations
 import ctypes
 import hashlib
 import json
+import os
 import platform
 import subprocess
 from types import SimpleNamespace
@@ -17,6 +18,7 @@ from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
 from bootstrap.s3.diagnostics import S3Error
 from bootstrap.s3.compiler_provider import compile_source_set_with_provider
 from bootstrap.s3.ir import IRModule
+from bootstrap.s3.native_compiler import NativeS3CExecutable, require_s3c_ng_executable
 from bootstrap.s3.pipeline import compile_sources
 from bootstrap.s3.ir_serialization import serialize_ir
 from bootstrap.s3.verifier import verify_ir
@@ -317,6 +319,74 @@ def _write_candidate_manifest(artifact, compiler_sources: dict[str, str]) -> Non
         source_graph_sha256=compiler_source_graph_sha256(compiler_sources),
         toolchain_version=toolchain_version,
         bootstrap_parent_ir_sha256=artifact.compiler_ir_sha256,
+    )
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="clean S3C-NG bootstrap qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_clean_checkout_bootstraps_from_exact_head_artifact(
+    tmp_path: Path,
+) -> None:
+    executable_value = os.environ.get("S3C_NG_BOOTSTRAP_EXECUTABLE")
+    assert executable_value, "clean-checkout job must provide its pinned bootstrap artifact"
+    executable = Path(executable_value)
+    candidate = require_s3c_ng_executable(executable)
+    manifest_path = executable.with_suffix(".manifest.json")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    sources = compiler_source_set(_ROOT)
+    source_commit = subprocess.run(
+        ["git", "-C", str(_ROOT), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    ).stdout.strip()
+    source_graph_sha256 = compiler_source_graph_sha256(sources)
+    assert manifest["source_commit"] == source_commit
+    assert manifest["source_graph_sha256"] == source_graph_sha256
+    assert manifest["target"] == "linux-x86_64"
+    assert manifest["artifact_sha256"] == hashlib.sha256(executable.read_bytes()).hexdigest()
+
+    generation_c = compile_source_set_with_provider(
+        sources,
+        compiler="s3c-ng",
+        executable=candidate.executable,
+        entry_module="app",
+    )
+    assert generation_c.ir is not None
+    verify_ir(generation_c.ir)
+    generation_c_sha256 = hashlib.sha256(
+        serialize_ir(generation_c.ir).encode("utf-8")
+    ).hexdigest()
+    assert generation_c_sha256 == manifest["compiler_ir_sha256"]
+
+    artifact_c = build_native_s3c(
+        generation_c.ir,
+        tmp_path / "clean-checkout-candidate-c",
+        label="s3c-ng-c",
+    )
+    assert artifact_c.assembly_sha256 == manifest["assembly_sha256"]
+    assert artifact_c.object_sha256 == manifest["object_sha256"]
+    assert artifact_c.executable_sha256 == manifest["artifact_sha256"]
+    generation_d = run_native_source_set(
+        NativeS3CExecutable(artifact_c.executable, candidate.entry_symbol),
+        sources,
+        entry_module="app",
+    )
+    assert generation_d.status == 0
+    generation_d_ir = decode_ng_ir_events(generation_d.source, generation_d.events)
+    verify_ir(generation_d_ir)
+    _assert_exact_ir_equal(generation_d_ir, generation_c.ir, context="clean B-to-C fixed point")
+    assert generation_d.source == generation_c.native_result.source
+    assert generation_d.events == generation_c.native_result.events
+    assert (
+        generation_d.output_envelope_sha256
+        == generation_c.native_result.output_envelope_sha256
     )
 
 

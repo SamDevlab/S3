@@ -184,6 +184,88 @@ jobs:
           S3_NATIVE_REQUIRED: "1"
         run: python -m pytest -q tests/test_native_s3c_ng.py
 
+  s3c-ng-bootstrap-seed:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate native compiler toolchain
+        run: |
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+          cc --version
+          as --version
+          ld --version
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Build exact-head S3C-NG bootstrap candidate
+        run: python tools/build_s3c_ng_candidate.py --output-directory "$RUNNER_TEMP/s3c-ng-bootstrap"
+
+      - name: Upload immutable exact-head bootstrap artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: s3c-ng-bootstrap-${{ github.sha }}
+          path: ${{ runner.temp }}/s3c-ng-bootstrap/*
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: true
+
+  s3c-ng-clean-bootstrap:
+    needs: s3c-ng-bootstrap-seed
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out clean repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate native compiler toolchain
+        run: |
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+          cc --version
+          as --version
+          ld --version
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Download bootstrap artifact from this exact workflow run
+        uses: actions/download-artifact@v5
+        with:
+          name: s3c-ng-bootstrap-${{ github.sha }}
+          path: ${{ runner.temp }}/s3c-ng-bootstrap
+
+      - name: Verify pinned bootstrap and clean-checkout B-to-C fixed point
+        env:
+          S3_NATIVE_REQUIRED: "1"
+          S3C_NG_BOOTSTRAP_EXECUTABLE: ${{ runner.temp }}/s3c-ng-bootstrap/s3c-ng
+        run: >-
+          python -m pytest -q
+          tests/test_native_s3c_ng.py
+          -k clean_checkout_bootstraps_from_exact_head_artifact
+
   numeric-domain-closure:
     runs-on: ubuntu-24.04
 
