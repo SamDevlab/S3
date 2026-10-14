@@ -325,6 +325,10 @@ def _write_candidate_manifest(artifact, compiler_sources: dict[str, str]) -> Non
 @pytest.mark.s3_native
 @pytest.mark.s3c_ng_promotion
 @pytest.mark.skipif(
+    not os.environ.get("S3C_NG_BOOTSTRAP_EXECUTABLE"),
+    reason="clean-checkout bootstrap artifact is supplied by its dedicated CI job",
+)
+@pytest.mark.skipif(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
     reason="clean S3C-NG bootstrap qualification requires Linux x86-64",
 )
