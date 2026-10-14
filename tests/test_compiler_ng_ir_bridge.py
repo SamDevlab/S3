@@ -4860,6 +4860,104 @@ def test_ng_source_set_matches_python_for_legacy_typed_vector_operations(
     assert actual_result == reference_result == 0
 
 
+def test_ng_source_set_checked_i64_arithmetic_matches_reference() -> None:
+    from bootstrap.s3.numeric import I64_MAX, I64_MIN, NumericError
+
+    sources = {
+        "app.s3": (
+            "module app\n"
+            "fn add(left: i64, right: i64) -> i64:\n"
+            "    return left + right\n"
+            "fn subtract(left: i64, right: i64) -> i64:\n"
+            "    return left - right\n"
+            "fn multiply(left: i64, right: i64) -> i64:\n"
+            "    return left * right\n"
+            "fn negate(value: i64) -> i64:\n"
+            "    return -value\n"
+            "fn divide(left: i64, right: i64) -> i64:\n"
+            "    return left / right\n"
+            "fn main() -> i64:\n"
+            "    return 0\n"
+        ),
+    }
+    reference = compile_sources(sources, entry_module="app").ir
+    assert reference is not None
+
+    status, encoded_source, cells = _run_ng_source_set_events(
+        sources,
+        entry_module="app",
+        max_steps=20_000_000,
+    )
+    assert status == 0, f"S3C-NG source-set compilation failed with status {status}"
+
+    actual = decode_ng_ir_events(encoded_source, cells)
+    verify_ir(actual)
+    assert _canonical_structure(actual) == _canonical_structure(reference)
+    actual_functions = {function.name: function for function in actual.functions}
+    reference_functions = {function.name: function for function in reference.functions}
+
+    def matching_function(functions, local_name: str):
+        return next(
+            function
+            for function in functions.values()
+            if function.name.endswith(f"__{local_name}")
+        )
+
+    successful_cases = (
+        ("add", (20, 22), 42),
+        ("subtract", (20, 22), -2),
+        ("multiply", (-7, 6), -42),
+        ("negate", (7,), -7),
+        ("divide", (-7, 3), -2),
+    )
+    for name, arguments, expected in successful_cases:
+        actual_function = matching_function(actual_functions, name)
+        reference_function = matching_function(reference_functions, name)
+        actual_result = ir_emulator._execute_function(
+            actual_functions, actual_function, arguments, (), {}, HostExecutionContext()
+        )
+        reference_result = ir_emulator._execute_function(
+            reference_functions,
+            reference_function,
+            arguments,
+            (),
+            {},
+            HostExecutionContext(),
+        )
+        assert actual_result == reference_result == expected
+
+    overflow_cases = (
+        ("add", (I64_MAX, 1)),
+        ("subtract", (I64_MIN, 1)),
+        ("multiply", (I64_MAX, 2)),
+        ("negate", (I64_MIN,)),
+        ("divide", (I64_MIN, -1)),
+        ("divide", (1, 0)),
+    )
+    for name, arguments in overflow_cases:
+        actual_function = matching_function(actual_functions, name)
+        reference_function = matching_function(reference_functions, name)
+        with pytest.raises(NumericError) as actual_error:
+            ir_emulator._execute_function(
+                actual_functions,
+                actual_function,
+                arguments,
+                (),
+                {},
+                HostExecutionContext(),
+            )
+        with pytest.raises(NumericError) as reference_error:
+            ir_emulator._execute_function(
+                reference_functions,
+                reference_function,
+                arguments,
+                (),
+                {},
+                HostExecutionContext(),
+            )
+        assert str(actual_error.value) == str(reference_error.value)
+
+
 def _branches_events() -> tuple[str, list[int]]:
     source = (_ROOT / "benchmarks/workloads/branches.s3").read_text(encoding="utf-8")
     return source, _emit_ng_events(source)
