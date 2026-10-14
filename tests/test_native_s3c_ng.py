@@ -467,6 +467,32 @@ export fn model_value() -> i64:
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
     reason="native S3C-NG qualification requires Linux x86-64",
 )
+def test_native_s3c_ng_compiles_bounded_stack_vm_maturity_workload(
+    tmp_path: Path,
+) -> None:
+    from tests.test_language_maturity_workloads import VM_CASES, _vm_program
+
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
+    sources = {"main.s3": _vm_program(VM_CASES)}
+
+    result = _assert_native_compile(
+        artifact,
+        sources,
+        expected_result=0,
+        entry_module="main",
+        tmp_path=tmp_path,
+    )
+    assert result.status == 0
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG qualification requires Linux x86-64",
+)
 def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
     tmp_path: Path,
 ) -> None:
