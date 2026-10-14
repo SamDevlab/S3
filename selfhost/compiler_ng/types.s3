@@ -184,6 +184,27 @@ fn ng_type_token_spells(source: &bytes, token: NgToken, wanted: text) -> trit:
         1:
             return 0
 
+fn ng_legacy_vector_alias_element_type(source: &bytes, token: NgToken) -> i64:
+    match ng_type_token_spells(source, token, text_from_static("i64_vector")):
+        -1:
+            return 1
+        0:
+            match ng_type_token_spells(source, token, text_from_static("tryte_vector")):
+                -1:
+                    return 3
+                0:
+                    match ng_type_token_spells(source, token, text_from_static("f64_vector")):
+                        -1:
+                            return 4
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
 fn ng_type_expect_kind(tokens: &vector<NgToken>, cursor: &mut vector<i64>, expected: i64) -> trit:
     mut token: NgToken = ng_type_token_at(tokens, cursor)
     match token.kind <=> expected:
@@ -259,16 +280,25 @@ fn ng_parse_named_type(source: &bytes, tokens: &vector<NgToken>, cursor: &mut ve
                                                                 -1:
                                                                     return ng_intern_string_type(types)
                                                                 0:
-                                                                    match ng_type_token_spells(source, token, text_from_static("vector")):
+                                                                    element_type = ng_legacy_vector_alias_element_type(source, token)
+                                                                    match element_type > 0:
                                                                         -1:
-                                                                            match ng_type_expect_kind(tokens, cursor, 360):
+                                                                            return ng_intern_vector_type(types, element_type)
+                                                                        0:
+                                                                            match ng_type_token_spells(source, token, text_from_static("vector")):
                                                                                 -1:
-                                                                                    element_type = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
-                                                                                    match element_type > 0:
+                                                                                    match ng_type_expect_kind(tokens, cursor, 360):
                                                                                         -1:
-                                                                                            match ng_type_expect_kind(tokens, cursor, 362):
+                                                                                            element_type = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
+                                                                                            match element_type > 0:
                                                                                                 -1:
-                                                                                                    return ng_intern_vector_type(types, element_type)
+                                                                                                    match ng_type_expect_kind(tokens, cursor, 362):
+                                                                                                        -1:
+                                                                                                            return ng_intern_vector_type(types, element_type)
+                                                                                                        0:
+                                                                                                            return -1
+                                                                                                        1:
+                                                                                                            return -1
                                                                                                 0:
                                                                                                     return -1
                                                                                                 1:
@@ -278,15 +308,13 @@ fn ng_parse_named_type(source: &bytes, tokens: &vector<NgToken>, cursor: &mut ve
                                                                                         1:
                                                                                             return -1
                                                                                 0:
-                                                                                    return -1
-                                                                                1:
-                                                                                    return -1
-                                                                        0:
-                                                                            match module_start >= 0:
-                                                                                -1:
-                                                                                    return ng_intern_nominal_type(source, types, module_start, module_end, token.start, token.end)
-                                                                                0:
-                                                                                    return -1
+                                                                                    match module_start >= 0:
+                                                                                        -1:
+                                                                                            return ng_intern_nominal_type(source, types, module_start, module_end, token.start, token.end)
+                                                                                        0:
+                                                                                            return -1
+                                                                                        1:
+                                                                                            return -1
                                                                                 1:
                                                                                     return -1
                                                                         1:

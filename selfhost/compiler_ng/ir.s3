@@ -1,7 +1,7 @@
 module selfhost.compiler_ng.ir
 
 from selfhost.compiler_ng.parser import NgAstNode, NgField, NgFunction, NgModule, NgParameter, NgRecord, ng_relational_operator_code
-from selfhost.compiler_ng.semantic import ng_builtin_argument_type, ng_builtin_call_kind, ng_builtin_result_type, ng_check_program_typed, ng_composite_vector_cell_type_supported, ng_find_function, ng_generic_call_result_type_argument, ng_is_resolved_builtin_call, ng_named_spans_equal, ng_resolved_call_function_index
+from selfhost.compiler_ng.semantic import ng_builtin_argument_type, ng_builtin_call_kind, ng_builtin_result_type, ng_check_program_typed, ng_composite_vector_cell_type_supported, ng_find_function, ng_generic_call_result_type_argument, ng_is_resolved_builtin_call, ng_legacy_vector_builtin_code, ng_legacy_vector_builtin_operation, ng_named_spans_equal, ng_resolved_call_function_index
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_type_equal
 from selfhost.compiler_ng.lexer import ng_span_fingerprint, ng_spans_equal
 
@@ -929,7 +929,7 @@ fn ng_emit_vector_new_expression(source: &bytes, types: &vector<NgTypeDescriptor
     mut argument_info: NgIRRegister = NgIRRegister(type_kind=0, source_start=-1)
     mut first_argument: i64 = 0
     mut result_register: i64 = -1
-    match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_new")):
+    match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 5):
         -1:
             match node.right > 0:
                 -1:
@@ -995,6 +995,59 @@ fn ng_emit_vector_new_expression(source: &bytes, types: &vector<NgTypeDescriptor
         1:
             return -13
 
+fn ng_ir_vector_builtin_name_matches(source: &bytes, start: i64, end: i64, expected_operation: i64) -> trit:
+    mut legacy_code: i64 = ng_legacy_vector_builtin_code(source, start, end)
+    mut legacy_operation: i64 = ng_legacy_vector_builtin_operation(legacy_code)
+    match legacy_code > 0:
+        -1:
+            match legacy_operation <=> expected_operation:
+                0:
+                    return -1
+                -1:
+                    return 0
+                1:
+                    return 0
+        0:
+            match expected_operation <=> 1:
+                0:
+                    return ng_ir_span_matches_text(source, start, end, text_from_static("vector_len"))
+                1:
+                    match expected_operation <=> 2:
+                        0:
+                            return ng_ir_span_matches_text(source, start, end, text_from_static("vector_push"))
+                        1:
+                            match expected_operation <=> 3:
+                                0:
+                                    return ng_ir_span_matches_text(source, start, end, text_from_static("vector_get"))
+                                1:
+                                    match expected_operation <=> 4:
+                                        0:
+                                            return ng_ir_span_matches_text(source, start, end, text_from_static("vector_set"))
+                                        1:
+                                            match expected_operation <=> 5:
+                                                0:
+                                                    return ng_ir_span_matches_text(source, start, end, text_from_static("vector_new"))
+                                                1:
+                                                    match expected_operation <=> 6:
+                                                        0:
+                                                            return ng_ir_span_matches_text(source, start, end, text_from_static("vector_pop"))
+                                                        -1:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                -1:
+                                                    return 0
+                                        -1:
+                                            return 0
+                                -1:
+                                    return 0
+                        -1:
+                            return 0
+                -1:
+                    return 0
+        1:
+            return 0
+
 fn ng_emit_vector_len_expression(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, node: NgAstNode, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
     mut element_supported: i64 = ng_ir_vector_new_builtin_id(types, fields, node.right)
     mut argument_node: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -1004,7 +1057,7 @@ fn ng_emit_vector_len_expression(source: &bytes, types: &vector<NgTypeDescriptor
     mut vector_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut first_argument: i64 = 0
     mut result_register: i64 = -1
-    match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_len")):
+    match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 1):
         -1:
             match element_supported > 0:
                 -1:
@@ -1328,7 +1381,7 @@ fn ng_emit_vector_push_expression(source: &bytes, types: &vector<NgTypeDescripto
             builtin_id = builtin_id
         1:
             builtin_id = builtin_id
-    match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_push")):
+    match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 2):
         -1:
             match builtin_id > 0:
                 -1:
@@ -1959,7 +2012,7 @@ fn ng_emit_vector_get_scalar_expression(source: &bytes, types: &vector<NgTypeDes
     mut result_register: i64 = -1
     mut first_argument: i64 = 0
     mut index_info: NgIRRegister = NgIRRegister(type_kind=0, source_start=-1)
-    match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_get")):
+    match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 3):
         -1:
             match node.left >= 0:
                 -1:
@@ -2062,7 +2115,7 @@ fn ng_emit_vector_get_record_expression(source: &bytes, types: &vector<NgTypeDes
     mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut field: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
     mut field_index: i64 = 0
-    match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_get")):
+    match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 3):
         -1:
             match node.right > 0:
                 -1:
@@ -2343,7 +2396,7 @@ fn ng_emit_vector_set_scalar_expression(source: &bytes, types: &vector<NgTypeDes
     mut value_info: NgIRRegister = NgIRRegister(type_kind=0, source_start=-1)
     mut first_argument: i64 = 0
     mut result_register: i64 = -1
-    match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_set")):
+    match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 4):
         -1:
             match node.left >= 0:
                 -1:
@@ -2702,6 +2755,14 @@ fn ng_emit_vector_pop_expression(source: &bytes, types: &vector<NgTypeDescriptor
 
 fn ng_ir_generic_vector_builtin_kind(source: &bytes, start: i64, end: i64) -> i64:
     mut name_length: i64 = end - start
+    mut legacy_code: i64 = ng_legacy_vector_builtin_code(source, start, end)
+    match legacy_code > 0:
+        -1:
+            return ng_legacy_vector_builtin_operation(legacy_code)
+        0:
+            legacy_code = 0
+        1:
+            return -13
     match name_length <=> 10:
         0:
             match ng_ir_span_matches_text(source, start, end, text_from_static("vector_pop")):
@@ -2867,19 +2928,19 @@ fn ng_emit_call_expression(source: &bytes, types: &vector<NgTypeDescriptor>, fie
                 -1:
                     return ng_emit_builtin_call_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
                 0:
-                    match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_len")):
+                    match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 1):
                         -1:
                             return ng_emit_vector_len_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
                         0:
-                            match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_push")):
+                            match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 2):
                                 -1:
                                     return ng_emit_vector_push_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
                                 0:
-                                    match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_get")):
+                                    match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 3):
                                         -1:
                                             return ng_emit_vector_get_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
                                         0:
-                                            match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_set")):
+                                            match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 4):
                                                 -1:
                                                     return ng_emit_vector_set_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
                                                 0:
@@ -3791,7 +3852,7 @@ fn ng_ir_emit_record_vector_pop_value_cells(source: &bytes, types: &vector<NgTyp
             return -13
     match node.kind <=> 5:
         0:
-            match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_pop")):
+            match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 6):
                 -1:
                     match ng_type_equal(source, types, node.right, type_id) <=> -1:
                         0:
@@ -3861,7 +3922,7 @@ fn ng_ir_emit_value_cells_impl(source: &bytes, types: &vector<NgTypeDescriptor>,
                             return status
                     match node.kind <=> 5:
                         0:
-                            match ng_ir_span_matches_text(source, node.start, node.operation, text_from_static("vector_get")):
+                            match ng_ir_vector_builtin_name_matches(source, node.start, node.operation, 3):
                                 -1:
                                     match ng_type_equal(source, types, node.right, type_id) <=> -1:
                                         0:

@@ -4758,6 +4758,32 @@ def test_ng_source_set_rejects_text_len_non_text_reference() -> None:
     assert events == []
 
 
+def test_ng_source_set_matches_python_for_legacy_vector_ordering_workload() -> None:
+    from tests.test_language_maturity_workloads import _ordering_program
+
+    sources = _ordering_program((29, -4, 8, 8, 17, 0), (-4, 8, 17, 30))
+    reference = compile_sources(sources, entry_module="main").ir
+    assert reference is not None
+
+    metrics: dict[str, object] = {}
+    status, source, cells = _run_ng_source_set_events(
+        sources,
+        entry_module="main",
+        max_steps=50_000_000,
+        metrics=metrics,
+    )
+    assert status == 0, (
+        f"S3C-NG source-set compilation failed with status {status}; "
+        f"steps={metrics.get('steps')}; "
+        f"status_returns={metrics.get('status_returns', [])[-24:]}"
+    )
+
+    actual = decode_ng_ir_events(source, cells)
+    verify_ir(actual)
+    assert _canonical_structure(actual) == _canonical_structure(reference)
+    assert execute_ir(actual) == execute_ir(reference) == 0
+
+
 def _branches_events() -> tuple[str, list[int]]:
     source = (_ROOT / "benchmarks/workloads/branches.s3").read_text(encoding="utf-8")
     return source, _emit_ng_events(source)

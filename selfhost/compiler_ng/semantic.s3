@@ -766,6 +766,130 @@ fn ng_vector_reference_matches(source: &bytes, types: &vector<NgTypeDescriptor>,
         1:
             return 0
 
+fn ng_span_starts_with_text(source: &bytes, start: i64, end: i64, wanted: text) -> trit:
+    mut wanted_length: i64 = text_len(&wanted)
+    match end - start >= wanted_length:
+        -1:
+            return ng_span_matches_text(source, start, start + wanted_length, wanted)
+        0:
+            return 0
+        1:
+            return 0
+
+fn ng_span_ends_with_text(source: &bytes, start: i64, end: i64, wanted: text) -> trit:
+    mut wanted_length: i64 = text_len(&wanted)
+    match end - start >= wanted_length:
+        -1:
+            return ng_span_matches_text(source, end - wanted_length, end, wanted)
+        0:
+            return 0
+        1:
+            return 0
+
+export fn ng_legacy_vector_builtin_code(source: &bytes, start: i64, end: i64) -> i64:
+    mut element_type: i64 = 0
+    mut operation: i64 = 0
+    match ng_span_starts_with_text(source, start, end, text_from_static("i64_vector_")):
+        -1:
+            element_type = 1
+        0:
+            match ng_span_starts_with_text(source, start, end, text_from_static("tryte_vector_")):
+                -1:
+                    element_type = 3
+                0:
+                    match ng_span_starts_with_text(source, start, end, text_from_static("f64_vector_")):
+                        -1:
+                            element_type = 4
+                        0:
+                            element_type = 0
+                        1:
+                            element_type = 0
+                1:
+                    element_type = 0
+        1:
+            element_type = 0
+    match element_type > 0:
+        -1:
+            match ng_span_ends_with_text(source, start, end, text_from_static("_len")):
+                -1:
+                    operation = 1
+                0:
+                    match ng_span_ends_with_text(source, start, end, text_from_static("_push")):
+                        -1:
+                            operation = 2
+                        0:
+                            match ng_span_ends_with_text(source, start, end, text_from_static("_get")):
+                                -1:
+                                    operation = 3
+                                0:
+                                    match ng_span_ends_with_text(source, start, end, text_from_static("_set")):
+                                        -1:
+                                            operation = 4
+                                        0:
+                                            match ng_span_ends_with_text(source, start, end, text_from_static("_new")):
+                                                -1:
+                                                    operation = 5
+                                                0:
+                                                    match ng_span_ends_with_text(source, start, end, text_from_static("_pop")):
+                                                        -1:
+                                                            operation = 6
+                                                        0:
+                                                            operation = 0
+                                                        1:
+                                                            operation = 0
+                                                1:
+                                                    operation = 0
+                                        1:
+                                            operation = 0
+                                1:
+                                    operation = 0
+                        1:
+                            operation = 0
+                1:
+                    operation = 0
+            match operation > 0:
+                -1:
+                    return element_type * 10 + operation
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+export fn ng_legacy_vector_builtin_element_type(code: i64) -> i64:
+    match code >= 40:
+        -1:
+            return 4
+        0:
+            match code >= 30:
+                -1:
+                    return 3
+                0:
+                    match code >= 10:
+                        -1:
+                            return 1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+export fn ng_legacy_vector_builtin_operation(code: i64) -> i64:
+    mut element_type: i64 = ng_legacy_vector_builtin_element_type(code)
+    match element_type > 0:
+        -1:
+            return code - element_type * 10
+        0:
+            return 0
+        1:
+            return 0
+
 export fn ng_builtin_call_kind(source: &bytes, name_start: i64, name_end: i64) -> i64:
     mut name_length: i64 = name_end - name_start
     match name_length <=> 9:
@@ -2042,10 +2166,136 @@ fn ng_generic_vector_set_type(source: &bytes, types: &vector<NgTypeDescriptor>, 
         1:
             return -14
 
+fn ng_generic_vector_new_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64) -> i64:
+    mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut expected: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut argument_type: i64 = 0
+    match call_node.right > 0:
+        -1:
+            match call_node.right <= vector_len<NgTypeDescriptor>(types):
+                -1:
+                    match expected_type > 0:
+                        -1:
+                            match expected_type <= vector_len<NgTypeDescriptor>(types):
+                                -1:
+                                    expected = vector_get<NgTypeDescriptor>(types, expected_type - 1)
+                                    match expected.kind <=> 8:
+                                        0:
+                                            match ng_type_equal(source, types, expected.element_type, call_node.right) <=> -1:
+                                                0:
+                                                    match ng_vector_element_supported(types, fields, call_node.right):
+                                                        -1:
+                                                            match call_node.left >= 0:
+                                                                -1:
+                                                                    argument = vector_get<NgAstNode>(nodes, call_node.left)
+                                                                    match argument.kind <=> 6:
+                                                                        0:
+                                                                            match argument.right <=> -1:
+                                                                                0:
+                                                                                    argument_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, argument.left, 1)
+                                                                                    match argument_type <=> 1:
+                                                                                        0:
+                                                                                            return expected_type
+                                                                                        -1:
+                                                                                            return argument_type
+                                                                                        1:
+                                                                                            return -14
+                                                                                -1:
+                                                                                    return -14
+                                                                                1:
+                                                                                    return -14
+                                                                        -1:
+                                                                            return -14
+                                                                        1:
+                                                                            return -14
+                                                                0:
+                                                                    return -14
+                                                                1:
+                                                                    return -14
+                                                        0:
+                                                            return -14
+                                                        1:
+                                                            return -14
+                                                -1:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        -1:
+                                            return -14
+                                        1:
+                                            return -14
+                                0:
+                                    return -14
+                                1:
+                                    return -14
+                        0:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+        0:
+            return -14
+        1:
+            return -14
+
+fn ng_legacy_vector_builtin_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64, builtin_code: i64) -> i64:
+    mut generic_call: NgAstNode = call_node
+    mut element_type: i64 = ng_legacy_vector_builtin_element_type(builtin_code)
+    mut operation: i64 = ng_legacy_vector_builtin_operation(builtin_code)
+    generic_call.right = element_type
+    match operation <=> 1:
+        0:
+            return ng_generic_vector_len_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+        1:
+            match operation <=> 2:
+                0:
+                    return ng_generic_vector_push_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                1:
+                    match operation <=> 3:
+                        0:
+                            return ng_generic_vector_get_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                        1:
+                            match operation <=> 4:
+                                0:
+                                    return ng_generic_vector_set_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                                1:
+                                    match operation <=> 5:
+                                        0:
+                                            return ng_generic_vector_new_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                                        1:
+                                            match operation <=> 6:
+                                                0:
+                                                    return ng_generic_vector_pop_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                                                1:
+                                                    return -13
+                                                -1:
+                                                    return -13
+                                        -1:
+                                            return -13
+                                -1:
+                                    return -13
+                        -1:
+                            return -13
+                -1:
+                    return -13
+        -1:
+            return -13
+
 fn ng_generic_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64) -> i64:
     mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut expected: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut argument_type: i64 = 0
+    mut legacy_vector_code: i64 = ng_legacy_vector_builtin_code(source, call_node.start, call_node.operation)
+    match legacy_vector_code > 0:
+        -1:
+            return ng_legacy_vector_builtin_call_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type, legacy_vector_code)
+        0:
+            legacy_vector_code = 0
+        1:
+            return -13
     match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_len")):
         -1:
             return ng_generic_vector_len_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type)
