@@ -890,7 +890,174 @@ export fn ng_legacy_vector_builtin_operation(code: i64) -> i64:
         1:
             return 0
 
+fn ng_resource_builtin_call_kind(source: &bytes, name_start: i64, name_end: i64) -> i64:
+    match ng_span_matches_text(source, name_start, name_end, text_from_static("host_capability_grant")):
+        -1:
+            return 14
+        0:
+            match ng_span_matches_text(source, name_start, name_end, text_from_static("resource_open")):
+                -1:
+                    return 15
+                0:
+                    match ng_span_matches_text(source, name_start, name_end, text_from_static("resource_is_open")):
+                        -1:
+                            return 16
+                        0:
+                            match ng_span_matches_text(source, name_start, name_end, text_from_static("resource_kind")):
+                                -1:
+                                    return 17
+                                0:
+                                    match ng_span_matches_text(source, name_start, name_end, text_from_static("resource_invoke")):
+                                        -1:
+                                            return 18
+                                        0:
+                                            match ng_span_matches_text(source, name_start, name_end, text_from_static("resource_close")):
+                                                -1:
+                                                    return 19
+                                                0:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        1:
+                                            return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn ng_resource_builtin_result_type(builtin_kind: i64) -> i64:
+    match builtin_kind <=> 14:
+        -1:
+            return 0
+        0:
+            return 7
+        1:
+            match builtin_kind <=> 15:
+                -1:
+                    return 0
+                0:
+                    return 8
+                1:
+                    match builtin_kind <=> 16:
+                        -1:
+                            return 0
+                        0:
+                            return 2
+                        1:
+                            match builtin_kind <=> 17:
+                                -1:
+                                    return 0
+                                0:
+                                    return 1
+                                1:
+                                    match builtin_kind <=> 18:
+                                        -1:
+                                            return 0
+                                        0:
+                                            return 3
+                                        1:
+                                            match builtin_kind <=> 19:
+                                                -1:
+                                                    return 0
+                                                0:
+                                                    return 3
+                                                1:
+                                                    return 0
+
+fn ng_resource_builtin_argument_type(builtin_kind: i64, argument_index: i64) -> i64:
+    match builtin_kind <=> 14:
+        -1:
+            return 0
+        0:
+            match argument_index <=> 0:
+                0:
+                    return 1
+                -1:
+                    return 0
+                1:
+                    return 0
+        1:
+            match builtin_kind <=> 15:
+                -1:
+                    return 0
+                0:
+                    match argument_index <=> 0:
+                        0:
+                            return 7
+                        -1:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    match builtin_kind <=> 16:
+                        -1:
+                            return 0
+                        0:
+                            match argument_index <=> 0:
+                                0:
+                                    return 9
+                                -1:
+                                    return 0
+                                1:
+                                    return 0
+                        1:
+                            match builtin_kind <=> 17:
+                                -1:
+                                    return 0
+                                0:
+                                    match argument_index <=> 0:
+                                        0:
+                                            return 9
+                                        -1:
+                                            return 0
+                                        1:
+                                            return 0
+                                1:
+                                    match builtin_kind <=> 18:
+                                        -1:
+                                            return 0
+                                        0:
+                                            match argument_index <=> 0:
+                                                0:
+                                                    return 9
+                                                1:
+                                                    match argument_index <=> 1:
+                                                        0:
+                                                            return 1
+                                                        -1:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                -1:
+                                                    return 0
+                                        1:
+                                            match builtin_kind <=> 19:
+                                                -1:
+                                                    return 0
+                                                0:
+                                                    match argument_index <=> 0:
+                                                        0:
+                                                            return 10
+                                                        -1:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                1:
+                                                    return 0
+
 export fn ng_builtin_call_kind(source: &bytes, name_start: i64, name_end: i64) -> i64:
+    mut resource_kind: i64 = ng_resource_builtin_call_kind(source, name_start, name_end)
+    match resource_kind > 0:
+        -1:
+            return resource_kind
+        0:
+            resource_kind = resource_kind
+        1:
+            resource_kind = resource_kind
     mut name_length: i64 = name_end - name_start
     match name_length <=> 9:
         -1:
@@ -1027,6 +1194,14 @@ export fn ng_builtin_call_kind(source: &bytes, name_start: i64, name_end: i64) -
                                     return -13
 
 export fn ng_builtin_result_type(builtin_kind: i64) -> i64:
+    mut resource_result: i64 = ng_resource_builtin_result_type(builtin_kind)
+    match resource_result > 0:
+        -1:
+            return resource_result
+        0:
+            resource_result = resource_result
+        1:
+            resource_result = resource_result
     match builtin_kind <=> 1:
         -1:
             return -13
@@ -1108,6 +1283,14 @@ export fn ng_builtin_result_type(builtin_kind: i64) -> i64:
                                                                                                             return -13
 
 export fn ng_builtin_argument_type(builtin_kind: i64, argument_index: i64) -> i64:
+    mut resource_argument: i64 = ng_resource_builtin_argument_type(builtin_kind, argument_index)
+    match resource_argument > 0:
+        -1:
+            return resource_argument
+        0:
+            resource_argument = resource_argument
+        1:
+            resource_argument = resource_argument
     match builtin_kind <=> 3:
         0:
             match argument_index <=> 0:
@@ -1217,6 +1400,33 @@ fn ng_builtin_reference_matches(source: &bytes, types: &vector<NgTypeDescriptor>
         1:
             return 0
 
+fn ng_address_target_kind_supported(kind: i64) -> trit:
+    match kind <= 6:
+        -1:
+            return -1
+        0:
+            match kind <=> 8:
+                0:
+                    return -1
+                -1:
+                    return 0
+                1:
+                    match kind <=> 11:
+                        0:
+                            return -1
+                        -1:
+                            return 0
+                        1:
+                            match kind <=> 12:
+                                0:
+                                    return -1
+                                -1:
+                                    return 0
+                                1:
+                                    return 0
+        1:
+            return 0
+
 fn ng_builtin_conversion_result_type(builtin_kind: i64, source_type: i64) -> i64:
     match builtin_kind <=> 1:
         0:
@@ -1319,7 +1529,108 @@ fn ng_static_text_builtin_call_type(types: &vector<NgTypeDescriptor>, nodes: &ve
         1:
             return -14
 
+fn ng_resource_builtin_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, builtin_kind: i64, argument_count: i64) -> i64:
+    mut expected_count: i64 = 1
+    mut expected_type: i64 = 0
+    mut actual_type: i64 = 0
+    mut result_type: i64 = ng_resource_builtin_result_type(builtin_kind)
+    mut argument_id: i64 = call_node.left
+    mut argument_index: i64 = 0
+    mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    match builtin_kind <=> 18:
+        0:
+            expected_count = 2
+        -1:
+            expected_count = expected_count
+        1:
+            expected_count = expected_count
+    match result_type > 0:
+        -1:
+            result_type = result_type
+        0:
+            return -13
+        1:
+            return -13
+    match argument_count <=> expected_count:
+        0:
+            expected_count = expected_count
+        -1:
+            return -14
+        1:
+            return -14
+    while argument_id >= 0:
+        argument = vector_get<NgAstNode>(nodes, argument_id)
+        match argument.kind <=> 6:
+            0:
+                expected_type = ng_resource_builtin_argument_type(builtin_kind, argument_index)
+                match expected_type > 0:
+                    -1:
+                        actual_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, argument.left, expected_type)
+                        match actual_type > 0:
+                            -1:
+                                match expected_type <=> 9:
+                                    -1:
+                                        match ng_type_equal(source, types, actual_type, expected_type) <=> -1:
+                                            0:
+                                                actual_type = actual_type
+                                            -1:
+                                                return -14
+                                            1:
+                                                return -14
+                                    0:
+                                        match ng_builtin_reference_matches(source, types, actual_type, 8, 0) <=> -1:
+                                            0:
+                                                actual_type = actual_type
+                                            -1:
+                                                return -14
+                                            1:
+                                                return -14
+                                    1:
+                                        match expected_type <=> 10:
+                                            0:
+                                                match ng_builtin_reference_matches(source, types, actual_type, 8, 1) <=> -1:
+                                                    0:
+                                                        actual_type = actual_type
+                                                    -1:
+                                                        return -14
+                                                    1:
+                                                        return -14
+                                            1:
+                                                match ng_type_equal(source, types, actual_type, expected_type) <=> -1:
+                                                    0:
+                                                        actual_type = actual_type
+                                                    -1:
+                                                        return -14
+                                                    1:
+                                                        return -14
+                                            -1:
+                                                return -14
+                            1:
+                                return actual_type
+                            0:
+                                return -14
+                        argument_id = argument.right
+                        argument_index = argument_index + 1
+                    0:
+                        return -13
+                    1:
+                        return -13
+            -1:
+                return -14
+            1:
+                return -14
+    return result_type
+
 fn ng_builtin_dynamic_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, builtin_kind: i64, argument_count: i64) -> i64:
+    match builtin_kind > 13:
+        -1:
+            return ng_resource_builtin_call_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+        0:
+            return ng_builtin_dynamic_call_type_existing(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+        1:
+            return ng_builtin_dynamic_call_type_existing(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+
+fn ng_builtin_dynamic_call_type_existing(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, builtin_kind: i64, argument_count: i64) -> i64:
     match builtin_kind <=> 10:
         0:
             return ng_bytes_concat_call_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, argument_count)
@@ -1661,6 +1972,15 @@ fn ng_builtin_dynamic_call_type_legacy(source: &bytes, types: &vector<NgTypeDesc
             return -13
 
 fn ng_builtin_dispatch_v2(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, builtin_kind: i64, argument_count: i64) -> i64:
+    match builtin_kind > 13:
+        -1:
+            return ng_builtin_dynamic_call_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+        0:
+            return ng_builtin_dispatch_v2_existing(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+        1:
+            return ng_builtin_dispatch_v2_existing(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+
+fn ng_builtin_dispatch_v2_existing(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, builtin_kind: i64, argument_count: i64) -> i64:
     mut first_argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut argument_type: i64 = -1
     mut expected_type: i64 = 0
@@ -3998,17 +4318,11 @@ fn ng_resolve_address_nodes_indexed(source: &bytes, types: &mut vector<NgTypeDes
                                                                 match target_type <= vector_len<NgTypeDescriptor>(&*types):
                                                                     -1:
                                                                         descriptor = vector_get<NgTypeDescriptor>(&*types, target_type - 1)
-                                                                        match descriptor.kind <= 6:
-                                                                            -1:
-                                                                                descriptor = descriptor
+                                                                        match ng_address_target_kind_supported(descriptor.kind) <=> -1:
                                                                             0:
-                                                                                match descriptor.kind <=> 8:
-                                                                                    0:
-                                                                                        descriptor = descriptor
-                                                                                    -1:
-                                                                                        return -14
-                                                                                    1:
-                                                                                        return -14
+                                                                                descriptor = descriptor
+                                                                            -1:
+                                                                                return -14
                                                                             1:
                                                                                 return -14
                                                                         match node.operation <=> 1:
@@ -4123,17 +4437,11 @@ fn ng_resolve_address_nodes_indexed(source: &bytes, types: &mut vector<NgTypeDes
                                                         match target_type <= vector_len<NgTypeDescriptor>(&*types):
                                                             -1:
                                                                 descriptor = vector_get<NgTypeDescriptor>(&*types, target_type - 1)
-                                                                match descriptor.kind <= 6:
-                                                                    -1:
-                                                                        descriptor = descriptor
+                                                                match ng_address_target_kind_supported(descriptor.kind) <=> -1:
                                                                     0:
-                                                                        match descriptor.kind <=> 8:
-                                                                            0:
-                                                                                descriptor = descriptor
-                                                                            -1:
-                                                                                return -14
-                                                                            1:
-                                                                                return -14
+                                                                        descriptor = descriptor
+                                                                    -1:
+                                                                        return -14
                                                                     1:
                                                                         return -14
                                                                 match node.operation <=> 0:

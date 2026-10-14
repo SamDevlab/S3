@@ -568,7 +568,19 @@ fn ng_emit_nonrecord_local_declaration(source: &bytes, types: &vector<NgTypeDesc
                 -1:
                     storage_mode = 1
                 0:
-                    storage_mode = 0
+                    match descriptor.kind <=> 11:
+                        0:
+                            storage_mode = 1
+                        -1:
+                            storage_mode = 0
+                        1:
+                            match descriptor.kind <=> 12:
+                                0:
+                                    storage_mode = 1
+                                -1:
+                                    storage_mode = 0
+                                1:
+                                    storage_mode = 0
                 1:
                     storage_mode = 0
         0:
@@ -5786,7 +5798,7 @@ export fn ng_emit_program_with_modules(source: &bytes, types: &vector<NgTypeDesc
         -1:
             return status
         0:
-            discard ng_ir_event(events, 0, 22, 8, 0, 0, 0, 0, 0)
+            discard ng_ir_event(events, 0, 23, 8, 0, 0, 0, 0, 0)
             while type_index < vector_len<NgTypeDescriptor>(types):
                 type_descriptor = vector_get<NgTypeDescriptor>(types, type_index)
                 discard ng_ir_event(events, 12, type_index + 1, type_descriptor.kind, type_descriptor.module_start, type_descriptor.module_end, type_descriptor.name_start, type_descriptor.name_end, type_descriptor.element_type)

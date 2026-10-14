@@ -23,7 +23,7 @@ the default. Promotion remains opt-in until all V7 gates pass.
 | S3C-NG input | `S3NGIN01`: entry-module UTF-8 name and bounded source-unit path/content records; at most 4096 units and 64 MiB per unit |
 | S3C-NG executable boundary | Linux x86-64 ELF plus `tools/native_selfhost_driver.c`; the driver transports bytes and invokes the exported entrypoint |
 | S3C-NG output | `S3NGOUT1`: signed i64 status, source-byte length, event count, source bytes, then i64 events |
-| Canonical IR boundary | NG IR event stream V22, width 8, decoded by `decode_ng_ir_events` into the shared `IRModule` |
+| Canonical IR boundary | NG IR event stream V23, width 8, decoded by `decode_ng_ir_events` into the shared `IRModule` |
 | Shared validation/backend | Python `verify_ir`, optimizer, `generate_assembly`, and the existing backend registry |
 
 The native S3C-NG frontend owns source-set parsing, type/semantic analysis,
@@ -128,14 +128,16 @@ ELF files remain local build outputs and are not committed or released.
 - Bootstrap artifact distribution/trust and a clean-checkout maintained
   bootstrap gate are not yet established; V6 fixed-point evidence remains
   inherited, not a V7 rerun.
-- The V22 event decoder is shared, but the full supported-language, invalid
+- The V23 event decoder is shared, but the full supported-language, invalid
   program, structured diagnostic, workload, and execution parity matrices are
   not yet qualified.
-- FFI-relevant compilation now has a Linux x86-64 promotion test that invokes
+- FFI-relevant compilation has a Linux x86-64 promotion test that invokes
   `ffi-build` with the explicit S3C-NG candidate, loads the resulting shared
-  library, and compares exported i64, f64, and borrowed-slice calls against a
-  library built from the Python reference IR. This is focused evidence, not
-  complete FFI or language parity.
+  library, and compares exported i64 and f64 calls against a library built
+  from the Python reference IR. Borrowed-slice signatures remain unsupported
+  in S3C-NG: the Python reference accepts them, while S3C-NG rejects the source
+  set without falling back. This is recorded as a partial, fail-closed
+  capability rather than slice parity; it does not qualify default promotion.
 - A Linux promotion run on the initial PR head exposed a fixed-point mismatch in
   static-string IDs for multi-module input. The decoder now assigns IDs in
   canonical function order, then source order within each function. The natural

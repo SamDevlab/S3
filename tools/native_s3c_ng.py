@@ -13,6 +13,7 @@ from pathlib import Path
 from bootstrap.s3.assembly import AssemblyProgram
 from bootstrap.s3.backends.x86_64 import NativeToolchain, generate_ffi_assembly
 from bootstrap.s3.codegen import generate_assembly
+from bootstrap.s3.compiler_ng_ir_bridge import NG_IR_FORMAT_VERSION
 from bootstrap.s3.ir import IRModule
 from bootstrap.s3.ir_serialization import serialize_ir
 from bootstrap.s3.native_compiler import (
@@ -92,7 +93,7 @@ def write_s3c_ng_candidate_manifest(
     manifest = {
         "schema_version": 2,
         "target": "linux-x86_64",
-        "ng_ir_format_version": 22,
+        "ng_ir_format_version": NG_IR_FORMAT_VERSION,
         "entry_module": "app",
         "entry_symbol": artifact.entry_symbol,
         "optimization_mode": "O0",

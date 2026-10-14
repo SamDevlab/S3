@@ -263,7 +263,7 @@ def test_native_executable_manifest_is_fail_closed_and_hash_bound(
     manifest = {
         "schema_version": 2,
         "target": "linux-x86_64",
-        "ng_ir_format_version": 22,
+        "ng_ir_format_version": native_compiler.NG_IR_FORMAT_VERSION,
         "entry_symbol": "ng_emit_source_set",
         "entry_module": "app",
         "optimization_mode": "O0",

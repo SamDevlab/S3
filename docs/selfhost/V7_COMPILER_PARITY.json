@@ -4,7 +4,7 @@
   "baseline_commit": "2eab8a43f07b7fc842c4036ea0fb0203a9d41d6c",
   "reference_compiler": "PYTHON",
   "default_compiler": "PYTHON",
-  "s3c_ng_ir_format": 22,
+  "s3c_ng_ir_format": 23,
   "qualification_status": "S3C_NG_SELECTABLE_QUALIFICATION_INCOMPLETE",
   "comparison_levels": [
     "STRUCTURAL_IR_PARITY",
@@ -31,9 +31,9 @@
     {"family": "vectors and generic vector operations", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_executes_composite_vector_new_push_and_len", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v16_generic_vector_get_is_explicit_and_executable", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_emits_and_executes_v21_composite_vector_pop", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_python_for_legacy_vector_ordering_workload (real i64_vector multi-module ordering workload)", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_python_for_legacy_typed_vector_operations (tryte_vector and f64_vector new/len/push/pop/get/set)", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate: composite vector new/push/len through native compilation and execution)"]},
     {"family": "generics", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v7_generic_vector_new_is_explicit_and_executable", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_resolves_imported_nominal_type_inside_vector_reference"]},
     {"family": "imports and multi-module programs", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_real_multimodule_program_is_order_independent_and_matches_reference (hosted IR execution; native execution is a separate Linux-only gate)", "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point (Linux native candidate gate)"]},
-    {"family": "host/resource operations", "state": "UNTESTED", "evidence": []},
+    {"family": "host/resource operations", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_reference_for_host_resource_lifecycle (hosted canonical IR and execution parity; focused invalid type/arity/mutability rejection)"]},
     {"family": "strings, bytes, and text", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v13_static_strings_match_reference_ir_and_fail_closed", "tests/test_compiler_ng_ir_bridge.py::test_ng_real_multimodule_program_is_order_independent_and_matches_reference (cross-module canonical string identity; hosted IR execution)"]},
-    {"family": "FFI-relevant compilation", "state": "PARTIAL", "evidence": ["tests/test_native_s3c_ng.py::test_native_s3c_ng_ffi_build_uses_selected_compiler_and_matches_reference (Linux x86-64 candidate CLI ffi-build, shared library calls for i64/f64 and borrowed slices; requires promotion CI)"]},
+    {"family": "FFI-relevant compilation", "state": "PARTIAL", "evidence": ["tests/test_native_s3c_ng.py::test_native_s3c_ng_ffi_build_uses_selected_compiler_and_matches_reference (Linux x86-64 candidate CLI ffi-build and shared-library parity for i64/f64; borrowed slices are separately expected to fail closed)", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_fails_closed_on_valid_borrowed_slice_program (hosted NG source path rejects a program accepted by the Python reference)"]},
     {"family": "invalid programs and diagnostics", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_rejects_invalid_module_graphs_and_calls", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_rejects_unknown_aggregate_reference_field (rejection only; diagnostic category/code/message parity is unqualified)"]},
     {"family": "source locations and spans", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_v22_preserves_utf8_source_locations_through_lowering", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate gate)"]}
   ],

@@ -252,6 +252,19 @@ fn ng_parse_named_type(source: &bytes, tokens: &vector<NgToken>, cursor: &mut ve
     match token.kind <=> 1:
         0:
             discard ng_type_advance(cursor)
+            match ng_type_token_spells(source, token, text_from_static("host_capability")):
+                -1:
+                    return 7
+                0:
+                    match ng_type_token_spells(source, token, text_from_static("resource_handle")):
+                        -1:
+                            return 8
+                        0:
+                            token = token
+                        1:
+                            return -1
+                1:
+                    return -1
             match ng_type_token_spells(source, token, text_from_static("i64")):
                 -1:
                     return 1
@@ -351,9 +364,13 @@ export fn ng_initialize_type_table(types: &mut vector<NgTypeDescriptor>) -> i64:
             discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(4, -1, -1, -1, -1, -1, -1, 0, 0, 0))
             discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(5, -1, -1, -1, -1, -1, -1, 0, 0, 0))
             discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(6, -1, -1, -1, -1, -1, -1, 0, 0, 0))
+            discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(11, -1, -1, -1, -1, -1, -1, 0, 0, 0))
+            discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(12, -1, -1, -1, -1, -1, -1, 0, 0, 0))
+            discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(9, -1, -1, -1, -1, -1, 8, 0, 0, 0))
+            discard vector_push<NgTypeDescriptor>(types, ng_type_descriptor(9, -1, -1, -1, -1, -1, 8, 1, 0, 0))
             return 0
         0:
-            match length < 6:
+            match length < 10:
                 -1:
                     return -1
                 0:
@@ -494,7 +511,19 @@ fn ng_type_equal_validated(source: &bytes, types: &vector<NgTypeDescriptor>, lef
                                                         -1:
                                                             return 0
                                                         1:
-                                                            return 0
+                                                            match left.kind <=> 11:
+                                                                0:
+                                                                    return -1
+                                                                -1:
+                                                                    return 0
+                                                                1:
+                                                                    match left.kind <=> 12:
+                                                                        0:
+                                                                            return -1
+                                                                        -1:
+                                                                            return 0
+                                                                        1:
+                                                                            return 0
                                                 -1:
                                                     return 0
                                         -1:

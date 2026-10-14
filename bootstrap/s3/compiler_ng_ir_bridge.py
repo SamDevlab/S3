@@ -54,6 +54,9 @@ counter suffix; current V22 streams require exactly one descriptor per block.
 Kind 29 marks a result-producing CALL whose canonical scalar ``result`` field
 is absent even though its result cells are transported for register identity,
 including value-projected calls whose result type has only one cell.
+V23 adds builtin type kinds 11 and 12 for ``host_capability`` and
+``resource_handle``. These source-level types map to canonical ``i64`` values;
+the descriptors preserve semantic checking across the native frontend boundary.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
@@ -85,7 +88,7 @@ from .diagnostics import SourceLocation
 from .vector_types import composite_vector_runtime_name_from_key
 
 
-NG_IR_FORMAT_VERSION = 22
+NG_IR_FORMAT_VERSION = 23
 NG_IR_RECORD_WIDTH = 8
 
 _BLOCK_NAME_PREFIXES = {
@@ -154,6 +157,8 @@ _TYPE_KINDS_V3 = {
     8: IRType.VECTOR,
     9: IRType.REFERENCE,
     10: IRType.STRING,
+    11: IRType.I64,
+    12: IRType.I64,
 }
 _COMPOSITE_VECTOR_FIELD_KINDS = frozenset(_TYPE_KINDS_V3) - {9}
 _OPCODE_CODES = {
@@ -263,7 +268,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -478,10 +483,12 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             _, detail_id, target_type, mutable, first_field, field_count, reserved0, reserved1 = detail
             if type_id != len(type_descriptors) + 1 or detail_id != type_id:
                 raise NGIRDecodeError("type descriptor IDs must be contiguous and ordered")
-            if kind not in range(1, 11) or any((reserved0, reserved1)):
+            if kind not in range(1, 13) or any((reserved0, reserved1)):
                 raise NGIRDecodeError(f"malformed type descriptor {type_id}")
             if kind == 10 and version < 13:
                 raise NGIRDecodeError("STRING type descriptor requires NG IR V13")
+            if kind in (11, 12) and version < 23:
+                raise NGIRDecodeError("host/resource type descriptors require NG IR V23")
             type_descriptors[type_id] = _TypeDescriptorRecord(
                 type_id, kind, module_start, module_end, name_start, name_end,
                 element_type, target_type, mutable, first_field, field_count,
@@ -541,7 +548,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     ) != (-1, -1, -1, -1)
                 ):
                     raise NGIRDecodeError(f"malformed reference type descriptor {type_id}")
-            else:
+            elif descriptor.kind == 10:
                 if (
                     version < 13
                     or (
@@ -552,6 +559,18 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     ) != (-1, -1, -1, -1, -1, -1, 0, 0, 0)
                 ):
                     raise NGIRDecodeError(f"malformed string type descriptor {type_id}")
+            else:
+                if (
+                    version < 23
+                    or type_id != descriptor.kind - 4
+                    or (
+                        descriptor.module_start, descriptor.module_end,
+                        descriptor.name_start, descriptor.name_end,
+                        descriptor.element_type, descriptor.target_type,
+                        descriptor.mutable, descriptor.first_field, descriptor.field_count,
+                    ) != (-1, -1, -1, -1, -1, -1, 0, 0, 0)
+                ):
+                    raise NGIRDecodeError(f"malformed V23 builtin type descriptor {type_id}")
         field_orders: dict[int, int] = {}
         field_positions: dict[int, list[int]] = {}
         for field_index, (owner_type, order, name_start, name_end, field_type) in enumerate(descriptor_fields):

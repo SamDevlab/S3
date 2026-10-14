@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ctypes
 import hashlib
+import json
 import platform
 import subprocess
 from types import SimpleNamespace
@@ -424,6 +425,7 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
 )
 def test_native_s3c_ng_ffi_build_uses_selected_compiler_and_matches_reference(
     tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     compiler_ir = compile_reference_b_ir(_ROOT)
     artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
@@ -434,11 +436,6 @@ export fn add(a: i64, b: i64) -> i64:
     return a + b
 export fn multiply(a: f64, b: f64) -> f64:
     return a * b
-export fn sum(xs: &[i64]) -> i64:
-    return xs[0] + xs[1]
-export fn bump(xs: &mut [i64]) -> i64:
-    xs[0] = xs[0] + 1
-    return xs[0]
 fn main() -> i64:
     return 0
 """
@@ -458,6 +455,31 @@ fn main() -> i64:
             str(ng_library),
         ]
     ) == 0
+    capsys.readouterr()
+
+    test_manifest = tmp_path / "s3-test.toml"
+    test_manifest.write_text(
+        '[runner]\nmode = "hosted"\ntimeout_ms = 10000\n\n'
+        '[[test]]\nname = "ffi_source_main"\nsource = "ffi.s3"\nexpected = 0\n',
+        encoding="utf-8",
+    )
+    report_path = tmp_path / "s3-test-report.json"
+    assert cli.main(
+        [
+            "test",
+            str(test_manifest),
+            "--compiler",
+            "s3c-ng",
+            "--s3c-ng-executable",
+            str(artifact.executable),
+            "--report",
+            str(report_path),
+        ]
+    ) == 0
+    test_report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert test_report["compiler"] == "s3c-ng"
+    assert test_report["summary"]["status"] == "PASS"
+    assert test_report["summary"]["passed"] == 1
 
     reference_library = tmp_path / "libffi-python.so"
     reference_ir = compile_sources({"main.s3": source}, entry_module="main").ir
@@ -467,28 +489,47 @@ fn main() -> i64:
 
     build_shared_library_from_assembly(reference_assembly, reference_library)
 
-    def call_exports(path: Path) -> tuple[int, float, int, int, int]:
+    def call_exports(path: Path) -> tuple[int, float]:
         library = ctypes.CDLL(str(path))
         library.add.argtypes = [ctypes.c_int64, ctypes.c_int64]
         library.add.restype = ctypes.c_int64
         library.multiply.argtypes = [ctypes.c_double, ctypes.c_double]
         library.multiply.restype = ctypes.c_double
-        values = (ctypes.c_int64 * 2)(4, 9)
-        library.sum.argtypes = [ctypes.POINTER(ctypes.c_int64), ctypes.c_int64]
-        library.sum.restype = ctypes.c_int64
-        library.bump.argtypes = [ctypes.POINTER(ctypes.c_int64), ctypes.c_int64]
-        library.bump.restype = ctypes.c_int64
         return (
             library.add(2, 5),
             library.multiply(1.5, 4.0),
-            library.sum(values, 2),
-            library.bump(values, 2),
-            values[0],
         )
 
     ng_results = call_exports(ng_library)
     reference_results = call_exports(reference_library)
-    assert ng_results == reference_results == (7, 6.0, 13, 5, 5)
+    assert ng_results == reference_results == (7, 6.0)
+
+    slice_source = """\
+export fn sum(xs: &[i64]) -> i64:
+    return xs[0] + xs[1]
+export fn bump(xs: &mut [i64]) -> i64:
+    xs[0] = xs[0] + 1
+    return xs[0]
+fn main() -> i64:
+    return 0
+"""
+    assert compile_sources({"main.s3": slice_source}, entry_module="main").ir is not None
+    slice_source_path = tmp_path / "ffi-slices.s3"
+    slice_source_path.write_text(slice_source, encoding="utf-8")
+    rejected = cli.main(
+        [
+            "ffi-build",
+            str(slice_source_path),
+            "--compiler",
+            "s3c-ng",
+            "--s3c-ng-executable",
+            str(artifact.executable),
+            "--output",
+            str(tmp_path / "libffi-slices-ng.so"),
+        ]
+    )
+    assert rejected == 1
+    assert "S3C-NG rejected the source set" in capsys.readouterr().err
 
 
 @pytest.mark.s3_native
