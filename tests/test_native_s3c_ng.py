@@ -526,6 +526,7 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
 def test_native_s3c_ng_ffi_build_uses_selected_compiler_and_matches_reference(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     compiler_ir = compile_reference_b_ir(_ROOT)
     artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
@@ -541,6 +542,11 @@ fn main() -> i64:
 """
     source_path = tmp_path / "ffi.s3"
     source_path.write_text(source, encoding="utf-8")
+
+    def reject_python_fallback(*_args, **_kwargs):
+        pytest.fail("explicit S3C-NG CLI command fell back to compile_source")
+
+    monkeypatch.setattr(cli, "compile_source", reject_python_fallback)
 
     ng_library = tmp_path / "libffi-ng.so"
     assert cli.main(
@@ -643,6 +649,7 @@ fn main() -> i64:
 def test_native_s3c_ng_reaches_native_compiler_fixed_point(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     compiler_ir = compile_reference_b_ir(_ROOT)
     artifact_b = build_native_s3c(compiler_ir, tmp_path / "native-b", label="compiler")
@@ -679,21 +686,58 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(
     cli_source_path = tmp_path / "provider-cli" / "main.s3"
     cli_source_path.parent.mkdir(parents=True, exist_ok=True)
     cli_source_path.write_text(small["app.s3"], encoding="utf-8", newline="\n")
-    assert cli.main(
-        [
-            "ir-json",
-            str(cli_source_path),
-            "--compiler",
-            "s3c-ng",
-            "--s3c-ng-executable",
-            str(artifact_b.executable),
-            "--entry-module",
-            "app",
-        ]
-    ) == 0
-    cli_capture = capsys.readouterr()
-    assert cli_capture.err == ""
-    assert cli_capture.out == serialize_ir(reference_output.ir)
+
+    def reject_python_fallback(*_args, **_kwargs):
+        pytest.fail("explicit S3C-NG CLI command fell back to compile_source")
+
+    monkeypatch.setattr(cli, "compile_source", reject_python_fallback)
+
+    def run_ng_cli(*arguments: str) -> str:
+        result = cli.main(
+            [
+                *arguments,
+                "--compiler",
+                "s3c-ng",
+                "--s3c-ng-executable",
+                str(artifact_b.executable),
+                "--entry-module",
+                "app",
+            ]
+        )
+        captured = capsys.readouterr()
+        assert result == 0, f"CLI failed for {arguments}: {captured.err}"
+        assert captured.err == ""
+        return captured.out
+
+    assert "status: ok" in run_ng_cli("check", str(cli_source_path))
+    assert run_ng_cli("ir", str(cli_source_path)) == json.dumps(
+        reference_output.ir.to_dict(), indent=2
+    ) + "\n"
+    assert run_ng_cli("ir-json", str(cli_source_path)) == serialize_ir(
+        reference_output.ir
+    )
+    inspection = run_ng_cli("inspect", str(cli_source_path), "--emit", "summary")
+    assert "functions: 2" in inspection
+    assert "entry: main" in inspection
+    assert run_ng_cli("inspect", str(cli_source_path), "--emit", "ir").endswith(
+        json.dumps(reference_output.ir.to_dict(), indent=2) + "\n"
+    )
+    assert run_ng_cli("asm", str(cli_source_path)) == reference_output.assembly_text
+    assert run_ng_cli("run", str(cli_source_path)) == "program returned: 42\n"
+    expected_native_assembly = generate_native_assembly(
+        generate_assembly(reference_output.ir)
+    )
+    assert run_ng_cli("native-asm", str(cli_source_path)) == expected_native_assembly
+
+    built_executable = tmp_path / "provider-cli" / "built-program"
+    assert run_ng_cli(
+        "build", str(cli_source_path), "--output", str(built_executable)
+    ).strip() == str(built_executable)
+    built_result = NativeToolchain.detect().run(built_executable)
+    assert built_result.returncode == 0
+    assert built_result.stdout == "program returned: 42\n"
+    assert built_result.stderr == ""
+    assert run_ng_cli("run-native", str(cli_source_path)) == "program returned: 42\n"
 
     b_small = _assert_native_compile(
         artifact_b, small, expected_result=42, tmp_path=tmp_path
