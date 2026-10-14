@@ -212,7 +212,7 @@ jobs:
           python -m pip install -e ".[dev]"
 
       - name: Build exact-head S3C-NG bootstrap candidate
-        run: python tools/build_s3c_ng_candidate.py --output-directory "$RUNNER_TEMP/s3c-ng-bootstrap"
+        run: python -m tools.build_s3c_ng_candidate --output-directory "$RUNNER_TEMP/s3c-ng-bootstrap"
 
       - name: Upload immutable exact-head bootstrap artifact
         uses: actions/upload-artifact@v4
