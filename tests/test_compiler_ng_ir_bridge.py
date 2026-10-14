@@ -4784,6 +4784,82 @@ def test_ng_source_set_matches_python_for_legacy_vector_ordering_workload() -> N
     assert execute_ir(actual) == execute_ir(reference) == 0
 
 
+@pytest.mark.parametrize(
+    ("element_type", "legacy_type", "value"),
+    (("tryte", "tryte_vector", -17), ("f64", "f64_vector", 1.25)),
+)
+def test_ng_source_set_matches_python_for_legacy_typed_vector_operations(
+    element_type: str,
+    legacy_type: str,
+    value: int | float,
+) -> None:
+    source = (
+        "module app\n"
+        f"fn exercise(value: {element_type}) -> i64:\n"
+        f"    mut values: {legacy_type} = {legacy_type}_new(1)\n"
+        f"    discard {legacy_type}_push(&mut values, value)\n"
+        f"    discard {legacy_type}_set(&mut values, 0, value)\n"
+        f"    mut fetched: {element_type} = {legacy_type}_get(&values, 0)\n"
+        f"    mut removed: {element_type} = {legacy_type}_pop(&mut values)\n"
+        "    match fetched == value:\n"
+        "        -1:\n"
+        "            match removed == value:\n"
+        "                -1:\n"
+        f"                    match {legacy_type}_len(&values) == 0:\n"
+        "                        -1:\n"
+        "                            return 0\n"
+        "                        0:\n"
+        "                            return 1\n"
+        "                        1:\n"
+        "                            return 1\n"
+        "                0:\n"
+        "                    return 1\n"
+        "                1:\n"
+        "                    return 1\n"
+        "        0:\n"
+        "            return 1\n"
+        "        1:\n"
+        "            return 1\n"
+        "fn main() -> i64:\n"
+        "    return 0\n"
+    )
+    sources = {"app.s3": source}
+    reference = compile_sources(sources, entry_module="app").ir
+    assert reference is not None
+
+    status, encoded_source, cells = _run_ng_source_set_events(
+        sources,
+        entry_module="app",
+        max_steps=20_000_000,
+    )
+    assert status == 0, f"S3C-NG source-set compilation failed with status {status}"
+
+    actual = decode_ng_ir_events(encoded_source, cells)
+    verify_ir(actual)
+    assert _canonical_structure(actual) == _canonical_structure(reference)
+
+    actual_functions = {function.name: function for function in actual.functions}
+    reference_functions = {function.name: function for function in reference.functions}
+    exercise_name = next(name for name in actual_functions if name.endswith("__exercise"))
+    actual_result = ir_emulator._execute_function(
+        actual_functions,
+        actual_functions[exercise_name],
+        (value,),
+        (),
+        {item.id: item.value for item in actual.static_strings},
+        HostExecutionContext(),
+    )
+    reference_result = ir_emulator._execute_function(
+        reference_functions,
+        reference_functions[exercise_name],
+        (value,),
+        (),
+        {item.id: item.value for item in reference.static_strings},
+        HostExecutionContext(),
+    )
+    assert actual_result == reference_result == 0
+
+
 def _branches_events() -> tuple[str, list[int]]:
     source = (_ROOT / "benchmarks/workloads/branches.s3").read_text(encoding="utf-8")
     return source, _emit_ng_events(source)
