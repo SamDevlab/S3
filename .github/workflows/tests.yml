@@ -257,6 +257,11 @@ jobs:
           name: s3c-ng-bootstrap-${{ github.sha }}
           path: ${{ runner.temp }}/s3c-ng-bootstrap
 
+      - name: Restore downloaded compiler execute permission
+        run: |
+          chmod u+x "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng"
+          test -x "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng"
+
       - name: Verify pinned bootstrap and clean-checkout B-to-C fixed point
         env:
           S3_NATIVE_REQUIRED: "1"
