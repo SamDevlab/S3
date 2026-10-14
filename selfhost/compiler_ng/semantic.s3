@@ -265,6 +265,184 @@ fn ng_tryte_literal_fits(source: &bytes, node: NgAstNode) -> trit:
 fn ng_i64_literal_fits(source: &bytes, node: NgAstNode) -> trit:
     return ng_literal_magnitude_fits(source, node, 922337203685477580, 7)
 
+fn ng_contextual_constant_integer_value(source: &bytes, nodes: &vector<NgAstNode>, node_id: i64, expected_type: i64, value: &mut i64) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    mut index: i64 = node.start
+    mut digit: i64 = 0
+    mut negative: i64 = 0
+    mut left_value: i64 = 0
+    mut right_value: i64 = 0
+    mut left_status: i64 = 0
+    mut right_status: i64 = 0
+    match node.kind <=> 1:
+        -1:
+            return 0
+        0:
+            index = node.start
+            match index < node.end:
+                -1:
+                    match to_i64(bytes_get(source, index)) <=> 45:
+                        0:
+                            negative = 1
+                            index = index + 1
+                        -1:
+                            negative = 0
+                        1:
+                            negative = 0
+                0:
+                    return 0
+                1:
+                    return 0
+            match index < node.end:
+                -1:
+                    *value = 0
+                    while index < node.end:
+                        digit = to_i64(bytes_get(source, index)) - 48
+                        match digit < 0:
+                            -1:
+                                return 0
+                            0:
+                                match digit > 9:
+                                    -1:
+                                        return 0
+                                    0:
+                                        *value = *value * 10 + digit
+                                    1:
+                                        *value = *value * 10 + digit
+                                index = index + 1
+                            1:
+                                return 0
+                    match negative <=> 1:
+                        0:
+                            *value = 0 - *value
+                        -1:
+                            *value = *value
+                        1:
+                            *value = *value
+                    return ng_contextual_integer_value_fits(expected_type, *value)
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            match node.kind <=> 3:
+                -1:
+                    return 0
+                0:
+                    return ng_contextual_constant_integer_value(source, nodes, node.left, expected_type, value)
+                1:
+                    match node.kind <=> 4:
+                        -1:
+                            return 0
+                        0:
+                            match node.operation <=> 343:
+                                -1:
+                                    return 0
+                                0:
+                                    left_status = ng_contextual_constant_integer_value(source, nodes, node.left, expected_type, &mut left_value)
+                                    right_status = ng_contextual_constant_integer_value(source, nodes, node.right, expected_type, &mut right_value)
+                                    match left_status <=> 0:
+                                        -1:
+                                            return -1
+                                        0:
+                                            match right_status <=> 0:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        1:
+                                            match right_status <=> 0:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    return 0
+                                                1:
+                                                    *value = left_value + right_value
+                                                    return ng_contextual_integer_value_fits(expected_type, *value)
+                                1:
+                                    match node.operation <=> 345:
+                                        -1:
+                                            return 0
+                                        0:
+                                            left_status = ng_contextual_constant_integer_value(source, nodes, node.left, expected_type, &mut left_value)
+                                            right_status = ng_contextual_constant_integer_value(source, nodes, node.right, expected_type, &mut right_value)
+                                            match left_status <=> 0:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    match right_status <=> 0:
+                                                        -1:
+                                                            return -1
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                1:
+                                                    match right_status <=> 0:
+                                                        -1:
+                                                            return -1
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            *value = left_value - right_value
+                                                            return ng_contextual_integer_value_fits(expected_type, *value)
+                                        1:
+                                            return 0
+                        1:
+                            match node.kind <=> 22:
+                                -1:
+                                    return 0
+                                0:
+                                    left_status = ng_contextual_constant_integer_value(source, nodes, node.left, expected_type, &mut left_value)
+                                    match left_status <=> 0:
+                                        -1:
+                                            return -1
+                                        0:
+                                            return 0
+                                        1:
+                                            *value = 0 - left_value
+                                            return ng_contextual_integer_value_fits(expected_type, *value)
+                                1:
+                                    return 0
+
+fn ng_contextual_integer_value_fits(expected_type: i64, value: i64) -> i64:
+    match expected_type <=> 2:
+        -1:
+            return 0
+        0:
+            match value < -1:
+                -1:
+                    return -1
+                0:
+                    return ng_contextual_integer_upper_value_fits(value, 1)
+                1:
+                    return ng_contextual_integer_upper_value_fits(value, 1)
+        1:
+            match expected_type <=> 3:
+                -1:
+                    return 0
+                0:
+                    match value < -364:
+                        -1:
+                            return -1
+                        0:
+                            return ng_contextual_integer_upper_value_fits(value, 364)
+                        1:
+                            return ng_contextual_integer_upper_value_fits(value, 364)
+                1:
+                    return 0
+
+fn ng_contextual_integer_upper_value_fits(value: i64, limit: i64) -> i64:
+    match value > limit:
+        -1:
+            return -1
+        0:
+            return 1
+        1:
+            return 1
+
 fn ng_span_matches_text(source: &bytes, start: i64, end: i64, wanted: text) -> trit:
     mut expected_length: i64 = text_len(&wanted)
     mut index: i64 = 0
@@ -507,6 +685,10 @@ fn ng_contextual_expression_type(source: &bytes, types: &vector<NgTypeDescriptor
     mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut base: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut constructor_type: i64 = -1
+    mut contextual_operand_type: i64 = 0
+    mut binary_type: i64 = 0
+    mut constant_status: i64 = 0
+    mut constant_value: i64 = 0
     match node.kind <=> 14:
         0:
             base = vector_get<NgAstNode>(nodes, node.left)
@@ -556,6 +738,61 @@ fn ng_contextual_expression_type(source: &bytes, types: &vector<NgTypeDescriptor
                     return ng_call_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node)
                 1:
                     return -14
+        -1:
+            node = node
+        1:
+            node = node
+    match node.kind <=> 3:
+        -1:
+            node = node
+        0:
+            return ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left, expected_type)
+        1:
+            node = node
+    match node.kind <=> 22:
+        -1:
+            node = node
+        0:
+            match ng_is_numeric_type(expected_type):
+                -1:
+                    contextual_operand_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left, expected_type)
+                    match contextual_operand_type <=> expected_type:
+                        0:
+                            constant_status = ng_contextual_constant_integer_value(source, nodes, node_id, expected_type, &mut constant_value)
+                            match constant_status < 0:
+                                -1:
+                                    return -14
+                                0:
+                                    return expected_type
+                                1:
+                                    return expected_type
+                        -1:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    node = node
+                1:
+                    node = node
+        1:
+            node = node
+    match node.kind <=> 4:
+        0:
+            binary_type = ng_binary_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node, expected_type)
+            match ng_is_numeric_type(binary_type):
+                -1:
+                    constant_status = ng_contextual_constant_integer_value(source, nodes, node_id, binary_type, &mut constant_value)
+                    match constant_status < 0:
+                        -1:
+                            return -14
+                        0:
+                            return binary_type
+                        1:
+                            return binary_type
+                0:
+                    return binary_type
+                1:
+                    return binary_type
         -1:
             node = node
         1:
@@ -2861,8 +3098,29 @@ fn ng_trit_binary_expression_type(source: &bytes, types: &vector<NgTypeDescripto
         1:
             return -14
 
-fn ng_binary_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode) -> i64:
-    mut left_type: i64 = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+fn ng_binary_expression_left_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode, expected_type: i64) -> i64:
+    match ng_is_relational_operator(node.operation):
+        -1:
+            return ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+        0:
+            match ng_is_numeric_type(expected_type):
+                -1:
+                    return ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left, expected_type)
+                0:
+                    return ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+                1:
+                    return ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+        1:
+            match ng_is_numeric_type(expected_type):
+                -1:
+                    return ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left, expected_type)
+                0:
+                    return ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+                1:
+                    return ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+
+fn ng_binary_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode, expected_type: i64) -> i64:
+    mut left_type: i64 = ng_binary_expression_left_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node, expected_type)
     mut right_type: i64 = 0
     match left_type <=> 0:
         -1:
@@ -2940,7 +3198,7 @@ fn ng_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                                 -1:
                                     return -11
                                 0:
-                                    return ng_binary_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node)
+                                    return ng_binary_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node, 0)
                                 1:
                                     match node.kind <=> 5:
                                         -1:

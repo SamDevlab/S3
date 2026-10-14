@@ -4432,6 +4432,59 @@ def test_ng_existing_language_maturity_workloads_match_reference(name: str) -> N
     assert execute_ir(candidate) == execute_ir(reference) == 0, name
 
 
+def test_ng_constant_integer_expression_preserves_contextual_numeric_type() -> None:
+    sources = {
+        "main.s3": (
+            "fn as_i64() -> i64:\n"
+            "    return 1 + 2\n"
+            "fn as_tryte() -> tryte:\n"
+            "    return 1 + 2\n"
+            "fn as_tryte_parenthesized_boundary() -> tryte:\n"
+            "    return (363 + 1)\n"
+            "fn as_tryte_negated_boundary() -> tryte:\n"
+            "    return -(360 + 4)\n"
+            "fn add_trytes(left: tryte, right: tryte) -> tryte:\n"
+            "    return left + right\n"
+            "fn main() -> i64:\n"
+            "    return 0\n"
+        ),
+    }
+    reference = compile_sources(sources, entry_module="main").ir
+    assert reference is not None
+
+    status, encoded_source, cells = _run_ng_source_set_events(
+        sources,
+        entry_module="main",
+    )
+    assert status == 0, f"S3C-NG source-set compilation failed with status {status}"
+    actual = decode_ng_ir_events(encoded_source, cells)
+    verify_ir(actual)
+    assert serialize_ir(actual) == serialize_ir(reference)
+
+
+@pytest.mark.parametrize(
+    ("return_type", "expression"),
+    (("tryte", "364 + 1"), ("tryte", "-364 - 1"), ("trit", "1 + 1")),
+    ids=("tryte-overflow", "tryte-underflow", "trit-overflow"),
+)
+def test_ng_contextual_constant_integer_overflow_matches_reference(
+    return_type: str,
+    expression: str,
+) -> None:
+    sources = {
+        "main.s3": (
+            f"fn main() -> {return_type}:\n"
+            f"    return {expression}\n"
+        ),
+    }
+
+    with pytest.raises(SemanticError):
+        compile_sources(sources, entry_module="main")
+
+    status, _, _ = _run_ng_source_set_events(sources, entry_module="main")
+    assert status < 0, f"S3C-NG accepted out-of-range constant {expression} as {return_type}"
+
+
 @pytest.mark.s3_native
 @pytest.mark.skipif(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},

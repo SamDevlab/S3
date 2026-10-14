@@ -159,6 +159,14 @@ the emitted IR, and executes each program through the native backend. That
 native gate and exact-head CI evidence remain pending. This is a focused
 real-workload corpus, not complete language-matrix qualification.
 
+The current focused numeric regression closes contextual result typing for
+constant integer expressions in `i64` and `tryte`, including grouped and
+negated `tryte` boundaries, while keeping parameter-driven `tryte` arithmetic
+dynamic. Constant `trit`/`tryte` overflow and underflow are rejected to match
+the Python semantic reference. The hosted canonical-IR tests and adjacent NG
+semantic boundary tests pass locally; the numeric feature remains `PARTIAL`,
+and native/exact-head CI qualification is still required.
+
 ## Current limitations
 
 - Linux CI has qualified the actual S3C-NG ELF for explicit provider use,

@@ -677,14 +677,73 @@ fn ng_integer_value(source: &bytes, start: i64, end: i64) -> NgIntegerResult:
         1:
             return NgIntegerResult(value=value, valid=1)
 
-fn ng_set_contextual_literal_type(nodes: &vector<NgAstNode>, node_id: i64, expected_type: i64, registers: &mut vector<NgIRRegister>, register_id: i64) -> i64:
+fn ng_ir_constant_integer_expression_shape(nodes: &vector<NgAstNode>, node_id: i64) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
-    mut register: NgIRRegister = NgIRRegister(type_kind=0, source_start=-1)
+    mut status: i64 = -1
     match node.kind <=> 1:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            match node.kind <=> 3:
+                0:
+                    return ng_ir_constant_integer_expression_shape(nodes, node.left)
+                -1:
+                    return -1
+                1:
+                    match node.kind <=> 4:
+                        -1:
+                            return -1
+                        0:
+                            match node.operation <=> 343:
+                                -1:
+                                    return -1
+                                0:
+                                    status = ng_ir_constant_integer_expression_shape(nodes, node.left)
+                                    match status <=> 0:
+                                        0:
+                                            return ng_ir_constant_integer_expression_shape(nodes, node.right)
+                                        -1:
+                                            return -1
+                                        1:
+                                            return -1
+                                1:
+                                    match node.operation <=> 345:
+                                        -1:
+                                            return -1
+                                        0:
+                                            status = ng_ir_constant_integer_expression_shape(nodes, node.left)
+                                            match status <=> 0:
+                                                0:
+                                                    return ng_ir_constant_integer_expression_shape(nodes, node.right)
+                                                -1:
+                                                    return -1
+                                                1:
+                                                    return -1
+                                        1:
+                                            return -1
+                        1:
+                            match node.kind <=> 22:
+                                -1:
+                                    return -1
+                                0:
+                                    return ng_ir_constant_integer_expression_shape(nodes, node.left)
+                                1:
+                                    return -1
+
+fn ng_set_contextual_numeric_type(expected_type: i64, registers: &mut vector<NgIRRegister>, register_id: i64) -> i64:
+    mut register: NgIRRegister = NgIRRegister(type_kind=0, source_start=-1)
+    match expected_type <=> 2:
         -1:
             return 0
         0:
-            match expected_type <=> 2:
+            register = vector_get<NgIRRegister>(&*registers, register_id)
+            register.type_kind = expected_type
+            discard vector_set<NgIRRegister>(&mut *registers, register_id, register)
+            return 0
+        1:
+            match expected_type <=> 3:
                 -1:
                     return 0
                 0:
@@ -693,18 +752,23 @@ fn ng_set_contextual_literal_type(nodes: &vector<NgAstNode>, node_id: i64, expec
                     discard vector_set<NgIRRegister>(&mut *registers, register_id, register)
                     return 0
                 1:
-                    match expected_type <=> 3:
-                        -1:
-                            return 0
-                        0:
-                            register = vector_get<NgIRRegister>(&*registers, register_id)
-                            register.type_kind = expected_type
-                            discard vector_set<NgIRRegister>(&mut *registers, register_id, register)
-                            return 0
-                        1:
-                            return 0
-        1:
+                    return 0
+
+fn ng_set_contextual_literal_type(nodes: &vector<NgAstNode>, node_id: i64, expected_type: i64, registers: &mut vector<NgIRRegister>, register_id: i64) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    match node.kind <=> 1:
+        -1:
             return 0
+        0:
+            return ng_set_contextual_numeric_type(expected_type, registers, register_id)
+        1:
+            match ng_ir_constant_integer_expression_shape(nodes, node_id) <=> 0:
+                0:
+                    return ng_set_contextual_numeric_type(expected_type, registers, register_id)
+                -1:
+                    return 0
+                1:
+                    return 0
 
 fn ng_ir_fold_constant_integer_binary(operation: i64, left: i64, right: i64) -> NgIntegerResult:
     match operation <=> 343:
@@ -4851,6 +4915,7 @@ fn ng_emit_function_return(source: &bytes, types: &vector<NgTypeDescriptor>, fie
                     match vector_len<i64>(&result_registers) <=> result_count:
                         0:
                             result_register = vector_get<i64>(&result_registers, 0)
+                            discard ng_set_contextual_literal_type(nodes, statement.left, function.return_type, registers, result_register)
                             return_pool_start = vector_len<i64>(&*return_values)
                             cell_index = 0
                             while cell_index < result_count:
