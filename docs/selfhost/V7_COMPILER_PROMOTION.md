@@ -140,14 +140,15 @@ job passed its maintained native fixed-point checks. This qualifies the
 maintained CI path on that head; it does not establish durable bootstrap
 distribution or complete compiler-promotion readiness.
 
-The current PR candidate adds a native CLI sample regression using the same
-`answer(42)` source through `check`, IR projections, `inspect`, Assembly,
-hosted/native execution, and build commands, with `ffi-build` and `test`
-covered by the neighboring native CLI regression. It compares reference
-artifacts/results and makes explicit S3C-NG fail if the CLI calls its Python
-single-source compiler path. This is a narrow command-routing sample, not
+The current PR candidate adds a native CLI regression using the `answer(42)`
+source through `check`, IR projections, `inspect`, Assembly, hosted/native
+execution, and build commands. It also routes relational-match and multi-module
+workloads through `ir-json`, `run`, `build`, and `run-native`; `ffi-build` and
+`test` are covered by the neighboring native CLI regression. It compares
+reference artifacts/results and makes explicit S3C-NG fail if the CLI calls
+its Python single-source compiler path. These remain narrow samples, not
 qualification of every command against the supported-language corpus; the
-exact-head Linux promotion job must pass before the sample is counted as
+exact-head Linux promotion job must pass before the new samples are counted as
 executed evidence.
 
 ## Current limitations

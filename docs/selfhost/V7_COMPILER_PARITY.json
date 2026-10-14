@@ -34,12 +34,16 @@
     "qualification_note": "Python and the native candidate both reject these cases; native status values are checked for regression, but they are not structured diagnostic category/code/span parity"
   },
   "native_cli_sample": {
-    "state": "EVIDENCE_GATED_SAMPLE_ONLY",
+    "state": "EVIDENCE_GATED_SAMPLES_ONLY",
     "test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point",
     "source_case": "single-module answer(42) program, compared with the Python reference",
     "commands": ["check", "ir", "ir-json", "inspect(summary)", "inspect(ir)", "asm", "run", "native-asm", "build", "run-native", "ffi-build", "test"],
     "assertions": ["canonical IR or Assembly parity where applicable", "hosted and native result parity", "explicit S3C-NG does not call the Python single-source compile path"],
-    "qualification_note": "This native sample does not qualify the complete CLI workload or language parity matrices"
+    "additional_workloads": [
+      {"case": "relational-match", "commands": ["ir-json", "run", "build", "run-native"], "expected_result": 10},
+      {"case": "multimodule", "commands": ["ir-json", "run", "build", "run-native"], "expected_result": 16}
+    ],
+    "qualification_note": "These Linux candidate CLI samples extend command routing to control-flow and multimodule workloads; they do not qualify the complete CLI workload or language parity matrices"
   },
   "features": [
     {"family": "numeric literals and balanced ternary", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v18_executes_typed_unary_negation", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v7_relational_match_selector_preserves_distinct_arms"]},

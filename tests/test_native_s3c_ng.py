@@ -764,6 +764,38 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(
     assert built_result.stderr == ""
     assert run_ng_cli("run-native", str(cli_source_path)) == "program returned: 42\n"
 
+    for workload_name, sources, expected_result in (
+        ("relational-match", _RELATIONAL_MATCH_SOURCES, 10),
+        ("multimodule", _MULTIMODULE_SOURCES, 16),
+    ):
+        workload_directory = tmp_path / "provider-cli" / workload_name
+        workload_directory.mkdir(parents=True)
+        for logical_path, contents in sources.items():
+            source_path = workload_directory / logical_path
+            source_path.parent.mkdir(parents=True, exist_ok=True)
+            source_path.write_text(contents, encoding="utf-8", newline="\n")
+
+        reference = compile_sources(sources, entry_module="app")
+        assert reference.ir is not None
+        assert run_ng_cli("ir-json", str(workload_directory)) == serialize_ir(
+            reference.ir
+        )
+        expected_output = f"program returned: {expected_result}\n"
+        assert run_ng_cli("run", str(workload_directory)) == expected_output
+
+        workload_executable = workload_directory / "program"
+        assert run_ng_cli(
+            "build",
+            str(workload_directory),
+            "--output",
+            str(workload_executable),
+        ).strip() == str(workload_executable)
+        workload_result = NativeToolchain.detect().run(workload_executable)
+        assert workload_result.returncode == 0
+        assert workload_result.stdout == expected_output
+        assert workload_result.stderr == ""
+        assert run_ng_cli("run-native", str(workload_directory)) == expected_output
+
     b_small = _assert_native_compile(
         artifact_b, small, expected_result=42, tmp_path=tmp_path
     )
