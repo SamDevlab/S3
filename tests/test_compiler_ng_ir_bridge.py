@@ -4792,6 +4792,38 @@ fn main() -> i64:
     assert events == []
 
 
+@pytest.mark.parametrize(
+    ("logical_path", "entry_module"),
+    (
+        ("main.s3", "main"),
+        ("pkg/main.s3", "pkg.main"),
+        ("_pkg/Name_2.s3", "_pkg.Name_2"),
+    ),
+)
+def test_ng_source_set_derives_module_name_for_implicit_module(
+    logical_path: str,
+    entry_module: str,
+) -> None:
+    source = """\
+fn main() -> i64:
+    return 42
+"""
+    sources = {logical_path: source}
+    reference = compile_sources(sources, entry_module=entry_module).ir
+    assert reference is not None
+
+    status, emitted_source, events = _run_ng_source_set_events(
+        sources,
+        entry_module=entry_module,
+    )
+    assert status == 0
+
+    actual = decode_ng_ir_events(emitted_source, events)
+    verify_ir(actual)
+    assert serialize_ir(actual) == serialize_ir(reference)
+    assert execute_ir(actual) == execute_ir(reference) == 42
+
+
 def test_ng_source_set_matches_python_for_legacy_vector_ordering_workload() -> None:
     from tests.test_language_maturity_workloads import _ordering_program
 

@@ -491,13 +491,15 @@ fn main() -> i64:
 
     def call_exports(path: Path) -> tuple[int, float]:
         library = ctypes.CDLL(str(path))
-        library.add.argtypes = [ctypes.c_int64, ctypes.c_int64]
-        library.add.restype = ctypes.c_int64
-        library.multiply.argtypes = [ctypes.c_double, ctypes.c_double]
-        library.multiply.restype = ctypes.c_double
+        add = getattr(library, "__s3mod_main__add")
+        multiply = getattr(library, "__s3mod_main__multiply")
+        add.argtypes = [ctypes.c_int64, ctypes.c_int64]
+        add.restype = ctypes.c_int64
+        multiply.argtypes = [ctypes.c_double, ctypes.c_double]
+        multiply.restype = ctypes.c_double
         return (
-            library.add(2, 5),
-            library.multiply(1.5, 4.0),
+            add(2, 5),
+            multiply(1.5, 4.0),
         )
 
     ng_results = call_exports(ng_library)

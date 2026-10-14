@@ -1612,23 +1612,23 @@ fn ng_module_identifier_start(value: i64) -> trit:
                         -1:
                             return -1
                         0:
-                            return 0
-                        1:
-                            return 0
-                1:
-                    match value < 97:
-                        -1:
-                            return 0
-                        0:
-                            match value < 123:
+                            match value < 97:
                                 -1:
-                                    return -1
-                                0:
                                     return 0
+                                0:
+                                    match value < 123:
+                                        -1:
+                                            return -1
+                                        0:
+                                            return 0
+                                        1:
+                                            return 0
                                 1:
                                     return 0
                         1:
                             return 0
+                1:
+                    return 0
         1:
             return 0
 
@@ -1749,11 +1749,11 @@ fn ng_derive_module_name(source: &mut bytes, path_start: i64, path_end: i64) -> 
     mut part_result: i64 = 0
     match path_length > 0:
         -1:
-            return NgSpan(start=-1, end=-1)
+            path_length = path_length
         0:
             return NgSpan(start=-1, end=-1)
         1:
-            path_length = path_length
+            return NgSpan(start=-1, end=-1)
     match to_i64(bytes_get(&*source, path_start)) == 47:
         -1:
             return NgSpan(start=-1, end=-1)
@@ -1812,7 +1812,7 @@ fn ng_derive_module_name(source: &mut bytes, path_start: i64, path_end: i64) -> 
                             -1:
                                 separator = 1
                             0:
-                                index = index + 1
+                                separator = 0
                             1:
                                 separator = 1
                     1:
@@ -1828,9 +1828,9 @@ fn ng_derive_module_name(source: &mut bytes, path_start: i64, path_end: i64) -> 
                     -1:
                         return NgSpan(start=-1, end=-1)
                     0:
-                        part_result = part_result
-                    1:
                         part_count = part_result
+                    1:
+                        return NgSpan(start=-1, end=-1)
                 segment_start = index + 1
                 separator = 0
                 index = index + 1
