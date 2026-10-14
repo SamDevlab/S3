@@ -116,18 +116,22 @@ Python reference-produced canonical IR (`python-reference-stage0`); it is not
 the pinned trusted S3C-NG bootstrap artifact required for promotion. Candidate
 ELF files remain local build outputs and are not committed or released.
 
-The maintained workflow now creates a per-exact-HEAD immutable GitHub Actions
+The maintained workflow creates a per-exact-HEAD immutable GitHub Actions
 artifact containing the candidate and schema-2 manifest, then consumes it from
 a separate clean Linux checkout. The artifact name binds the source SHA within
-the workflow run; rerunning its seed job replaces that run-scoped artifact,
-and GitHub verifies the uploaded artifact digest on download. The clean-checkout
-gate additionally checks the executable SHA, source commit, source-graph SHA,
-canonical compiler IR, Assembly, object, and ELF against the manifest. The
-consumed seed still records
-`python-reference-stage0` as its parent. This is an ephemeral, same-workflow
-trust path, not a release asset or a durable external distribution mechanism.
-Its maintained qualification remains pending until this gate passes on the
-exact PR head.
+the workflow run; GitHub verifies the uploaded artifact digest on download.
+The clean-checkout gate additionally checks the executable SHA, source commit,
+source-graph SHA, canonical compiler IR, Assembly, object, and ELF against the
+manifest. The consumed seed records `python-reference-stage0` as its parent.
+This is an ephemeral, same-workflow trust path, not a release asset or a
+durable external distribution mechanism.
+
+The exact-head gate passed on `bf9a947412ff3f408cb030f89a6d2315049bfacd` in
+Tests workflow run `38594968631` on 2026-10-14. The dedicated clean-checkout
+job passed after downloading that run's candidate, and the S3C-NG promotion
+job passed its maintained native fixed-point checks. This qualifies the
+maintained CI path on that head; it does not establish durable bootstrap
+distribution or complete compiler-promotion readiness.
 
 ## Current limitations
 
@@ -138,11 +142,13 @@ exact PR head.
 - `test` and ProjectTooling host-side build/run now accept compiler selection,
   but their S3C-NG parity is unqualified. The `container` CLI remains a Docker
   interoperability workflow rather than a host compiler-selection path.
-- The exact-head clean-checkout artifact path is implemented, but its maintained
-  gate and exact-head result are still required. The artifact is ephemeral and
-  same-workflow; durable external bootstrap distribution remains undecided.
-- The existing V6 fixed-point evidence remains historical; the new clean
-  bootstrap gate must establish a maintained V7 fixed point independently.
+- The exact-head clean-checkout artifact path and maintained V7 native
+  fixed-point gates passed on `bf9a947412ff3f408cb030f89a6d2315049bfacd`.
+  The artifact is ephemeral and same-workflow; durable external bootstrap
+  distribution remains undecided. The seed's Python Stage0 trust root remains
+  explicit.
+- The existing V6 fixed-point evidence remains historical; the V7 maintained
+  promotion and clean-checkout gates are separate, newly passing evidence.
 - The V23 event decoder is shared, but the full supported-language, invalid
   program, structured diagnostic, workload, and execution parity matrices are
   not yet qualified.
@@ -153,11 +159,9 @@ exact PR head.
   in S3C-NG: the Python reference accepts them, while S3C-NG rejects the source
   set without falling back. This is recorded as a partial, fail-closed
   capability rather than slice parity; it does not qualify default promotion.
-- A Linux promotion run on the initial PR head exposed a fixed-point mismatch in
-  static-string IDs for multi-module input. The decoder now assigns IDs in
-  canonical function order, then source order within each function. The natural
-  Linux promotion gate passed on `5487e336ea2cc4d0fdf607d3e070766030e1e628`.
-  A follow-up change adds explicit per-module static strings to the native
-  multi-module workload; that stronger fixture still requires Linux CI on the
-  next pushed head.
+- A Linux promotion run on an earlier PR head exposed a fixed-point mismatch
+  in static-string IDs for multi-module input. The decoder now assigns IDs in
+  canonical function order, then source order within each function. The
+  strengthened per-module static-string workload and native promotion gate
+  passed in run `38594968631` on the exact head above.
 - No compiler default has been changed; no release artifact is authorized.

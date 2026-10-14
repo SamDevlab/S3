@@ -66,13 +66,13 @@
     {"command": "container run", "semantic_compilation": "INDIRECT", "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "DOCKER_RUNTIME_S3C_NG_SELECTABLE_UNQUALIFIED"}
   ],
   "bootstrap": {
-    "clean_checkout": "EXACT_HEAD_IMMUTABLE_CI_ARTIFACT_GATE_PENDING",
-    "strict_fixed_point": "V7_CLEAN_CHECKOUT_B_TO_C_GATE_PENDING",
+    "clean_checkout": "PASS_EXACT_HEAD_BF9A9474_RUN_38594968631",
+    "strict_fixed_point": "PASS_MAINTAINED_NATIVE_B_C_D_AND_CLEAN_CHECKOUT_B_TO_C_EXACT_HEAD_BF9A9474",
     "artifact_distribution_policy": "SAME_WORKFLOW_IMMUTABLE_ARTIFACT; DURABLE_EXTERNAL_DISTRIBUTION_UNDECIDED",
     "candidate_builder": "tools/build_s3c_ng_candidate.py",
     "candidate_seed": "PYTHON_REFERENCE_STAGE0",
     "candidate_manifest_schema": 2,
-    "trusted_s3c_ng_seed": "EXACT_HEAD_AND_SAME_WORKFLOW_RUN_ARTIFACT; MAINTAINED_GATE_PENDING"
+    "trusted_s3c_ng_seed": "PYTHON_REFERENCE_STAGE0_PARENT; EXACT_HEAD_AND_SAME_WORKFLOW_RUN_ARTIFACT; MAINTAINED_GATE_PASS_RUN_38594968631"
   },
   "promoted_default": false
 }
