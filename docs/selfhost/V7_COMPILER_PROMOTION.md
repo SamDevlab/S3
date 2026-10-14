@@ -151,6 +151,14 @@ qualification of every command against the supported-language corpus; the
 exact-head Linux promotion job must pass before the new samples are counted as
 executed evidence.
 
+The current worktree's focused hosted test passes using the repository's
+sorting/search, hex-encoding, and CSV-parser workload sources and builders. It
+compares canonical IR and execution with the Python reference. A separate Linux
+x86-64 native candidate gate additionally compares source locations, verifies
+the emitted IR, and executes each program through the native backend. That
+native gate and exact-head CI evidence remain pending. This is a focused
+real-workload corpus, not complete language-matrix qualification.
+
 ## Current limitations
 
 - Linux CI has qualified the actual S3C-NG ELF for explicit provider use,

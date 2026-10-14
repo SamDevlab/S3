@@ -519,6 +519,52 @@ def test_native_s3c_ng_compiles_bounded_stack_vm_maturity_workload(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
     reason="native S3C-NG qualification requires Linux x86-64",
 )
+def test_native_s3c_ng_matches_existing_language_maturity_workloads(
+    tmp_path: Path,
+) -> None:
+    from tests.test_language_maturity_workloads import (
+        _csv_program,
+        _hex_program,
+        _ordering_program,
+    )
+
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
+    workloads = (
+        (
+            "ordering-search",
+            _ordering_program((29, -4, 8, 8, 17, 0), (-4, 8, 17, 30)),
+        ),
+        (
+            "hex-encoding",
+            _hex_program(bytes((0, 83, 51, 255))),
+        ),
+        (
+            "csv-integer-parser",
+            {"main.s3": _csv_program("-12,0,25,-3", (10, 4))},
+        ),
+    )
+
+    for name, sources in workloads:
+        work_directory = tmp_path / name
+        work_directory.mkdir()
+        result = _assert_native_compile(
+            artifact,
+            sources,
+            expected_result=0,
+            entry_module="main",
+            tmp_path=work_directory,
+        )
+        assert result.status == 0, name
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG qualification requires Linux x86-64",
+)
 def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
     tmp_path: Path,
 ) -> None:

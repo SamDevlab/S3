@@ -4376,6 +4376,62 @@ def test_ng_real_multimodule_program_is_order_independent_and_matches_reference(
     assert "function" in translate_verified_ir(ng_ir)
 
 
+@pytest.mark.parametrize(
+    "name",
+    ("ordering-search", "hex-encoding", "csv-integer-parser"),
+)
+def test_ng_existing_language_maturity_workloads_match_reference(name: str) -> None:
+    from tests.test_language_maturity_workloads import (
+        _csv_program,
+        _hex_program,
+        _ordering_program,
+    )
+
+    workloads = {
+        "ordering-search": _ordering_program((29, -4, 8, 8, 17, 0), (-4, 8, 17, 30)),
+        "hex-encoding": _hex_program(bytes((0, 83, 51, 255))),
+        "csv-integer-parser": {"main.s3": _csv_program("-12,0,25,-3", (10, 4))},
+    }
+
+    def first_difference(left: object, right: object, path: str = "$") -> tuple[str, object, object] | None:
+        if type(left) is not type(right):
+            return path, left, right
+        if isinstance(left, dict):
+            left_keys = set(left)
+            right_keys = set(right)
+            if left_keys != right_keys:
+                return path + ".keys", sorted(left_keys), sorted(right_keys)
+            for key in sorted(left_keys):
+                difference = first_difference(left[key], right[key], f"{path}.{key}")
+                if difference is not None:
+                    return difference
+        elif isinstance(left, list):
+            if len(left) != len(right):
+                return path + ".length", len(left), len(right)
+            for index, (left_item, right_item) in enumerate(zip(left, right)):
+                difference = first_difference(left_item, right_item, f"{path}[{index}]")
+                if difference is not None:
+                    return difference
+        elif left != right:
+            return path, left, right
+        return None
+
+    sources = workloads[name]
+    reference = compile_sources(sources, entry_module="main").ir
+    assert reference is not None, name
+    source, cells = _emit_ng_source_set_events(sources, entry_module="main")
+    candidate = decode_ng_ir_events(source, cells)
+    verify_ir(candidate)
+    candidate_json = json.loads(serialize_ir(candidate))
+    reference_json = json.loads(serialize_ir(reference))
+    difference = first_difference(candidate_json, reference_json)
+    assert difference is None, (
+        f"{name}: canonical IR differs at {difference[0]}: "
+        f"candidate={difference[1]!r}, reference={difference[2]!r}"
+    )
+    assert execute_ir(candidate) == execute_ir(reference) == 0, name
+
+
 @pytest.mark.s3_native
 @pytest.mark.skipif(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},

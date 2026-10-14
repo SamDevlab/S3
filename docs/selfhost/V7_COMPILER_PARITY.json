@@ -48,6 +48,25 @@
     ],
     "qualification_note": "These Linux candidate CLI samples extend command routing to control-flow and multimodule workloads; they do not qualify the complete CLI workload or language parity matrices"
   },
+  "native_real_workloads": {
+    "state": "PENDING_EXACT_HEAD_LINUX_PROMOTION",
+    "test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_matches_existing_language_maturity_workloads",
+    "source_corpus": "Existing examples/language_maturity implementations and tests/test_language_maturity_workloads.py program builders",
+    "cases": [
+      {"id": "ordering-search", "capabilities": ["multi-module imports", "mutable runtime vectors", "loops", "match", "sorting", "binary search"], "expected_result": 0},
+      {"id": "hex-encoding", "capabilities": ["multi-module imports", "bytes", "loops", "numeric conversion"], "expected_result": 0},
+      {"id": "csv-integer-parser", "capabilities": ["text", "bytes", "records", "checked arithmetic", "validation branches"], "expected_result": 0}
+    ],
+    "assertions": ["canonical serialized IR parity", "source-location parity", "shared verifier acceptance", "native execution result parity"],
+    "qualification_note": "The actual native candidate runs these existing language-maturity workloads on Linux x86-64; this focused corpus does not upgrade the complete supported-language matrix to PASS"
+  },
+  "hosted_real_workloads": {
+    "state": "PASS_FOCUSED_LOCAL_WORKTREE",
+    "test": "tests/test_compiler_ng_ir_bridge.py::test_ng_existing_language_maturity_workloads_match_reference",
+    "cases": ["ordering-search", "hex-encoding", "csv-integer-parser"],
+    "assertions": ["canonical serialized IR parity", "shared verifier acceptance", "hosted execution result parity"],
+    "qualification_note": "The focused hosted comparison passed locally on the current worktree; the hosted bridge exercises S3C-NG source logic through reference IR and the hosted emulator. Native-candidate proof is tracked separately and remains pending exact-head Linux CI"
+  },
   "features": [
     {"family": "numeric literals and balanced ternary", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v18_executes_typed_unary_negation", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v7_relational_match_selector_preserves_distinct_arms"]},
     {"family": "checked i64 arithmetic", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_checked_i64_arithmetic_matches_reference (hosted canonical IR parity, valid arithmetic, overflow, and division-by-zero behavior)"]},

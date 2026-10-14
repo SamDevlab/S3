@@ -706,6 +706,100 @@ fn ng_set_contextual_literal_type(nodes: &vector<NgAstNode>, node_id: i64, expec
         1:
             return 0
 
+fn ng_ir_fold_constant_integer_binary(operation: i64, left: i64, right: i64) -> NgIntegerResult:
+    match operation <=> 343:
+        -1:
+            return NgIntegerResult(value=0, valid=0)
+        0:
+            return NgIntegerResult(value=left + right, valid=1)
+        1:
+            match operation <=> 345:
+                -1:
+                    return NgIntegerResult(value=0, valid=0)
+                0:
+                    return NgIntegerResult(value=left - right, valid=1)
+                1:
+                    return NgIntegerResult(value=0, valid=0)
+
+fn ng_ir_constant_integer_expression(source: &bytes, nodes: &vector<NgAstNode>, node_id: i64) -> NgIntegerResult:
+    mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    mut left: NgIntegerResult = NgIntegerResult(value=0, valid=0)
+    mut right: NgIntegerResult = NgIntegerResult(value=0, valid=0)
+    match node.kind == 1:
+        -1:
+            return ng_integer_value(source, node.start, node.end)
+        0:
+            match node.kind == 3:
+                -1:
+                    return ng_ir_constant_integer_expression(source, nodes, node.left)
+                0:
+                    match node.kind == 4:
+                        -1:
+                            left = ng_ir_constant_integer_expression(source, nodes, node.left)
+                            match left.valid <=> 1:
+                                -1:
+                                    return left
+                                0:
+                                    right = ng_ir_constant_integer_expression(source, nodes, node.right)
+                                    match right.valid <=> 1:
+                                        -1:
+                                            return right
+                                        0:
+                                            return ng_ir_fold_constant_integer_binary(node.operation, left.value, right.value)
+                                        1:
+                                            return right
+                                1:
+                                    return left
+                        0:
+                            match node.kind == 22:
+                                -1:
+                                    left = ng_ir_constant_integer_expression(source, nodes, node.left)
+                                    match left.valid <=> 1:
+                                        -1:
+                                            return left
+                                        0:
+                                            return NgIntegerResult(value=0 - left.value, valid=1)
+                                        1:
+                                            return left
+                                0:
+                                    return NgIntegerResult(value=0, valid=0)
+                                1:
+                                    return NgIntegerResult(value=0, valid=0)
+                        1:
+                            return NgIntegerResult(value=0, valid=0)
+                1:
+                    return NgIntegerResult(value=0, valid=0)
+        1:
+            return NgIntegerResult(value=0, valid=0)
+
+fn ng_ir_constant_integer_source_start(nodes: &vector<NgAstNode>, node_id: i64) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    match node.kind == 4:
+        -1:
+            return node.start
+        0:
+            match node.kind == 3:
+                -1:
+                    return ng_ir_constant_integer_source_start(nodes, node.left)
+                0:
+                    match node.kind == 22:
+                        -1:
+                            return node.start
+                        0:
+                            match node.kind == 1:
+                                -1:
+                                    return node.start
+                                0:
+                                    return -1
+                                1:
+                                    return -1
+                        1:
+                            return -1
+                1:
+                    return -1
+        1:
+            return -1
+
 fn ng_ir_span_matches_text(source: &bytes, start: i64, end: i64, wanted: text) -> trit:
     mut expected_length: i64 = text_len(&wanted)
     mut index: i64 = 0
@@ -3374,6 +3468,8 @@ fn ng_emit_record_field_from_value(source: &bytes, types: &vector<NgTypeDescript
 
 fn ng_emit_expression_impl(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, node_id: i64, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    mut folded_integer: NgIntegerResult = NgIntegerResult(value=0, valid=0)
+    mut folded_source_start: i64 = -1
     mut base: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut argument_link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut named_argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -3398,6 +3494,30 @@ fn ng_emit_expression_impl(source: &bytes, types: &vector<NgTypeDescriptor>, fie
     mut left_info: NgIRRegister = NgIRRegister(type_kind=0, source_start=-1)
     mut right_info: NgIRRegister = NgIRRegister(type_kind=0, source_start=-1)
     mut index_register: i64 = -1
+    match node.kind > 1:
+        -1:
+            folded_integer = ng_ir_constant_integer_expression(source, nodes, node_id)
+            match folded_integer.valid <=> 2:
+                -1:
+                    match folded_integer.valid <=> 1:
+                        0:
+                            folded_source_start = ng_ir_constant_integer_source_start(nodes, node_id)
+                            register = vector_len<NgIRRegister>(&*registers)
+                            discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=1, source_start=folded_source_start))
+                            discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=1, result=register, operand_count=0, operand0=-1, operand1=-1, immediate=folded_integer.value, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1, source_start=folded_source_start))
+                            return register
+                        -1:
+                            node = node
+                        1:
+                            node = node
+                0:
+                    return -16
+                1:
+                    return -16
+        0:
+            node = node
+        1:
+            node = node
     match node.kind <=> 1:
         -1:
             return -20
