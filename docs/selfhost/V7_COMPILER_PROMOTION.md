@@ -89,10 +89,14 @@ semantic Python fallback is attempted.
 Both providers meet at `IRModule`; verifier, optimizer, Assembly generation,
 hosted execution, x86-64 generation, native build/run, and FFI Assembly
 generation remain shared. S3C-NG provider mode does not create a Python
-`SemanticModel` or AST. The native output status currently carries no structured
-diagnostic payload, so negative-program and diagnostic parity remain
-unqualified. S3C-NG currently accepts source syntax 0.6 only and requires a
-Linux x86-64 ELF candidate.
+`SemanticModel` or AST. The native source-set boundary now has an additive
+`S3NGOUT2` response with bounded, separate diagnostic records while retaining
+the `S3NGOUT1` legacy entrypoint and decoder. The focused implementation covers
+missing modules, direct self-cycles, unknown imported symbols, and private
+imported symbols; all other nonzero native statuses still fail closed as
+transport errors. This is not full negative-program or diagnostic parity.
+S3C-NG currently accepts source syntax 0.6 only and requires a Linux x86-64 ELF
+candidate.
 
 The local V24 increment adds borrowed immutable-slice type descriptors,
 explicit hidden length parameters, and indexed slice-load lowering. The hosted
@@ -103,14 +107,19 @@ also built and invoked immutable `&[i64]` exports through the pointer-plus-lengt
 ABI, including forwarding both cells through a second S3 function. Mutable slice
 stores and the broader slice corpus remain unqualified.
 
-The native candidate rejection matrix now checks ten invalid source-set cases
+The native candidate rejection matrix checks ten invalid source-set cases
 against the Python reference, covering module/import graphs, call arity and
-types, aggregate fields, bytes builtins, and resource builtins. This proves
-rejection and guards each current native status value; it does not qualify
-stable diagnostic categories, codes, messages, or source spans. `S3NGOUT1`
-currently returns only status, source bytes, and IR events; S3C-NG rejections
-are surfaced as generic toolchain errors. Structured diagnostic transport and
-parity remain an open promotion gate.
+types, aggregate fields, bytes builtins, and resource builtins. That matrix
+proves rejection and guards native status values, not full diagnostic parity.
+The new `S3NGOUT2` slice separately transports stable category, phase, code,
+source-unit index, UTF-8 byte span, and message identifier for four import
+failure codes. The host validates the bounded envelope and source span, maps a
+single recognized record to the public semantic diagnostic, and does not
+recompile through Python. Multi-record formatting and statuses without a
+record fail closed. `S3NGOUT1` remains available through the legacy exported
+entrypoint. Focused provider tests pass locally; the real native regression is
+Linux x86-64-only and still requires the exact-candidate CI gate. The broader
+negative corpus, parser/type diagnostics, and diagnostic parity remain open.
 
 Compiler selection is offered on semantic compile commands, the test-manifest
 runner, and project-test discovery API. `doctor`, `targets`, `tokens`, `ast`, `format`, and `docs`

@@ -19,6 +19,9 @@
 #define MAX_SOURCE_UNITS 4096U
 #define INPUT_MAGIC "S3NGIN01"
 #define OUTPUT_MAGIC "S3NGOUT1"
+#define OUTPUT_V2_MAGIC "S3NGOUT2"
+#define DIAGNOSTIC_RECORD_I64S 7U
+#define MAX_DIAGNOSTIC_RECORDS 256U
 
 typedef struct {
     unsigned char *data;
@@ -41,9 +44,24 @@ typedef int64_t (*NgSourceSetCompiler)(
     void **events_reference
 );
 
+typedef int64_t (*NgSourceSetCompilerV2)(
+    void **units_reference,
+    void *entry_module,
+    void **source_reference,
+    void **events_reference,
+    void **diagnostics_reference
+);
+
 static int fail(const char *message) {
     fprintf(stderr, "native S3C-NG transport: %s\n", message);
     return 2;
+}
+
+static int has_suffix(const char *value, const char *suffix) {
+    size_t value_length = strlen(value);
+    size_t suffix_length = strlen(suffix);
+    return value_length >= suffix_length &&
+        strcmp(value + value_length - suffix_length, suffix) == 0;
 }
 
 static int read_exact(FILE *stream, void *destination, size_t length) {
@@ -146,6 +164,47 @@ static int write_output(
         write_exact(stream, &event_count, sizeof(event_count)) &&
         write_exact(stream, source->data, (size_t)source_length) &&
         write_exact(stream, events->data, (size_t)(event_count * sizeof(int64_t)));
+    if (fclose(stream) != 0) {
+        ok = 0;
+    }
+    return ok;
+}
+
+static int write_output_v2(
+    const char *path,
+    int64_t status,
+    const S3DynamicDescriptor *source,
+    const S3DynamicDescriptor *events,
+    const S3DynamicDescriptor *diagnostics
+) {
+    const uint64_t diagnostic_record_bytes = DIAGNOSTIC_RECORD_I64S * sizeof(int64_t);
+    if (source == NULL || events == NULL || diagnostics == NULL ||
+        source->length < 0 || events->length < 0 || diagnostics->length < 0 ||
+        (events->length % (int64_t)sizeof(int64_t)) != 0 ||
+        (diagnostics->length % (int64_t)diagnostic_record_bytes) != 0 ||
+        (uint64_t)source->length > (uint64_t)source->capacity ||
+        (uint64_t)events->length > (uint64_t)events->capacity ||
+        (uint64_t)diagnostics->length > (uint64_t)diagnostics->capacity) {
+        return 0;
+    }
+    uint64_t source_length = (uint64_t)source->length;
+    uint64_t event_count = (uint64_t)events->length / sizeof(int64_t);
+    uint64_t diagnostic_count = (uint64_t)diagnostics->length / diagnostic_record_bytes;
+    if (diagnostic_count > MAX_DIAGNOSTIC_RECORDS) {
+        return 0;
+    }
+    FILE *stream = fopen(path, "wb");
+    if (stream == NULL) {
+        return 0;
+    }
+    int ok = write_exact(stream, OUTPUT_V2_MAGIC, 8) &&
+        write_exact(stream, &status, sizeof(status)) &&
+        write_exact(stream, &source_length, sizeof(source_length)) &&
+        write_exact(stream, &event_count, sizeof(event_count)) &&
+        write_exact(stream, &diagnostic_count, sizeof(diagnostic_count)) &&
+        write_exact(stream, source->data, (size_t)source_length) &&
+        write_exact(stream, events->data, (size_t)(event_count * sizeof(int64_t))) &&
+        write_exact(stream, diagnostics->data, (size_t)(diagnostic_count * diagnostic_record_bytes));
     if (fclose(stream) != 0) {
         ok = 0;
     }
@@ -259,17 +318,47 @@ int main(int argc, char **argv) {
     void *units_value = units;
     void *source_value = source;
     void *events_value = events;
-    int64_t status = compiler(
-        &units_value,
-        entry_module,
-        &source_value,
-        &events_value
-    );
-    if (!write_output(
+    int is_v2 = has_suffix(argv[1], "ng_emit_source_set_v2");
+    int64_t status = 0;
+    int output_ok = 0;
+    if (is_v2) {
+        uint64_t diagnostic_capacity =
+            MAX_DIAGNOSTIC_RECORDS * DIAGNOSTIC_RECORD_I64S * sizeof(int64_t);
+        S3DynamicDescriptor *diagnostics = dynamic_new(diagnostic_capacity, NULL, 0);
+        if (diagnostics == NULL) {
+            return fail("could not allocate diagnostic output descriptor");
+        }
+        void *diagnostics_value = diagnostics;
+        NgSourceSetCompilerV2 compiler_v2 = (NgSourceSetCompilerV2)compiler;
+        status = compiler_v2(
+            &units_value,
+            entry_module,
+            &source_value,
+            &events_value,
+            &diagnostics_value
+        );
+        output_ok = write_output_v2(
             argv[3],
             status,
             (const S3DynamicDescriptor *)source_value,
-            (const S3DynamicDescriptor *)events_value)) {
+            (const S3DynamicDescriptor *)events_value,
+            (const S3DynamicDescriptor *)diagnostics_value
+        );
+    } else {
+        status = compiler(
+            &units_value,
+            entry_module,
+            &source_value,
+            &events_value
+        );
+        output_ok = write_output(
+            argv[3],
+            status,
+            (const S3DynamicDescriptor *)source_value,
+            (const S3DynamicDescriptor *)events_value
+        );
+    }
+    if (!output_ok) {
         return fail("could not write compiler output envelope");
     }
     return 0;

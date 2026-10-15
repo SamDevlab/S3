@@ -16,15 +16,205 @@ from bootstrap.s3.compiler_provider import (
     compilation_requires_ir_execution,
     compile_source_set_with_provider,
 )
+from bootstrap.s3.diagnostics import (
+    DiagnosticCode,
+    DiagnosticSource,
+    SemanticError,
+    diagnostic_from_exception,
+)
 from bootstrap.s3.ir import IRBasicBlock, IRFunction, IRInstruction, IRModule, IROpcode, IRRegister, IRType
 from bootstrap.s3.native_compiler import (
+    NativeDiagnosticRecord,
     NativeS3CTransportError,
     NativeSourceSetResult,
+    decode_output_envelope,
+    decode_output_envelope_v2,
     encode_source_manifest,
     inspect_s3c_ng_executable,
 )
 from bootstrap.s3.pipeline import CompilationResult, compile_source
 from tools.native_s3c_ng import compiler_source_graph_sha256, write_s3c_ng_candidate_manifest
+
+
+def _encode_output_envelope_v2(
+    status: int,
+    source: bytes,
+    events: tuple[int, ...] = (),
+    diagnostics: tuple[NativeDiagnosticRecord, ...] = (),
+) -> bytes:
+    encoded = bytearray(b"S3NGOUT2")
+    encoded.extend(struct.pack("<qQQQ", status, len(source), len(events), len(diagnostics)))
+    encoded.extend(source)
+    if events:
+        encoded.extend(struct.pack(f"<{len(events)}q", *events))
+    for record in diagnostics:
+        encoded.extend(
+            struct.pack(
+                "<7q",
+                record.category_id,
+                record.phase_id,
+                record.code_id,
+                record.source_unit_index,
+                record.start_byte,
+                record.end_byte,
+                record.message_id,
+            )
+        )
+    return bytes(encoded)
+
+
+def test_native_output_envelopes_keep_v1_and_validate_v2_diagnostics() -> None:
+    legacy = b"S3NGOUT1" + struct.pack("<qQQ", 0, 3, 2) + b"src" + struct.pack("<2q", 4, 5)
+    assert decode_output_envelope(legacy) == (0, b"src", (4, 5))
+
+    diagnostic = NativeDiagnosticRecord(1, 1, 1, 0, 3, 8, 1)
+    encoded = _encode_output_envelope_v2(-3, b"source", (9,), (diagnostic,))
+    assert decode_output_envelope_v2(encoded) == (
+        -3,
+        b"source",
+        (9,),
+        (diagnostic,),
+    )
+
+    malformed = _encode_output_envelope_v2(
+        -3,
+        b"source",
+        diagnostics=(NativeDiagnosticRecord(1, 1, 999, 0, 3, 8, 999),),
+    )
+    with pytest.raises(NativeS3CTransportError, match="invalid or unsupported"):
+        decode_output_envelope_v2(malformed)
+
+    success_with_error = _encode_output_envelope_v2(0, b"source", diagnostics=(diagnostic,))
+    with pytest.raises(NativeS3CTransportError, match="successful result"):
+        decode_output_envelope_v2(success_with_error)
+
+
+@pytest.mark.parametrize(
+    ("code_id", "expected_code", "source"),
+    (
+        (
+            2,
+            DiagnosticCode.MODULE_CYCLE,
+            "module main\nfrom main import main\nfn main() -> i64:\n    return 0\n",
+        ),
+        (
+            1,
+            DiagnosticCode.MODULE_NOT_FOUND,
+            "module main\nfrom absent import value\nfn main() -> i64:\n    return 0\n",
+        ),
+        (
+            3,
+            DiagnosticCode.IMPORT_UNKNOWN_SYMBOL,
+            "module main\nfrom lib import missing\nfn main() -> i64:\n    return 0\n",
+        ),
+        (
+            4,
+            DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+            "module main\nfrom lib import hidden\nfn main() -> i64:\n    return 0\n",
+        ),
+    ),
+)
+def test_s3c_ng_structured_import_diagnostics_preserve_source_identity_and_span(
+    monkeypatch: pytest.MonkeyPatch,
+    code_id: int,
+    expected_code: DiagnosticCode,
+    source: str,
+) -> None:
+    start = source.index("from ")
+    end = source.index("\n", start)
+    record = NativeDiagnosticRecord(1, 1, code_id, 0, start, end, code_id)
+    native_result = NativeSourceSetResult(
+        status=-3,
+        source=b"",
+        events=(),
+        returncode=0,
+        stdout=b"",
+        stderr=b"",
+        output_envelope_sha256="0" * 64,
+        output_envelope_bytes=40 + 7 * 8,
+        elapsed_seconds=0.01,
+        diagnostics=(record,),
+    )
+    monkeypatch.setattr(
+        compiler_provider,
+        "require_s3c_ng_executable",
+        lambda _path: SimpleNamespace(executable=Path("s3c-ng"), entry_symbol="emit_v2"),
+    )
+    monkeypatch.setattr(
+        compiler_provider,
+        "run_native_source_set",
+        lambda *_args, **_kwargs: native_result,
+    )
+
+    def forbidden(*_args, **_kwargs):
+        pytest.fail("S3C-NG diagnostics must not trigger Python semantic compilation")
+
+    monkeypatch.setattr(compiler_provider, "compile_source", forbidden)
+    monkeypatch.setattr(compiler_provider, "compile_sources", forbidden)
+    with pytest.raises(SemanticError) as captured:
+        compile_source_set_with_provider(
+            {"main.s3": source},
+            compiler=CompilerKind.S3C_NG,
+        )
+
+    assert captured.value.diagnostic_code is expected_code
+    assert captured.value.location is not None
+    assert (captured.value.location.offset, captured.value.location.line, captured.value.location.column) == (
+        start,
+        2,
+        1,
+    )
+    diagnostic = diagnostic_from_exception(captured.value)
+    assert diagnostic.file == "main.s3"
+    assert diagnostic.source == DiagnosticSource(
+        offset=start,
+        line=2,
+        column=1,
+        end_offset=end,
+        end_line=2,
+        end_column=end - start + 1,
+    )
+
+
+def test_s3c_ng_diagnostic_converts_utf8_byte_span_to_codepoint_location(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = "module main\n# caf\u00e9\nfrom absent import value\nfn main() -> i64:\n    return 0\n"
+    start = len(source[: source.index("from ")].encode("utf-8"))
+    end = len(source[: source.index("\n", source.index("from "))].encode("utf-8"))
+    native_result = NativeSourceSetResult(
+        status=-3,
+        source=b"",
+        events=(),
+        returncode=0,
+        stdout=b"",
+        stderr=b"",
+        output_envelope_sha256="0" * 64,
+        output_envelope_bytes=40 + 7 * 8,
+        elapsed_seconds=0.01,
+        diagnostics=(NativeDiagnosticRecord(1, 1, 1, 0, start, end, 1),),
+    )
+    monkeypatch.setattr(
+        compiler_provider,
+        "require_s3c_ng_executable",
+        lambda _path: SimpleNamespace(executable=Path("s3c-ng"), entry_symbol="emit_v2"),
+    )
+    monkeypatch.setattr(
+        compiler_provider,
+        "run_native_source_set",
+        lambda *_args, **_kwargs: native_result,
+    )
+
+    with pytest.raises(SemanticError) as captured:
+        compile_source_set_with_provider({"main.s3": source}, compiler=CompilerKind.S3C_NG)
+
+    expected_offset = source.index("from ")
+    assert captured.value.location is not None
+    assert (captured.value.location.offset, captured.value.location.line, captured.value.location.column) == (
+        expected_offset,
+        3,
+        1,
+    )
 
 
 def test_python_remains_the_initial_default_compiler() -> None:

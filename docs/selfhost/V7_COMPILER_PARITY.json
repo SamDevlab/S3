@@ -20,7 +20,7 @@
     "native_candidate_tests": "Only Linux x86-64 tests marked s3c_ng_promotion exercise the actual native candidate"
   },
   "invalid_program_corpus": {
-    "state": "REJECTION_PARITY_ONLY_DIAGNOSTICS_UNQUALIFIED",
+    "state": "REJECTION_PARITY_WITH_FOCUSED_STRUCTURED_DIAGNOSTICS",
     "native_test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback",
     "cases": [
       {"id": "missing-module", "expected_native_status": -3},
@@ -34,7 +34,23 @@
       {"id": "wrong-bytes-builtin-type", "expected_native_status": -14},
       {"id": "wrong-resource-open-type", "expected_native_status": -14}
     ],
-    "qualification_note": "Python and the native candidate both reject these cases; native status values are checked for regression, but they are not structured diagnostic category/code/span parity"
+    "qualification_note": "The existing ten-case corpus still proves rejection/status only. A separate native test now targets source-set missing-module, unknown-import-symbol, and private-import-symbol diagnostics; the broader negative corpus and diagnostic parity remain unqualified."
+  },
+  "structured_diagnostic_transport": {
+    "protocol": "S3NGOUT2",
+    "legacy_protocol": "S3NGOUT1 remains decoded for existing artifacts",
+    "record_fields": ["category_id", "phase_id", "code_id", "source_unit_index", "start_byte", "end_byte", "message_id"],
+    "implemented_codes": [
+      {"id": 1, "code": "S3E_MODULE_NOT_FOUND"},
+      {"id": 2, "code": "S3E_MODULE_CYCLE"},
+      {"id": 3, "code": "S3E_IMPORT_UNKNOWN_SYMBOL"},
+      {"id": 4, "code": "S3E_IMPORT_PRIVATE_SYMBOL"}
+    ],
+    "native_test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint",
+    "provider_tests": "tests/test_compiler_provider.py",
+    "scope": "The native implementation records the three import failure classes in the named native test and a direct self-cycle at the corresponding validation site. Other negative statuses without a diagnostic record fail closed as NativeS3CTransportError.",
+    "parity_status": "FOCUSED_IMPLEMENTATION_NATIVE_CI_PENDING",
+    "qualification_note": "Stable category/phase/code/message identifiers and local UTF-8 byte spans are transported separately from IR events. Python converts and formats the record without semantic recompilation. Full invalid-program and structured-diagnostic parity is not qualified."
   },
   "native_cli_sample": {
     "state": "EVIDENCE_GATED_SAMPLES_ONLY",
@@ -112,8 +128,8 @@
     {"family": "host/resource operations", "state": "UNTESTED", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_reference_for_host_resource_lifecycle (hosted canonical IR and execution parity; focused invalid type/arity/mutability rejection)"]},
     {"family": "strings, bytes, and text", "state": "UNTESTED", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v13_static_strings_match_reference_ir_and_fail_closed", "tests/test_compiler_ng_ir_bridge.py::test_ng_real_multimodule_program_is_order_independent_and_matches_reference (cross-module canonical string identity; hosted IR execution)"]},
     {"family": "FFI-relevant compilation", "state": "UNTESTED", "evidence": ["tests/test_native_s3c_ng.py::test_native_s3c_ng_ffi_build_uses_selected_compiler_and_matches_reference (exact-head Linux x86-64 candidate CLI ffi-build parity for i64/f64 and immutable borrowed slices)", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_python_for_borrowed_slice_indexing (hosted V24 slice parameter and indexed-load parity)"]},
-    {"family": "invalid-program rejection", "state": "UNTESTED", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_rejects_invalid_module_graphs_and_calls", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_rejects_unknown_aggregate_reference_field (rejection behavior only; complete negative corpus remains unqualified)"]},
-    {"family": "structured diagnostic parity", "state": "S3C_NG_MISSING", "evidence": ["S3NGOUT1 returns status, source bytes, and IR events but no structured diagnostic category, code, location, or span; native rejection is currently exposed as a generic toolchain error"]},
+    {"family": "invalid-program rejection", "state": "UNTESTED", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_rejects_invalid_module_graphs_and_calls", "tests/test_native_s3c_ng.py::test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint (three focused import diagnostics; full negative corpus remains unqualified)"]},
+    {"family": "structured diagnostic parity", "state": "UNTESTED", "evidence": ["S3NGOUT2 transports separate semantic diagnostic records for focused import failures; tests/test_compiler_provider.py checks stable codes, source identity, UTF-8 byte-to-codepoint location conversion, malformed record rejection, and no Python semantic fallback", "tests/test_native_s3c_ng.py::test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint (Linux native gate; exact-head CI pending)"]},
     {"family": "source locations and spans", "state": "UNTESTED", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_v22_preserves_utf8_source_locations_through_lowering", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate gate)"]}
   ],
   "command_matrix_policy": {

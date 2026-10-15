@@ -10,6 +10,14 @@ from pathlib import Path
 from .assembly import AssemblyProgram
 from .codegen import generate_assembly
 from .compiler_ng_ir_bridge import NGIRDecodeError, decode_ng_ir_events
+from .diagnostics import (
+    DiagnosticCategory,
+    DiagnosticCode,
+    DiagnosticPhase,
+    DiagnosticSource,
+    SemanticError,
+    SourceLocation,
+)
 from .ir import (
     DYNAMIC_BUILTIN_SIGNATURES,
     IRModule,
@@ -19,6 +27,8 @@ from .ir import (
 )
 from .lexer import SyntaxMode
 from .native_compiler import (
+    NativeDiagnosticCode,
+    NativeDiagnosticRecord,
     NativeS3CTransportError,
     NativeSourceSetResult,
     require_s3c_ng_executable,
@@ -118,6 +128,12 @@ def compile_source_set_with_provider(
         entry_module=entry_module,
     )
     if result.status != 0:
+        if result.diagnostics:
+            if len(result.diagnostics) != 1:
+                raise NativeS3CTransportError(
+                    "S3C-NG returned multiple diagnostics before multi-diagnostic formatting is qualified"
+                )
+            raise _native_semantic_error(result.diagnostics[0], sources)
         raise NativeS3CTransportError(
             f"S3C-NG rejected the source set (status={result.status})"
         )
@@ -133,6 +149,79 @@ def compile_source_set_with_provider(
     optimizer = optimize_dynamic_ir if _requires_conservative_optimization(ir) else optimize_ir
     ir = optimizer(ir, level)
     return NativeCompilationResult(ir, generate_assembly(ir), result)
+
+
+_NATIVE_DIAGNOSTICS: dict[int, tuple[DiagnosticCode, str]] = {
+    NativeDiagnosticCode.MODULE_NOT_FOUND: (
+        DiagnosticCode.MODULE_NOT_FOUND,
+        "imported module was not found",
+    ),
+    NativeDiagnosticCode.MODULE_CYCLE: (
+        DiagnosticCode.MODULE_CYCLE,
+        "module dependency cycle prevents compilation",
+    ),
+    NativeDiagnosticCode.IMPORT_UNKNOWN_SYMBOL: (
+        DiagnosticCode.IMPORT_UNKNOWN_SYMBOL,
+        "imported symbol is not exported",
+    ),
+    NativeDiagnosticCode.IMPORT_PRIVATE_SYMBOL: (
+        DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+        "imported symbol is private",
+    ),
+}
+
+
+def _native_semantic_error(
+    record: NativeDiagnosticRecord,
+    sources: Mapping[str, str],
+) -> SemanticError:
+    paths = sorted(sources)
+    if record.source_unit_index < 0 or record.source_unit_index >= len(paths):
+        raise NativeS3CTransportError("S3C-NG diagnostic references an unknown source unit")
+    path = paths[record.source_unit_index]
+    source_bytes = sources[path].encode("utf-8")
+    if record.start_byte < 0 or record.end_byte > len(source_bytes):
+        raise NativeS3CTransportError("S3C-NG diagnostic span exceeds its source unit")
+    try:
+        source_text = source_bytes.decode("utf-8")
+        prefix = source_bytes[: record.start_byte].decode("utf-8")
+        through_end = source_bytes[: record.end_byte].decode("utf-8")
+    except UnicodeError as error:
+        raise NativeS3CTransportError(
+            "S3C-NG diagnostic span is not on UTF-8 boundaries"
+        ) from error
+    code_and_message = _NATIVE_DIAGNOSTICS.get(record.code_id)
+    if code_and_message is None or record.message_id != record.code_id:
+        raise NativeS3CTransportError("S3C-NG diagnostic code or message identifier is unknown")
+
+    def line_column(prefix_text: str) -> tuple[int, int]:
+        line = prefix_text.count("\n") + 1
+        column = len(prefix_text.rsplit("\n", 1)[-1]) + 1
+        return line, column
+
+    start_offset = len(prefix)
+    end_offset = len(through_end)
+    line, column = line_column(prefix)
+    end_line, end_column = line_column(through_end)
+    if end_offset > len(source_text):
+        raise NativeS3CTransportError("S3C-NG diagnostic span exceeds decoded source")
+    source = DiagnosticSource(
+        offset=start_offset,
+        line=line,
+        column=column,
+        end_offset=end_offset,
+        end_line=end_line,
+        end_column=end_column,
+    )
+    code, message = code_and_message
+    return SemanticError(
+        message,
+        SourceLocation(start_offset, line, column),
+        diagnostic_category=DiagnosticCategory.SEMANTIC,
+        diagnostic_code=code,
+        diagnostic_phase=DiagnosticPhase.SEMANTIC,
+        diagnostic_context={"file": path, "source": source},
+    )
 
 
 def _requires_conservative_optimization(module: IRModule) -> bool:

@@ -253,7 +253,45 @@ fn ng_find_import_target(source: &bytes, modules: &vector<NgModule>, imports: &v
     mut imported: NgImport = vector_get<NgImport>(imports, import_index)
     return ng_find_module_by_name(source, modules, imported.target_start, imported.target_end)
 
-fn ng_order_modules(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, order: &mut vector<i64>) -> i64:
+fn ng_append_import_diagnostic(source: &bytes, modules: &vector<NgModule>, imported: NgImport, diagnostics: &mut vector<i64>, code_id: i64, message_id: i64) -> i64:
+    mut module_item: NgModule = vector_get<NgModule>(modules, imported.module_index)
+    mut line_start: i64 = imported.target_start
+    mut line_end: i64 = imported.target_end
+    mut source_index: i64 = module_item.source_index
+    mut local_start: i64 = 0
+    mut local_end: i64 = 0
+    mut byte: i64 = 0
+    while line_start > module_item.source_start:
+        byte = to_i64(bytes_get(source, line_start - 1))
+        match byte <=> 10:
+            0:
+                break
+            -1:
+                line_start = line_start - 1
+            1:
+                line_start = line_start - 1
+    while line_end < module_item.source_end:
+        byte = to_i64(bytes_get(source, line_end))
+        match byte <=> 10:
+            0:
+                break
+            -1:
+                line_end = line_end + 1
+            1:
+                line_end = line_end + 1
+    local_start = line_start - module_item.source_start
+    local_end = line_end - module_item.source_start
+    # S3NGOUT2: category, phase, code, source-unit index, byte start/end, message id.
+    discard vector_push<i64>(&mut *diagnostics, 1)
+    discard vector_push<i64>(&mut *diagnostics, 1)
+    discard vector_push<i64>(&mut *diagnostics, code_id)
+    discard vector_push<i64>(&mut *diagnostics, source_index)
+    discard vector_push<i64>(&mut *diagnostics, local_start)
+    discard vector_push<i64>(&mut *diagnostics, local_end)
+    discard vector_push<i64>(&mut *diagnostics, message_id)
+    return 0
+
+fn ng_order_modules(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, order: &mut vector<i64>, diagnostics: &mut vector<i64>) -> i64:
     mut done: vector<i64> = vector_new<i64>(vector_len<NgModule>(modules) + 1)
     mut module_index: i64 = 0
     mut import_index: i64 = 0
@@ -282,10 +320,12 @@ fn ng_order_modules(source: &bytes, modules: &vector<NgModule>, imports: &vector
                                 target_index = ng_find_import_target(source, modules, imports, import_index)
                                 match target_index < 0:
                                     -1:
+                                        discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 1, 1)
                                         return -3
                                     0:
                                         match target_index <=> module_index:
                                             0:
+                                                discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 2, 2)
                                                 return -6
                                             1:
                                                 match vector_get<i64>(&done, target_index) <=> 0:
@@ -304,6 +344,7 @@ fn ng_order_modules(source: &bytes, modules: &vector<NgModule>, imports: &vector
                                                     1:
                                                         ready = ready
                                     1:
+                                        discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 1, 1)
                                         return -3
                             -1:
                                 imported = imported
@@ -579,7 +620,7 @@ fn ng_rewrite_imported_nominal_types(source: &bytes, modules: &vector<NgModule>,
         type_index = type_index + 1
     return 0
 
-fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, function_lookup: &vector<i64>, records: &vector<NgRecord>) -> i64:
+fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, functions: &vector<NgFunction>, function_lookup: &vector<i64>, records: &vector<NgRecord>, diagnostics: &mut vector<i64>) -> i64:
     mut import_index: i64 = 0
     mut prior_index: i64 = 0
     mut target_index: i64 = -1
@@ -616,6 +657,7 @@ fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vec
             -1:
                 match record_index < 0:
                     -1:
+                        discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 3, 3)
                         return -4
                     0:
                         target_record = vector_get<NgRecord>(records, record_index)
@@ -623,10 +665,13 @@ fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vec
                             0:
                                 type_import = 1
                             -1:
+                                discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 4, 4)
                                 return -5
                             1:
+                                discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 4, 4)
                                 return -5
                     1:
+                        discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 3, 3)
                         return -4
             0:
                 target = vector_get<NgFunction>(functions, function_index)
@@ -649,6 +694,7 @@ fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vec
                     -1:
                         match record_index < 0:
                             -1:
+                                discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 4, 4)
                                 return -5
                             0:
                                 target_record = vector_get<NgRecord>(records, record_index)
@@ -656,14 +702,18 @@ fn ng_validate_imports(source: &bytes, modules: &vector<NgModule>, imports: &vec
                                     0:
                                         type_import = 1
                                     -1:
+                                        discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 4, 4)
                                         return -5
                                     1:
+                                        discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 4, 4)
                                         return -5
                             1:
+                                discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 4, 4)
                                 return -5
                     1:
                         match record_index < 0:
                             -1:
+                                discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 4, 4)
                                 return -5
                             0:
                                 target_record = vector_get<NgRecord>(records, record_index)
@@ -882,7 +932,7 @@ fn ng_resolve_module_calls(source: &bytes, modules: &vector<NgModule>, imports: 
         node_index = node_index + 1
     return 0
 
-export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, source: &mut bytes, events: &mut vector<i64>) -> i64:
+export fn ng_emit_source_set_v2(units: &vector<NgSourceUnit>, entry_module: text, source: &mut bytes, events: &mut vector<i64>, diagnostics: &mut vector<i64>) -> i64:
     mut unit_count: i64 = vector_len<NgSourceUnit>(units)
     mut source_index: i64 = 0
     mut source_start: i64 = 0
@@ -1012,7 +1062,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
         -1:
             return status
         0:
-            status = ng_order_modules(&*source, &modules, &imports, &mut order)
+            status = ng_order_modules(&*source, &modules, &imports, &mut order, &mut *diagnostics)
         1:
             return status
     match status <=> 0:
@@ -1086,9 +1136,10 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
         -1:
             return status
         0:
-            status = ng_validate_imports(&*source, &modules, &imports, &functions, &function_lookup, &records)
+            status = ng_validate_imports(&*source, &modules, &imports, &functions, &function_lookup, &records, &mut *diagnostics)
         1:
             return status
+
     match status <=> 0:
         -1:
             return status
@@ -1153,3 +1204,7 @@ export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, s
                     return status
         1:
             return status
+
+export fn ng_emit_source_set(units: &vector<NgSourceUnit>, entry_module: text, source: &mut bytes, events: &mut vector<i64>) -> i64:
+    mut diagnostics: vector<i64> = vector_new<i64>(7)
+    return ng_emit_source_set_v2(units, entry_module, source, events, &mut diagnostics)

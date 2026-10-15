@@ -322,6 +322,77 @@ def _assert_native_outputs_equal(
     assert left.output_envelope_sha256 == right.output_envelope_sha256, workload
 
 
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG diagnostics qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint(
+    tmp_path: Path,
+) -> None:
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    assert artifact.entry_symbol.endswith("ng_emit_source_set_v2")
+
+    cases = (
+        (
+            "direct-self-cycle",
+            2,
+            "module app\nfrom app import main\nfn main() -> i64:\n    return 0\n",
+            {"app.s3"},
+        ),
+        (
+            "missing-module",
+            1,
+            "module app\nfrom absent import value\nfn main() -> i64:\n    return 0\n",
+            {"app.s3"},
+        ),
+        (
+            "unknown-symbol",
+            3,
+            "module app\nfrom library import missing\nfn main() -> i64:\n    return 0\n",
+            {"app.s3", "library.s3"},
+        ),
+        (
+            "private-symbol",
+            4,
+            "module app\nfrom library import hidden\nfn main() -> i64:\n    return 0\n",
+            {"app.s3", "library.s3"},
+        ),
+    )
+    for case, code_id, app_source, paths in cases:
+        sources = {"app.s3": app_source}
+        if case == "unknown-symbol":
+            sources["library.s3"] = (
+                "module library\nexport fn present() -> i64:\n    return 1\n"
+            )
+        elif case == "private-symbol":
+            sources["library.s3"] = "module library\nfn hidden() -> i64:\n    return 1\n"
+        assert set(sources) == paths
+        result = run_native_source_set(artifact, sources, entry_module="app")
+        assert result.status != 0, case
+        assert len(result.diagnostics) == 1, case
+        diagnostic = result.diagnostics[0]
+        assert (diagnostic.category_id, diagnostic.phase_id, diagnostic.code_id) == (
+            1,
+            1,
+            code_id,
+        ), case
+        assert diagnostic.source_unit_index == 0, case
+        start = len("module app\n".encode("utf-8"))
+        end = len(app_source.splitlines()[1].encode("utf-8")) + start
+        assert (diagnostic.start_byte, diagnostic.end_byte) == (start, end), case
+
+    legacy = run_native_source_set(
+        NativeS3CExecutable(artifact.executable, "ng_emit_source_set"),
+        {"app.s3": "module app\nfn main() -> i64:\n    return 0\n"},
+        entry_module="app",
+    )
+    assert legacy.status == 0
+    assert legacy.diagnostics == ()
+
+
 def _write_candidate_manifest(artifact, compiler_sources: dict[str, str]) -> None:
     source_commit = subprocess.run(
         ["git", "-C", str(_ROOT), "rev-parse", "HEAD"],

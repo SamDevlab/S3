@@ -153,16 +153,24 @@ def build_native_s3c(
     output_directory.mkdir(parents=True, exist_ok=True)
     toolchain = NativeToolchain.detect()
     assembly_program: AssemblyProgram = generate_assembly(compiler_ir)
-    entry_symbols = [
+    entry_symbols_v2 = [
+        function.name
+        for function in compiler_ir.functions
+        if function.exported and function.name.endswith("ng_emit_source_set_v2")
+    ]
+    entry_symbols_v1 = [
         function.name
         for function in compiler_ir.functions
         if function.exported and function.name.endswith("ng_emit_source_set")
     ]
-    if len(entry_symbols) != 1:
+    if len(entry_symbols_v2) == 1:
+        entry_symbol = entry_symbols_v2[0]
+    elif not entry_symbols_v2 and len(entry_symbols_v1) == 1:
+        entry_symbol = entry_symbols_v1[0]
+    else:
         raise NativeS3CTransportError(
-            "compiler IR must expose exactly one ng_emit_source_set entrypoint"
+            "compiler IR must expose exactly one supported source-set entrypoint"
         )
-    entry_symbol = entry_symbols[0]
     assembly = generate_ffi_assembly(
         assembly_program,
         max_frames=4096,

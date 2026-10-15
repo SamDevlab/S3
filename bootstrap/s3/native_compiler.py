@@ -12,6 +12,7 @@ import tempfile
 import time
 from collections.abc import Mapping
 from dataclasses import dataclass
+from enum import IntEnum
 from pathlib import Path
 from typing import Protocol
 
@@ -21,9 +22,13 @@ from .compiler_ng_ir_bridge import NG_IR_FORMAT_VERSION
 
 _INPUT_MAGIC = b"S3NGIN01"
 _OUTPUT_MAGIC = b"S3NGOUT1"
+_OUTPUT_V2_MAGIC = b"S3NGOUT2"
 _MAX_DYNAMIC_BYTES = 64 * 1024 * 1024
 _MAX_SOURCE_UNITS = 4096
 _OUTPUT_HEADER_SIZE = 32
+_OUTPUT_V2_HEADER_SIZE = 40
+_DIAGNOSTIC_RECORD_I64S = 7
+_MAX_DIAGNOSTIC_RECORDS = 256
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _GIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
@@ -41,9 +46,35 @@ class NativeS3CExecutable:
     entry_symbol: str
 
 
+class NativeDiagnosticCategory(IntEnum):
+    SEMANTIC = 1
+
+
+class NativeDiagnosticPhase(IntEnum):
+    SEMANTIC = 1
+
+
+class NativeDiagnosticCode(IntEnum):
+    MODULE_NOT_FOUND = 1
+    MODULE_CYCLE = 2
+    IMPORT_UNKNOWN_SYMBOL = 3
+    IMPORT_PRIVATE_SYMBOL = 4
+
+
 class _ExecutableArtifact(Protocol):
     executable: Path
     entry_symbol: str
+
+
+@dataclass(frozen=True, slots=True)
+class NativeDiagnosticRecord:
+    category_id: int
+    phase_id: int
+    code_id: int
+    source_unit_index: int
+    start_byte: int
+    end_byte: int
+    message_id: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +88,7 @@ class NativeSourceSetResult:
     output_envelope_sha256: str
     output_envelope_bytes: int
     elapsed_seconds: float
+    diagnostics: tuple[NativeDiagnosticRecord, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -219,7 +251,13 @@ def run_native_source_set(
                 f"exit={completed.returncode}; stderr={completed.stderr.decode(errors='replace')}"
             )
         encoded_output = output_path.read_bytes()
-        status, source, events = decode_output_envelope(encoded_output)
+        if encoded_output[:8] == _OUTPUT_MAGIC:
+            status, source, events = decode_output_envelope(encoded_output)
+            diagnostics: tuple[NativeDiagnosticRecord, ...] = ()
+        elif encoded_output[:8] == _OUTPUT_V2_MAGIC:
+            status, source, events, diagnostics = decode_output_envelope_v2(encoded_output)
+        else:
+            raise NativeS3CTransportError("native compiler output envelope has an unsupported version")
         return NativeSourceSetResult(
             status=status,
             source=source,
@@ -230,6 +268,7 @@ def run_native_source_set(
             output_envelope_sha256=hashlib.sha256(encoded_output).hexdigest(),
             output_envelope_bytes=len(encoded_output),
             elapsed_seconds=elapsed_seconds,
+            diagnostics=diagnostics,
         )
 
 
@@ -273,6 +312,63 @@ def decode_output_envelope(encoded: bytes) -> tuple[int, bytes, tuple[int, ...]]
         else ()
     )
     return status, source, tuple(events)
+
+
+def decode_output_envelope_v2(
+    encoded: bytes,
+) -> tuple[int, bytes, tuple[int, ...], tuple[NativeDiagnosticRecord, ...]]:
+    """Decode S3NGOUT2, including its separate bounded diagnostic records."""
+
+    if len(encoded) < _OUTPUT_V2_HEADER_SIZE or encoded[:8] != _OUTPUT_V2_MAGIC:
+        raise NativeS3CTransportError("native compiler v2 output envelope has an invalid header")
+    status, source_length, event_count, diagnostic_count = struct.unpack_from(
+        "<qQQQ", encoded, 8
+    )
+    if (
+        source_length > _MAX_DYNAMIC_BYTES
+        or diagnostic_count > _MAX_DIAGNOSTIC_RECORDS
+        or event_count > _MAX_DYNAMIC_BYTES // 8
+    ):
+        raise NativeS3CTransportError("native compiler v2 output envelope exceeds transport bounds")
+    source_end = _OUTPUT_V2_HEADER_SIZE + source_length
+    events_end = source_end + event_count * 8
+    expected_length = events_end + diagnostic_count * _DIAGNOSTIC_RECORD_I64S * 8
+    if expected_length != len(encoded):
+        raise NativeS3CTransportError(
+            "native compiler v2 output envelope has inconsistent lengths"
+        )
+    source = encoded[_OUTPUT_V2_HEADER_SIZE:source_end]
+    events = (
+        struct.unpack_from(f"<{event_count}q", encoded, source_end)
+        if event_count
+        else ()
+    )
+    records: list[NativeDiagnosticRecord] = []
+    for index in range(diagnostic_count):
+        values = struct.unpack_from(
+            f"<{_DIAGNOSTIC_RECORD_I64S}q",
+            encoded,
+            events_end + index * _DIAGNOSTIC_RECORD_I64S * 8,
+        )
+        record = NativeDiagnosticRecord(*values)
+        if (
+            record.category_id != NativeDiagnosticCategory.SEMANTIC
+            or record.phase_id != NativeDiagnosticPhase.SEMANTIC
+            or record.code_id not in {code.value for code in NativeDiagnosticCode}
+            or record.message_id != record.code_id
+            or record.source_unit_index < 0
+            or record.start_byte < 0
+            or record.end_byte < record.start_byte
+        ):
+            raise NativeS3CTransportError(
+                f"native compiler v2 diagnostic record {index} is invalid or unsupported"
+            )
+        records.append(record)
+    if status == 0 and records:
+        raise NativeS3CTransportError(
+            "native compiler v2 output attached diagnostics to a successful result"
+        )
+    return status, source, tuple(events), tuple(records)
 
 
 def _sha256_file(path: Path) -> str:
