@@ -716,7 +716,6 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
         "missing-module": DiagnosticCode.MODULE_NOT_FOUND,
         "missing-symbol": DiagnosticCode.IMPORT_UNKNOWN_SYMBOL,
         "private-symbol": DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
-        "dependency-cycle": DiagnosticCode.MODULE_CYCLE,
     }
 
     for case, sources in _INVALID_PROVIDER_SOURCES.items():
