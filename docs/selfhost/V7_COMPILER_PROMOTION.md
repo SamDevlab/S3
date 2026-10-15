@@ -190,15 +190,26 @@ the Python semantic reference. The hosted canonical-IR tests and adjacent NG
 semantic boundary tests pass locally; the full numeric feature family remains
 `UNTESTED`, and broader exact-head differential qualification is still required.
 
+At exact HEAD `ed394e26b2aa8f4caa1a579daa8a77462910d6f5`, the Linux native
+workload test adds focused `checked-i64-arithmetic` and generic
+`vector<i64>` push/set/get/pop cases alongside ordering/search, hex encoding,
+and CSV parsing. Native CI run `38769827678` passed the `native-x86-64` job
+with 176 tests; the three Python unit shards each reported 4,625 passed and
+180 skipped. The exact-head `Tests` workflow and the `S3 1.0 candidate gates`
+and `M1.38 Docker capability closure` workflows all passed. This evidence is
+limited to these workloads; the full feature families, diagnostic parity,
+and remaining V7 promotion gates are still open.
+
 ## Current limitations
 
 - Linux CI has qualified the actual S3C-NG ELF for explicit provider use,
   representative ordinary and multi-module programs, the maintained B/C/D
-  compiler fixed-point path, and focused ProjectTooling/discovery samples.
-  Exact-head run `38721603135` passed at
-  `042af57f81ba94f9bc8e4aff360acf5935bc5748`; each Python unit shard reported
-  4,625 passed and 180 skipped. Parity across every semantic CLI command and the
-  full supported-language matrix is still unqualified.
+  compiler fixed-point path, focused ProjectTooling/discovery samples, and
+  five focused native workloads. Exact-head run `38769827678` passed at
+  `ed394e26b2aa8f4caa1a579daa8a77462910d6f5`: each Python unit shard reported
+  4,625 passed and 180 skipped, and `native-x86-64` reported 176 passed.
+  Parity across every semantic CLI command and the full supported-language
+  matrix is still unqualified.
 - `test` and ProjectTooling host-side build/run accept compiler selection.
   Focused native ProjectTooling build/run and sorted discovery/filter parity
   pass at the exact head above; broad project build/run and test-discovery
