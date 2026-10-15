@@ -3167,8 +3167,55 @@ fn ng_binary_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, f
                         1:
                             return -14
 
+fn ng_slice_index_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode) -> i64:
+    mut reference_type_id: i64 = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+    mut index_type_id: i64 = -1
+    mut reference_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut slice_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    match reference_type_id > 0:
+        -1:
+            reference_type = vector_get<NgTypeDescriptor>(types, reference_type_id - 1)
+            match reference_type.kind <=> 9:
+                0:
+                    slice_type = vector_get<NgTypeDescriptor>(types, reference_type.target_type - 1)
+                    match slice_type.kind <=> 13:
+                        0:
+                            index_type_id = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.right)
+                            match index_type_id <=> 1:
+                                0:
+                                    return slice_type.element_type
+                                -1:
+                                    match index_type_id <=> 3:
+                                        0:
+                                            return slice_type.element_type
+                                        -1:
+                                            return -14
+                                        1:
+                                            return -14
+                                1:
+                                    return -14
+                        -1:
+                            return -14
+                        1:
+                            return -14
+                -1:
+                    return -14
+                1:
+                    return -14
+        0:
+            return reference_type_id
+        1:
+            return -14
+
 fn ng_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node_id: i64) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    match node.kind <=> 23:
+        0:
+            return ng_slice_index_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node)
+        -1:
+            node = node
+        1:
+            return -11
     match node.kind == 22:
         -1:
             return ng_negation_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node)
@@ -3295,6 +3342,15 @@ export fn ng_function_index_for_node(functions: &vector<NgFunction>, node_index:
             return -1
 
 fn ng_scope_has_right_child(kind: i64) -> trit:
+    match kind <=> 23:
+        0:
+            return -1
+        -1:
+            return ng_scope_has_right_child_legacy(kind)
+        1:
+            return -1
+
+fn ng_scope_has_right_child_legacy(kind: i64) -> trit:
     match kind == 4:
         -1:
             return -1

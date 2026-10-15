@@ -221,28 +221,48 @@ export fn ng_parse_type_descriptor(source: &bytes, tokens: &vector<NgToken>, cur
     mut type_id: i64 = -1
     mut element_type: i64 = -1
     mut mutable: i64 = 0
-    match token.kind <=> 338:
+    match token.kind <=> 391:
         0:
             discard ng_type_advance(cursor)
-            token = ng_type_token_at(tokens, cursor)
-            match ng_type_token_spells(source, token, text_from_static("mut")):
+            element_type = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
+            match element_type > 0:
                 -1:
-                    mutable = 1
-                    discard ng_type_advance(cursor)
-                0:
-                    mutable = 0
-                1:
-                    return -1
-            type_id = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
-            match type_id > 0:
-                -1:
-                    return ng_intern_reference_type(types, type_id, mutable)
+                    match ng_type_expect_kind(tokens, cursor, 393) <=> -1:
+                        0:
+                            return ng_intern_slice_type(types, element_type)
+                        -1:
+                            return -1
+                        1:
+                            return -1
                 0:
                     return -1
                 1:
                     return -1
         -1:
-            return ng_parse_named_type(source, tokens, cursor, types, module_start, module_end)
+            match token.kind <=> 338:
+                0:
+                    discard ng_type_advance(cursor)
+                    token = ng_type_token_at(tokens, cursor)
+                    match ng_type_token_spells(source, token, text_from_static("mut")):
+                        -1:
+                            mutable = 1
+                            discard ng_type_advance(cursor)
+                        0:
+                            mutable = 0
+                        1:
+                            return -1
+                    type_id = ng_parse_type_descriptor(source, tokens, cursor, types, module_start, module_end)
+                    match type_id > 0:
+                        -1:
+                            return ng_intern_reference_type(types, type_id, mutable)
+                        0:
+                            return -1
+                        1:
+                            return -1
+                -1:
+                    return ng_parse_named_type(source, tokens, cursor, types, module_start, module_end)
+                1:
+                    return -1
         1:
             return -1
 
@@ -635,7 +655,13 @@ fn ng_type_equal_validated(source: &bytes, types: &vector<NgTypeDescriptor>, lef
                                                                         -1:
                                                                             return 0
                                                                         1:
-                                                                            return 0
+                                                                            match left.kind <=> 13:
+                                                                                0:
+                                                                                    return ng_type_equal(source, types, left.element_type, right.element_type)
+                                                                                -1:
+                                                                                    return 0
+                                                                                1:
+                                                                                    return 0
                                                 -1:
                                                     return 0
                                         -1:
@@ -784,6 +810,34 @@ fn ng_intern_vector_type_validated(table: &mut vector<NgTypeDescriptor>, element
                 index = index + 1
     discard vector_push<NgTypeDescriptor>(&mut *table, ng_type_descriptor(8, -1, -1, -1, -1, element_type, -1, 0, 0, 0))
     return index + 1
+
+export fn ng_intern_slice_type(types: &mut vector<NgTypeDescriptor>, element_type: i64) -> i64:
+    mut index: i64 = 6
+    mut item: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut table_view: vector<NgTypeDescriptor> = *types
+    match ng_type_id_valid(&table_view, element_type) <=> -1:
+        0:
+            while index < vector_len<NgTypeDescriptor>(&table_view):
+                item = vector_get<NgTypeDescriptor>(&table_view, index)
+                match item.kind <=> 13:
+                    0:
+                        match item.element_type <=> element_type:
+                            0:
+                                return index + 1
+                            -1:
+                                index = index + 1
+                            1:
+                                index = index + 1
+                    -1:
+                        index = index + 1
+                    1:
+                        index = index + 1
+            discard vector_push<NgTypeDescriptor>(&mut *types, ng_type_descriptor(13, -1, -1, -1, -1, element_type, -1, 0, 0, 0))
+            return index + 1
+        -1:
+            return -1
+        1:
+            return -1
 
 export fn ng_intern_reference_type(types: &mut vector<NgTypeDescriptor>, target_type: i64, mutable: i64) -> i64:
     mut table_view: vector<NgTypeDescriptor> = *types

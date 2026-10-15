@@ -1750,6 +1750,7 @@ fn ng_emit_builtin_call_expression(source: &bytes, types: &vector<NgTypeDescript
 
 fn ng_ir_value_cell_count(types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, type_id: i64) -> i64:
     mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut target_descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut field: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
     mut field_index: i64 = 0
     mut field_cells: i64 = 0
@@ -1789,7 +1790,20 @@ fn ng_ir_value_cell_count(types: &vector<NgTypeDescriptor>, fields: &vector<NgFi
                         -1:
                             return 1
                         1:
-                            return 1
+                            match descriptor.kind <=> 9:
+                                0:
+                                    target_descriptor = vector_get<NgTypeDescriptor>(types, descriptor.target_type - 1)
+                                    match target_descriptor.kind <=> 13:
+                                        0:
+                                            return 2
+                                        -1:
+                                            return 1
+                                        1:
+                                            return 1
+                                -1:
+                                    return 1
+                                1:
+                                    return 1
                 0:
                     return -14
                 1:
@@ -1921,6 +1935,24 @@ fn ng_ir_add_parameter_record_children(types: &vector<NgTypeDescriptor>, fields:
         1:
             return -14
 
+fn ng_ir_add_slice_length_register(types: &vector<NgTypeDescriptor>, descriptor: NgTypeDescriptor, registers: &mut vector<NgIRRegister>) -> i64:
+    mut target_descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    match descriptor.kind <=> 9:
+        0:
+            target_descriptor = vector_get<NgTypeDescriptor>(types, descriptor.target_type - 1)
+            match target_descriptor.kind <=> 13:
+                0:
+                    discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=1, source_start=-1))
+                    return 0
+                -1:
+                    return 0
+                1:
+                    return 0
+        -1:
+            return 0
+        1:
+            return 0
+
 fn ng_ir_add_parameter_variable(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, parameter: NgParameter, variables: &mut vector<NgIRVariable>, registers: &mut vector<NgIRRegister>) -> i64:
     mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut variable_index: i64 = vector_len<NgIRVariable>(&*variables)
@@ -1938,11 +1970,13 @@ fn ng_ir_add_parameter_variable(source: &bytes, types: &vector<NgTypeDescriptor>
                             register_index = vector_len<NgIRRegister>(&*registers)
                             discard vector_push<NgIRRegister>(&mut *registers, NgIRRegister(type_kind=parameter.type_kind, source_start=-1))
                             discard vector_push<NgIRVariable>(&mut *variables, NgIRVariable(name_start=parameter.name_start, name_end=parameter.name_end, name_fingerprint=ng_span_fingerprint(source, parameter.name_start, parameter.name_end), type_kind=parameter.type_kind, mutable=0, register=register_index, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
+                            discard ng_ir_add_slice_length_register(types, descriptor, registers)
                             return 0
                         1:
                             register_index = vector_len<NgIRRegister>(&*registers)
                             discard vector_push<NgIRRegister>(&mut *registers, NgIRRegister(type_kind=parameter.type_kind, source_start=-1))
                             discard vector_push<NgIRVariable>(&mut *variables, NgIRVariable(name_start=parameter.name_start, name_end=parameter.name_end, name_fingerprint=ng_span_fingerprint(source, parameter.name_start, parameter.name_end), type_kind=parameter.type_kind, mutable=0, register=register_index, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1))
+                            discard ng_ir_add_slice_length_register(types, descriptor, registers)
                             return 0
                 0:
                     return -14
@@ -2016,6 +2050,57 @@ fn ng_ir_emit_parameter_leaf(source: &bytes, types: &vector<NgTypeDescriptor>, v
         1:
             return -14
 
+fn ng_ir_emit_slice_length_parameter(types: &vector<NgTypeDescriptor>, parameter: NgParameter, type_id: i64, variable_index: i64, source_unit: i64, source_start: i64, variables: &vector<NgIRVariable>, register_source_units: &mut vector<i64>, events: &mut vector<i64>, function_index: i64, ordinal: &mut i64) -> i64:
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut slice_descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut variable: NgIRVariable = NgIRVariable(name_start=0, name_end=0, name_fingerprint=0, type_kind=0, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1)
+    mut length_register: i64 = -1
+    match type_id > 0:
+        -1:
+            descriptor = vector_get<NgTypeDescriptor>(types, type_id - 1)
+            match descriptor.kind <=> 9:
+                0:
+                    slice_descriptor = vector_get<NgTypeDescriptor>(types, descriptor.target_type - 1)
+                    match slice_descriptor.kind <=> 13:
+                        0:
+                            match variable_index >= 0:
+                                -1:
+                                    variable = vector_get<NgIRVariable>(variables, variable_index)
+                                    length_register = variable.register + 1
+                                    match variable.register >= 0:
+                                        -1:
+                                            match length_register < vector_len<i64>(&*register_source_units):
+                                                -1:
+                                                    discard ng_ir_event(events, 34, function_index, *ordinal, 1, length_register, parameter.name_start, parameter.name_end, 0)
+                                                    discard vector_set<i64>(register_source_units, length_register, source_unit)
+                                                    discard ng_ir_event(events, 26, 2, function_index, *ordinal, source_unit, source_start, 0, 0)
+                                                    *ordinal = *ordinal + 1
+                                                    return 0
+                                                0:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        0:
+                                            return -14
+                                        1:
+                                            return -14
+                                0:
+                                    return -14
+                                1:
+                                    return -14
+                        -1:
+                            return 0
+                        1:
+                            return 0
+                -1:
+                    return 0
+                1:
+                    return 0
+        0:
+            return -14
+        1:
+            return -14
+
 fn ng_ir_emit_parameter_value_cells(source: &bytes, types: &vector<NgTypeDescriptor>, records: &vector<NgRecord>, fields: &vector<NgField>, modules: &vector<NgModule>, variables: &vector<NgIRVariable>, register_source_units: &mut vector<i64>, events: &mut vector<i64>, function_index: i64, source_unit: i64, parameter: NgParameter, type_id: i64, variable_index: i64, source_start: i64, ordinal: &mut i64) -> i64:
     mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut field: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
@@ -2069,7 +2154,7 @@ fn ng_ir_emit_parameter_value_cells(source: &bytes, types: &vector<NgTypeDescrip
                                     variable = vector_get<NgIRVariable>(variables, variable_index)
                                     discard vector_set<i64>(register_source_units, variable.register, source_unit)
                                     discard ng_ir_event(events, 26, 2, function_index, *ordinal - 1, source_unit, source_start, 0, 0)
-                                    return 0
+                                    return ng_ir_emit_slice_length_parameter(types, parameter, type_id, variable_index, source_unit, source_start, variables, register_source_units, events, function_index, ordinal)
                                 -1:
                                     return status
                                 1:
@@ -2081,7 +2166,7 @@ fn ng_ir_emit_parameter_value_cells(source: &bytes, types: &vector<NgTypeDescrip
                                     variable = vector_get<NgIRVariable>(variables, variable_index)
                                     discard vector_set<i64>(register_source_units, variable.register, source_unit)
                                     discard ng_ir_event(events, 26, 2, function_index, *ordinal - 1, source_unit, source_start, 0, 0)
-                                    return 0
+                                    return ng_ir_emit_slice_length_parameter(types, parameter, type_id, variable_index, source_unit, source_start, variables, register_source_units, events, function_index, ordinal)
                                 -1:
                                     return status
                                 1:
@@ -3530,6 +3615,83 @@ fn ng_emit_record_field_from_value(source: &bytes, types: &vector<NgTypeDescript
         1:
             return -14
 
+fn ng_emit_slice_load_expression(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, node: NgAstNode, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
+    mut target: NgAstNode = vector_get<NgAstNode>(nodes, node.left)
+    mut variable_index: i64 = -1
+    mut variable: NgIRVariable = NgIRVariable(name_start=0, name_end=0, name_fingerprint=0, type_kind=0, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1)
+    mut reference_descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut slice_descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut reference_register: i64 = -1
+    mut index_register: i64 = -1
+    mut length_register: i64 = -1
+    mut result_register: i64 = -1
+    match target.kind <=> 2:
+        0:
+            variable_index = ng_ir_variable_index(source, variables, target.start, target.end)
+        -1:
+            return -14
+        1:
+            return -14
+    match variable_index >= 0:
+        -1:
+            variable = vector_get<NgIRVariable>(variables, variable_index)
+            match variable.register >= 0:
+                -1:
+                    match variable.type_kind > 0:
+                        -1:
+                            reference_descriptor = vector_get<NgTypeDescriptor>(types, variable.type_kind - 1)
+                            match reference_descriptor.kind <=> 9:
+                                0:
+                                    slice_descriptor = vector_get<NgTypeDescriptor>(types, reference_descriptor.target_type - 1)
+                                    match slice_descriptor.kind <=> 13:
+                                        0:
+                                            reference_register = ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node.left, call_arguments, registers, instructions)
+                                            match reference_register >= 0:
+                                                -1:
+                                                    index_register = ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node.right, call_arguments, registers, instructions)
+                                                    match index_register >= 0:
+                                                        -1:
+                                                            discard ng_set_contextual_literal_type(nodes, node.right, 3, registers, index_register)
+                                                            length_register = variable.register + 1
+                                                            match length_register < vector_len<NgIRRegister>(&*registers):
+                                                                -1:
+                                                                    result_register = vector_len<NgIRRegister>(&*registers)
+                                                                    discard vector_push<NgIRRegister>(registers, NgIRRegister(type_kind=slice_descriptor.element_type, source_start=-1))
+                                                                    discard vector_push<NgIRInstruction>(instructions, NgIRInstruction(opcode=23, result=result_register, operand_count=3, operand0=reference_register, operand1=index_register, immediate=length_register, memory=-1, initialization=0, block=0, target0=-1, target1=-1, target2=-1, source_start=-1))
+                                                                    return result_register
+                                                                0:
+                                                                    return -14
+                                                                1:
+                                                                    return -14
+                                                        0:
+                                                            return index_register
+                                                        1:
+                                                            return index_register
+                                                0:
+                                                    return reference_register
+                                                1:
+                                                    return reference_register
+                                        -1:
+                                            return -14
+                                        1:
+                                            return -14
+                                -1:
+                                    return -14
+                                1:
+                                    return -14
+                        0:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+        0:
+            return -14
+        1:
+            return -14
+
 fn ng_emit_expression_impl(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, node_id: i64, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
     mut folded_integer: NgIntegerResult = NgIntegerResult(value=0, valid=0)
@@ -3558,6 +3720,13 @@ fn ng_emit_expression_impl(source: &bytes, types: &vector<NgTypeDescriptor>, fie
     mut left_info: NgIRRegister = NgIRRegister(type_kind=0, source_start=-1)
     mut right_info: NgIRRegister = NgIRRegister(type_kind=0, source_start=-1)
     mut index_register: i64 = -1
+    match node.kind <=> 23:
+        0:
+            return ng_emit_slice_load_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, node, call_arguments, registers, instructions)
+        -1:
+            node = node
+        1:
+            return -20
     match node.kind > 1:
         -1:
             folded_integer = ng_ir_constant_integer_expression(source, nodes, node_id)
@@ -5983,7 +6152,7 @@ export fn ng_emit_program_with_modules(source: &bytes, types: &vector<NgTypeDesc
         -1:
             return status
         0:
-            discard ng_ir_event(events, 0, 23, 8, 0, 0, 0, 0, 0)
+            discard ng_ir_event(events, 0, 24, 8, 0, 0, 0, 0, 0)
             while type_index < vector_len<NgTypeDescriptor>(types):
                 type_descriptor = vector_get<NgTypeDescriptor>(types, type_index)
                 discard ng_ir_event(events, 12, type_index + 1, type_descriptor.kind, type_descriptor.module_start, type_descriptor.module_end, type_descriptor.name_start, type_descriptor.name_end, type_descriptor.element_type)

@@ -20,6 +20,7 @@ from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.backends.x86_64 import NativeToolchain
 from bootstrap.s3.diagnostics import SemanticError, diagnostic_from_exception
 from bootstrap.s3.dynamic import (
+    DEFAULT_MAX_BUFFER_BYTES,
     DynamicCompositeVector,
     DynamicBytes,
     DynamicText,
@@ -42,6 +43,10 @@ from tools.qbe_oracle import QBETranslationError, translate_verified_ir
 
 
 _ROOT = Path(__file__).parents[1]
+
+
+def _source_set_event_capacity(source_capacity: int) -> int:
+    return min(max(32768, source_capacity * 8), DEFAULT_MAX_BUFFER_BYTES // 8)
 
 _REAL_NG_MODULE_SOURCES = {
     "app.s3": """\
@@ -454,7 +459,7 @@ def _run_ng_source_set_events(
         )
         + 8192,
     )
-    event_capacity = max(32768, source_capacity * 8)
+    event_capacity = _source_set_event_capacity(source_capacity)
     unit_initializers: list[str] = []
     for index, (path, contents) in enumerate(sources.items()):
         unit_initializers.extend(
@@ -4182,7 +4187,7 @@ def test_ng_self_compiles_dependency_closed_compiler_module_graph() -> None:
             )
         )
     source_buffer = DynamicBytes(source_capacity)
-    event_buffer = i64_vector_new(source_capacity * 8)
+    event_buffer = i64_vector_new(_source_set_event_capacity(source_capacity))
     units_cell = ir_emulator._Cell(value=units, initialized=True, mutable=False)
     source_cell = ir_emulator._Cell(value=source_buffer, initialized=True)
     events_cell = ir_emulator._Cell(value=event_buffer, initialized=True)
@@ -4883,7 +4888,7 @@ def test_ng_source_set_rejects_text_len_non_text_reference() -> None:
     assert events == []
 
 
-def test_ng_source_set_fails_closed_on_valid_borrowed_slice_program() -> None:
+def test_ng_source_set_matches_python_for_borrowed_slice_indexing() -> None:
     source = """\
 module app
 fn sum(values: &[i64]) -> i64:
@@ -4891,14 +4896,50 @@ fn sum(values: &[i64]) -> i64:
 fn main() -> i64:
     return 0
 """
-    assert compile_sources({"app.s3": source}, entry_module="app").ir is not None
+    reference = compile_sources({"app.s3": source}, entry_module="app").ir
+    assert reference is not None
 
-    status, _, events = _run_ng_source_set_events(
+    status, encoded_source, events = _run_ng_source_set_events(
         {"app.s3": source},
         entry_module="app",
     )
-    assert status < 0
-    assert events == []
+    assert status == 0, f"S3C-NG slice source-set status={status}; trailing events={events[-12:]}"
+
+    actual = decode_ng_ir_events(encoded_source, events)
+    verify_ir(actual)
+    assert _canonical_structure(actual) == _canonical_structure(reference)
+    assert execute_ir(actual) == execute_ir(reference) == 0
+
+    slice_value = ir_emulator.SliceValue(
+        (
+            ir_emulator._Cell(value=7, initialized=True),
+            ir_emulator._Cell(value=8, initialized=True),
+        ),
+        0,
+        2,
+        False,
+    )
+    actual_functions = {function.name: function for function in actual.functions}
+    reference_functions = {function.name: function for function in reference.functions}
+    actual_sum = actual_functions["__s3mod_app__sum"]
+    reference_sum = reference_functions["__s3mod_app__sum"]
+    arguments = (slice_value, 2)
+    assert ir_emulator._execute_function(
+        actual_functions,
+        actual_sum,
+        arguments,
+        (),
+        {},
+        HostExecutionContext(),
+    ) == 15
+    assert ir_emulator._execute_function(
+        reference_functions,
+        reference_sum,
+        arguments,
+        (),
+        {},
+        HostExecutionContext(),
+    ) == 15
 
 
 @pytest.mark.parametrize(

@@ -23,7 +23,7 @@ the default. Promotion remains opt-in until all V7 gates pass.
 | S3C-NG input | `S3NGIN01`: entry-module UTF-8 name and bounded source-unit path/content records; at most 4096 units and 64 MiB per unit |
 | S3C-NG executable boundary | Linux x86-64 ELF plus `tools/native_selfhost_driver.c`; the driver transports bytes and invokes the exported entrypoint |
 | S3C-NG output | `S3NGOUT1`: signed i64 status, source-byte length, event count, source bytes, then i64 events |
-| Canonical IR boundary | NG IR event stream V23, width 8, decoded by `decode_ng_ir_events` into the shared `IRModule` |
+| Canonical IR boundary | NG IR event stream V24, width 8, decoded by `decode_ng_ir_events` into the shared `IRModule` |
 | Shared validation/backend | Python `verify_ir`, optimizer, `generate_assembly`, and the existing backend registry |
 
 The native S3C-NG frontend owns source-set parsing, type/semantic analysis,
@@ -93,6 +93,13 @@ generation remain shared. S3C-NG provider mode does not create a Python
 diagnostic payload, so negative-program and diagnostic parity remain
 unqualified. S3C-NG currently accepts source syntax 0.6 only and requires a
 Linux x86-64 ELF candidate.
+
+The local V24 increment adds borrowed immutable-slice type descriptors,
+explicit hidden length parameters, and indexed slice-load lowering. The hosted
+regression compares canonical IR with the Python reference, verifies the
+result, and executes the slice-taking function with the same bounded slice
+value. This is focused hosted evidence; native CLI/FFI slice ABI and the wider
+slice feature family remain unqualified.
 
 The native candidate rejection matrix now checks ten invalid source-set cases
 against the Python reference, covering module/import graphs, call arity and
@@ -183,16 +190,16 @@ and native/exact-head CI qualification is still required.
   explicit.
 - The existing V6 fixed-point evidence remains historical; the V7 maintained
   promotion and clean-checkout gates are separate, newly passing evidence.
-- The V23 event decoder is shared, but the full supported-language, invalid
+- The V24 event decoder is shared, but the full supported-language, invalid
   program, structured diagnostic, workload, and execution parity matrices are
   not yet qualified.
 - FFI-relevant compilation has a Linux x86-64 promotion test that invokes
   `ffi-build` with the explicit S3C-NG candidate, loads the resulting shared
   library, and compares exported i64 and f64 calls against a library built
-  from the Python reference IR. Borrowed-slice signatures remain unsupported
-  in S3C-NG: the Python reference accepts them, while S3C-NG rejects the source
-  set without falling back. This is recorded as a partial, fail-closed
-  capability rather than slice parity; it does not qualify default promotion.
+  from the Python reference IR. V24 has focused hosted parity for an immutable
+  borrowed-slice parameter and indexed loads. Native slice ABI, mutable-slice
+  operations, and broad slice parity remain unqualified; this does not qualify
+  default promotion.
 - A Linux promotion run on an earlier PR head exposed a fixed-point mismatch
   in static-string IDs for multi-module input. The decoder now assigns IDs in
   canonical function order, then source order within each function. The
