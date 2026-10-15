@@ -291,6 +291,17 @@ fn ng_append_import_diagnostic(source: &bytes, modules: &vector<NgModule>, impor
     discard vector_push<i64>(&mut *diagnostics, message_id)
     return 0
 
+fn ng_append_unlocated_diagnostic(diagnostics: &mut vector<i64>, code_id: i64, message_id: i64) -> i64:
+    # A negative source index and span mean the reference diagnostic has no location.
+    discard vector_push<i64>(&mut *diagnostics, 1)
+    discard vector_push<i64>(&mut *diagnostics, 1)
+    discard vector_push<i64>(&mut *diagnostics, code_id)
+    discard vector_push<i64>(&mut *diagnostics, -1)
+    discard vector_push<i64>(&mut *diagnostics, -1)
+    discard vector_push<i64>(&mut *diagnostics, -1)
+    discard vector_push<i64>(&mut *diagnostics, message_id)
+    return 0
+
 fn ng_order_modules(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, order: &mut vector<i64>, diagnostics: &mut vector<i64>) -> i64:
     mut done: vector<i64> = vector_new<i64>(vector_len<NgModule>(modules) + 1)
     mut module_index: i64 = 0
@@ -325,7 +336,7 @@ fn ng_order_modules(source: &bytes, modules: &vector<NgModule>, imports: &vector
                                     0:
                                         match target_index <=> module_index:
                                             0:
-                                                discard ng_append_import_diagnostic(source, modules, imported, &mut *diagnostics, 2, 2)
+                                                discard ng_append_unlocated_diagnostic(&mut *diagnostics, 2, 2)
                                                 return -6
                                             1:
                                                 match vector_get<i64>(&done, target_index) <=> 0:

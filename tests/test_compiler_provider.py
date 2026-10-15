@@ -88,15 +88,20 @@ def test_native_output_envelopes_keep_v1_and_validate_v2_diagnostics() -> None:
     with pytest.raises(NativeS3CTransportError, match="successful result"):
         decode_output_envelope_v2(success_with_error)
 
+    unlocated_cycle = NativeDiagnosticRecord(1, 1, 2, -1, -1, -1, 2)
+    assert decode_output_envelope_v2(
+        _encode_output_envelope_v2(-6, b"source", diagnostics=(unlocated_cycle,))
+    )[3] == (unlocated_cycle,)
+    partial_unlocated = NativeDiagnosticRecord(1, 1, 2, -1, 0, -1, 2)
+    with pytest.raises(NativeS3CTransportError, match="invalid or unsupported"):
+        decode_output_envelope_v2(
+            _encode_output_envelope_v2(-6, b"source", diagnostics=(partial_unlocated,))
+        )
+
 
 @pytest.mark.parametrize(
     ("code_id", "expected_code", "source"),
     (
-        (
-            2,
-            DiagnosticCode.MODULE_CYCLE,
-            "module main\nfrom main import main\nfn main() -> i64:\n    return 0\n",
-        ),
         (
             1,
             DiagnosticCode.MODULE_NOT_FOUND,
@@ -174,6 +179,42 @@ def test_s3c_ng_structured_import_diagnostics_preserve_source_identity_and_span(
         end_line=2,
         end_column=end - start + 1,
     )
+
+
+def test_s3c_ng_unlocated_cycle_diagnostic_preserves_reference_location_policy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = "module main\nfrom main import main\nfn main() -> i64:\n    return 0\n"
+    native_result = NativeSourceSetResult(
+        status=-6,
+        source=b"",
+        events=(),
+        returncode=0,
+        stdout=b"",
+        stderr=b"",
+        output_envelope_sha256="0" * 64,
+        output_envelope_bytes=40 + 7 * 8,
+        elapsed_seconds=0.01,
+        diagnostics=(NativeDiagnosticRecord(1, 1, 2, -1, -1, -1, 2),),
+    )
+    monkeypatch.setattr(
+        compiler_provider,
+        "require_s3c_ng_executable",
+        lambda _path: SimpleNamespace(executable=Path("s3c-ng"), entry_symbol="emit_v2"),
+    )
+    monkeypatch.setattr(
+        compiler_provider,
+        "run_native_source_set",
+        lambda *_args, **_kwargs: native_result,
+    )
+    with pytest.raises(SemanticError) as captured:
+        compile_source_set_with_provider(
+            {"main.s3": source},
+            compiler=CompilerKind.S3C_NG,
+        )
+    assert captured.value.diagnostic_code is DiagnosticCode.MODULE_CYCLE
+    assert captured.value.location is None
+    assert diagnostic_from_exception(captured.value).source is None
 
 
 def test_s3c_ng_diagnostic_converts_utf8_byte_span_to_codepoint_location(

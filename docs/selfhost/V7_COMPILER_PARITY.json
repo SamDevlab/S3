@@ -48,9 +48,10 @@
     ],
     "native_test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint",
     "provider_tests": "tests/test_compiler_provider.py",
-    "scope": "The native implementation records the three import failure classes in the named native test and a direct self-cycle at the corresponding validation site. Other negative statuses without a diagnostic record fail closed as NativeS3CTransportError.",
+    "scope": "The native implementation records missing-module, direct-self-cycle, unknown-import-symbol, and private-import-symbol failures in the named native test. The direct-cycle record uses an all-negative source/span sentinel because the Python reference supplies no location. Other negative statuses without a diagnostic record fail closed as NativeS3CTransportError.",
     "parity_status": "FOCUSED_IMPLEMENTATION_NATIVE_CI_PENDING",
-    "qualification_note": "Stable category/phase/code/message identifiers and local UTF-8 byte spans are transported separately from IR events. Python converts and formats the record without semantic recompilation. Full invalid-program and structured-diagnostic parity is not qualified."
+    "message_parity": "UNQUALIFIED",
+    "qualification_note": "Stable category/phase/code/message identifiers and local UTF-8 byte spans are transported separately from IR events. The focused native test compares category, phase, code, and reference source-location policy for four import failures. Python converts and formats the record without semantic recompilation. Exact message parity, full invalid-program parity, and complete structured-diagnostic parity are not qualified."
   },
   "native_cli_sample": {
     "state": "EVIDENCE_GATED_SAMPLES_ONLY",

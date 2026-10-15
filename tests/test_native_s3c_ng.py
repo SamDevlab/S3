@@ -15,7 +15,7 @@ import bootstrap.s3.cli as cli
 from bootstrap.s3.backends.x86_64 import NativeToolchain, generate_native_assembly
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
-from bootstrap.s3.diagnostics import S3Error
+from bootstrap.s3.diagnostics import DiagnosticCode, S3Error, SemanticError
 from bootstrap.s3.compiler_provider import compile_source_set_with_provider
 from bootstrap.s3.ffi import build_shared_library_from_assembly
 from bootstrap.s3.ir import IRModule
@@ -333,6 +333,7 @@ def test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint(
 ) -> None:
     compiler_ir = compile_reference_b_ir(_ROOT)
     artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
     assert artifact.entry_symbol.endswith("ng_emit_source_set_v2")
 
     cases = (
@@ -379,13 +380,42 @@ def test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint(
             1,
             code_id,
         ), case
-        assert diagnostic.source_unit_index == 0, case
-        start = len("module app\n".encode("utf-8"))
-        end = len(app_source.splitlines()[1].encode("utf-8")) + start
-        assert (diagnostic.start_byte, diagnostic.end_byte) == (start, end), case
+        if case == "direct-self-cycle":
+            assert (diagnostic.source_unit_index, diagnostic.start_byte, diagnostic.end_byte) == (
+                -1,
+                -1,
+                -1,
+            )
+        else:
+            assert diagnostic.source_unit_index == 0, case
+            start = len("module app\n".encode("utf-8"))
+            end = len(app_source.splitlines()[1].encode("utf-8")) + start
+            assert (diagnostic.start_byte, diagnostic.end_byte) == (start, end), case
 
+        with pytest.raises(S3Error) as reference_error:
+            compile_source_set_with_provider(sources, compiler="python", entry_module="app")
+        with pytest.raises(S3Error) as native_error:
+            compile_source_set_with_provider(
+                sources,
+                compiler="s3c-ng",
+                executable=artifact.executable,
+                entry_module="app",
+            )
+        expected = reference_error.value
+        actual = native_error.value
+        assert actual.diagnostic_category is expected.diagnostic_category, case
+        assert actual.diagnostic_phase is expected.diagnostic_phase, case
+        assert actual.diagnostic_code is expected.diagnostic_code, case
+        assert actual.location == expected.location, case
+
+    legacy_symbols = [
+        function.name
+        for function in compiler_ir.functions
+        if function.exported and function.name.endswith("ng_emit_source_set")
+    ]
+    assert len(legacy_symbols) == 1
     legacy = run_native_source_set(
-        NativeS3CExecutable(artifact.executable, "ng_emit_source_set"),
+        NativeS3CExecutable(artifact.executable, legacy_symbols[0]),
         {"app.s3": "module app\nfn main() -> i64:\n    return 0\n"},
         entry_module="app",
     )
@@ -682,6 +712,12 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
         "wrong-bytes-builtin-type": -14,
         "wrong-resource-open-type": -14,
     }
+    structured_diagnostics = {
+        "missing-module": DiagnosticCode.MODULE_NOT_FOUND,
+        "missing-symbol": DiagnosticCode.IMPORT_UNKNOWN_SYMBOL,
+        "private-symbol": DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+        "dependency-cycle": DiagnosticCode.MODULE_CYCLE,
+    }
 
     for case, sources in _INVALID_PROVIDER_SOURCES.items():
         entry_module = (
@@ -700,16 +736,26 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
         with pytest.raises(S3Error):
             compile_sources(sources, entry_module=entry_module)
 
-        with pytest.raises(
-            NativeS3CTransportError,
-            match=rf"rejected the source set \(status={expected_statuses[case]}\)",
-        ):
-            compile_source_set_with_provider(
-                sources,
-                compiler="s3c-ng",
-                executable=artifact.executable,
-                entry_module=entry_module,
-            )
+        if case in structured_diagnostics:
+            with pytest.raises(SemanticError) as native_error:
+                compile_source_set_with_provider(
+                    sources,
+                    compiler="s3c-ng",
+                    executable=artifact.executable,
+                    entry_module=entry_module,
+                )
+            assert native_error.value.diagnostic_code is structured_diagnostics[case]
+        else:
+            with pytest.raises(
+                NativeS3CTransportError,
+                match=rf"rejected the source set \(status={expected_statuses[case]}\)",
+            ):
+                compile_source_set_with_provider(
+                    sources,
+                    compiler="s3c-ng",
+                    executable=artifact.executable,
+                    entry_module=entry_module,
+                )
 
 
 @pytest.mark.s3_native

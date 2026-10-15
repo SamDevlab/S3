@@ -115,11 +115,15 @@ The new `S3NGOUT2` slice separately transports stable category, phase, code,
 source-unit index, UTF-8 byte span, and message identifier for four import
 failure codes. The host validates the bounded envelope and source span, maps a
 single recognized record to the public semantic diagnostic, and does not
-recompile through Python. Multi-record formatting and statuses without a
-record fail closed. `S3NGOUT1` remains available through the legacy exported
-entrypoint. Focused provider tests pass locally; the real native regression is
-Linux x86-64-only and still requires the exact-candidate CI gate. The broader
-negative corpus, parser/type diagnostics, and diagnostic parity remain open.
+recompile through Python. The focused Linux test compares category, phase,
+code, and source-location policy with the Python reference; exact displayed
+message parity remains unqualified. A direct-cycle record uses an explicit
+no-location sentinel because Python reports that cycle without a location.
+Multi-record formatting and statuses without a record fail closed.
+`S3NGOUT1` remains available through the legacy exported entrypoint. Focused
+provider tests pass locally; the real native regression is Linux x86-64-only
+and requires the exact-candidate CI gate. The broader negative corpus,
+parser/type diagnostics, and full diagnostic parity remain open.
 
 Compiler selection is offered on semantic compile commands, the test-manifest
 runner, and project-test discovery API. `doctor`, `targets`, `tokens`, `ast`, `format`, and `docs`

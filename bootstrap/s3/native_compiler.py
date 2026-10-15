@@ -351,14 +351,23 @@ def decode_output_envelope_v2(
             events_end + index * _DIAGNOSTIC_RECORD_I64S * 8,
         )
         record = NativeDiagnosticRecord(*values)
+        unlocated_cycle = (
+            record.code_id == NativeDiagnosticCode.MODULE_CYCLE
+            and record.source_unit_index == -1
+            and record.start_byte == -1
+            and record.end_byte == -1
+        )
         if (
             record.category_id != NativeDiagnosticCategory.SEMANTIC
             or record.phase_id != NativeDiagnosticPhase.SEMANTIC
             or record.code_id not in {code.value for code in NativeDiagnosticCode}
             or record.message_id != record.code_id
-            or record.source_unit_index < 0
-            or record.start_byte < 0
-            or record.end_byte < record.start_byte
+            or not unlocated_cycle
+            and (
+                record.source_unit_index < 0
+                or record.start_byte < 0
+                or record.end_byte < record.start_byte
+            )
         ):
             raise NativeS3CTransportError(
                 f"native compiler v2 diagnostic record {index} is invalid or unsupported"

@@ -175,52 +175,67 @@ def _native_semantic_error(
     record: NativeDiagnosticRecord,
     sources: Mapping[str, str],
 ) -> SemanticError:
-    paths = sorted(sources)
-    if record.source_unit_index < 0 or record.source_unit_index >= len(paths):
-        raise NativeS3CTransportError("S3C-NG diagnostic references an unknown source unit")
-    path = paths[record.source_unit_index]
-    source_bytes = sources[path].encode("utf-8")
-    if record.start_byte < 0 or record.end_byte > len(source_bytes):
-        raise NativeS3CTransportError("S3C-NG diagnostic span exceeds its source unit")
-    try:
-        source_text = source_bytes.decode("utf-8")
-        prefix = source_bytes[: record.start_byte].decode("utf-8")
-        through_end = source_bytes[: record.end_byte].decode("utf-8")
-    except UnicodeError as error:
-        raise NativeS3CTransportError(
-            "S3C-NG diagnostic span is not on UTF-8 boundaries"
-        ) from error
     code_and_message = _NATIVE_DIAGNOSTICS.get(record.code_id)
     if code_and_message is None or record.message_id != record.code_id:
         raise NativeS3CTransportError("S3C-NG diagnostic code or message identifier is unknown")
+
+    no_location = (
+        record.code_id == NativeDiagnosticCode.MODULE_CYCLE
+        and record.source_unit_index == -1
+        and record.start_byte == -1
+        and record.end_byte == -1
+    )
+    path: str | None = None
+    location: SourceLocation | None = None
+    source: DiagnosticSource | None = None
+    if not no_location:
+        paths = sorted(sources)
+        if record.source_unit_index < 0 or record.source_unit_index >= len(paths):
+            raise NativeS3CTransportError("S3C-NG diagnostic references an unknown source unit")
+        path = paths[record.source_unit_index]
+        source_bytes = sources[path].encode("utf-8")
+        if record.start_byte < 0 or record.end_byte > len(source_bytes):
+            raise NativeS3CTransportError("S3C-NG diagnostic span exceeds its source unit")
+        try:
+            source_text = source_bytes.decode("utf-8")
+            prefix = source_bytes[: record.start_byte].decode("utf-8")
+            through_end = source_bytes[: record.end_byte].decode("utf-8")
+        except UnicodeError as error:
+            raise NativeS3CTransportError(
+                "S3C-NG diagnostic span is not on UTF-8 boundaries"
+            ) from error
 
     def line_column(prefix_text: str) -> tuple[int, int]:
         line = prefix_text.count("\n") + 1
         column = len(prefix_text.rsplit("\n", 1)[-1]) + 1
         return line, column
 
-    start_offset = len(prefix)
-    end_offset = len(through_end)
-    line, column = line_column(prefix)
-    end_line, end_column = line_column(through_end)
-    if end_offset > len(source_text):
-        raise NativeS3CTransportError("S3C-NG diagnostic span exceeds decoded source")
-    source = DiagnosticSource(
-        offset=start_offset,
-        line=line,
-        column=column,
-        end_offset=end_offset,
-        end_line=end_line,
-        end_column=end_column,
-    )
+    context: dict[str, object] = {}
+    if not no_location:
+        start_offset = len(prefix)
+        end_offset = len(through_end)
+        line, column = line_column(prefix)
+        end_line, end_column = line_column(through_end)
+        if end_offset > len(source_text):
+            raise NativeS3CTransportError("S3C-NG diagnostic span exceeds decoded source")
+        location = SourceLocation(start_offset, line, column)
+        source = DiagnosticSource(
+            offset=start_offset,
+            line=line,
+            column=column,
+            end_offset=end_offset,
+            end_line=end_line,
+            end_column=end_column,
+        )
+        context = {"file": path, "source": source}
     code, message = code_and_message
     return SemanticError(
         message,
-        SourceLocation(start_offset, line, column),
+        location,
         diagnostic_category=DiagnosticCategory.SEMANTIC,
         diagnostic_code=code,
         diagnostic_phase=DiagnosticPhase.SEMANTIC,
-        diagnostic_context={"file": path, "source": source},
+        diagnostic_context=context,
     )
 
 
