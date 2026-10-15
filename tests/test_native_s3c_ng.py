@@ -17,6 +17,7 @@ from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
 from bootstrap.s3.diagnostics import S3Error
 from bootstrap.s3.compiler_provider import compile_source_set_with_provider
+from bootstrap.s3.ffi import build_shared_library_from_assembly
 from bootstrap.s3.ir import IRModule
 from bootstrap.s3.native_compiler import NativeS3CExecutable, require_s3c_ng_executable
 from bootstrap.s3.pipeline import compile_sources
@@ -711,16 +712,15 @@ fn main() -> i64:
     slice_source = """\
 export fn sum(xs: &[i64]) -> i64:
     return xs[0] + xs[1]
-export fn bump(xs: &mut [i64]) -> i64:
-    xs[0] = xs[0] + 1
-    return xs[0]
+export fn relay(xs: &[i64]) -> i64:
+    return sum(xs)
 fn main() -> i64:
     return 0
 """
-    assert compile_sources({"main.s3": slice_source}, entry_module="main").ir is not None
     slice_source_path = tmp_path / "ffi-slices.s3"
     slice_source_path.write_text(slice_source, encoding="utf-8")
-    rejected = cli.main(
+    ng_slice_library = tmp_path / "libffi-slices-ng.so"
+    assert cli.main(
         [
             "ffi-build",
             str(slice_source_path),
@@ -729,7 +729,54 @@ fn main() -> i64:
             "--s3c-ng-executable",
             str(artifact.executable),
             "--output",
-            str(tmp_path / "libffi-slices-ng.so"),
+            str(ng_slice_library),
+        ]
+    ) == 0
+    capsys.readouterr()
+
+    slice_reference_ir = compile_sources(
+        {"main.s3": slice_source}, entry_module="main"
+    ).ir
+    assert slice_reference_ir is not None
+    slice_reference_library = tmp_path / "libffi-slices-python.so"
+    build_shared_library_from_assembly(
+        generate_assembly(slice_reference_ir), slice_reference_library
+    )
+
+    def call_slice_exports(path: Path) -> tuple[int, int]:
+        library = ctypes.CDLL(str(path))
+        total = getattr(library, "__s3mod_main__sum")
+        relay = getattr(library, "__s3mod_main__relay")
+        total.argtypes = [ctypes.POINTER(ctypes.c_int64), ctypes.c_int64]
+        total.restype = ctypes.c_int64
+        relay.argtypes = total.argtypes
+        relay.restype = ctypes.c_int64
+        values = (ctypes.c_int64 * 2)(13, 29)
+        return total(values, len(values)), relay(values, len(values))
+
+    assert call_slice_exports(ng_slice_library) == call_slice_exports(
+        slice_reference_library
+    ) == (42, 42)
+
+    mutable_slice_source = """\
+export fn bump(xs: &mut [i64]) -> i64:
+    xs[0] = xs[0] + 1
+    return xs[0]
+fn main() -> i64:
+    return 0
+"""
+    mutable_slice_path = tmp_path / "ffi-mutable-slice.s3"
+    mutable_slice_path.write_text(mutable_slice_source, encoding="utf-8")
+    rejected = cli.main(
+        [
+            "ffi-build",
+            str(mutable_slice_path),
+            "--compiler",
+            "s3c-ng",
+            "--s3c-ng-executable",
+            str(artifact.executable),
+            "--output",
+            str(tmp_path / "libffi-mutable-slice-ng.so"),
         ]
     )
     assert rejected == 1
