@@ -4893,6 +4893,8 @@ def test_ng_source_set_matches_python_for_borrowed_slice_indexing() -> None:
 module app
 fn sum(values: &[i64]) -> i64:
     return values[0] + values[1]
+fn relay(values: &[i64]) -> i64:
+    return sum(values)
 fn main() -> i64:
     return 0
 """
@@ -4923,6 +4925,8 @@ fn main() -> i64:
     reference_functions = {function.name: function for function in reference.functions}
     actual_sum = actual_functions["__s3mod_app__sum"]
     reference_sum = reference_functions["__s3mod_app__sum"]
+    actual_relay = actual_functions["__s3mod_app__relay"]
+    reference_relay = reference_functions["__s3mod_app__relay"]
     arguments = (slice_value, 2)
     assert ir_emulator._execute_function(
         actual_functions,
@@ -4935,6 +4939,22 @@ fn main() -> i64:
     assert ir_emulator._execute_function(
         reference_functions,
         reference_sum,
+        arguments,
+        (),
+        {},
+        HostExecutionContext(),
+    ) == 15
+    assert ir_emulator._execute_function(
+        actual_functions,
+        actual_relay,
+        arguments,
+        (),
+        {},
+        HostExecutionContext(),
+    ) == 15
+    assert ir_emulator._execute_function(
+        reference_functions,
+        reference_relay,
         arguments,
         (),
         {},

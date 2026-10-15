@@ -1748,6 +1748,86 @@ fn ng_emit_builtin_call_expression(source: &bytes, types: &vector<NgTypeDescript
         1:
             return -13
 
+fn ng_ir_is_slice_reference(types: &vector<NgTypeDescriptor>, type_id: i64) -> i64:
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut target_descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    match type_id > 0:
+        -1:
+            match type_id <= vector_len<NgTypeDescriptor>(types):
+                -1:
+                    descriptor = vector_get<NgTypeDescriptor>(types, type_id - 1)
+                    match descriptor.kind <=> 9:
+                        0:
+                            match descriptor.target_type > 0:
+                                -1:
+                                    match descriptor.target_type <= vector_len<NgTypeDescriptor>(types):
+                                        -1:
+                                            target_descriptor = vector_get<NgTypeDescriptor>(types, descriptor.target_type - 1)
+                                            match target_descriptor.kind <=> 13:
+                                                0:
+                                                    return 1
+                                                -1:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        0:
+                                            return -1
+                                        1:
+                                            return -1
+                                0:
+                                    return -1
+                                1:
+                                    return -1
+                        -1:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
+fn ng_ir_parameter_uses_value_cells(types: &vector<NgTypeDescriptor>, type_id: i64) -> i64:
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut slice_reference: i64 = 0
+    match type_id > 0:
+        -1:
+            match type_id <= vector_len<NgTypeDescriptor>(types):
+                -1:
+                    descriptor = vector_get<NgTypeDescriptor>(types, type_id - 1)
+                    match descriptor.kind <=> 7:
+                        0:
+                            return 1
+                        -1:
+                            return 0
+                        1:
+                            slice_reference = ng_ir_is_slice_reference(types, type_id)
+                            match slice_reference <=> 1:
+                                0:
+                                    return 1
+                                -1:
+                                    match slice_reference <=> 0:
+                                        0:
+                                            return 0
+                                        -1:
+                                            return -1
+                                        1:
+                                            return -1
+                                1:
+                                    return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
+
 fn ng_ir_value_cell_count(types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, type_id: i64) -> i64:
     mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut target_descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
@@ -3218,8 +3298,20 @@ fn ng_emit_call_expression(source: &bytes, types: &vector<NgTypeDescriptor>, fie
         argument_node = vector_get<NgAstNode>(nodes, argument_list)
         parameter = vector_get<NgParameter>(parameters, function.first_parameter + argument_index)
         parameter_type = vector_get<NgTypeDescriptor>(types, parameter.type_kind - 1)
-        match parameter_type.kind == 7:
+        match ng_ir_parameter_uses_value_cells(types, parameter.type_kind) <=> 1:
             -1:
+                argument_register = ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, argument_node.left, call_arguments, registers, instructions)
+                match argument_register <=> -1:
+                    -1:
+                        return argument_register
+                    0:
+                        return argument_register
+                    1:
+                        discard ng_set_contextual_literal_type(nodes, argument_node.left, parameter.type_kind, registers, argument_register)
+                        discard vector_push<i64>(&mut evaluated_arguments, argument_register)
+                        argument_list = argument_node.right
+                        argument_index = argument_index + 1
+            0:
                 status = ng_ir_emit_value_cells(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, parameter.type_kind, argument_node.left, call_arguments, registers, instructions, &mut evaluated_arguments)
                 match status <=> 0:
                     0:
@@ -3229,30 +3321,8 @@ fn ng_emit_call_expression(source: &bytes, types: &vector<NgTypeDescriptor>, fie
                         return status
                     1:
                         return status
-            0:
-                argument_register = ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, argument_node.left, call_arguments, registers, instructions)
-                match argument_register <=> -1:
-                    -1:
-                        return argument_register
-                    0:
-                        return argument_register
-                    1:
-                        discard ng_set_contextual_literal_type(nodes, argument_node.left, parameter.type_kind, registers, argument_register)
-                        discard vector_push<i64>(&mut evaluated_arguments, argument_register)
-                        argument_list = argument_node.right
-                        argument_index = argument_index + 1
             1:
-                argument_register = ng_emit_expression(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, argument_node.left, call_arguments, registers, instructions)
-                match argument_register <=> -1:
-                    -1:
-                        return argument_register
-                    0:
-                        return argument_register
-                    1:
-                        discard ng_set_contextual_literal_type(nodes, argument_node.left, parameter.type_kind, registers, argument_register)
-                        discard vector_push<i64>(&mut evaluated_arguments, argument_register)
-                        argument_list = argument_node.right
-                        argument_index = argument_index + 1
+                return -14
     first_argument = vector_len<i64>(&*call_arguments)
     argument_index = 0
     while argument_index < vector_len<i64>(&evaluated_arguments):
@@ -4127,6 +4197,32 @@ fn ng_ir_constructor_field_value(nodes: &vector<NgAstNode>, source: &bytes, cons
                 return -14
     return -14
 
+fn ng_ir_append_local_leaf_value_cells(source: &bytes, types: &vector<NgTypeDescriptor>, variables: &vector<NgIRVariable>, variable_index: i64, type_id: i64, output_registers: &mut vector<i64>) -> i64:
+    mut variable: NgIRVariable = vector_get<NgIRVariable>(variables, variable_index)
+    mut slice_reference: i64 = 0
+    match ng_type_equal(source, types, variable.type_kind, type_id) <=> -1:
+        0:
+            match variable.register >= 0:
+                -1:
+                    discard vector_push<i64>(output_registers, variable.register)
+                    slice_reference = ng_ir_is_slice_reference(types, type_id)
+                    match slice_reference <=> 1:
+                        0:
+                            discard vector_push<i64>(output_registers, variable.register + 1)
+                            return 0
+                        -1:
+                            return 0
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+        -1:
+            return -14
+        1:
+            return -14
+
 fn ng_ir_append_local_value_cells(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, variables: &vector<NgIRVariable>, variable_index: i64, type_id: i64, output_registers: &mut vector<i64>) -> i64:
     mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut field: NgField = NgField(record_index=0, name_start=0, name_end=0, type_id=0, order=0)
@@ -4161,37 +4257,9 @@ fn ng_ir_append_local_value_cells(source: &bytes, types: &vector<NgTypeDescripto
                                         return -14
                             return 0
                         -1:
-                            variable = vector_get<NgIRVariable>(variables, variable_index)
-                            match ng_type_equal(source, types, variable.type_kind, type_id) <=> -1:
-                                0:
-                                    match variable.register >= 0:
-                                        -1:
-                                            discard vector_push<i64>(output_registers, variable.register)
-                                            return 0
-                                        0:
-                                            return -14
-                                        1:
-                                            return -14
-                                -1:
-                                    return -14
-                                1:
-                                    return -14
+                            return ng_ir_append_local_leaf_value_cells(source, types, variables, variable_index, type_id, output_registers)
                         1:
-                            variable = vector_get<NgIRVariable>(variables, variable_index)
-                            match ng_type_equal(source, types, variable.type_kind, type_id) <=> -1:
-                                0:
-                                    match variable.register >= 0:
-                                        -1:
-                                            discard vector_push<i64>(output_registers, variable.register)
-                                            return 0
-                                        0:
-                                            return -14
-                                        1:
-                                            return -14
-                                -1:
-                                    return -14
-                                1:
-                                    return -14
+                            return ng_ir_append_local_leaf_value_cells(source, types, variables, variable_index, type_id, output_registers)
                 0:
                     return -14
                 1:
@@ -4438,13 +4506,85 @@ fn ng_ir_emit_value_cells_impl(source: &bytes, types: &vector<NgTypeDescriptor>,
         1:
             return -14
 
+fn ng_ir_emit_slice_value_cells(source: &bytes, types: &vector<NgTypeDescriptor>, nodes: &vector<NgAstNode>, variables: &vector<NgIRVariable>, registers: &vector<NgIRRegister>, type_id: i64, node_id: i64, output_registers: &mut vector<i64>) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    mut variable_index: i64 = -1
+    mut variable: NgIRVariable = NgIRVariable(name_start=0, name_end=0, name_fingerprint=0, type_kind=0, mutable=0, register=-1, memory=-1, parent_index=-1, field_name_start=-1, field_name_end=-1)
+    mut length_register: i64 = -1
+    mut pointer_info: NgIRRegister = NgIRRegister(type_kind=0, source_start=-1)
+    mut length_info: NgIRRegister = NgIRRegister(type_kind=0, source_start=-1)
+    match ng_ir_is_slice_reference(types, type_id) <=> 1:
+        0:
+            match node.kind <=> 2:
+                0:
+                    variable_index = ng_ir_variable_index(source, variables, node.start, node.end)
+                -1:
+                    return -14
+                1:
+                    return -14
+            match variable_index >= 0:
+                -1:
+                    variable = vector_get<NgIRVariable>(variables, variable_index)
+                    length_register = variable.register + 1
+                    match variable.type_kind <=> type_id:
+                        0:
+                            match variable.register >= 0:
+                                -1:
+                                    match length_register < vector_len<NgIRRegister>(registers):
+                                        -1:
+                                            pointer_info = vector_get<NgIRRegister>(registers, variable.register)
+                                            length_info = vector_get<NgIRRegister>(registers, length_register)
+                                            match pointer_info.type_kind <=> type_id:
+                                                0:
+                                                    match length_info.type_kind <=> 1:
+                                                        0:
+                                                            discard vector_push<i64>(output_registers, variable.register)
+                                                            discard vector_push<i64>(output_registers, length_register)
+                                                            return 0
+                                                        -1:
+                                                            return -14
+                                                        1:
+                                                            return -14
+                                                -1:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        0:
+                                            return -14
+                                        1:
+                                            return -14
+                                0:
+                                    return -14
+                                1:
+                                    return -14
+                        -1:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+        -1:
+            return -14
+        1:
+            return -14
+
 fn ng_ir_emit_value_cells(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, variables: &vector<NgIRVariable>, first_parameter: i64, parameter_count: i64, type_id: i64, node_id: i64, call_arguments: &mut vector<i64>, registers: &mut vector<NgIRRegister>, instructions: &mut vector<NgIRInstruction>, output_registers: &mut vector<i64>) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
     mut descriptor: NgTypeDescriptor = vector_get<NgTypeDescriptor>(types, type_id - 1)
     mut function_index: i64 = ng_resolved_call_function_index(node.operation)
     mut first_register: i64 = vector_len<NgIRRegister>(&*registers)
     mut first_instruction: i64 = vector_len<NgIRInstruction>(&*instructions)
-    mut status: i64 = ng_ir_emit_value_cells_impl(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, type_id, node_id, call_arguments, registers, instructions, output_registers)
+    mut status: i64 = 0
+    mut slice_reference: i64 = ng_ir_is_slice_reference(types, type_id)
+    match slice_reference <=> 1:
+        0:
+            status = ng_ir_emit_slice_value_cells(source, types, nodes, variables, &*registers, type_id, node_id, output_registers)
+        -1:
+            status = ng_ir_emit_value_cells_impl(source, types, fields, functions, nodes, parameters, variables, first_parameter, parameter_count, type_id, node_id, call_arguments, registers, instructions, output_registers)
+        1:
+            return -14
     match status <=> 0:
         -1:
             return status
