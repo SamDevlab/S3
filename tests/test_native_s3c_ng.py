@@ -22,6 +22,7 @@ from bootstrap.s3.ir import IRModule
 from bootstrap.s3.native_compiler import NativeS3CExecutable, require_s3c_ng_executable
 from bootstrap.s3.pipeline import compile_sources
 from bootstrap.s3.project_container import ProjectTooling
+from bootstrap.s3.test_framework import run_project_tests
 from bootstrap.s3.ir_serialization import serialize_ir
 from bootstrap.s3.verifier import verify_ir
 import tools.native_s3c_ng as native_s3c_ng
@@ -911,6 +912,63 @@ fn main() -> i64:
     assert ng_project_ir is not None
     assert serialize_ir(ng_project_ir) == serialize_ir(python_project_ir)
     assert python_project.run() == ng_project.run() == 42
+
+    project_tests = project_root / "checks"
+    for directory, name in (("z", "z_smoke"), ("a", "a_smoke")):
+        test_root = project_tests / directory
+        test_root.mkdir(parents=True)
+        (test_root / "case.s3").write_text(
+            "fn main() -> i64:\n    return 5\n", encoding="ascii"
+        )
+        manifest = (
+            '[runner]\nmode = "hosted"\n'
+            f'[[test]]\nname = "{name}"\nsource = "case.s3"\nexpected = 5\n'
+        )
+        (test_root / "s3-test.toml").write_text(manifest, encoding="ascii")
+
+    reference_discovery = run_project_tests(project_tests)
+    native_discovery = run_project_tests(
+        project_tests,
+        compiler="s3c-ng",
+        executable=artifact_b.executable,
+    )
+    expected_manifests = ["a/s3-test.toml", "z/s3-test.toml"]
+    assert (
+        reference_discovery["manifests"]
+        == native_discovery["manifests"]
+        == expected_manifests
+    )
+    assert reference_discovery["summary"] == native_discovery["summary"]
+    assert reference_discovery["summary"]["status"] == "PASS"
+    assert reference_discovery["summary"]["passed"] == 2
+    def discovered_results(report: dict[str, object]) -> list[tuple[object, ...]]:
+        return [
+            (
+                case["name"],
+                case["status"],
+                case["hosted"]["status"],
+                case["hosted"].get("value"),
+            )
+            for manifest_report in report["reports"]
+            for case in manifest_report["tests"]
+        ]
+
+    assert discovered_results(reference_discovery) == discovered_results(
+        native_discovery
+    )
+
+    filtered_reference = run_project_tests(project_tests, name_pattern="a_*")
+    filtered_native = run_project_tests(
+        project_tests,
+        name_pattern="a_*",
+        compiler="s3c-ng",
+        executable=artifact_b.executable,
+    )
+    assert filtered_reference["manifests"] == filtered_native["manifests"] == [
+        "a/s3-test.toml"
+    ]
+    assert filtered_reference["summary"] == filtered_native["summary"]
+    assert filtered_reference["summary"]["passed"] == 1
 
     for workload_name, sources, expected_result in (
         ("relational-match", _RELATIONAL_MATCH_SOURCES, 10),
