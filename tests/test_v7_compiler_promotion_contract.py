@@ -41,17 +41,20 @@ def test_v7_parity_evidence_is_scoped_and_points_to_existing_tests() -> None:
             encoding="utf-8"
         )
     )
+    allowed_states = set(document["feature_matrix_policy"]["allowed_states"])
     scope = document["evidence_scope"]
     assert "not native-candidate qualification" in scope["hosted_bridge_tests"]
     assert "actual native candidate" in scope["native_candidate_tests"]
 
     for feature in document["features"]:
         evidence = feature["evidence"]
-        if feature["state"] == "UNTESTED":
-            assert evidence == []
-        elif feature["state"] == "PARTIAL":
+        assert feature["state"] in allowed_states, feature["family"]
+        if feature["state"] == "PARTIAL":
             assert evidence
         for item in evidence:
+            if "::" not in item:
+                assert feature["state"] == "S3C_NG_MISSING", (feature["family"], item)
+                continue
             selector = item.split(" (", maxsplit=1)[0]
             path_text, test_name = selector.split("::", maxsplit=1)
             test_path = repository / path_text
