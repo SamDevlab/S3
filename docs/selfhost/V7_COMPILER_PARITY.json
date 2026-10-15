@@ -62,11 +62,11 @@
     "qualification_note": "The actual native candidate ran these existing language-maturity workloads on Linux x86-64 in exact-head CI; this focused corpus does not upgrade the complete supported-language matrix to PARITY_PASS"
   },
   "project_tooling": {
-    "state": "PENDING_EXACT_HEAD_LINUX_PROMOTION",
+    "state": "PASS_EXACT_HEAD_042AF57F_RUN_38721603135",
     "test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point",
-    "case": "single-module i64 project build/run through Python and explicit S3C-NG providers",
-    "assertions": ["canonical IR equality", "execution result equality"],
-    "qualification_note": "This is one focused host-side ProjectTooling sample; full project build/run and test-discovery parity remains unqualified until its exact-head Linux promotion test passes, and broader project API parity remains open."
+    "case": "single-module i64 project build/run plus two-manifest project test discovery through Python and explicit S3C-NG providers",
+    "assertions": ["canonical IR equality", "execution result equality", "deterministic manifest order", "name-filter parity", "per-test hosted outcome parity"],
+    "qualification_note": "This focused Linux native sample passed in exact-head CI; it does not qualify the full ProjectTooling API, broad project corpus, or every discovery/filter combination."
   },
   "hosted_real_workloads": {
     "state": "PASS_FOCUSED_LOCAL_WORKTREE",

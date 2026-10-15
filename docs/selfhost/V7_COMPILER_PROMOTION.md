@@ -164,11 +164,14 @@ passed the exact-head Linux promotion job in run `38683054022` for
 `20af4034a4bcc5b2b842740624de614a98bfca60`; full Python test groups were still
 running when recorded.
 
-A new Linux-only regression in the current worktree exercises one host-side
-`ProjectTooling` project through Python and explicit S3C-NG providers. It
-compares canonical IR and execution results. This narrow sample awaits the
-exact-head promotion run for the current candidate; complete ProjectTooling
-build/run and test-discovery parity remain unqualified.
+A Linux-only regression exercises one host-side `ProjectTooling` project
+through Python and explicit S3C-NG providers, comparing canonical IR and
+execution results. The same native test discovers two project test manifests
+created in reverse order, compares deterministic ordering and name filtering,
+and checks per-test hosted outcomes. These focused samples passed exact-head
+Linux promotion run `38721603135` on `042af57f81ba94f9bc8e4aff360acf5935bc5748`.
+The full ProjectTooling API and broad project/test-discovery corpus remain
+unqualified.
 
 The current worktree's focused hosted test passes using the repository's
 sorting/search, hex-encoding, and CSV-parser workload sources and builders. It
@@ -190,16 +193,17 @@ semantic boundary tests pass locally; the full numeric feature family remains
 ## Current limitations
 
 - Linux CI has qualified the actual S3C-NG ELF for explicit provider use,
-  representative ordinary and multi-module programs, and the maintained B/C/D
-  compiler fixed-point path. Exact-head native promotion passed on
-  `20af4034a4bcc5b2b842740624de614a98bfca60`; the full Python test groups were
-  still running when recorded. Parity across every semantic CLI command and
-  the full supported-language matrix is still unqualified.
-- `test` and ProjectTooling host-side build/run now accept compiler selection.
-  One focused ProjectTooling provider comparison is awaiting exact-head Linux
-  CI; broad project build/run and test-discovery parity remain unqualified. The
-  `container` CLI remains a Docker interoperability workflow rather than a host
-  compiler-selection path.
+  representative ordinary and multi-module programs, the maintained B/C/D
+  compiler fixed-point path, and focused ProjectTooling/discovery samples.
+  Exact-head run `38721603135` passed at
+  `042af57f81ba94f9bc8e4aff360acf5935bc5748`; each Python unit shard reported
+  4,625 passed and 180 skipped. Parity across every semantic CLI command and the
+  full supported-language matrix is still unqualified.
+- `test` and ProjectTooling host-side build/run accept compiler selection.
+  Focused native ProjectTooling build/run and sorted discovery/filter parity
+  pass at the exact head above; broad project build/run and test-discovery
+  parity remain unqualified. The `container` CLI remains a Docker
+  interoperability workflow rather than a host compiler-selection path.
 - The exact-head clean-checkout artifact path and maintained V7 native
   fixed-point gates passed on `bf9a947412ff3f408cb030f89a6d2315049bfacd`.
   The artifact is ephemeral and same-workflow; durable external bootstrap
