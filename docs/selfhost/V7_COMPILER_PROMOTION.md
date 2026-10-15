@@ -65,12 +65,12 @@ some front-end inspection commands).
 
 The machine-readable command matrix and parity inventory are in
 `V7_COMPILER_PARITY.json` (schema 2). The matrix is an inventory, not a passing
-qualification claim. States must be backed by existing
-tests/spec/workloads and may only be promoted from `UNTESTED` when the same
-source cases have run through both compiler providers at the relevant comparison
-level. The Python reference remains available explicitly throughout V7.
-`PARTIAL` feature evidence names the tests and execution scope; hosted IR
-execution does not stand in for native S3C-NG execution or full feature parity.
+qualification claim. States must be backed by existing tests/spec/workloads
+and may only be promoted from `UNTESTED` when the same source cases have run
+through both compiler providers at the relevant comparison level. Scoped
+evidence does not qualify an entire family; hosted IR execution does not stand
+in for native S3C-NG execution or full feature parity. The Python reference
+remains available explicitly throughout V7.
 
 The maintained `s3c-ng-promotion` Linux x86-64 job owns the native provider and
 strict fixed-point tests once per CI candidate. The three Python-version unit
@@ -98,15 +98,19 @@ The local V24 increment adds borrowed immutable-slice type descriptors,
 explicit hidden length parameters, and indexed slice-load lowering. The hosted
 regression compares canonical IR with the Python reference, verifies the
 result, and executes the slice-taking function with the same bounded slice
-value. This is focused hosted evidence; native CLI/FFI slice ABI and the wider
-slice feature family remain unqualified.
+value. This is focused hosted evidence. Exact-head Linux CI run `38683054022`
+also built and invoked immutable `&[i64]` exports through the pointer-plus-length
+ABI, including forwarding both cells through a second S3 function. Mutable slice
+stores and the broader slice corpus remain unqualified.
 
 The native candidate rejection matrix now checks ten invalid source-set cases
 against the Python reference, covering module/import graphs, call arity and
 types, aggregate fields, bytes builtins, and resource builtins. This proves
 rejection and guards each current native status value; it does not qualify
-stable diagnostic categories, codes, messages, or source spans. Those remain
-an open promotion gate.
+stable diagnostic categories, codes, messages, or source spans. `S3NGOUT1`
+currently returns only status, source bytes, and IR events; S3C-NG rejections
+are surfaced as generic toolchain errors. Structured diagnostic transport and
+parity remain an open promotion gate.
 
 Compiler selection is offered on semantic compile commands, the test-manifest
 runner, and project-test discovery API. `doctor`, `targets`, `tokens`, `ast`, `format`, and `docs`
@@ -154,35 +158,48 @@ workloads through `ir-json`, `run`, `build`, and `run-native`; `ffi-build` and
 `test` are covered by the neighboring native CLI regression. It compares
 reference artifacts/results and makes explicit S3C-NG fail if the CLI calls
 its Python single-source compiler path. These remain narrow samples, not
-qualification of every command against the supported-language corpus; the
-exact-head Linux promotion job must pass before the new samples are counted as
-executed evidence.
+qualification of every command against the supported-language corpus. The
+native CLI, real-workload, immutable-slice FFI, and B/C/D fixed-point samples
+passed the exact-head Linux promotion job in run `38683054022` for
+`20af4034a4bcc5b2b842740624de614a98bfca60`; full Python test groups were still
+running when recorded.
+
+A new Linux-only regression in the current worktree exercises one host-side
+`ProjectTooling` project through Python and explicit S3C-NG providers. It
+compares canonical IR and execution results. This narrow sample awaits the
+exact-head promotion run for the current candidate; complete ProjectTooling
+build/run and test-discovery parity remain unqualified.
 
 The current worktree's focused hosted test passes using the repository's
 sorting/search, hex-encoding, and CSV-parser workload sources and builders. It
 compares canonical IR and execution with the Python reference. A separate Linux
 x86-64 native candidate gate additionally compares source locations, verifies
 the emitted IR, and executes each program through the native backend. That
-native gate and exact-head CI evidence remain pending. This is a focused
-real-workload corpus, not complete language-matrix qualification.
+native gate passed in exact-head run `38683054022` for
+`20af4034a4bcc5b2b842740624de614a98bfca60`. This is a focused real-workload
+corpus, not complete language-matrix qualification.
 
 The current focused numeric regression closes contextual result typing for
 constant integer expressions in `i64` and `tryte`, including grouped and
 negated `tryte` boundaries, while keeping parameter-driven `tryte` arithmetic
 dynamic. Constant `trit`/`tryte` overflow and underflow are rejected to match
 the Python semantic reference. The hosted canonical-IR tests and adjacent NG
-semantic boundary tests pass locally; the numeric feature remains `PARTIAL`,
-and native/exact-head CI qualification is still required.
+semantic boundary tests pass locally; the full numeric feature family remains
+`UNTESTED`, and broader exact-head differential qualification is still required.
 
 ## Current limitations
 
 - Linux CI has qualified the actual S3C-NG ELF for explicit provider use,
   representative ordinary and multi-module programs, and the maintained B/C/D
-  compiler fixed-point path. Parity across every semantic CLI command and the
-  full supported-language matrix is still unqualified.
-- `test` and ProjectTooling host-side build/run now accept compiler selection,
-  but their S3C-NG parity is unqualified. The `container` CLI remains a Docker
-  interoperability workflow rather than a host compiler-selection path.
+  compiler fixed-point path. Exact-head native promotion passed on
+  `20af4034a4bcc5b2b842740624de614a98bfca60`; the full Python test groups were
+  still running when recorded. Parity across every semantic CLI command and
+  the full supported-language matrix is still unqualified.
+- `test` and ProjectTooling host-side build/run now accept compiler selection.
+  One focused ProjectTooling provider comparison is awaiting exact-head Linux
+  CI; broad project build/run and test-discovery parity remain unqualified. The
+  `container` CLI remains a Docker interoperability workflow rather than a host
+  compiler-selection path.
 - The exact-head clean-checkout artifact path and maintained V7 native
   fixed-point gates passed on `bf9a947412ff3f408cb030f89a6d2315049bfacd`.
   The artifact is ephemeral and same-workflow; durable external bootstrap
@@ -195,10 +212,10 @@ and native/exact-head CI qualification is still required.
   not yet qualified.
 - FFI-relevant compilation has a Linux x86-64 promotion test that invokes
   `ffi-build` with the explicit S3C-NG candidate, loads the resulting shared
-  library, and compares exported i64 and f64 calls against a library built
-  from the Python reference IR. V24 has focused hosted parity for an immutable
-  borrowed-slice parameter and indexed loads. Native slice ABI, mutable-slice
-  operations, and broad slice parity remain unqualified; this does not qualify
+  library, and compares exported i64/f64 calls against a library built from
+  Python reference IR. Exact-head Linux CI also qualified immutable-slice
+  pointer-plus-length entry and forwarding through `relay`. Mutable-slice
+  stores and broad slice parity remain unqualified; this does not qualify
   default promotion.
 - A Linux promotion run on an earlier PR head exposed a fixed-point mismatch
   in static-string IDs for multi-module input. The decoder now assigns IDs in

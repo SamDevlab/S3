@@ -21,6 +21,7 @@ from bootstrap.s3.ffi import build_shared_library_from_assembly
 from bootstrap.s3.ir import IRModule
 from bootstrap.s3.native_compiler import NativeS3CExecutable, require_s3c_ng_executable
 from bootstrap.s3.pipeline import compile_sources
+from bootstrap.s3.project_container import ProjectTooling
 from bootstrap.s3.ir_serialization import serialize_ir
 from bootstrap.s3.verifier import verify_ir
 import tools.native_s3c_ng as native_s3c_ng
@@ -881,6 +882,35 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(
     assert built_result.stdout == "program returned: 42\n"
     assert built_result.stderr == ""
     assert run_ng_cli("run-native", str(cli_source_path)) == "program returned: 42\n"
+
+    project_root = tmp_path / "project-tooling"
+    project_source_root = project_root / "src"
+    project_source_root.mkdir(parents=True)
+    project_source = """\
+module main
+fn increment(value: i64) -> i64:
+    return value + 1
+fn main() -> i64:
+    return increment(41)
+"""
+    (project_source_root / "main.s3").write_text(
+        project_source, encoding="utf-8", newline="\n"
+    )
+    (project_root / "s3.toml").write_text(
+        "[project]\nname='promotion-project'\nversion='1'\n"
+        "entrypoint='main'\nsource_roots=['src']\nprofile='hosted'\n",
+        encoding="ascii",
+    )
+    python_project = ProjectTooling(project_root)
+    ng_project = ProjectTooling(
+        project_root, compiler="s3c-ng", executable=artifact_b.executable
+    )
+    python_project_ir = python_project.build().ir
+    ng_project_ir = ng_project.build().ir
+    assert python_project_ir is not None
+    assert ng_project_ir is not None
+    assert serialize_ir(ng_project_ir) == serialize_ir(python_project_ir)
+    assert python_project.run() == ng_project.run() == 42
 
     for workload_name, sources, expected_result in (
         ("relational-match", _RELATIONAL_MATCH_SOURCES, 10),
