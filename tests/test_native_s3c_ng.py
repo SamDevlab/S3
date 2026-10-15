@@ -547,6 +547,31 @@ def test_native_s3c_ng_matches_existing_language_maturity_workloads(
             "csv-integer-parser",
             {"main.s3": _csv_program("-12,0,25,-3", (10, 4))},
         ),
+        (
+            "checked-i64-arithmetic",
+            {
+                "main.s3": (
+                    "fn combine(left: i64, right: i64) -> i64:\n"
+                    "    return left * 3 + right\n"
+                    "fn main() -> i64:\n"
+                    "    return combine(10, 12) - 42\n"
+                )
+            },
+        ),
+        (
+            "generic-scalar-vector-mutation",
+            {
+                "main.s3": (
+                    "fn main() -> i64:\n"
+                    "    mut values: vector<i64> = vector_new<i64>(2)\n"
+                    "    discard vector_push<i64>(&mut values, 19)\n"
+                    "    discard vector_set<i64>(&mut values, 0, 42)\n"
+                    "    mut result: i64 = vector_get<i64>(&values, 0)\n"
+                    "    result = result - vector_pop<i64>(&mut values)\n"
+                    "    return result\n"
+                )
+            },
+        ),
     )
 
     for name, sources in workloads:
