@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import sys
@@ -43,7 +44,11 @@ from .compiler_provider import (
     compile_source_set_with_provider,
 )
 from .native_compiler import inspect_s3c_ng_executable
-from .s3c_ng_distribution import install_s3c_ng_bootstrap
+from .s3c_ng_distribution import (
+    BootstrapDistributionError,
+    install_s3c_ng_bootstrap,
+    pinned_install_path,
+)
 from .pipeline import compile_source
 from .project_container import ProjectTooling
 from .s3_docker import DockerProvider, DockerSpec
@@ -361,6 +366,46 @@ def _print_targets() -> None:
 def _print_doctor() -> None:
     registry = create_builtin_backend_registry()
     s3c_ng = inspect_s3c_ng_executable()
+    if s3c_ng.available:
+        try:
+            artifact_sha256 = hashlib.sha256(s3c_ng.executable.read_bytes()).hexdigest()
+            manifest = json.loads(
+                s3c_ng.executable.with_suffix(".manifest.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            artifact_sha256 = "unavailable"
+            manifest = {}
+        if isinstance(manifest, dict):
+            target = manifest.get("target", "unavailable")
+            source_commit = manifest.get("source_commit", "unavailable")
+        else:
+            target = "unavailable"
+            source_commit = "unavailable"
+    else:
+        artifact_sha256 = "unavailable"
+        target = "unavailable"
+        source_commit = "unavailable"
+    try:
+        pinned_path = pinned_install_path()
+    except BootstrapDistributionError:
+        bootstrap_seed_status = "invalid release lock"
+    else:
+        if pinned_path is None:
+            bootstrap_seed_status = "unpublished"
+        elif not pinned_path.is_file():
+            bootstrap_seed_status = "pinned release not installed"
+        elif not s3c_ng.available:
+            bootstrap_seed_status = "pinned release cache invalid or unavailable"
+        else:
+            try:
+                active_is_pinned = s3c_ng.executable.resolve() == pinned_path.resolve()
+            except OSError:
+                active_is_pinned = False
+            bootstrap_seed_status = "pinned release active"
+            if not active_is_pinned:
+                bootstrap_seed_status = "pinned release installed, not active"
     lines = [
         "S3 doctor",
         "",
@@ -378,7 +423,10 @@ def _print_doctor() -> None:
         "  python available: yes",
         f"  s3c-ng available: {'yes' if s3c_ng.available else 'no'}",
         f"  s3c-ng executable: {s3c_ng.executable}",
-        "  trusted bootstrap seed: not pinned in this checkout",
+        f"  s3c-ng target: {target}",
+        f"  s3c-ng artifact sha256: {artifact_sha256}",
+        f"  s3c-ng source commit: {source_commit}",
+        f"  trusted bootstrap seed: {bootstrap_seed_status}",
         "",
         "Targets:",
     ]

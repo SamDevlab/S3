@@ -25,6 +25,9 @@ def test_v7_command_matrix_is_complete_and_classifies_indirect_container_run() -
             "promotion_blocker_if_unsupported",
             "state",
         } <= row.keys()
+    assert commands["doctor"]["state"] == (
+        "HOST_DIAGNOSTIC_WITH_CANDIDATE_IDENTITY_AND_BOOTSTRAP_PIN"
+    )
 
     run = commands["container run"]
     assert run["semantic_compilation"] == "INDIRECT"
@@ -40,6 +43,12 @@ def test_v7_command_matrix_is_complete_and_classifies_indirect_container_run() -
     )
     assert document["default_compiler"] == "PYTHON"
     assert document["promoted_default"] is False
+    assert document["platform_scope"] == {
+        "native_candidate_target": "linux-x86_64",
+        "trusted_bootstrap_targets": ["linux-x86_64"],
+        "s3c_ng_supported_now_applies_only_to": "linux-x86_64",
+        "global_promotion": False,
+    }
 
 
 def test_v7_parity_evidence_is_scoped_and_points_to_existing_tests() -> None:

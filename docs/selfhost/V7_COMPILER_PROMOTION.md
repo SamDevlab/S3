@@ -61,6 +61,12 @@ some front-end inspection commands).
 | `container build` | NO (configures runtime) | YES | Embeds the selected compiler in the image's `s3 run` entrypoint; image build itself does not compile S3 source |
 | `container run` | INDIRECT | YES | Docker invokes `s3 run`; compiler and optional candidate path are forwarded into the container |
 
+`s3 doctor` reports the selected default and reference provider, candidate
+availability, target, artifact SHA-256, source commit, trusted-release pin
+state, and native toolchain availability. The release pin is reported
+separately from candidate availability so a local development ELF is not
+misrepresented as a trusted distributed seed.
+
 ## Qualification rule
 
 The machine-readable command matrix and parity inventory are in
@@ -69,8 +75,11 @@ qualification claim. States must be backed by existing tests/spec/workloads
 and may only be promoted from `UNTESTED` when the same source cases have run
 through both compiler providers at the relevant comparison level. Scoped
 evidence does not qualify an entire family; hosted IR execution does not stand
-in for native S3C-NG execution or full feature parity. The Python reference
-remains available explicitly throughout V7.
+in for native S3C-NG execution or full feature parity. `PARTIAL` means one or
+more focused differential tests pass while the complete repository-derived
+family corpus or its required comparison levels remain unqualified; it is not
+a promotion pass. The Python reference remains available explicitly
+throughout V7.
 
 The maintained `s3c-ng-promotion` Linux x86-64 job owns the native provider and
 strict fixed-point tests once per CI candidate. The three Python-version unit
@@ -96,7 +105,9 @@ missing modules, direct self-cycles, unknown imported symbols, and private
 imported symbols; all other nonzero native statuses still fail closed as
 transport errors. This is not full negative-program or diagnostic parity.
 S3C-NG currently accepts source syntax 0.6 only and requires a Linux x86-64 ELF
-candidate.
+candidate. The `s3c_ng_supported_now` command-matrix entries apply only to that
+target; they do not claim support on Windows or other targets. No global
+promotion has occurred, and Windows continues to use the Python reference path.
 
 The local V24 increment adds borrowed immutable-slice type descriptors,
 explicit hidden length parameters, and indexed slice-load lowering. The hosted

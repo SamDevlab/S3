@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -7,6 +8,7 @@ from pathlib import Path
 import pytest
 
 import bootstrap.s3.cli as cli
+import bootstrap.s3.native_compiler as native_compiler
 from bootstrap.s3.ir_serialization import serialize_ir
 from bootstrap.s3.pipeline import compile_source
 
@@ -648,7 +650,59 @@ def test_doctor_command_reports_environment_and_internal_architecture(
     assert "  default: python" in captured.out
     assert "  reference: python" in captured.out
     assert "  python available: yes" in captured.out
-    assert "trusted bootstrap seed: not pinned" in captured.out
+    assert "trusted bootstrap seed: unpublished" in captured.out
+
+
+def test_doctor_reports_valid_s3c_ng_candidate_identity(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    executable = tmp_path / "s3c-ng"
+    executable.write_bytes(b"candidate")
+    executable.with_suffix(".manifest.json").write_text(
+        json.dumps(
+            {
+                "target": "linux-x86_64",
+                "source_commit": "a" * 40,
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        cli,
+        "inspect_s3c_ng_executable",
+        lambda: native_compiler.S3CNgAvailability(executable, True),
+    )
+    monkeypatch.setattr(cli, "pinned_install_path", lambda: None)
+
+    assert cli.main(["doctor"]) == 0
+    output = capsys.readouterr().out
+    assert "s3c-ng target: linux-x86_64" in output
+    assert f"s3c-ng artifact sha256: {hashlib.sha256(b'candidate').hexdigest()}" in output
+    assert f"s3c-ng source commit: {'a' * 40}" in output
+    assert "trusted bootstrap seed: unpublished" in output
+
+
+def test_doctor_distinguishes_invalid_pinned_cache(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pinned = tmp_path / "pinned" / "s3c-ng"
+    pinned.parent.mkdir()
+    pinned.write_bytes(b"incomplete")
+    monkeypatch.setattr(
+        cli,
+        "inspect_s3c_ng_executable",
+        lambda: native_compiler.S3CNgAvailability(pinned, False, "manifest missing"),
+    )
+    monkeypatch.setattr(cli, "pinned_install_path", lambda: pinned)
+
+    assert cli.main(["doctor"]) == 0
+    output = capsys.readouterr().out
+    assert "s3c-ng available: no" in output
+    assert "trusted bootstrap seed: pinned release cache invalid or unavailable" in output
 
 
 def test_explicit_s3c_ng_cli_request_fails_closed_without_python_fallback(
