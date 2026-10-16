@@ -35,6 +35,9 @@ def test_v7_command_matrix_is_complete_and_classifies_indirect_container_run() -
     assert bootstrap["semantic_compilation"] is False
     assert bootstrap["s3c_ng_supported_now"] is False
     assert bootstrap["state"] == "EXPLICIT_RELEASE_INSTALLER_LOCK_UNPUBLISHED"
+    assert document["bootstrap"]["candidate_packager_source_identity"] == (
+        "REQUIRES_CHECKOUT_HEAD_AND_CLEAN_COMPILER_INPUTS_AND_RECOMPUTED_SOURCE_GRAPH_TO_MATCH_MANIFEST"
+    )
     assert document["default_compiler"] == "PYTHON"
     assert document["promoted_default"] is False
 

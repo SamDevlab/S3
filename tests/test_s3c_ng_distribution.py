@@ -12,6 +12,7 @@ import pytest
 import bootstrap.s3.cli as cli
 import bootstrap.s3.native_compiler as native_compiler
 import bootstrap.s3.s3c_ng_distribution as distribution
+import tools.package_s3c_ng_bootstrap as package_tool
 from tools.package_s3c_ng_bootstrap import _archive as package_archive
 
 
@@ -233,6 +234,92 @@ def test_release_archive_packaging_is_deterministic() -> None:
     executable, manifest, _ = _candidate()
 
     assert package_archive(executable, manifest) == package_archive(executable, manifest)
+
+
+def test_release_packager_requires_matching_clean_source_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source_commit = "a" * 40
+    graph_sha256 = "b" * 64
+    commands: list[tuple[str, ...]] = []
+
+    def git(_repository: Path, *arguments: str) -> str:
+        commands.append(arguments)
+        if arguments == ("rev-parse", "HEAD"):
+            return source_commit
+        return ""
+
+    monkeypatch.setattr(package_tool, "_git", git)
+    monkeypatch.setattr(
+        package_tool,
+        "compiler_source_set",
+        lambda _repo: {"main.s3": "fn main():\n    return 0\n"},
+    )
+    monkeypatch.setattr(
+        package_tool, "compiler_source_graph_sha256", lambda _sources: graph_sha256
+    )
+    manifest = {
+        "source_commit": source_commit,
+        "source_graph_sha256": graph_sha256,
+        "toolchain": {
+            "compiler": "cc",
+            "version": "cc 1",
+            "assembler": "as",
+            "linker": "ld",
+        },
+    }
+
+    package_tool._validate_source_provenance(tmp_path, manifest)
+    assert ("status", "--porcelain", "--", *package_tool._COMPILER_INPUTS) in commands
+
+
+@pytest.mark.parametrize(
+    ("manifest_update", "git_status", "graph_result", "message"),
+    [
+        ({"source_commit": "c" * 40}, "", "b" * 64, "source commit"),
+        ({}, " M selfhost/compiler_ng/module.s3", "b" * 64, "must be clean"),
+        ({}, "", "c" * 64, "source graph"),
+        ({"toolchain": {"compiler": "cc"}}, "", "b" * 64, "toolchain provenance"),
+    ],
+)
+def test_release_packager_rejects_untrusted_source_provenance(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    manifest_update: dict[str, object],
+    git_status: str,
+    graph_result: str,
+    message: str,
+) -> None:
+    source_commit = "a" * 40
+    graph_sha256 = "b" * 64
+
+    def git(_repository: Path, *arguments: str) -> str:
+        if arguments == ("rev-parse", "HEAD"):
+            return source_commit
+        return git_status
+
+    monkeypatch.setattr(package_tool, "_git", git)
+    monkeypatch.setattr(
+        package_tool, "compiler_source_set", lambda _repo: {"main.s3": "source"}
+    )
+    monkeypatch.setattr(
+        package_tool, "compiler_source_graph_sha256", lambda _sources: graph_result
+    )
+    manifest: dict[str, object] = {
+        "source_commit": source_commit,
+        "source_graph_sha256": graph_sha256,
+        "toolchain": {
+            "compiler": "cc",
+            "version": "cc 1",
+            "assembler": "as",
+            "linker": "ld",
+        },
+    }
+    manifest.update(manifest_update)
+
+    with pytest.raises(ValueError, match=message):
+        package_tool._validate_source_provenance(tmp_path, manifest)
 
 
 def test_bootstrap_distribution_is_linux_x86_64_only(

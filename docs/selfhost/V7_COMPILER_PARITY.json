@@ -173,6 +173,7 @@
     "release_published": false,
     "pinned_release_sha256": false,
     "candidate_builder": "tools/build_s3c_ng_candidate.py",
+    "candidate_packager_source_identity": "REQUIRES_CHECKOUT_HEAD_AND_CLEAN_COMPILER_INPUTS_AND_RECOMPUTED_SOURCE_GRAPH_TO_MATCH_MANIFEST",
     "candidate_seed": "PYTHON_REFERENCE_STAGE0",
     "candidate_manifest_schema": 2,
     "trusted_s3c_ng_seed": "PYTHON_REFERENCE_STAGE0_PARENT; EXACT_HEAD_AND_SAME_WORKFLOW_RUN_ARTIFACT; MAINTAINED_GATE_PASS_RUN_38594968631"

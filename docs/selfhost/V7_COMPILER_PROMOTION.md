@@ -172,6 +172,10 @@ The preferred durable carrier is a versioned GitHub Release asset named
 ELF and its schema-2 provenance manifest. The packaged lock records the release
 tag, archive and executable SHA-256 values, source commit, source-graph digest,
 Linux x86-64 target, and exact compiler/assembler/linker identities.
+Before producing the archive, the packager now requires the manifest's source
+commit to equal the checkout `HEAD`, requires compiler inputs to be clean, and
+recomputes the checked-in compiler source-graph digest. It also fails closed if
+the manifest omits compiler, assembler, or linker identity/version fields.
 
 Acquisition is an explicit one-time command, `s3 bootstrap install s3c-ng`.
 Normal compilation never downloads an artifact. Once a release pin is

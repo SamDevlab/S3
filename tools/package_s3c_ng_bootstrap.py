@@ -7,10 +7,57 @@ import gzip
 import hashlib
 import io
 import json
+import subprocess
 import tarfile
 from pathlib import Path
 
 from bootstrap.s3.native_compiler import inspect_s3c_ng_executable
+from tools.native_s3c_ng import compiler_source_graph_sha256, compiler_source_set
+
+
+_COMPILER_INPUTS = (
+    "bootstrap/s3",
+    "selfhost/compiler_ng",
+    "tools/native_s3c_ng.py",
+    "tools/native_selfhost_driver.c",
+)
+
+
+def _git(repository: Path, *arguments: str) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repository), *arguments],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise ValueError(f"git {' '.join(arguments)} failed: {error}") from error
+    if result.returncode != 0:
+        raise ValueError(f"git {' '.join(arguments)} failed: {result.stderr.strip()}")
+    return result.stdout.strip()
+
+
+def _validate_source_provenance(repository: Path, manifest: dict[str, object]) -> None:
+    source_commit = manifest.get("source_commit")
+    if (
+        not isinstance(source_commit, str)
+        or _git(repository, "rev-parse", "HEAD") != source_commit
+    ):
+        raise ValueError("candidate source commit does not match the packaging checkout HEAD")
+    if _git(repository, "status", "--porcelain", "--", *_COMPILER_INPUTS):
+        raise ValueError("compiler source inputs must be clean before bootstrap packaging")
+    sources = compiler_source_set(repository)
+    if manifest.get("source_graph_sha256") != compiler_source_graph_sha256(sources):
+        raise ValueError("candidate source graph does not match the packaging checkout")
+
+    toolchain = manifest.get("toolchain")
+    if not isinstance(toolchain, dict) or any(
+        not isinstance(toolchain.get(key), str) or not toolchain[key].strip()
+        for key in ("compiler", "version", "assembler", "linker")
+    ):
+        raise ValueError("candidate manifest is missing complete toolchain provenance")
 
 
 def _archive(executable: bytes, manifest: bytes) -> bytes:
@@ -45,9 +92,22 @@ def main() -> int:
     manifest_path = args.executable.with_suffix(".manifest.json")
     executable = args.executable.read_bytes()
     manifest_bytes = manifest_path.read_bytes()
-    manifest = json.loads(manifest_bytes.decode("utf-8"))
-    if manifest.get("bootstrap_parent", {}).get("kind") != "python-reference-stage0":
+    try:
+        manifest = json.loads(manifest_bytes.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError) as error:
+        parser.error(f"candidate manifest is invalid: {error}")
+    if not isinstance(manifest, dict):
+        parser.error("candidate manifest must be a JSON object")
+    bootstrap_parent = manifest.get("bootstrap_parent")
+    if (
+        not isinstance(bootstrap_parent, dict)
+        or bootstrap_parent.get("kind") != "python-reference-stage0"
+    ):
         parser.error("candidate manifest does not identify the qualified V7 bootstrap parent")
+    try:
+        _validate_source_provenance(Path(__file__).resolve().parents[1], manifest)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     archive = _archive(executable, manifest_bytes)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(archive)
