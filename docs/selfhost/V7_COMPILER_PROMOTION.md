@@ -186,8 +186,9 @@ gets one warmup and three alternating O0 samples. IR and Assembly hashes must
 match before timing data is accepted. The report is retained as a separate CI
 evidence artifact; it is not a bootstrap seed. There is no fixed speedup
 threshold. Promotion review considers pathological slowdown and startup
-behavior, and does not claim a speedup. This gate remains pending until the
-exact candidate head runs the updated workflow.
+behavior, and records process plus maximum child peak RSS for the combined
+measurement (not attributed per provider). It does not claim a speedup. This
+gate remains pending until the exact candidate head runs the updated workflow.
 
 ## Stable bootstrap distribution preparation
 

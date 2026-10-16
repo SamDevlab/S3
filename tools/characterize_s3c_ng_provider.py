@@ -233,6 +233,13 @@ def main() -> int:
     manifest_path = executable.with_suffix(".manifest.json")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     repository = Path(__file__).resolve().parents[1]
+    import resource
+
+    workloads = [
+        _measure_workload(workload, executable, args.runs)
+        for workload in _workloads(repository)
+    ]
+    cli_startup = _measure_cli_startup(executable, args.runs)
     report: dict[str, object] = {
         "schema": "s3c-ng-provider-performance-v1",
         "classification": "CHARACTERIZATION_ONLY",
@@ -245,11 +252,11 @@ def main() -> int:
         "artifact_sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
         "source_commit": manifest.get("source_commit"),
         "source_graph_sha256": manifest.get("source_graph_sha256"),
-        "workloads": [
-            _measure_workload(workload, executable, args.runs)
-            for workload in _workloads(repository)
-        ],
-        "cli_startup": _measure_cli_startup(executable, args.runs),
+        "process_peak_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+        "max_child_peak_rss_kib": resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss,
+        "rss_scope": "process and maximum observed child peak across the complete characterization; not attributed per provider",
+        "workloads": workloads,
+        "cli_startup": cli_startup,
     }
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     print(rendered, end="")

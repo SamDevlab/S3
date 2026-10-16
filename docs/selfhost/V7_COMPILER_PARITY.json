@@ -119,7 +119,7 @@
     "ci_job": "s3c-ng-clean-bootstrap",
     "workloads": ["small", "multimodule-ordering-search", "real-pebble-workload", "self-source"],
     "cli_startup": "small check command measured in fresh Python processes",
-    "protocol": "one warmup and three alternating paired O0 measurements per provider; compare canonical IR and Assembly before accepting timing samples",
+    "protocol": "one warmup and three alternating paired O0 measurements per provider; compare canonical IR and Assembly before accepting timing samples; record process and aggregate child peak RSS, not attributed per provider",
     "threshold_policy": "no fixed speedup threshold; review pathological slowdown, memory explosion, and unusable startup",
     "classification": "CHARACTERIZATION_ONLY",
     "stable_result_artifact": "s3c-ng-provider-performance-${GITHUB_SHA}"
