@@ -175,6 +175,20 @@ job passed its maintained native fixed-point checks. This qualifies the
 maintained CI path on that head; it does not establish durable bootstrap
 distribution or complete compiler-promotion readiness.
 
+## Performance characterization
+
+The clean-bootstrap Linux x86-64 job runs
+`tools/characterize_s3c_ng_provider.py` against its verified candidate. It
+compares Python and S3C-NG on a small program, a real multimodule
+ordering/search workload, a generated Pebble compiler workload, and the full
+S3C-NG source set, then measures a fresh-process `check` command. Each provider
+gets one warmup and three alternating O0 samples. IR and Assembly hashes must
+match before timing data is accepted. The report is retained as a separate CI
+evidence artifact; it is not a bootstrap seed. There is no fixed speedup
+threshold. Promotion review considers pathological slowdown and startup
+behavior, and does not claim a speedup. This gate remains pending until the
+exact candidate head runs the updated workflow.
+
 ## Stable bootstrap distribution preparation
 
 The preferred durable carrier is a versioned GitHub Release asset named

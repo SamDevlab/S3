@@ -269,6 +269,14 @@ jobs:
           chmod u+x "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng"
           test -x "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng"
 
+      - name: Characterize equivalent Python and S3C-NG workloads
+        env:
+          S3C_NG_BOOTSTRAP_EXECUTABLE: ${{ runner.temp }}/s3c-ng-bootstrap/s3c-ng
+        run: >-
+          python -m tools.characterize_s3c_ng_provider
+          --runs 3
+          --output "$RUNNER_TEMP/s3c-ng-provider-performance.json"
+
       - name: Verify pinned bootstrap and clean-checkout B-to-C fixed point
         env:
           S3_NATIVE_REQUIRED: "1"
@@ -278,6 +286,14 @@ jobs:
           python -m pytest -q
           tests/test_native_s3c_ng.py
           -k clean_checkout_bootstraps_from_exact_head_artifact
+
+      - name: Preserve provider performance characterization
+        uses: actions/upload-artifact@v4
+        with:
+          name: s3c-ng-provider-performance-${{ github.sha }}
+          path: ${{ runner.temp }}/s3c-ng-provider-performance.json
+          if-no-files-found: error
+          retention-days: 90
 
   numeric-domain-closure:
     runs-on: ubuntu-24.04

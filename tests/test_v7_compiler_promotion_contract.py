@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from tools.characterize_s3c_ng_provider import _workloads
+
 
 def test_v7_command_matrix_is_complete_and_classifies_indirect_container_run() -> None:
     path = Path(__file__).parents[1] / "docs" / "selfhost" / "V7_COMPILER_PARITY.json"
@@ -43,6 +45,12 @@ def test_v7_command_matrix_is_complete_and_classifies_indirect_container_run() -
     )
     assert document["default_compiler"] == "PYTHON"
     assert document["promoted_default"] is False
+    assert document["performance_characterization"]["state"] == (
+        "PENDING_EXACT_HEAD_LINUX_X86_64_RUN"
+    )
+    assert document["performance_characterization"]["classification"] == (
+        "CHARACTERIZATION_ONLY"
+    )
     assert document["platform_scope"] == {
         "native_candidate_target": "linux-x86_64",
         "trusted_bootstrap_targets": ["linux-x86_64"],
@@ -77,3 +85,28 @@ def test_v7_parity_evidence_is_scoped_and_points_to_existing_tests() -> None:
             test_path = repository / path_text
             assert test_path.is_file(), selector
             assert f"def {test_name}(" in test_path.read_text(encoding="utf-8"), selector
+
+
+def test_v7_performance_characterization_has_required_workload_classes() -> None:
+    repository = Path(__file__).parents[1]
+    workloads = _workloads(repository)
+
+    assert [workload.name for workload in workloads] == [
+        "small",
+        "multimodule-ordering-search",
+        "real-pebble-workload",
+        "self-source",
+    ]
+    assert len(workloads[0].sources) == 1
+    assert len(workloads[1].sources) > 1
+    assert len(workloads[2].sources["main.s3"]) > 50_000
+    assert set(workloads[3].sources) == {
+        "app.s3",
+        "character_classes.s3",
+        "lexer.s3",
+        "types.s3",
+        "parser.s3",
+        "semantic.s3",
+        "ir.s3",
+        "modules.s3",
+    }
