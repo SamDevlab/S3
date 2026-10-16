@@ -13,6 +13,7 @@ def test_v7_command_matrix_is_complete_and_classifies_indirect_container_run() -
         "doctor", "targets", "tokens", "ast", "check", "ir", "ir-json",
         "inspect", "verify-ir", "asm", "run", "native-asm", "build",
         "run-native", "ffi-build", "format", "docs", "test",
+        "bootstrap install s3c-ng",
         "container inspect", "container plan", "container build", "container run",
     }
     for row in commands.values():
@@ -30,6 +31,10 @@ def test_v7_command_matrix_is_complete_and_classifies_indirect_container_run() -
     assert run["s3c_ng_required_for_promotion"] is True
     assert run["s3c_ng_supported_now"] is True
     assert run["promotion_blocker_if_unsupported"] is True
+    bootstrap = commands["bootstrap install s3c-ng"]
+    assert bootstrap["semantic_compilation"] is False
+    assert bootstrap["s3c_ng_supported_now"] is False
+    assert bootstrap["state"] == "EXPLICIT_RELEASE_INSTALLER_LOCK_UNPUBLISHED"
     assert document["default_compiler"] == "PYTHON"
     assert document["promoted_default"] is False
 

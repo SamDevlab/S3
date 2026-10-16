@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 import bootstrap.s3.cli as cli
+import bootstrap.s3.s3c_ng_distribution as s3c_ng_distribution
 from bootstrap.s3.backends.x86_64 import NativeToolchain, generate_native_assembly
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
@@ -36,6 +37,7 @@ from tools.native_s3c_ng import (
     run_native_source_set,
     write_s3c_ng_candidate_manifest,
 )
+from tools.package_s3c_ng_bootstrap import _archive as package_s3c_ng_bootstrap
 
 
 _ROOT = Path(__file__).parents[1]
@@ -460,6 +462,7 @@ def _write_candidate_manifest(artifact, compiler_sources: dict[str, str]) -> Non
 )
 def test_native_s3c_ng_clean_checkout_bootstraps_from_exact_head_artifact(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     executable_value = os.environ.get("S3C_NG_BOOTSTRAP_EXECUTABLE")
     assert executable_value, "clean-checkout job must provide its pinned bootstrap artifact"
@@ -482,6 +485,49 @@ def test_native_s3c_ng_clean_checkout_bootstraps_from_exact_head_artifact(
     assert manifest["target"] == "linux-x86_64"
     assert manifest["artifact_sha256"] == hashlib.sha256(executable.read_bytes()).hexdigest()
 
+    expected_package = package_s3c_ng_bootstrap(
+        executable.read_bytes(), manifest_path.read_bytes()
+    )
+    package_value = os.environ.get("S3C_NG_BOOTSTRAP_ARCHIVE")
+    if package_value:
+        packaged = Path(package_value).read_bytes()
+        assert packaged == expected_package, "workflow release candidate package must be reproducible"
+    else:
+        packaged = expected_package
+    toolchain_manifest = manifest["toolchain"]
+    assert isinstance(toolchain_manifest, dict)
+    lock_path = tmp_path / "release-lock.json"
+    lock_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "status": "PINNED",
+                "release_tag": "s3c-ng-bootstrap-ci-exact-head",
+                "asset_name": "s3c-ng-bootstrap-linux-x86_64.tar.gz",
+                "asset_sha256": hashlib.sha256(packaged).hexdigest(),
+                "artifact_sha256": manifest["artifact_sha256"],
+                "artifact_bytes": manifest["artifact_bytes"],
+                "source_commit": source_commit,
+                "source_graph_sha256": source_graph_sha256,
+                "target": "linux-x86_64",
+                "toolchain": toolchain_manifest,
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(s3c_ng_distribution, "_download", lambda _url: packaged)
+    installed_path = s3c_ng_distribution.install_s3c_ng_bootstrap(
+        lock_path=lock_path,
+        cache_root=tmp_path / "installed-bootstrap",
+    )
+    assert hashlib.sha256(installed_path.read_bytes()).hexdigest() == manifest["artifact_sha256"]
+    monkeypatch.setattr(s3c_ng_distribution, "_LOCK_PATH", lock_path)
+    monkeypatch.setenv("S3_BOOTSTRAP_CACHE", str(installed_path.parent.parent))
+    monkeypatch.delenv("S3C_NG_BOOTSTRAP_EXECUTABLE", raising=False)
+    candidate = require_s3c_ng_executable()
+    assert candidate.executable == installed_path.resolve()
+
     generation_c = compile_source_set_with_provider(
         sources,
         compiler="s3c-ng",
@@ -497,7 +543,7 @@ def test_native_s3c_ng_clean_checkout_bootstraps_from_exact_head_artifact(
 
     artifact_c = build_native_s3c(
         generation_c.ir,
-        executable.parent,
+        tmp_path / "rebuilt-generation-c",
         label=executable.name,
     )
     assert artifact_c.assembly_sha256 == manifest["assembly_sha256"]

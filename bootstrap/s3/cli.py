@@ -43,6 +43,7 @@ from .compiler_provider import (
     compile_source_set_with_provider,
 )
 from .native_compiler import inspect_s3c_ng_executable
+from .s3c_ng_distribution import install_s3c_ng_bootstrap
 from .pipeline import compile_source
 from .project_container import ProjectTooling
 from .s3_docker import DockerProvider, DockerSpec
@@ -217,6 +218,12 @@ def _parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("doctor")
     subparsers.add_parser("targets")
+
+    bootstrap = subparsers.add_parser("bootstrap", help="install a pinned native compiler bootstrap")
+    bootstrap_actions = bootstrap.add_subparsers(dest="bootstrap_action", required=True)
+    bootstrap_install = bootstrap_actions.add_parser("install")
+    bootstrap_install.add_argument("artifact", choices=("s3c-ng",))
+    bootstrap_install.set_defaults(diagnostic_format="text", debug=False)
 
     container = subparsers.add_parser(
         "container", help="inspect, plan, build, or run an S3 project container"
@@ -479,6 +486,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     try:
+        if args.command == "bootstrap":
+            executable = install_s3c_ng_bootstrap()
+            print(executable)
+            return 0
         if args.command == "doctor":
             _print_doctor()
             return 0

@@ -154,8 +154,8 @@ the workflow run; GitHub verifies the uploaded artifact digest on download.
 The clean-checkout gate additionally checks the executable SHA, source commit,
 source-graph SHA, canonical compiler IR, Assembly, object, and ELF against the
 manifest. The consumed seed records `python-reference-stage0` as its parent.
-This is an ephemeral, same-workflow trust path, not a release asset or a
-durable external distribution mechanism.
+This is an ephemeral, same-workflow trust path used for CI qualification. It is
+not itself a release asset; stable distribution is handled separately below.
 
 The exact-head gate passed on `bf9a947412ff3f408cb030f89a6d2315049bfacd` in
 Tests workflow run `38594968631` on 2026-10-14. The dedicated clean-checkout
@@ -163,6 +163,28 @@ job passed after downloading that run's candidate, and the S3C-NG promotion
 job passed its maintained native fixed-point checks. This qualifies the
 maintained CI path on that head; it does not establish durable bootstrap
 distribution or complete compiler-promotion readiness.
+
+## Stable bootstrap distribution preparation
+
+The preferred durable carrier is a versioned GitHub Release asset named
+`s3c-ng-bootstrap-linux-x86_64.tar.gz`. The deterministic packager is
+`tools/package_s3c_ng_bootstrap.py`; the archive contains only the candidate
+ELF and its schema-2 provenance manifest. The packaged lock records the release
+tag, archive and executable SHA-256 values, source commit, source-graph digest,
+Linux x86-64 target, and exact compiler/assembler/linker identities.
+
+Acquisition is an explicit one-time command, `s3 bootstrap install s3c-ng`.
+Normal compilation never downloads an artifact. Once a release pin is
+published, installation verifies the archive digest before parsing it, checks
+the manifest against the lock, validates the ELF and provenance, then installs
+atomically under the S3 bootstrap cache. Missing, incompatible, modified, or
+unpublished artifacts fail closed. On platforms other than Linux x86-64 the
+Python reference remains available and S3C-NG is not promoted by this path.
+
+This PR contains the installer and deterministic packager, but its lock remains
+`UNPUBLISHED`: the final candidate artifact and exact provenance have not yet
+been frozen, and no release/tag has been published. Publication still requires
+the campaign owner's explicit confirmation. `DEFAULT_COMPILER` remains Python.
 
 The current PR candidate adds a native CLI regression using the `answer(42)`
 source through `check`, IR projections, `inspect`, Assembly, hosted/native
@@ -230,9 +252,10 @@ and remaining V7 promotion gates are still open.
   interoperability workflow rather than a host compiler-selection path.
 - The exact-head clean-checkout artifact path and maintained V7 native
   fixed-point gates passed on `bf9a947412ff3f408cb030f89a6d2315049bfacd`.
-  The artifact is ephemeral and same-workflow; durable external bootstrap
-  distribution remains undecided. The seed's Python Stage0 trust root remains
-  explicit.
+  The artifact is ephemeral and same-workflow. A deterministic, hash-pinned
+  GitHub Release distribution path is now implemented, but the lock is still
+  unpublished pending the final candidate and owner confirmation. The seed's
+  Python Stage0 trust root remains explicit.
 - The existing V6 fixed-point evidence remains historical; the V7 maintained
   promotion and clean-checkout gates are separate, newly passing evidence.
 - The V24 event decoder is shared, but the full supported-language, invalid

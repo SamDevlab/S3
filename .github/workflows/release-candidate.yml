@@ -94,6 +94,21 @@ jobs:
           assert importlib.metadata.version('s3-bootstrap') == '1.0.0'
           PY
 
+      - name: Verify bootstrap distribution lock is installed and unpublished
+        run: |
+          .release-venv/bin/python - <<'PY'
+          import json
+          from importlib.resources import files
+
+          lock = json.loads(
+              files('bootstrap.s3').joinpath('s3c_ng_bootstrap_lock.json').read_text()
+          )
+          assert lock['schema_version'] == 1
+          assert lock['status'] == 'UNPUBLISHED'
+          assert lock['asset_name'] == 's3c-ng-bootstrap-linux-x86_64.tar.gz'
+          assert lock['asset_sha256'] is None
+          PY
+
       - name: CLI and official-example smoke
         run: |
           .release-venv/bin/s3 --help

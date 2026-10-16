@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
 import re
 import struct
@@ -99,14 +100,26 @@ class S3CNgAvailability:
 
 
 def default_s3c_ng_path() -> Path:
-    """Return the repository-local candidate location used by the `s3` CLI."""
+    """Return an explicit override, pinned installation, or development candidate."""
+
+    override = os.environ.get("S3C_NG_BOOTSTRAP_EXECUTABLE")
+    if override:
+        return Path(override).expanduser().resolve()
+    from .s3c_ng_distribution import pinned_install_path
+
+    installed = pinned_install_path()
+    if installed is not None:
+        return installed
 
     repository = Path(__file__).resolve().parents[2]
     return repository / "build" / "s3c-ng"
 
 
 def inspect_s3c_ng_executable(path: Path | None = None) -> S3CNgAvailability:
-    executable = default_s3c_ng_path() if path is None else Path(path).expanduser().resolve()
+    try:
+        executable = default_s3c_ng_path() if path is None else Path(path).expanduser().resolve()
+    except S3Error as error:
+        return S3CNgAvailability(Path(), False, str(error))
     if platform.system() != "Linux" or platform.machine().lower() not in {
         "x86_64",
         "amd64",
@@ -190,6 +203,11 @@ def inspect_s3c_ng_executable(path: Path | None = None) -> S3CNgAvailability:
             False,
             "S3C-NG artifact manifest does not match the executable or supported contract",
         )
+    from .s3c_ng_distribution import verify_default_artifact
+
+    pinned_error = verify_default_artifact(executable)
+    if pinned_error:
+        return S3CNgAvailability(executable, False, pinned_error)
     return S3CNgAvailability(executable, True)
 
 

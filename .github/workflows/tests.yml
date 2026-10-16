@@ -214,6 +214,13 @@ jobs:
       - name: Build exact-head S3C-NG bootstrap candidate
         run: python -m tools.build_s3c_ng_candidate --output-directory "$RUNNER_TEMP/s3c-ng-bootstrap"
 
+      - name: Package deterministic Linux x86-64 release candidate
+        run: >-
+          python -m tools.package_s3c_ng_bootstrap
+          "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng"
+          --output
+          "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng-bootstrap-linux-x86_64.tar.gz"
+
       - name: Upload immutable exact-head bootstrap artifact
         uses: actions/upload-artifact@v4
         with:
@@ -266,6 +273,7 @@ jobs:
         env:
           S3_NATIVE_REQUIRED: "1"
           S3C_NG_BOOTSTRAP_EXECUTABLE: ${{ runner.temp }}/s3c-ng-bootstrap/s3c-ng
+          S3C_NG_BOOTSTRAP_ARCHIVE: ${{ runner.temp }}/s3c-ng-bootstrap/s3c-ng-bootstrap-linux-x86_64.tar.gz
         run: >-
           python -m pytest -q
           tests/test_native_s3c_ng.py

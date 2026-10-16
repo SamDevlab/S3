@@ -130,7 +130,7 @@
     {"family": "strings, bytes, and text", "state": "UNTESTED", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v13_static_strings_match_reference_ir_and_fail_closed", "tests/test_compiler_ng_ir_bridge.py::test_ng_real_multimodule_program_is_order_independent_and_matches_reference (cross-module canonical string identity; hosted IR execution)"]},
     {"family": "FFI-relevant compilation", "state": "UNTESTED", "evidence": ["tests/test_native_s3c_ng.py::test_native_s3c_ng_ffi_build_uses_selected_compiler_and_matches_reference (exact-head Linux x86-64 candidate CLI ffi-build parity for i64/f64 and immutable borrowed slices)", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_python_for_borrowed_slice_indexing (hosted V24 slice parameter and indexed-load parity)"]},
     {"family": "invalid-program rejection", "state": "UNTESTED", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_rejects_invalid_module_graphs_and_calls", "tests/test_native_s3c_ng.py::test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint (three focused import diagnostics; full negative corpus remains unqualified)"]},
-    {"family": "structured diagnostic parity", "state": "UNTESTED", "evidence": ["S3NGOUT2 transports separate semantic diagnostic records for focused import failures; tests/test_compiler_provider.py checks stable codes, source identity, UTF-8 byte-to-codepoint location conversion, malformed record rejection, and no Python semantic fallback", "tests/test_native_s3c_ng.py::test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint (Linux native gate; exact-head CI pending)"]},
+    {"family": "structured diagnostic parity", "state": "UNTESTED", "evidence": ["tests/test_compiler_provider.py::test_native_output_envelopes_keep_v1_and_validate_v2_diagnostics (S3NGOUT2 malformed record rejection and legacy envelope compatibility)", "tests/test_compiler_provider.py::test_s3c_ng_structured_import_diagnostics_preserve_source_identity_and_span (stable import codes, source identity, span, and no Python semantic fallback)", "tests/test_compiler_provider.py::test_s3c_ng_unlocated_cycle_diagnostic_preserves_reference_location_policy", "tests/test_compiler_provider.py::test_s3c_ng_diagnostic_converts_utf8_byte_span_to_codepoint_location", "tests/test_native_s3c_ng.py::test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint (Linux native candidate gate)"] , "qualification_note": "Focused transport and import-diagnostic coverage only; complete invalid-program, message, code, location, span, and note parity remains unqualified."},
     {"family": "source locations and spans", "state": "UNTESTED", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_v22_preserves_utf8_source_locations_through_lowering", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate gate)"]}
   ],
   "command_matrix_policy": {
@@ -140,6 +140,7 @@
   "cli_commands": [
     {"command": "doctor", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "HOST_DIAGNOSTIC_TOOLING"},
     {"command": "targets", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "TARGET_METADATA_TOOLING"},
+    {"command": "bootstrap install s3c-ng", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "EXPLICIT_RELEASE_INSTALLER_LOCK_UNPUBLISHED"},
     {"command": "tokens", "semantic_compilation": false, "python_reference_only": true, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "PYTHON_FRONTEND_TOOLING"},
     {"command": "ast", "semantic_compilation": false, "python_reference_only": true, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "PYTHON_FRONTEND_TOOLING"},
     {"command": "check", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
@@ -164,7 +165,13 @@
   "bootstrap": {
     "clean_checkout": "PASS_EXACT_HEAD_BF9A9474_RUN_38594968631",
     "strict_fixed_point": "PASS_MAINTAINED_NATIVE_B_C_D_AND_CLEAN_CHECKOUT_B_TO_C_EXACT_HEAD_BF9A9474",
-    "artifact_distribution_policy": "SAME_WORKFLOW_IMMUTABLE_ARTIFACT; DURABLE_EXTERNAL_DISTRIBUTION_UNDECIDED",
+    "artifact_distribution_policy": "VERSIONED_GITHUB_RELEASE_ASSET; EXPLICIT_INSTALL_ONLY; LOCK_UNPUBLISHED_PENDING_FINAL_CANDIDATE_AND_HUMAN_PUBLICATION_CONFIRMATION",
+    "release_asset_name": "s3c-ng-bootstrap-linux-x86_64.tar.gz",
+    "release_lock": "bootstrap/s3/s3c_ng_bootstrap_lock.json",
+    "install_command": "s3 bootstrap install s3c-ng",
+    "download_during_compilation": false,
+    "release_published": false,
+    "pinned_release_sha256": false,
     "candidate_builder": "tools/build_s3c_ng_candidate.py",
     "candidate_seed": "PYTHON_REFERENCE_STAGE0",
     "candidate_manifest_schema": 2,

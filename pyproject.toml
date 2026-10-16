@@ -22,6 +22,9 @@ s3 = "bootstrap.s3.cli:main"
 [tool.setuptools.packages.find]
 include = ["bootstrap*"]
 
+[tool.setuptools.package-data]
+"bootstrap.s3" = ["s3c_ng_bootstrap_lock.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
