@@ -30,7 +30,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(f"unknown application: {args.name}")
     reports = [run_application(item["path"], mode=args.mode) for item in selected]
     print(json.dumps(reports, indent=2, sort_keys=True))
-    return 0 if all(item["status"] == "PASS" for item in reports) else 1
+    successful = {"PASS", "FFI_PASS", "NOT_APPLICABLE", "FFI_NOT_APPLICABLE"}
+    return 0 if all(item["status"] in successful for item in reports) else 1
 
 
 if __name__ == "__main__":

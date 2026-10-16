@@ -34,6 +34,14 @@ report compiler, source, fixture, and package-source hashes. `native` and `ffi`
 are distinct modes; on an unsupported host they return
 `UNSUPPORTED_ENVIRONMENT`, not `PASS`.
 
+The `ffi-native-library` example is intentionally qualified only by
+`--mode ffi`. On Linux x86-64 that command builds a temporary ELF shared object
+from versioned S3 source, verifies its exported symbol, and calls it from a
+separate Python `ctypes` process. Other applications report
+`FFI_NOT_APPLICABLE`; the FFI example reports `NOT_APPLICABLE` in hosted,
+compile-only, and standalone native modes. These outcomes are explicit skips,
+not successful executions.
+
 The existing test-runner report's `target` field is compiler target metadata;
 it is not evidence that native code ran on that operating system. For hosted
 results, use the explicit `execution_mode` and `host_environment` fields in the
