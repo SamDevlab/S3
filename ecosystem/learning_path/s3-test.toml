@@ -1,0 +1,42 @@
+[runner]
+mode = "hosted"
+optimization = "O0"
+timeout_ms = 10000
+max_frames = 1024
+max_instructions = 100000
+
+[[test]]
+name = "first-program"
+source = "lessons/01-first-program.s3"
+entry = "main"
+expected = 42
+
+[[test]]
+name = "functions-and-types"
+source = "lessons/02-functions-and-types.s3"
+entry = "main"
+expected = 126
+
+[[test]]
+name = "control-flow"
+source = "lessons/03-control-flow.s3"
+entry = "main"
+expected = 15
+
+[[test]]
+name = "records"
+source = "lessons/04-records.s3"
+entry = "main"
+expected = 42
+
+[[test]]
+name = "three-way-comparison"
+source = "lessons/05-three-way-comparison.s3"
+entry = "main"
+expected = 7
+
+[[test]]
+name = "module-import"
+sources = ["lessons/06-metrics.s3", "lessons/06-modules.s3"]
+entry = "main"
+expected = 42
