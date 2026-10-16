@@ -1071,7 +1071,13 @@ export fn ng_legacy_vector_builtin_code(source: &bytes, start: i64, end: i64) ->
                                                         -1:
                                                             operation = 6
                                                         0:
-                                                            operation = 0
+                                                            match ng_span_ends_with_text(source, start, end, text_from_static("_capacity")):
+                                                                -1:
+                                                                    operation = 7
+                                                                0:
+                                                                    operation = 0
+                                                                1:
+                                                                    operation = 0
                                                         1:
                                                             operation = 0
                                                 1:
@@ -2827,7 +2833,13 @@ fn ng_legacy_vector_builtin_call_type(source: &bytes, types: &vector<NgTypeDescr
                                                 0:
                                                     return ng_generic_vector_pop_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
                                                 1:
-                                                    return -13
+                                                    match operation <=> 7:
+                                                        0:
+                                                            return ng_generic_vector_len_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                                                        -1:
+                                                            return -13
+                                                        1:
+                                                            return -13
                                                 -1:
                                                     return -13
                                         -1:

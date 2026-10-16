@@ -170,6 +170,9 @@ _INVALID_PROVIDER_SOURCES = {
     "wrong-bytes-builtin-type": {
         "app.s3": "module app\nfn invalid_index(data: &bytes) -> tryte:\n    return bytes_get(data, data)\nfn main() -> i64:\n    return 0\n",
     },
+    "wrong-i64-vector-capacity-type": {
+        "app.s3": "module app\nfn invalid_capacity(values: &vector<f64>) -> i64:\n    return i64_vector_capacity(values)\nfn main() -> i64:\n    return 0\n",
+    },
     "wrong-resource-open-type": {
         "app.s3": "module app\nfn main() -> i64:\n    mut handle: resource_handle = resource_open(1)\n    return 0\n",
     },
@@ -288,6 +291,7 @@ def _assert_native_compile(
     tmp_path: Path,
     entry_module: str = "app",
     context: str = "native compile",
+    execute_native: bool = True,
 ) -> NativeSourceSetResult:
     reference = compile_sources(sources, "O0", entry_module=entry_module).ir
     assert reference is not None
@@ -300,6 +304,8 @@ def _assert_native_compile(
     _assert_exact_ir_equal(actual, reference, context=context)
     assert _canonical_structure(actual) == _canonical_structure(reference)
     assert _source_location_structure(actual) == _source_location_structure(reference)
+    if not execute_native:
+        return result
 
     assembly = generate_native_assembly(generate_assembly(actual))
     executable = NativeToolchain.detect().build(
@@ -675,9 +681,12 @@ def test_native_s3c_ng_matches_existing_language_maturity_workloads(
     tmp_path: Path,
 ) -> None:
     from tests.test_language_maturity_workloads import (
+        PEBBLE_CASES,
         _csv_program,
         _hex_program,
         _ordering_program,
+        _generated_pebble_cases,
+        _pebble_program,
     )
 
     compiler_ir = compile_reference_b_ir(_ROOT)
@@ -721,6 +730,51 @@ def test_native_s3c_ng_matches_existing_language_maturity_workloads(
                 )
             },
         ),
+        (
+            "typed-i64-vector-capacity",
+            {
+                "main.s3": (
+                    "fn main() -> i64:\n"
+                    "    mut values: vector<i64> = vector_new<i64>(8)\n"
+                    "    discard vector_push<i64>(&mut values, 42)\n"
+                    "    return i64_vector_capacity(&values) - 8\n"
+                )
+            },
+        ),
+        (
+            "typed-tryte-vector-capacity",
+            {
+                "main.s3": (
+                    "fn main() -> i64:\n"
+                    "    mut values: vector<tryte> = vector_new<tryte>(8)\n"
+                    "    return tryte_vector_capacity(&values) - 8\n"
+                )
+            },
+        ),
+        (
+            "typed-f64-vector-capacity",
+            {
+                "main.s3": (
+                    "fn main() -> i64:\n"
+                    "    mut values: vector<f64> = vector_new<f64>(8)\n"
+                    "    return f64_vector_capacity(&values) - 8\n"
+                )
+            },
+        ),
+        (
+            "pebble-compiler-canary",
+            {
+                "main.s3": _pebble_program(PEBBLE_CASES[:5])
+            },
+        ),
+        (
+            "pebble-compiler-full-canonical-ir",
+            {
+                "main.s3": _pebble_program(
+                    PEBBLE_CASES + _generated_pebble_cases()
+                )
+            },
+        ),
     )
 
     for name, sources in workloads:
@@ -732,6 +786,7 @@ def test_native_s3c_ng_matches_existing_language_maturity_workloads(
             expected_result=0,
             entry_module="main",
             tmp_path=work_directory,
+            execute_native=name != "pebble-compiler-full-canonical-ir",
         )
         assert result.status == 0, name
 
@@ -801,6 +856,7 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
         "dependency-cycle": -6,
         "unknown-reference-field": -15,
         "wrong-bytes-builtin-type": -14,
+        "wrong-i64-vector-capacity-type": -14,
         "wrong-resource-open-type": -14,
     }
     structured_diagnostics = {
