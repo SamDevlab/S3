@@ -62,6 +62,11 @@ slice references, and opcode 23 for checked indexed loads. Slice descriptors
 carry the element type; malformed parameter records remain fail-closed rather
 than having their lengths inferred from source. Slice-length and slice-store
 opcodes are not part of the implemented V24 interchange surface.
+V25 adds internal static-array type kind 14. Array descriptors preserve their
+scalar element type and positive fixed length; arrays are represented at
+runtime by the existing typed memory objects and indexed LOAD/STORE opcodes,
+not as register values. The decoder rejects array descriptors in value
+positions and validates their element and length metadata.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
@@ -93,7 +98,7 @@ from .diagnostics import SourceLocation
 from .vector_types import composite_vector_runtime_name_from_key
 
 
-NG_IR_FORMAT_VERSION = 24
+NG_IR_FORMAT_VERSION = 25
 NG_IR_RECORD_WIDTH = 8
 
 _BLOCK_NAME_PREFIXES = {
@@ -274,7 +279,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -389,9 +394,13 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
         try:
             return _TYPE_KINDS_V3[descriptor.kind]
         except KeyError as exc:
-            raise NGIRDecodeError(
-                f"nominal type descriptor {code} must be lowered to field cells before {context}"
-            ) from exc
+            if descriptor.kind == 7:
+                message = f"nominal type descriptor {code} must be lowered to field cells before {context}"
+            elif descriptor.kind == 14:
+                message = f"static array type descriptor {code} is not a runtime value in {context}"
+            else:
+                message = f"type descriptor {code} is not a runtime value in {context}"
+            raise NGIRDecodeError(message) from exc
 
     def source_name(start: int, end: int, context: str) -> str:
         if start < 0 or end <= start or end > len(source):
@@ -500,7 +509,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             _, detail_id, target_type, mutable, first_field, field_count, reserved0, reserved1 = detail
             if type_id != len(type_descriptors) + 1 or detail_id != type_id:
                 raise NGIRDecodeError("type descriptor IDs must be contiguous and ordered")
-            if kind not in range(1, 14) or any((reserved0, reserved1)):
+            if kind not in range(1, 15) or any((reserved0, reserved1)):
                 raise NGIRDecodeError(f"malformed type descriptor {type_id}")
             if kind == 10 and version < 13:
                 raise NGIRDecodeError("STRING type descriptor requires NG IR V13")
@@ -592,6 +601,23 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     ) != (-1, -1, -1, -1)
                 ):
                     raise NGIRDecodeError(f"malformed slice type descriptor {type_id}")
+            elif descriptor.kind == 14:
+                element = type_descriptors.get(descriptor.element_type)
+                if (
+                    version < 25
+                    or element is None
+                    or descriptor.element_type >= type_id
+                    or element.kind not in {1, 2, 3, 4, 5, 6}
+                    or descriptor.target_type != -1
+                    or descriptor.mutable != 0
+                    or descriptor.first_field != 0
+                    or not 1 <= descriptor.field_count <= 365
+                    or (
+                        descriptor.module_start, descriptor.module_end,
+                        descriptor.name_start, descriptor.name_end,
+                    ) != (-1, -1, -1, -1)
+                ):
+                    raise NGIRDecodeError(f"malformed static array type descriptor {type_id}")
             else:
                 if (
                     version < 23

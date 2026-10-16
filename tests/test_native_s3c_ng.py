@@ -804,11 +804,14 @@ def test_native_s3c_ng_matches_existing_single_module_examples(
         "first.s3",
         "mutable_switch.s3",
         "mutable_value.s3",
+        "native_abi.s3",
         "nested_calls.s3",
         "recursive_memory.s3",
         "recursive_sum.s3",
         "sign.s3",
         "simple_call.s3",
+        "static_array.s3",
+        "trit_array.s3",
     )
     compiler_ir = compile_reference_b_ir(_ROOT)
     artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")

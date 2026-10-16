@@ -382,7 +382,7 @@ def test_ir_step_budget_counts_dispatched_instructions() -> None:
         )
 
 
-def _emit_ng_events(source: str) -> list[int]:
+def _emit_ng_events(source: str, *, expected_status: int = 0) -> list[int]:
     wrapper = f'''
 fn main() -> vector<i64>:
     mut source_text: text = text_from_static({json.dumps(source, ensure_ascii=False)})
@@ -440,7 +440,9 @@ fn main() -> vector<i64>:
     assert isinstance(events, DynamicVector)
     assert events.element_type == "i64"
     cells = [int(value) for value in events]
-    assert cells and cells[0] == 0, f"S3C-NG failed during lex/parse/emit: {cells}"
+    assert cells and cells[0] == expected_status, (
+        f"S3C-NG status mismatch: expected {expected_status}, got {cells}"
+    )
     return cells
 
 
@@ -712,6 +714,101 @@ def test_branches_ng_output_decodes_verifies_executes_and_matches_reference() ->
     )
     assert serialize_ir(ng_canonical_ir) == serialize_ir(reference_ir)
     assert execute_ir(reference_ir) == execute_ir(ng_canonical_ir)
+
+
+def test_v25_static_array_memory_ir_matches_reference_and_rejects_bad_descriptors() -> None:
+    source = (_ROOT / "examples" / "static_array.s3").read_text(encoding="utf-8")
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+
+    events = _emit_ng_events(source)
+    records = _event_records(events)
+    assert records[0] == [0, 25, 8, 0, 0, 0, 0, 0]
+    array_descriptor = next(row for row in records if row[0] == 12 and row[2] == 14)
+    array_details = next(row for row in records if row[0] == 13 and row[1] == array_descriptor[1])
+    assert array_descriptor[7] == 3
+    assert array_details[5] == 4
+
+    actual_ir = decode_ng_ir_events(source.encode("utf-8"), events)
+    verify_ir(actual_ir)
+    assert _canonical_structure(actual_ir) == _canonical_structure(reference_ir)
+    assert serialize_ir(actual_ir) == serialize_ir(reference_ir)
+    assert execute_ir(actual_ir) == execute_ir(reference_ir) == 13
+    assert any(memory.length == 4 and memory.element_type is IRType.TRYTE for memory in actual_ir.functions[0].memory_objects)
+
+    malformed_length = [record.copy() for record in records]
+    next(row for row in malformed_length if row[0] == 13 and row[1] == array_descriptor[1])[5] = 0
+    with pytest.raises(NGIRDecodeError, match="malformed static array type descriptor"):
+        decode_ng_ir_events(source.encode("utf-8"), _flatten(malformed_length))
+
+    array_as_value = [record.copy() for record in records]
+    register = next(row for row in array_as_value if row[0] == 3)
+    register[3] = array_descriptor[1]
+    with pytest.raises(NGIRDecodeError, match="static array type descriptor .* is not a runtime value"):
+        decode_ng_ir_events(source.encode("utf-8"), _flatten(array_as_value))
+
+
+def test_v25_trit_array_memory_ir_matches_reference() -> None:
+    source = (_ROOT / "examples" / "trit_array.s3").read_text(encoding="utf-8")
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+
+    events = _emit_ng_events(source)
+    actual_ir = decode_ng_ir_events(source.encode("utf-8"), events)
+    verify_ir(actual_ir)
+    assert _canonical_structure(actual_ir) == _canonical_structure(reference_ir)
+    assert serialize_ir(actual_ir) == serialize_ir(reference_ir)
+    assert execute_ir(actual_ir) == execute_ir(reference_ir) == 1
+    assert any(memory.length == 3 and memory.element_type is IRType.TRIT for memory in actual_ir.functions[0].memory_objects)
+
+
+def test_v25_static_array_dynamic_tryte_index_matches_reference() -> None:
+    source = """\
+fn main() -> tryte:
+    mut values: tryte[4] = [1, 2, 3, 4]
+    mut index: tryte = 2
+    values[index] = 9
+    return values[index]
+"""
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+
+    actual_ir = decode_ng_ir_events(source.encode("utf-8"), _emit_ng_events(source))
+    verify_ir(actual_ir)
+    assert _canonical_structure(actual_ir) == _canonical_structure(reference_ir)
+    assert serialize_ir(actual_ir) == serialize_ir(reference_ir)
+    assert execute_ir(actual_ir) == execute_ir(reference_ir) == 9
+
+
+def test_v25_static_array_dynamic_i64_index_matches_reference() -> None:
+    source = """\
+fn main() -> tryte:
+    values: tryte[3] = [1, 2, 3]
+    mut index: i64 = 1
+    index = index + 1
+    return values[index]
+"""
+    reference_ir = compile_source(source).ir
+    assert reference_ir is not None
+
+    actual_ir = decode_ng_ir_events(source.encode("utf-8"), _emit_ng_events(source))
+    verify_ir(actual_ir)
+    assert _canonical_structure(actual_ir) == _canonical_structure(reference_ir)
+    assert serialize_ir(actual_ir) == serialize_ir(reference_ir)
+    assert execute_ir(actual_ir) == execute_ir(reference_ir) == 3
+
+
+def test_v25_static_array_rejects_dynamic_trit_index_like_reference() -> None:
+    source = """\
+fn main() -> tryte:
+    values: tryte[2] = [1, 2]
+    index: trit = 1
+    return values[index]
+"""
+    with pytest.raises(SemanticError):
+        compile_source(source)
+
+    assert _emit_ng_events(source, expected_status=-14) == [-14]
 
 
 def test_v22_block_descriptors_preserve_canonical_names_and_targets() -> None:
