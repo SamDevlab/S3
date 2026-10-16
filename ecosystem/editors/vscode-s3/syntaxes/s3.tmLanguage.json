@@ -1,0 +1,65 @@
+{
+  "scopeName": "source.s3",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#module-declarations" },
+    { "include": "#function-declarations" },
+    { "include": "#record-declarations" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [{ "name": "comment.line.number-sign.s3", "match": "#.*$" }]
+    },
+    "strings": {
+      "name": "string.quoted.double.s3",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [{ "name": "constant.character.escape.s3", "match": "\\\\." }]
+    },
+    "numbers": {
+      "patterns": [
+        { "name": "constant.numeric.float.s3", "match": "(?<![A-Za-z0-9_])(?:[0-9]+\\.[0-9]+)(?![A-Za-z0-9_])" },
+        { "name": "constant.numeric.integer.s3", "match": "(?<![A-Za-z0-9_])[0-9]+(?![A-Za-z0-9_])" }
+      ]
+    },
+    "module-declarations": {
+      "patterns": [
+        { "match": "\\b(module|from|import|as)\\b", "name": "keyword.control.import.s3" },
+        { "match": "(?<=\\bmodule\\s)[A-Za-z_][A-Za-z0-9_.]*", "name": "entity.name.namespace.s3" }
+      ]
+    },
+    "function-declarations": {
+      "patterns": [
+        { "match": "\\b(export|foreign)\\b", "name": "storage.modifier.s3" },
+        { "match": "\\bfn\\s+([A-Za-z_][A-Za-z0-9_]*)", "captures": { "1": { "name": "entity.name.function.s3" } } }
+      ]
+    },
+    "record-declarations": {
+      "patterns": [
+        { "match": "\\b(record|enum)\\s+([A-Za-z_][A-Za-z0-9_]*)", "captures": { "1": { "name": "keyword.declaration.type.s3" }, "2": { "name": "entity.name.type.s3" } } }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        { "match": "\\b(return|switch|match|select|case|while|break|continue|for|in|range|len|discard|else|mut)\\b", "name": "keyword.control.s3" }
+      ]
+    },
+    "types": {
+      "patterns": [
+        { "match": "\\b(trit|tryte|i64|f64)\\b", "name": "storage.type.s3" },
+        { "match": "&mut|&|\\*", "name": "keyword.operator.reference.s3" }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        { "match": "<=>", "name": "keyword.operator.ternary-comparison.s3" },
+        { "match": "==|!=|<=|>=|->|\\+=|\\*=|[+*/=<>~|&-]", "name": "keyword.operator.s3" }
+      ]
+    }
+  }
+}

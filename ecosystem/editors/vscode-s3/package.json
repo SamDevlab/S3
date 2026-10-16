@@ -1,0 +1,47 @@
+{
+  "name": "s3-language",
+  "displayName": "S3 Language Support",
+  "description": "Syntax highlighting and editor features using the S3 repository language server.",
+  "version": "0.1.0",
+  "publisher": "s3",
+  "license": "Apache-2.0",
+  "engines": { "vscode": "^1.80.0" },
+  "categories": ["Programming Languages"],
+  "activationEvents": ["onLanguage:s3"],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "s3",
+        "aliases": ["S3", "s3"],
+        "extensions": [".s3"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      { "language": "s3", "scopeName": "source.s3", "path": "./syntaxes/s3.tmLanguage.json" }
+    ],
+    "configuration": {
+      "title": "S3 Language",
+      "properties": {
+        "s3.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Python executable that runs the repository's S3 language server."
+        },
+        "s3.repositoryPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to an S3 checkout containing bootstrap/s3/lsp.py; empty uses the matching workspace folder."
+        }
+      }
+    },
+    "commands": [
+      { "command": "s3.restartLanguageServer", "title": "S3: Restart Language Server" },
+      { "command": "s3.checkCurrentFile", "title": "S3: Check Current File" },
+      { "command": "s3.inspectProject", "title": "S3: Inspect Project" },
+      { "command": "s3.buildProject", "title": "S3: Build Project (Compile Only)" },
+      { "command": "s3.runProject", "title": "S3: Run Project (Explicit)" }
+    ]
+  }
+}
