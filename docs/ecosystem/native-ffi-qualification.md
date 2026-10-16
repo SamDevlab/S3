@@ -85,6 +85,11 @@ and the six learning-path tests passed.
 The VSIX was rebuilt from this checkout (`s3-language` 0.1.0; main
 `extension.js`; S3 language metadata, grammar, and client scripts present).
 Archive SHA-256: `c3923a395a9e05be3f1336fc4d43c3fc169957219c0d1adbf340852ba7dd06d4`.
+The smoke rebuild from the final report HEAD produced archive SHA-256
+`3e8544c9e6ea46d28c22e40250052aeb819c3c3883139aea2dffbf3be4a0ddd5`; all nine
+archive entries and their uncompressed bytes matched. The packager preserves
+filesystem timestamps, so ZIP timestamps (and therefore the whole-archive
+hash) vary between builds; byte-identical VSIX output is not claimed.
 Its local installation was verified with VS Code 1.141.0 in a temporary,
 isolated user-data and extensions directory; no Marketplace publication or
 global extension installation was performed. The packaged extension resolves
