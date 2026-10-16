@@ -1,0 +1,10 @@
+[project]
+name = "graph-path-report"
+version = "0.1.0"
+entrypoint = "main"
+source_roots = ["src"]
+profile = "hosted"
+dependencies = []
+foreign_libraries = []
+external_executables = []
+services = []

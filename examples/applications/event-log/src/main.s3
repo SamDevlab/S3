@@ -1,0 +1,41 @@
+module main
+from app.event.fixture import event_count
+from app.event.fixture import event_at
+from s3.ecosystem.key_value_records import parse_numeric_pair
+from s3.ecosystem.key_value_records import NumericPair
+
+fn main() -> i64:
+    mut index: i64 = 0
+    mut key_sum: i64 = 0
+    mut value_sum: i64 = 0
+    while index < event_count():
+        mut input: text = event_at(index)
+        mut pair: NumericPair = parse_numeric_pair(&input)
+        match pair.status <=> -1:
+            -1:
+                return 0 - 30
+            0:
+                key_sum = key_sum + pair.key
+                value_sum = value_sum + pair.value
+            1:
+                return 0 - 31
+        index = index + 1
+    mut malformed: text = text_from_static("12x=5")
+    mut malformed_result: NumericPair = parse_numeric_pair(&malformed)
+    match malformed_result.status <=> 0:
+        -1:
+            return 0 - 32
+        0:
+            malformed_result = malformed_result
+        1:
+            return 0 - 33
+    mut empty: text = text_from_static("")
+    mut empty_result: NumericPair = parse_numeric_pair(&empty)
+    match empty_result.status <=> 0:
+        -1:
+            return 0 - 34
+        0:
+            empty_result = empty_result
+        1:
+            return 0 - 35
+    return key_sum * 100 + value_sum

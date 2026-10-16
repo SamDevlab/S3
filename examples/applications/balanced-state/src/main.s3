@@ -1,0 +1,49 @@
+module main
+from app.ternary.fixture import make_values
+from s3.ecosystem.balanced_ternary import BalancedDigits
+from s3.ecosystem.balanced_ternary import DecodeResult
+from s3.ecosystem.balanced_ternary import encode_i64
+from s3.ecosystem.balanced_ternary import decode_i64
+from s3.ecosystem.integer_summary import I64Summary
+from s3.ecosystem.integer_summary import summarize_i64
+
+fn main() -> i64:
+    mut values: i64_vector = make_values()
+    mut lengths: i64_vector = i64_vector_new(7)
+    mut index: i64 = 0
+    while index < i64_vector_len(&values):
+        mut value: i64 = i64_vector_get(&values, index)
+        mut encoded: BalancedDigits = encode_i64(value)
+        match encoded.status <=> -1:
+            -1:
+                return 0 - 20
+            0:
+                encoded = encoded
+            1:
+                return 0 - 21
+        mut decoded: DecodeResult = decode_i64(encoded)
+        match decoded.status <=> -1:
+            -1:
+                return 0 - 22
+            0:
+                decoded = decoded
+            1:
+                return 0 - 23
+        match decoded.value <=> value:
+            -1:
+                return 0 - 24
+            0:
+                discard i64_vector_push(&mut lengths, encoded.length)
+            1:
+                return 0 - 25
+        index = index + 1
+    mut summary: I64Summary = summarize_i64(&lengths)
+    mut out_of_range: BalancedDigits = encode_i64(581130734)
+    match out_of_range.status <=> 0:
+        -1:
+            return 0 - 26
+        0:
+            out_of_range = out_of_range
+        1:
+            return 0 - 27
+    return summary.sum * 1000 + summary.count

@@ -1,0 +1,9 @@
+[application]
+schema = "s3.application.v1"
+name = "bounded-event-log"
+kind = "structured-key-value-data"
+compiler_revision = "2eab8a43f07b7fc842c4036ea0fb0203a9d41d6c"
+entry_module = "main"
+execution_mode = "HOSTED_EXECUTION"
+expected_output = 30615
+fixtures = ["fixtures/events.s3"]

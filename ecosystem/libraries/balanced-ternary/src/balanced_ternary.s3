@@ -1,0 +1,120 @@
+module s3.ecosystem.balanced_ternary
+
+export record BalancedDigits:
+    status: trit
+    encoded_digits: i64
+    length: i64
+
+export record DecodeResult:
+    status: trit
+    value: i64
+
+fn invalid_encoding() -> BalancedDigits:
+    return BalancedDigits(status=0, encoded_digits=0, length=0)
+
+export fn encode_i64(value: i64) -> BalancedDigits:
+    match value <=> 581130733:
+        1:
+            return invalid_encoding()
+        -1:
+            match value <=> -581130733:
+                -1:
+                    return invalid_encoding()
+                0:
+                    return encode_in_range(value)
+                1:
+                    return encode_in_range(value)
+        0:
+            return encode_in_range(value)
+
+fn encode_in_range(value: i64) -> BalancedDigits:
+    mut remaining: i64 = value
+    mut encoded: i64 = 0
+    mut place: i64 = 1
+    mut length: i64 = 0
+    while remaining != 0:
+        mut quotient: i64 = remaining / 3
+        mut digit: i64 = remaining - quotient * 3
+        match digit <=> 1:
+            -1:
+                digit = digit
+            0:
+                digit = digit
+            1:
+                digit = digit - 3
+                quotient = quotient + 1
+        match digit <=> -1:
+            -1:
+                digit = digit + 3
+                quotient = quotient - 1
+            0:
+                digit = digit
+            1:
+                digit = digit
+        encoded = encoded + (digit + 1) * place
+        place = place * 3
+        length = length + 1
+        remaining = quotient
+    match length <=> 0:
+        -1:
+            return BalancedDigits(status=0, encoded_digits=0, length=0)
+        0:
+            return BalancedDigits(status=-1, encoded_digits=1, length=1)
+        1:
+            return BalancedDigits(status=-1, encoded_digits=encoded, length=length)
+
+export fn decode_i64(encoded: BalancedDigits) -> DecodeResult:
+    match encoded.status <=> -1:
+        -1:
+            return DecodeResult(status=0, value=0)
+        0:
+            return decode_valid(encoded)
+        1:
+            return DecodeResult(status=0, value=0)
+
+fn decode_valid(encoded: BalancedDigits) -> DecodeResult:
+    match encoded.length <=> 0:
+        -1:
+            return DecodeResult(status=0, value=0)
+        0:
+            return DecodeResult(status=0, value=0)
+        1:
+            match encoded.length <=> 19:
+                1:
+                    return DecodeResult(status=0, value=0)
+                -1:
+                    return decode_length_valid(encoded)
+                0:
+                    return decode_length_valid(encoded)
+
+fn decode_length_valid(encoded: BalancedDigits) -> DecodeResult:
+    mut bound: i64 = 1
+    mut count: i64 = 0
+    while count < encoded.length:
+        bound = bound * 3
+        count = count + 1
+    match encoded.encoded_digits <=> 0:
+        -1:
+            return DecodeResult(status=0, value=0)
+        0:
+            return decode_digits(encoded)
+        1:
+            match encoded.encoded_digits <=> bound:
+                -1:
+                    return decode_digits(encoded)
+                0:
+                    return DecodeResult(status=0, value=0)
+                1:
+                    return DecodeResult(status=0, value=0)
+
+fn decode_digits(encoded: BalancedDigits) -> DecodeResult:
+    mut value: i64 = 0
+    mut place: i64 = 1
+    mut index: i64 = 0
+    while index < encoded.length:
+        mut shifted: i64 = encoded.encoded_digits / place
+        mut encoded_digit: i64 = shifted - shifted / 3 * 3
+        value = value + (encoded_digit - 1) * place
+        place = place * 3
+        index = index + 1
+    return DecodeResult(status=-1, value=value)

@@ -1,0 +1,9 @@
+[application]
+schema = "s3.application.v1"
+name = "graph-path-report"
+kind = "graph-traversal"
+compiler_revision = "2eab8a43f07b7fc842c4036ea0fb0203a9d41d6c"
+entry_module = "main"
+execution_mode = "HOSTED_EXECUTION"
+expected_output = 309
+fixtures = ["fixtures/graph.s3"]

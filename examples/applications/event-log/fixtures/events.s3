@@ -1,0 +1,25 @@
+module app.event.fixture
+
+export fn event_count() -> i64:
+    return 3
+
+export fn event_at(index: i64) -> text:
+    match index <=> 0:
+        -1:
+            return text_from_static("")
+        0:
+            return text_from_static("101=7")
+        1:
+            match index <=> 1:
+                -1:
+                    return text_from_static("")
+                0:
+                    return text_from_static("102=-3")
+                1:
+                    match index <=> 2:
+                        -1:
+                            return text_from_static("")
+                        0:
+                            return text_from_static("103=11")
+                        1:
+                            return text_from_static("")

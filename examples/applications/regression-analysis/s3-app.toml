@@ -1,0 +1,10 @@
+[application]
+schema = "s3.application.v1"
+name = "linear-regression-report"
+kind = "numerical-analysis"
+compiler_revision = "2eab8a43f07b7fc842c4036ea0fb0203a9d41d6c"
+entry_module = "main"
+execution_mode = "HOSTED_EXECUTION"
+expected_output = 210
+fixtures = ["fixtures/observations.s3"]
+stdlib_modules = ["s3.v1.science"]

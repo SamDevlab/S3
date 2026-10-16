@@ -1,0 +1,50 @@
+module main
+from app.regression.fixture import make_x
+from app.regression.fixture import make_y
+from s3.v1.science import F64Result
+from s3.v1.science import mean
+from s3.v1.science import covariance
+from s3.v1.science import variance
+from s3.ecosystem.balanced_ternary import encode_i64
+from s3.ecosystem.balanced_ternary import BalancedDigits
+from s3.ecosystem.balanced_ternary import DecodeResult
+from s3.ecosystem.balanced_ternary import decode_i64
+
+fn main() -> i64:
+    mut x: f64_vector = make_x()
+    mut y: f64_vector = make_y()
+    mut x_variance: f64 = variance(&x)
+    mut xy_covariance: F64Result = covariance(&x, &y)
+    mut slope: f64 = xy_covariance.value / x_variance
+    mut intercept: f64 = mean(&y) - slope * mean(&x)
+    match slope <=> 2.0:
+        -1:
+            return 0 - 44
+        0:
+            slope = slope
+        1:
+            return 0 - 45
+    match intercept <=> 1.0:
+        -1:
+            return 0 - 46
+        0:
+            intercept = intercept
+        1:
+            return 0 - 47
+    mut result: i64 = 210
+    mut encoded: BalancedDigits = encode_i64(result)
+    mut decoded: DecodeResult = decode_i64(encoded)
+    match decoded.status <=> -1:
+        -1:
+            return 0 - 40
+        0:
+            decoded = decoded
+        1:
+            return 0 - 41
+    match decoded.value <=> result:
+        -1:
+            return 0 - 42
+        0:
+            return result
+        1:
+            return 0 - 43

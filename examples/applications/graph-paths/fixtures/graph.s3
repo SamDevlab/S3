@@ -1,0 +1,19 @@
+module app.graph.fixture
+
+export fn make_edges() -> i64_vector:
+    mut edges: i64_vector = i64_vector_new(14)
+    discard i64_vector_push(&mut edges, 0)
+    discard i64_vector_push(&mut edges, 1)
+    discard i64_vector_push(&mut edges, 0)
+    discard i64_vector_push(&mut edges, 2)
+    discard i64_vector_push(&mut edges, 1)
+    discard i64_vector_push(&mut edges, 3)
+    discard i64_vector_push(&mut edges, 2)
+    discard i64_vector_push(&mut edges, 3)
+    discard i64_vector_push(&mut edges, 3)
+    discard i64_vector_push(&mut edges, 4)
+    discard i64_vector_push(&mut edges, 2)
+    discard i64_vector_push(&mut edges, 5)
+    discard i64_vector_push(&mut edges, 5)
+    discard i64_vector_push(&mut edges, 4)
+    return edges

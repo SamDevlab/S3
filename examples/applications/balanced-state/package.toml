@@ -1,0 +1,11 @@
+[package]
+name = "s3-app-balanced-state"
+version = "0.1.0"
+
+[[dependency]]
+name = "s3-balanced-ternary"
+source = "ecosystem/libraries/balanced-ternary"
+
+[[dependency]]
+name = "s3-integer-summary"
+source = "ecosystem/libraries/integer-summary"

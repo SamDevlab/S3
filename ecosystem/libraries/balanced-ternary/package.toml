@@ -1,0 +1,3 @@
+[package]
+name = "s3-balanced-ternary"
+version = "0.1.0"

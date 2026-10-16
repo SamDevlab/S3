@@ -1,0 +1,130 @@
+module s3.ecosystem.key_value_records
+
+record IntegerParse:
+    status: trit
+    value: i64
+
+export record NumericPair:
+    status: trit
+    key: i64
+    value: i64
+
+fn invalid_integer() -> IntegerParse:
+    return IntegerParse(status=0, value=0)
+
+fn invalid_pair() -> NumericPair:
+    return NumericPair(status=0, key=0, value=0)
+
+fn parse_integer(bytes: &bytes, start: i64, end: i64) -> IntegerParse:
+    match start <=> end:
+        -1:
+            return parse_nonempty_integer(bytes, start, end)
+        0:
+            return invalid_integer()
+        1:
+            return invalid_integer()
+
+fn parse_nonempty_integer(bytes: &bytes, start: i64, end: i64) -> IntegerParse:
+    mut index: i64 = start
+    mut sign: i64 = 1
+    mut digits: i64 = 0
+    mut value: i64 = 0
+    mut first: i64 = to_i64(bytes_get(bytes, index))
+    match first <=> 45:
+        -1:
+            sign = sign
+        0:
+            sign = 0 - 1
+            index = index + 1
+        1:
+            sign = sign
+    while index < end:
+        mut octet: i64 = to_i64(bytes_get(bytes, index))
+        match octet <=> 48:
+            -1:
+                return invalid_integer()
+            0:
+                match digits <=> 6:
+                    -1:
+                        value = value * 10
+                        digits = digits + 1
+                    0:
+                        return invalid_integer()
+                    1:
+                        return invalid_integer()
+            1:
+                match octet <=> 57:
+                    -1:
+                        match digits <=> 6:
+                            -1:
+                                value = value * 10 + octet - 48
+                                digits = digits + 1
+                            0:
+                                return invalid_integer()
+                            1:
+                                return invalid_integer()
+                    0:
+                        match digits <=> 6:
+                            -1:
+                                value = value * 10 + octet - 48
+                                digits = digits + 1
+                            0:
+                                return invalid_integer()
+                            1:
+                                return invalid_integer()
+                    1:
+                        return invalid_integer()
+        index = index + 1
+    match digits <=> 0:
+        -1:
+            return invalid_integer()
+        0:
+            return invalid_integer()
+        1:
+            return IntegerParse(status=-1, value=sign * value)
+
+export fn parse_numeric_pair(input: &text) -> NumericPair:
+    mut bytes: bytes = bytes_from_text(input)
+    mut length: i64 = bytes_len(&bytes)
+    mut index: i64 = 0
+    mut separator: i64 = -1
+    while index < length:
+        mut octet: i64 = to_i64(bytes_get(&bytes, index))
+        match octet <=> 61:
+            -1:
+                index = index
+            0:
+                match separator <=> -1:
+                    0:
+                        separator = index
+                    -1:
+                        return invalid_pair()
+                    1:
+                        return invalid_pair()
+            1:
+                index = index
+        index = index + 1
+    match separator <=> -1:
+        -1:
+            return invalid_pair()
+        0:
+            return invalid_pair()
+        1:
+            return parse_pair_parts(&bytes, length, separator)
+
+fn parse_pair_parts(bytes: &bytes, length: i64, separator: i64) -> NumericPair:
+    mut key: IntegerParse = parse_integer(bytes, 0, separator)
+    mut value: IntegerParse = parse_integer(bytes, separator + 1, length)
+    match key.status <=> -1:
+        -1:
+            return invalid_pair()
+        0:
+            match value.status <=> -1:
+                -1:
+                    return invalid_pair()
+                0:
+                    return NumericPair(status=-1, key=key.value, value=value.value)
+                1:
+                    return invalid_pair()
+        1:
+            return invalid_pair()

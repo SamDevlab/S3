@@ -1,0 +1,3 @@
+[package]
+name = "s3-key-value-records"
+version = "0.1.0"

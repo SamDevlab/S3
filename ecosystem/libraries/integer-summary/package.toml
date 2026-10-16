@@ -1,0 +1,3 @@
+[package]
+name = "s3-integer-summary"
+version = "0.1.0"
