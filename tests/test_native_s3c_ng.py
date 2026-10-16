@@ -20,6 +20,7 @@ from bootstrap.s3.diagnostics import DiagnosticCode, S3Error, SemanticError
 from bootstrap.s3.compiler_provider import compile_source_set_with_provider
 from bootstrap.s3.ffi import build_shared_library_from_assembly
 from bootstrap.s3.ir import IRModule
+from bootstrap.s3.ir_emulator import execute_ir
 from bootstrap.s3.native_compiler import NativeS3CExecutable, require_s3c_ng_executable
 from bootstrap.s3.pipeline import compile_sources
 from bootstrap.s3.project_container import ProjectTooling
@@ -286,6 +287,7 @@ def _assert_native_compile(
     expected_result: int,
     tmp_path: Path,
     entry_module: str = "app",
+    context: str = "native compile",
 ) -> NativeSourceSetResult:
     reference = compile_sources(sources, "O0", entry_module=entry_module).ir
     assert reference is not None
@@ -295,9 +297,9 @@ def _assert_native_compile(
     assert result.status == 0
     actual = decode_ng_ir_events(result.source, result.events)
     verify_ir(actual)
+    _assert_exact_ir_equal(actual, reference, context=context)
     assert _canonical_structure(actual) == _canonical_structure(reference)
     assert _source_location_structure(actual) == _source_location_structure(reference)
-    _assert_exact_ir_equal(actual, reference, context="native compile")
 
     assembly = generate_native_assembly(generate_assembly(actual))
     executable = NativeToolchain.detect().build(
@@ -732,6 +734,49 @@ def test_native_s3c_ng_matches_existing_language_maturity_workloads(
             tmp_path=work_directory,
         )
         assert result.status == 0, name
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_matches_existing_single_module_examples(
+    tmp_path: Path,
+) -> None:
+    examples = (
+        "first.s3",
+        "mutable_switch.s3",
+        "mutable_value.s3",
+        "nested_calls.s3",
+        "recursive_memory.s3",
+        "recursive_sum.s3",
+        "sign.s3",
+        "simple_call.s3",
+    )
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
+
+    for example in examples:
+        sources = {
+            "main.s3": (_ROOT / "examples" / example).read_text(encoding="utf-8"),
+        }
+        reference = compile_sources(sources, entry_module="main")
+        assert reference.ir is not None, example
+        expected_result = execute_ir(reference.ir)
+        assert isinstance(expected_result, int), example
+
+        result = _assert_native_compile(
+            artifact,
+            sources,
+            expected_result=expected_result,
+            entry_module="main",
+            tmp_path=tmp_path / Path(example).stem,
+            context=f"native example {example}",
+        )
+        assert result.status == 0, example
 
 
 @pytest.mark.s3_native
