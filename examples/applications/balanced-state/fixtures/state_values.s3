@@ -1,0 +1,12 @@
+module app.ternary.fixture
+
+export fn make_values() -> i64_vector:
+    mut values: i64_vector = i64_vector_new(7)
+    discard i64_vector_push(&mut values, 0 - 581130733)
+    discard i64_vector_push(&mut values, 0 - 242)
+    discard i64_vector_push(&mut values, 0 - 1)
+    discard i64_vector_push(&mut values, 0)
+    discard i64_vector_push(&mut values, 1)
+    discard i64_vector_push(&mut values, 242)
+    discard i64_vector_push(&mut values, 581130733)
+    return values

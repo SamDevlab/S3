@@ -1,0 +1,43 @@
+module s3.ecosystem.integer_summary
+
+export record I64Summary:
+    status: trit
+    count: i64
+    sum: i64
+    minimum: i64
+    maximum: i64
+
+export fn summarize_i64(values: &i64_vector) -> I64Summary:
+    mut count: i64 = i64_vector_len(values)
+    match count <=> 0:
+        -1:
+            return I64Summary(status=0, count=0, sum=0, minimum=0, maximum=0)
+        0:
+            return I64Summary(status=0, count=0, sum=0, minimum=0, maximum=0)
+        1:
+            return summarize_nonempty(values, count)
+
+fn summarize_nonempty(values: &i64_vector, count: i64) -> I64Summary:
+    mut index: i64 = 0
+    mut sum: i64 = 0
+    mut minimum: i64 = i64_vector_get(values, 0)
+    mut maximum: i64 = minimum
+    while index < count:
+        mut value: i64 = i64_vector_get(values, index)
+        sum = sum + value
+        match value <=> minimum:
+            -1:
+                minimum = value
+            0:
+                minimum = minimum
+            1:
+                minimum = minimum
+        match value <=> maximum:
+            -1:
+                maximum = maximum
+            0:
+                maximum = maximum
+            1:
+                maximum = value
+        index = index + 1
+    return I64Summary(status=-1, count=count, sum=sum, minimum=minimum, maximum=maximum)

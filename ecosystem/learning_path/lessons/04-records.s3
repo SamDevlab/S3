@@ -1,0 +1,9 @@
+module main
+
+record LessonSummary:
+    count: i64
+    total: i64
+
+fn main() -> i64:
+    mut summary: LessonSummary = LessonSummary(count=6, total=36)
+    return summary.count + summary.total

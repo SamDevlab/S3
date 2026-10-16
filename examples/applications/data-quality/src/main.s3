@@ -1,0 +1,57 @@
+module main
+from app.data.fixture import make_records
+from app.data.fixture import make_empty_records
+from s3.ecosystem.integer_summary import I64Summary
+from s3.ecosystem.integer_summary import summarize_i64
+from s3.ecosystem.balanced_ternary import BalancedDigits
+from s3.ecosystem.balanced_ternary import DecodeResult
+from s3.ecosystem.balanced_ternary import encode_i64
+from s3.ecosystem.balanced_ternary import decode_i64
+
+fn main() -> i64:
+    mut values: i64_vector = make_records()
+    mut summary: I64Summary = summarize_i64(&values)
+    match summary.status <=> -1:
+        -1:
+            return 0 - 90
+        0:
+            summary = summary
+        1:
+            return 0 - 91
+    mut empty: i64_vector = make_empty_records()
+    mut empty_summary: I64Summary = summarize_i64(&empty)
+    match empty_summary.status <=> 0:
+        -1:
+            return 0 - 92
+        0:
+            empty_summary = empty_summary
+        1:
+            return 0 - 93
+    mut outliers: i64 = 0
+    mut index: i64 = 0
+    while index < summary.count:
+        mut value: i64 = i64_vector_get(&values, index)
+        match value <=> 50:
+            -1:
+                outliers = outliers
+            0:
+                outliers = outliers
+            1:
+                outliers = outliers + 1
+        index = index + 1
+    mut encoded: BalancedDigits = encode_i64(summary.sum)
+    mut decoded: DecodeResult = decode_i64(encoded)
+    match decoded.status <=> -1:
+        -1:
+            return 0 - 94
+        0:
+            decoded = decoded
+        1:
+            return 0 - 95
+    match decoded.value <=> summary.sum:
+        -1:
+            return 0 - 96
+        0:
+            return summary.sum * 100 + outliers
+        1:
+            return 0 - 97

@@ -1,0 +1,7 @@
+module main
+
+export fn s3_add_i64(left: i64, right: i64) -> i64:
+    return left + right
+
+fn main() -> i64:
+    return 0

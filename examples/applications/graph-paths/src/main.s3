@@ -1,0 +1,181 @@
+module main
+from app.graph.fixture import make_edges
+from s3.ecosystem.integer_summary import I64Summary
+from s3.ecosystem.integer_summary import summarize_i64
+
+export record GraphReport:
+    status: trit
+    target_distance: i64
+    reachable_count: i64
+    distance_sum: i64
+
+fn invalid_graph() -> GraphReport:
+    return GraphReport(status=0, target_distance=0 - 2, reachable_count=0, distance_sum=0)
+
+fn valid_node(node: i64, node_count: i64) -> trit:
+    match node <=> 0:
+        -1:
+            return 0
+        0:
+            return valid_node_upper(node, node_count)
+        1:
+            return valid_node_upper(node, node_count)
+
+fn valid_node_upper(node: i64, node_count: i64) -> trit:
+    match node <=> node_count:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 0
+
+fn analyze_graph(edges: &i64_vector, node_count: i64, source: i64, target: i64) -> GraphReport:
+    match node_count <=> 0:
+        -1:
+            return invalid_graph()
+        0:
+            return invalid_graph()
+        1:
+            return analyze_valid_size(edges, node_count, source, target)
+
+fn analyze_valid_size(edges: &i64_vector, node_count: i64, source: i64, target: i64) -> GraphReport:
+    match valid_node(source, node_count) <=> -1:
+        -1:
+            return invalid_graph()
+        0:
+            return analyze_target(edges, node_count, source, target)
+        1:
+            return invalid_graph()
+
+fn analyze_target(edges: &i64_vector, node_count: i64, source: i64, target: i64) -> GraphReport:
+    match valid_node(target, node_count) <=> -1:
+        -1:
+            return invalid_graph()
+        0:
+            return analyze_edges(edges, node_count, source, target)
+        1:
+            return invalid_graph()
+
+fn analyze_edges(edges: &i64_vector, node_count: i64, source: i64, target: i64) -> GraphReport:
+    mut edge_count: i64 = i64_vector_len(edges)
+    mut paired_count: i64 = edge_count / 2 * 2
+    match edge_count <=> paired_count:
+        -1:
+            return invalid_graph()
+        0:
+            return traverse_graph(edges, node_count, source, target)
+        1:
+            return invalid_graph()
+
+fn traverse_graph(edges: &i64_vector, node_count: i64, source: i64, target: i64) -> GraphReport:
+    mut edge_count: i64 = i64_vector_len(edges)
+    mut distances: i64_vector = i64_vector_new(node_count)
+    mut queue: i64_vector = i64_vector_new(node_count)
+    mut init: i64 = 0
+    while init < node_count:
+        discard i64_vector_push(&mut distances, 0 - 1)
+        init = init + 1
+    discard i64_vector_set(&mut distances, source, 0)
+    discard i64_vector_push(&mut queue, source)
+    mut head: i64 = 0
+    while head < i64_vector_len(&queue):
+        mut current: i64 = i64_vector_get(&queue, head)
+        mut edge_index: i64 = 0
+        while edge_index < edge_count:
+            mut source_node: i64 = i64_vector_get(edges, edge_index)
+            mut to: i64 = i64_vector_get(edges, edge_index + 1)
+            match valid_node(source_node, node_count) <=> -1:
+                -1:
+                    return invalid_graph()
+                0:
+                    match valid_node(to, node_count) <=> -1:
+                        -1:
+                            return invalid_graph()
+                        0:
+                            discard edge_source_matches(source_node, to, current, &mut distances, &mut queue)
+                        1:
+                            return invalid_graph()
+                1:
+                    return invalid_graph()
+            edge_index = edge_index + 2
+        head = head + 1
+    return summarize_graph(&distances, target)
+
+fn edge_source_matches(from_node: i64, to: i64, current: i64, distances: &mut i64_vector, queue: &mut i64_vector) -> i64:
+    match from_node <=> current:
+        -1:
+            return 0
+        0:
+            return enqueue_if_unvisited(to, current, distances, queue)
+        1:
+            return 0
+
+fn enqueue_if_unvisited(to: i64, current: i64, distances: &mut i64_vector, queue: &mut i64_vector) -> i64:
+    mut distance: i64 = i64_vector_get(&*distances, to)
+    match distance <=> 0 - 1:
+        -1:
+            return 0
+        0:
+            discard i64_vector_set(distances, to, i64_vector_get(&*distances, current) + 1)
+            discard i64_vector_push(queue, to)
+            return 0
+        1:
+            return 0
+
+fn summarize_graph(distances: &i64_vector, target: i64) -> GraphReport:
+    mut summary: I64Summary = summarize_i64(distances)
+    mut reachable: i64_vector = i64_vector_new(summary.count)
+    mut index: i64 = 0
+    while index < summary.count:
+        mut distance: i64 = i64_vector_get(distances, index)
+        match distance <=> 0 - 1:
+            -1:
+                distance = distance
+            0:
+                distance = distance
+            1:
+                discard i64_vector_push(&mut reachable, distance)
+        index = index + 1
+    summary = summarize_i64(&reachable)
+    return GraphReport(
+        status=summary.status,
+        target_distance=i64_vector_get(distances, target),
+        reachable_count=summary.count,
+        distance_sum=summary.sum
+    )
+
+fn main() -> i64:
+    mut edges: i64_vector = make_edges()
+    mut report: GraphReport = analyze_graph(&edges, 6, 0, 4)
+    match report.status <=> -1:
+        -1:
+            return 0 - 80
+        0:
+            report = report
+        1:
+            return 0 - 81
+    match report.target_distance <=> 3:
+        -1:
+            return 0 - 82
+        0:
+            report = report
+        1:
+            return 0 - 83
+    mut disconnected: GraphReport = analyze_graph(&edges, 7, 0, 6)
+    match disconnected.target_distance <=> 0 - 1:
+        -1:
+            return 0 - 84
+        0:
+            disconnected = disconnected
+        1:
+            return 0 - 85
+    mut invalid: GraphReport = analyze_graph(&edges, 6, 0 - 1, 4)
+    match invalid.status <=> 0:
+        -1:
+            return 0 - 86
+        0:
+            invalid = invalid
+        1:
+            return 0 - 87
+    return report.target_distance * 100 + report.distance_sum

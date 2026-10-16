@@ -1,0 +1,9 @@
+module main
+
+fn main() -> i64:
+    mut total: i64 = 0
+    mut value: i64 = 1
+    while value < 6:
+        total = total + value
+        value = value + 1
+    return total

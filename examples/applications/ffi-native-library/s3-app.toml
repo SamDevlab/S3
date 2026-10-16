@@ -1,0 +1,45 @@
+[application]
+schema = "s3.application.v1"
+name = "ffi-native-library"
+kind = "native-ffi-reference"
+compiler_revision = "2eab8a43f07b7fc842c4036ea0fb0203a9d41d6c"
+entry_module = "main"
+execution_mode = "FFI_INTEGRATION"
+fixtures = []
+
+[application.ffi]
+schema = "s3.ffi-app.v1"
+source = "src/main.s3"
+library_filename = "libs3_ffi_reference.so"
+symbol = "s3_add_i64"
+parameters = ["i64", "i64"]
+result = "i64"
+calling_convention = "sysv-amd64"
+supported_os = "Linux"
+supported_arch = "x86_64"
+timeout_ms = 10000
+
+[[application.ffi.cases]]
+name = "zero"
+arguments = [0, 0]
+expected = 0
+
+[[application.ffi.cases]]
+name = "positive"
+arguments = [23, 19]
+expected = 42
+
+[[application.ffi.cases]]
+name = "negative"
+arguments = [-10, 3]
+expected = -7
+
+[[application.ffi.cases]]
+name = "i64-min-boundary"
+arguments = [-9223372036854775808, 0]
+expected = -9223372036854775808
+
+[[application.ffi.cases]]
+name = "i64-max-boundary"
+arguments = [9223372036854775807, 0]
+expected = 9223372036854775807

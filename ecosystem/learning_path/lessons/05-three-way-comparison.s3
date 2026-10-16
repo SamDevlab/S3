@@ -1,0 +1,13 @@
+module main
+
+fn sign_code(value: i64) -> i64:
+    match value <=> 0:
+        -1:
+            return 3
+        0:
+            return 5
+        1:
+            return 7
+
+fn main() -> i64:
+    return sign_code(18)

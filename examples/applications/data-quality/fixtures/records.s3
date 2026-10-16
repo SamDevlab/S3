@@ -1,0 +1,14 @@
+module app.data.fixture
+
+export fn make_records() -> i64_vector:
+    mut values: i64_vector = i64_vector_new(6)
+    discard i64_vector_push(&mut values, 4)
+    discard i64_vector_push(&mut values, 5)
+    discard i64_vector_push(&mut values, 5)
+    discard i64_vector_push(&mut values, 6)
+    discard i64_vector_push(&mut values, 100)
+    discard i64_vector_push(&mut values, 0 - 13)
+    return values
+
+export fn make_empty_records() -> i64_vector:
+    return i64_vector_new(0)

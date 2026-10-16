@@ -1,0 +1,5 @@
+module main
+from lessons.metrics import add_three
+
+fn main() -> i64:
+    return add_three(39, 3)

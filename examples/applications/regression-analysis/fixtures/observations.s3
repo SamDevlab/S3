@@ -1,0 +1,19 @@
+module app.regression.fixture
+
+export fn make_x() -> f64_vector:
+    mut values: f64_vector = f64_vector_new(5)
+    discard f64_vector_push(&mut values, 0.0)
+    discard f64_vector_push(&mut values, 1.0)
+    discard f64_vector_push(&mut values, 2.0)
+    discard f64_vector_push(&mut values, 3.0)
+    discard f64_vector_push(&mut values, 4.0)
+    return values
+
+export fn make_y() -> f64_vector:
+    mut values: f64_vector = f64_vector_new(5)
+    discard f64_vector_push(&mut values, 1.0)
+    discard f64_vector_push(&mut values, 3.0)
+    discard f64_vector_push(&mut values, 5.0)
+    discard f64_vector_push(&mut values, 7.0)
+    discard f64_vector_push(&mut values, 9.0)
+    return values
