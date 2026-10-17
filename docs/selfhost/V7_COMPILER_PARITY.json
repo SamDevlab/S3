@@ -324,6 +324,58 @@
       "pr_state": "OPEN_DRAFT",
       "merge_authorized": false,
       "tag_or_release_authorized": false
+    },
+    "utf8_diagnostics_followup": {
+      "source_base_commit": "77970b24237b5f9858daef4f08b479c6d8bf2330",
+      "candidate": {
+        "target": "linux-x86_64",
+        "ephemeral": true,
+        "trusted_seed": false,
+        "sha256": "52409e44e0115da051180d15725ed686a526c4f985563f571c1c66d9c4fa70c7",
+        "bytes": 30068920,
+        "source_graph_sha256": "586f3b938e9cf31f2f24464d80d835f034c97192c4b91b6b70df8348d0af0689"
+      },
+      "root_cause": "UTF8 width calculation used the wrong quote-discriminator arm and treated boolean relation results as three-way comparisons",
+      "native_frontend_diagnostics": {
+        "status": "PASS",
+        "cases": 7,
+        "matched_fields": ["category", "phase", "code", "source_unit", "utf8_byte_span", "host_location"],
+        "invalid_utf8_span_byte_lengths": [1, 2, 3, 4]
+      },
+      "focused_tests": {
+        "linux_x86_64": {"passed": 8, "failed": 0, "elapsed_seconds": 49.34},
+        "windows_hosted_diagnostics": {"passed": 7, "failed": 0},
+        "compileall": "PASS",
+        "diff_check": "PASS",
+        "full_suite_run": false
+      },
+      "differential_corpus": {
+        "final_candidate_non_pebble": {"selected": 11, "passed": 11, "failed": 0, "families_sampled": 11},
+        "claim": "NONE_CASE_SAMPLES_ONLY",
+        "all_18_feature_families": "PARTIAL",
+        "earlier_candidate_full_selection": {
+          "candidate_sha256": "e726901465c72b83cd5a5bd6c47fc098bd577e7cd90fbc9410df82c07801f5ce",
+          "selected": 12,
+          "passed": 12,
+          "stale_after_utf8_source_change": true
+        },
+        "near_final_candidate_pebble_diagnosis": {
+          "candidate_sha256": "d870e767cb3ea7f1adf7bd0873d99c9894bf056964c7d54b1d9e04e7cb34e9c1",
+          "case": "maturity-pebble-compiler",
+          "native_process_timeout_seconds": 120.0,
+          "timeout_confirmed_by_single_case_diagnosis": true,
+          "final_candidate_pebble_rerun": false
+        }
+      },
+      "promotion": {
+        "python_reference_preserved": true,
+        "default_compiler": "PYTHON",
+        "seed_release": "UNPUBLISHED",
+        "family_states_promoted": 0,
+        "pr_state": "OPEN_DRAFT",
+        "merge_authorized": false,
+        "tag_or_release_authorized": false
+      }
     }
   }
 }

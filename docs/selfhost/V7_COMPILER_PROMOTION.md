@@ -414,6 +414,35 @@ work is not a release qualification.
   remains `UNPUBLISHED`; no PR merge, tag, release, or global promotion is
   authorized.
 
+## UTF-8 diagnostic-span follow-up — 2026-10-17
+
+- A multibyte invalid symbol exposed that the native diagnostic span could end
+  inside a UTF-8 code point. The cause was width selection tied to the quote
+  discriminator and to treating relation predicates as three-way comparisons.
+  The corrected helper uses the language's boolean-trit contract (`-1` true,
+  `0` false) and sequential UTF-8 lead-byte thresholds.
+- The final local Linux x86-64 candidate was ephemeral at
+  `/tmp/s3-v7-r2-utf8-final/s3c-ng`, SHA-256
+  `52409e44e0115da051180d15725ed686a526c4f985563f571c1c66d9c4fa70c7`,
+  30,068,920 bytes, source commit `77970b24237b5f9858daef4f08b479c6d8bf2330`,
+  source-graph SHA-256
+  `586f3b938e9cf31f2f24464d80d835f034c97192c4b91b6b70df8348d0af0689`.
+- Seven native frontend diagnostic cases matched the reference through the
+  provider boundary, including invalid spans of 1, 2, 3, and 4 UTF-8 bytes.
+  Linux focused tests passed 8/8 in 49.34 seconds; Windows hosted diagnostic
+  tests passed 7/7. `compileall` and `git diff --check` passed.
+- The final candidate passed all 11 selected non-Pebble differential samples
+  across 11 families at canonical-IR and hosted-execution levels. They remain
+  `CASE_SAMPLE_ONLY`; no feature family is promoted. The earlier 12/12 result
+  belongs to candidate `e7269014...`, before the UTF-8 source change.
+- A near-final candidate `d870e767...` failed the full 12-case bounded corpus
+  only on `maturity-pebble-compiler`. A separate single-case diagnosis confirmed
+  the native compiler process timed out at 120 seconds; this was not a
+  diagnostic mismatch. Pebble was not rerun on the final candidate. The timeout
+  remains an unresolved performance/host observation, not a pass or a proven
+  regression from the UTF-8 fix. No full suite or full characterization was
+  run again.
+
 Next engineering work remains performance/memory root-cause attribution and
 expansion of repository-derived positive and negative differential coverage.
 No family is promoted by this checkpoint.

@@ -474,6 +474,24 @@ def test_native_s3c_ng_frontend_diagnostics_and_provider_parity(
             10,
         ),
         (
+            "non-ascii-unsupported-symbol",
+            "module app\nfn main() -> i64:\n    return π\n",
+            2,
+            10,
+        ),
+        (
+            "non-ascii-3byte-symbol",
+            "module app\nfn main() -> i64:\n    return 中\n",
+            2,
+            10,
+        ),
+        (
+            "non-ascii-4byte-symbol",
+            "module app\nfn main() -> i64:\n    return 💩\n",
+            2,
+            10,
+        ),
+        (
             "unterminated-string",
             'module app\nfn main() -> i64:\n    return "oops\n',
             2,
@@ -541,6 +559,15 @@ def test_native_s3c_ng_frontend_diagnostics_and_provider_parity(
         elif case == "unsupported-punctuation":
             start = source_bytes.index(b"@")
             end = start + 1
+        elif case == "non-ascii-unsupported-symbol":
+            start = source_bytes.index("π".encode("utf-8"))
+            end = start + len("π".encode("utf-8"))
+        elif case == "non-ascii-3byte-symbol":
+            start = source_bytes.index("中".encode("utf-8"))
+            end = start + len("中".encode("utf-8"))
+        elif case == "non-ascii-4byte-symbol":
+            start = source_bytes.index("💩".encode("utf-8"))
+            end = start + len("💩".encode("utf-8"))
         elif case == "unterminated-string":
             start = source_bytes.index(b'"')
             end = source_bytes.index(b"\n", start)

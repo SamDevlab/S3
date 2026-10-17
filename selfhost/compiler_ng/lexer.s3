@@ -894,6 +894,31 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
                 1:
                     return -1
 
+fn ng_utf8_failure_width(lead_byte: i64) -> i64:
+    mut width: i64 = 1
+    match lead_byte >= 194:
+        -1:
+            width = 2
+        0:
+            width = 1
+        1:
+            width = width
+    match lead_byte >= 224:
+        -1:
+            width = 3
+        0:
+            width = width
+        1:
+            width = width
+    match lead_byte >= 240:
+        -1:
+            width = 4
+        0:
+            width = width
+        1:
+            width = width
+    return width
+
 fn ng_record_lex_failure(source: &bytes, cursor: i64, length: i64, base: i64, failure: &mut vector<i64>) -> i64:
     mut code: i64 = 10
     mut start: i64 = cursor
@@ -978,40 +1003,16 @@ fn ng_record_lex_failure(source: &bytes, cursor: i64, length: i64, base: i64, fa
                     1:
                         scanning = 0
         -1:
-            match unit < 128:
-                -1:
-                    end = start + 1
-                0:
-                    end = start + 1
-                1:
-                    match unit < 194:
-                        -1:
-                            end = start + 1
-                        0:
-                            end = start + 2
-                        1:
-                            match unit < 224:
-                                -1:
-                                    end = start + 2
-                                0:
-                                    end = start + 3
-                                1:
-                                    match unit < 240:
-                                        -1:
-                                            end = start + 3
-                                        0:
-                                            end = start + 4
-                                        1:
-                                            end = start + 4
-            match end > length:
-                -1:
-                    end = length
-                0:
-                    end = end
-                1:
-                    end = end
+            end = start + ng_utf8_failure_width(unit)
         1:
-            end = start + 1
+            end = start + ng_utf8_failure_width(unit)
+    match end > length:
+        -1:
+            end = length
+        0:
+            end = end
+        1:
+            end = end
     discard vector_push<i64>(failure, code)
     discard vector_push<i64>(failure, start + base)
     discard vector_push<i64>(failure, end + base)

@@ -42,6 +42,27 @@ _CASES = (
         2,
     ),
     (
+        "non_ascii_unsupported_symbol",
+        "module app\nfn main() -> i64:\n    return π\n",
+        NativeDiagnosticCode.LEX_INVALID_CHARACTER,
+        "LEX_INVALID_CHARACTER",
+        2,
+    ),
+    (
+        "non_ascii_3byte_symbol",
+        "module app\nfn main() -> i64:\n    return 中\n",
+        NativeDiagnosticCode.LEX_INVALID_CHARACTER,
+        "LEX_INVALID_CHARACTER",
+        2,
+    ),
+    (
+        "non_ascii_4byte_symbol",
+        "module app\nfn main() -> i64:\n    return 💩\n",
+        NativeDiagnosticCode.LEX_INVALID_CHARACTER,
+        "LEX_INVALID_CHARACTER",
+        2,
+    ),
+    (
         "unterminated_string",
         'module app\nfn main() -> i64:\n    return "oops\n',
         NativeDiagnosticCode.LEX_UNTERMINATED_STRING_LITERAL,
@@ -176,6 +197,15 @@ def test_native_frontend_diagnostic_matches_python_reference(
     elif case_name == "unsupported_punctuation":
         expected_start = encoded_source.index(b"@")
         expected_end = expected_start + 1
+    elif case_name == "non_ascii_unsupported_symbol":
+        expected_start = encoded_source.index("π".encode("utf-8"))
+        expected_end = expected_start + len("π".encode("utf-8"))
+    elif case_name == "non_ascii_3byte_symbol":
+        expected_start = encoded_source.index("中".encode("utf-8"))
+        expected_end = expected_start + len("中".encode("utf-8"))
+    elif case_name == "non_ascii_4byte_symbol":
+        expected_start = encoded_source.index("💩".encode("utf-8"))
+        expected_end = expected_start + len("💩".encode("utf-8"))
     elif case_name == "unterminated_string":
         expected_start = encoded_source.index(b'"')
         expected_end = encoded_source.index(b"\n", expected_start)
