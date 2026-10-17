@@ -1,6 +1,55 @@
 # S3 V7 Compiler Promotion
 
-Campaign state: qualification in progress on `feat/s3-v7-compiler-promotion-bootstrap-independence`.
+Campaign state: `PARTIAL_CLOSED` on `feat/s3-v7-compiler-promotion-bootstrap-independence`.
+
+## Definitive closeout — 2026-10-17
+
+**Result: `PARTIAL_CLOSED`; technical promotion is not complete.** This is an
+administrative closeout of the current V7 qualification attempt, not a claim
+that S3C-NG is production-ready or at feature parity.
+
+- PR [#331](https://github.com/SamDevlab/S3/pull/331) remains OPEN and Draft.
+  No Ready transition, merge, tag, release, or default change is authorized.
+- Exact tested source HEAD: `ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99`.
+  The final documentation commit may advance the PR head without changing this
+  tested source. No executable/compiler/test logic changes are included in
+  this closeout.
+- Natural Tests workflow run `39040792079` targets that exact source HEAD.
+  At closeout it had 11 successful jobs, 0 failed jobs, and 4 unit/renderer
+  shards still in progress. This is `CI_PENDING`, not an all-green full-suite
+  result. The native x86-64, S3C-NG promotion, exact-head seed, clean-checkout
+  B-to-C fixed-point, and performance-characterization jobs had succeeded.
+- All 18 currently listed feature families remain `PARTIAL`. Focused native
+  execution and the B-to-C fixed point do not establish whole-language parity.
+  Full negative-program, diagnostic/source-span, CLI, and ProjectTooling parity
+  also remain unqualified.
+- The exact-head Linux x86-64 bootstrap candidate was built and installed in a
+  clean CI checkout from the immutable artifact in run `39040792079`. Its
+  executable SHA-256 is
+  `390f4c04f056396ec70352919b2e71d9be50fc6d9ba2f891eddfb8f4a6e216f8`; its
+  source-graph SHA-256 is
+  `07143ec7fe5a5f7cb7a1d97efe4eadefdc97b25db81e2cd548be867d041d3278`.
+  The seed still derives from `python-reference-stage0`; the CI artifact is
+  ephemeral, not a durable release. The release lock remains `UNPUBLISHED`.
+- Performance characterization is not a promotion pass. On all five measured
+  cases S3C-NG was slower than Python: small `20.235x`, multimodule
+  ordering/search `2.311x`, real Pebble `1.523x`, self-source `2.369x`, and
+  fresh CLI startup `1.078x`. The run recorded 341,980 KiB process peak RSS and
+  4,144,716 KiB maximum observed child peak RSS across the measurement; these
+  figures are not attributed to an individual provider. This is a material
+  performance and memory risk, not evidence of speedup.
+- Python remains the reference and default compiler on all platforms. S3C-NG
+  remains opt-in and qualified only as a candidate on Linux x86-64. Windows
+  compatibility remains on Python. No global support claim is made.
+- V8 remains blocked pending a future explicit V7 technical-completion gate.
+  This closeout does not start V8.
+
+The remaining work is substantive: complete differential feature-family and
+invalid-program/diagnostic coverage, broader user-command and ProjectTooling
+qualification, resolve the observed performance/memory risk, and obtain
+explicit owner approval before publishing or pinning a durable Linux seed.
+Because those gates are not satisfied, the campaign closes as partial rather
+than extending into another open-ended qualification cycle.
 
 ## V6 starting evidence
 
@@ -187,8 +236,14 @@ match before timing data is accepted. The report is retained as a separate CI
 evidence artifact; it is not a bootstrap seed. There is no fixed speedup
 threshold. Promotion review considers pathological slowdown and startup
 behavior, and records process plus maximum child peak RSS for the combined
-measurement (not attributed per provider). It does not claim a speedup. This
-gate remains pending until the exact candidate head runs the updated workflow.
+measurement (not attributed per provider). Exact source HEAD
+`ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99` was characterized in run
+`39040792079` on Linux x86-64. Ratios (S3C-NG/Python) were 20.235x small,
+2.311x multimodule ordering/search, 1.523x real Pebble, 2.369x self-source,
+and 1.078x fresh CLI startup. Process peak RSS was 341,980 KiB and maximum
+observed child peak RSS was 4,144,716 KiB across the measurement; neither is
+provider-attributed. Classification remains `CHARACTERIZATION_ONLY`; this is
+not a speedup claim. Four unit/renderer shards were still pending at closeout.
 
 ## Stable bootstrap distribution preparation
 
@@ -212,9 +267,11 @@ unpublished artifacts fail closed. On platforms other than Linux x86-64 the
 Python reference remains available and S3C-NG is not promoted by this path.
 
 This PR contains the installer and deterministic packager, but its lock remains
-`UNPUBLISHED`: the final candidate artifact and exact provenance have not yet
-been frozen, and no release/tag has been published. Publication still requires
-the campaign owner's explicit confirmation. `DEFAULT_COMPILER` remains Python.
+`UNPUBLISHED`: no durable release/tag has been published. The exact-head
+candidate and provenance were produced and consumed successfully by the
+ephemeral CI clean-checkout gate in run `39040792079`; this does not make that
+artifact a stable carrier. Publication still requires the campaign owner's
+explicit confirmation. `DEFAULT_COMPILER` remains Python.
 
 The current PR candidate adds a native CLI regression using the `answer(42)`
 source through `check`, IR projections, `inspect`, Assembly, hosted/native

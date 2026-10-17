@@ -10,8 +10,35 @@
     "s3c_ng_supported_now_applies_only_to": "linux-x86_64",
     "global_promotion": false
   },
-  "s3c_ng_ir_format": 24,
+  "s3c_ng_ir_format": 25,
   "qualification_status": "S3C_NG_SELECTABLE_QUALIFICATION_INCOMPLETE",
+  "campaign_closeout": {
+    "status": "PARTIAL_CLOSED",
+    "technical_promotion_complete": false,
+    "date": "2026-10-17",
+    "pr": 331,
+    "pr_state": "OPEN_DRAFT",
+    "tested_source_head": "ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99",
+    "final_closeout_is_documentation_only": true,
+    "ci_run": 39040792079,
+    "ci_head": "ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99",
+    "ci_status_at_closeout": "PENDING",
+    "ci_jobs": {"success": 11, "failure": 0, "pending": 4},
+    "partial_feature_family_count": 18,
+    "v8_started": false,
+    "v8_gate": "BLOCKED_PENDING_V7_TECHNICAL_COMPLETION",
+    "merge_performed": false,
+    "release_or_tag_published": false,
+    "default_changed": false,
+    "remaining_blockers": [
+      "complete repository-derived differential feature-family parity",
+      "broad invalid-program, diagnostic, and source-span parity",
+      "broader CLI and ProjectTooling qualification",
+      "material measured S3C-NG slowdown and aggregate child-memory risk",
+      "durable Linux seed publication and lock pin require explicit owner confirmation",
+      "exact-head natural CI still had four unit/renderer shards pending at closeout"
+    ]
+  },
   "comparison_levels": [
     "STRUCTURAL_IR_PARITY",
     "SERIALIZED_IR_PARITY",
@@ -55,7 +82,7 @@
     "native_test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint",
     "provider_tests": "tests/test_compiler_provider.py",
     "scope": "The native implementation records missing-module, direct-self-cycle, unknown-import-symbol, and private-import-symbol failures in the named native test. The direct-cycle record uses an all-negative source/span sentinel because the Python reference supplies no location. Other negative statuses without a diagnostic record fail closed as NativeS3CTransportError.",
-    "parity_status": "FOCUSED_IMPLEMENTATION_NATIVE_CI_PENDING",
+    "parity_status": "FOCUSED_IMPLEMENTATION_PASS_EXACT_HEAD_AC6B0F0D",
     "message_parity": "UNQUALIFIED",
     "qualification_note": "Stable category/phase/code/message identifiers and local UTF-8 byte spans are transported separately from IR events. The focused native test compares category, phase, code, and reference source-location policy for four import failures. Python converts and formats the record without semantic recompilation. Exact message parity, full invalid-program parity, and complete structured-diagnostic parity are not qualified."
   },
@@ -114,15 +141,32 @@
     "qualification_note": "Focused local checker and canonical IR parity evidence only; complete numeric parity and exact-head CI remain separate promotion gates"
   },
   "performance_characterization": {
-    "state": "PENDING_EXACT_HEAD_LINUX_X86_64_RUN",
+    "state": "PASS_EXACT_HEAD_LINUX_X86_64",
     "tool": "tools/characterize_s3c_ng_provider.py",
     "ci_job": "s3c-ng-clean-bootstrap",
+    "ci_run": 39040792079,
+    "source_commit": "ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99",
+    "source_graph_sha256": "07143ec7fe5a5f7cb7a1d97efe4eadefdc97b25db81e2cd548be867d041d3278",
     "workloads": ["small", "multimodule-ordering-search", "real-pebble-workload", "self-source"],
     "cli_startup": "small check command measured in fresh Python processes",
     "protocol": "one warmup and three alternating paired O0 measurements per provider; compare canonical IR and Assembly before accepting timing samples; record process and aggregate child peak RSS, not attributed per provider",
+    "s3c_ng_to_python_ratios": {
+      "small": 20.235,
+      "multimodule_ordering_search": 2.311,
+      "real_pebble_workload": 1.523,
+      "self_source": 2.369,
+      "fresh_cli_startup": 1.078
+    },
+    "process_peak_rss_kib": 341980,
+    "max_child_peak_rss_kib": 4144716,
+    "rss_attribution": "COMBINED_MEASUREMENT_NOT_ATTRIBUTED_PER_PROVIDER",
+    "performance_result": "S3C_NG_SLOWER_ON_ALL_FIVE_MEASURED_CASES; MATERIAL_PERFORMANCE_AND_MEMORY_RISK; NO_SPEEDUP_CLAIM",
+    "performance_report_sha256": "c097518caf77fb163bbfb41c282f2c177ea732ba880efcf537e9f8c826616569",
     "threshold_policy": "no fixed speedup threshold; review pathological slowdown, memory explosion, and unusable startup",
     "classification": "CHARACTERIZATION_ONLY",
-    "stable_result_artifact": "s3c-ng-provider-performance-${GITHUB_SHA}"
+    "stable_result_artifact": "s3c-ng-provider-performance-ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99",
+    "candidate_executable_sha256": "390f4c04f056396ec70352919b2e71d9be50fc6d9ba2f891eddfb8f4a6e216f8",
+    "full_workflow_status_at_closeout": "11_SUCCESS_0_FAILURE_4_PENDING"
   },
   "feature_matrix_policy": {
     "allowed_states": ["PARITY_PASS", "PARTIAL", "S3C_NG_MISSING", "REFERENCE_ONLY", "EXPECTED_DIFFERENCE", "UNTESTED"],
@@ -181,8 +225,8 @@
     {"command": "container run", "semantic_compilation": "INDIRECT", "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "DOCKER_RUNTIME_S3C_NG_SELECTABLE_UNQUALIFIED"}
   ],
   "bootstrap": {
-    "clean_checkout": "PASS_EXACT_HEAD_BF9A9474_RUN_38594968631",
-    "strict_fixed_point": "PASS_MAINTAINED_NATIVE_B_C_D_AND_CLEAN_CHECKOUT_B_TO_C_EXACT_HEAD_BF9A9474",
+    "clean_checkout": "PASS_EXACT_HEAD_AC6B0F0D_RUN_39040792079",
+    "strict_fixed_point": "PASS_MAINTAINED_NATIVE_B_C_D_AND_CLEAN_CHECKOUT_B_TO_C_EXACT_HEAD_AC6B0F0D_RUN_39040792079",
     "artifact_distribution_policy": "VERSIONED_GITHUB_RELEASE_ASSET; EXPLICIT_INSTALL_ONLY; LOCK_UNPUBLISHED_PENDING_FINAL_CANDIDATE_AND_HUMAN_PUBLICATION_CONFIRMATION",
     "release_asset_name": "s3c-ng-bootstrap-linux-x86_64.tar.gz",
     "release_lock": "bootstrap/s3/s3c_ng_bootstrap_lock.json",
@@ -194,7 +238,14 @@
     "candidate_packager_source_identity": "REQUIRES_CHECKOUT_HEAD_AND_CLEAN_COMPILER_INPUTS_AND_RECOMPUTED_SOURCE_GRAPH_TO_MATCH_MANIFEST",
     "candidate_seed": "PYTHON_REFERENCE_STAGE0",
     "candidate_manifest_schema": 2,
-    "trusted_s3c_ng_seed": "PYTHON_REFERENCE_STAGE0_PARENT; EXACT_HEAD_AND_SAME_WORKFLOW_RUN_ARTIFACT; MAINTAINED_GATE_PASS_RUN_38594968631"
+    "candidate_source_commit": "ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99",
+    "candidate_source_graph_sha256": "07143ec7fe5a5f7cb7a1d97efe4eadefdc97b25db81e2cd548be867d041d3278",
+    "candidate_executable_sha256": "390f4c04f056396ec70352919b2e71d9be50fc6d9ba2f891eddfb8f4a6e216f8",
+    "candidate_executable_bytes": 29531464,
+    "ci_run": 39040792079,
+    "ephemeral_package_sha256": "3a8b262cd4e4e40da16549ddf06dfa47229f2614bd1d2f2d4edcff18047e9ee4",
+    "ephemeral_package_bytes": 2669759,
+    "trusted_s3c_ng_seed": "PYTHON_REFERENCE_STAGE0_PARENT; EXACT_HEAD_AND_SAME_WORKFLOW_RUN_ARTIFACT; CLEAN_CHECKOUT_B_TO_C_PASS_RUN_39040792079; EPHEMERAL_NOT_DURABLE; RELEASE_LOCK_UNPUBLISHED"
   },
   "promoted_default": false
 }
