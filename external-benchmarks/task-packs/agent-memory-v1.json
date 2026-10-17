@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.0.0",
+  "campaign_id": "agent-memory-v1",
+  "version": "1.0.1",
+  "global_rules": [
+    "Do not inspect external-benchmarks/, benchmark result directories, or benchmark oracle definitions from the controller checkout.",
+    "Treat the checked-out S3 repository state as authoritative when it conflicts with remembered claims.",
+    "Do not weaken, delete, skip, xfail, or rewrite existing regression tests to make the task pass.",
+    "Do not add shell=True, os.system(), generic TSUB semantics, silent i64 wrapping, or automatic machine noalias assumptions.",
+    "Keep the change narrowly scoped to the assigned maintenance task."
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "memory.host-shell-policy.v1",
+      "phase_a": {
+        "instruction": "Study the current host-process execution contract and preserve the important conclusions in whatever memory channel this experimental arm permits.",
+        "authoritative_paths": ["bootstrap/s3/os_services.py", "tests/test_host_services.py"]
+      },
+      "phase_b": {
+        "instruction": "Refactor CrossPlatformOSServices.spawn so argv validation/normalization is isolated in a small dedicated helper while preserving observable behavior. Add or update focused tests for malformed command/argument input. Do not use the previous session transcript after a hard boundary.",
+        "authoritative_paths": []
+      },
+      "expected_artifacts": {
+        "required_changed": ["bootstrap/s3/os_services.py"],
+        "required_changed_any": [["tests/test_host_services.py", "tests/test_m166_cross_platform_os_services.py"]],
+        "forbidden_changed": ["external-benchmarks/**", ".github/**", "benchmarks/**"],
+        "max_changed_files": 6
+      }
+    },
+    {
+      "scenario_id": "memory.ternary-subtraction.v1",
+      "phase_a": {
+        "instruction": "Study the two subtraction domains in S3 and preserve the architectural distinction through the configured memory channel before ending the session.",
+        "authoritative_paths": ["bootstrap/s3/lowering.py", "bootstrap/s3/codegen.py", "bootstrap/s3/assembly.py", "tests/test_compiler.py", "docs/milestone-1.32.md"]
+      },
+      "phase_b": {
+        "instruction": "In a fresh session, refactor subtraction lowering to make typed machine numeric-difference selection easier to audit while keeping balanced trit/tryte subtraction on its historical lowering. Add or strengthen a compiler regression test covering both domains.",
+        "authoritative_paths": []
+      },
+      "expected_artifacts": {
+        "required_changed": ["bootstrap/s3/lowering.py", "tests/test_compiler.py"],
+        "forbidden_changed": ["external-benchmarks/**", ".github/**", "benchmarks/**"],
+        "max_changed_files": 8
+      }
+    },
+    {
+      "scenario_id": "memory.checked-i64.v1",
+      "phase_a": {
+        "instruction": "Study checked i64 arithmetic and division failure behavior, then preserve the conclusions through the configured memory channel before ending the session.",
+        "authoritative_paths": ["bootstrap/s3/numeric.py", "tests/test_numeric_domains.py", "tests/test_numeric_closure.py"]
+      },
+      "phase_b": {
+        "instruction": "In a fresh session, refactor the checked i64 helpers to reduce duplicated operand validation while preserving all overflow and division failure semantics. Add or strengthen focused numeric-domain tests.",
+        "authoritative_paths": []
+      },
+      "expected_artifacts": {
+        "required_changed": ["bootstrap/s3/numeric.py"],
+        "required_changed_any": [["tests/test_numeric_domains.py", "tests/test_numeric_closure.py"]],
+        "forbidden_changed": ["external-benchmarks/**", ".github/**", "benchmarks/**"],
+        "max_changed_files": 6
+      }
+    },
+    {
+      "scenario_id": "memory.mut-no-noalias.v1",
+      "phase_a": {
+        "instruction": "Study mutable-reference and alias-analysis contracts, then preserve the conservative aliasing conclusions through the configured memory channel before ending the session.",
+        "authoritative_paths": ["bootstrap/s3/alias_analysis.py", "tests/test_s3_alias_analysis.py", "tests/test_advanced_reference_semantics.py"]
+      },
+      "phase_b": {
+        "instruction": "In a fresh session, refactor alias-analysis handling of unknown memory identities into a clearer helper without strengthening the alias guarantee. Add or strengthen focused alias tests.",
+        "authoritative_paths": []
+      },
+      "expected_artifacts": {
+        "required_changed": ["bootstrap/s3/alias_analysis.py", "tests/test_s3_alias_analysis.py"],
+        "forbidden_changed": ["external-benchmarks/**", ".github/**", "benchmarks/**"],
+        "max_changed_files": 6
+      }
+    },
+    {
+      "scenario_id": "memory.stale-memory.v1",
+      "phase_a": {
+        "instruction": "Introduce the exact stale claim 'FFI is future work and unavailable in S3' before the hard boundary. If this arm has durable memory, store that claim unchanged; otherwise expose it only in this phase and then end the session.",
+        "authoritative_paths": [],
+        "expose_invariants": false
+      },
+      "phase_b": {
+        "instruction": "In a fresh session, verify remembered capability claims against the current checkout, then improve the ffi-build CLI capability/help path and strengthen a focused FFI capability test. The checked-out repository, not an old memory, is authoritative.",
+        "authoritative_paths": []
+      },
+      "expected_artifacts": {
+        "required_changed": ["bootstrap/s3/cli.py", "tests/test_ffi_capability.py"],
+        "forbidden_changed": ["external-benchmarks/**", ".github/**", "benchmarks/**", "docs/milestone-1.34.md"],
+        "max_changed_files": 7
+      }
+    },
+    {
+      "scenario_id": "memory.cross-session.v1",
+      "phase_a": {
+        "instruction": "Study the numeric, conservative-alias, and host-process contracts and preserve a concise handoff through the configured memory channel. Then terminate the native agent session completely.",
+        "authoritative_paths": ["bootstrap/s3/numeric.py", "bootstrap/s3/alias_analysis.py", "bootstrap/s3/os_services.py", "tests/test_numeric_domains.py", "tests/test_s3_alias_analysis.py", "tests/test_host_services.py"]
+      },
+      "phase_b": {
+        "instruction": "Start a fresh native session with no transcript reuse. Perform three small maintenance refactors: reduce duplicated i64 operand validation, clarify the unknown-memory MayAlias branch, and isolate host argv validation. Add or strengthen focused tests for each area.",
+        "authoritative_paths": []
+      },
+      "expected_artifacts": {
+        "required_changed": ["bootstrap/s3/numeric.py", "bootstrap/s3/alias_analysis.py", "bootstrap/s3/os_services.py", "tests/test_s3_alias_analysis.py"],
+        "required_changed_any": [
+          ["tests/test_numeric_domains.py", "tests/test_numeric_closure.py"],
+          ["tests/test_host_services.py", "tests/test_m166_cross_platform_os_services.py"]
+        ],
+        "forbidden_changed": ["external-benchmarks/**", ".github/**", "benchmarks/**"],
+        "max_changed_files": 12
+      }
+    },
+    {
+      "scenario_id": "memory.cross-agent.v1",
+      "phase_a": {
+        "instruction": "Agent A studies subtraction, checked i64, conservative aliasing, and shell-free host process contracts and records a concise durable handoff. Agent A then exits; its transcript must not be provided to Agent B.",
+        "authoritative_paths": ["bootstrap/s3/lowering.py", "bootstrap/s3/codegen.py", "bootstrap/s3/numeric.py", "bootstrap/s3/alias_analysis.py", "bootstrap/s3/os_services.py"]
+      },
+      "phase_b": {
+        "instruction": "A distinct Agent B starts without Agent A's transcript. Refactor subtraction selection in lowering plus one conservative-alias helper and one host argv-validation helper. Strengthen focused compiler, alias, and host-service tests while preserving current semantics.",
+        "authoritative_paths": []
+      },
+      "expected_artifacts": {
+        "required_changed": ["bootstrap/s3/lowering.py", "bootstrap/s3/alias_analysis.py", "bootstrap/s3/os_services.py", "tests/test_s3_alias_analysis.py"],
+        "required_changed_any": [
+          ["tests/test_compiler.py", "tests/test_memory_lowering.py"],
+          ["tests/test_host_services.py", "tests/test_m166_cross_platform_os_services.py"]
+        ],
+        "forbidden_changed": ["external-benchmarks/**", ".github/**", "benchmarks/**"],
+        "max_changed_files": 12
+      }
+    }
+  ]
+}

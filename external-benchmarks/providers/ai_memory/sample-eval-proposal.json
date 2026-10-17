@@ -1,0 +1,12 @@
+{
+  "path": "_rules/s3-numeric.md",
+  "kind": "rule",
+  "operation": "update",
+  "edit_mode": "patch",
+  "title": "S3 numeric semantics",
+  "confidence": 0.95,
+  "rationale": "Preserve checked machine integer semantics.",
+  "before_body": "",
+  "after_body": "# S3 numeric semantics\n\ni64 overflow does not wrap. Balanced ternary subtraction does not use TNDIFF.\n",
+  "expected_base_body_sha256": "fixture"
+}

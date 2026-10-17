@@ -1,0 +1,7 @@
+{
+  "provider": {"id": "<provider-id>", "version": "<provider-version>"},
+  "agent": {"provider": "<agent-provider>", "model": "<model>", "harness": "<harness>"},
+  "execution": {"s3_commit": "<pinned-s3-commit>", "agent_harness_version": "<harness-version>", "tool_permissions_profile": "<permissions-profile>", "task_protocol_version": "agent-memory-v1", "repetition": 1},
+  "handoff": {"kind": "cross-session", "source_agent": {"provider": "<agent-provider>", "model": "<source-model>", "harness": "<source-harness>"}, "target_agent": {"provider": "<agent-provider>", "model": "<target-model>", "harness": "<target-harness>"}, "transcript_reused": false},
+  "reported_invariants": []
+}

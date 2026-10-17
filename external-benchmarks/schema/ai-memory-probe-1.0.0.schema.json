@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s3-lang.local/external-benchmarks/ai-memory-probe-1.0.0.schema.json",
+  "title": "S3 AI-MEMORY Probe 1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "provider", "status", "connection", "scope"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {"id": {"const": "ai-memory"}}
+    },
+    "status": {"const": "PASS"},
+    "connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transport", "endpoint_class", "auth_configured"],
+      "properties": {
+        "transport": {"enum": ["http", "https"]},
+        "endpoint_class": {"enum": ["loopback", "remote"]},
+        "auth_configured": {"type": "boolean"}
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspace_present", "project_present", "project_page_count"],
+      "properties": {
+        "workspace_present": {"type": "boolean"},
+        "project_present": {"type": "boolean"},
+        "project_page_count": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "search_hit_count": {"type": "integer", "minimum": 0, "maximum": 100}
+      }
+    }
+  }
+}

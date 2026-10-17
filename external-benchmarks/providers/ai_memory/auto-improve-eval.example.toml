@@ -1,0 +1,17 @@
+# Operator-side example for the Agent Memory V1 integrity-gate arm.
+#
+# This file is documentation only. S3 does not modify AI-MEMORY configuration.
+# Copy the relevant block into the operator-owned AI-MEMORY config when running
+# the `ai-memory+s3-integrity-gate` benchmark arm.
+#
+# IMPORTANT: the eval command runs in the AI-MEMORY server environment. Replace
+# /absolute/path/to/S3 with a path visible to that process/container. If the
+# server is containerized, mount the S3 checkout read-only and use that mounted
+# path here.
+
+[auto_improve.eval]
+enabled = true
+command = "python3 /absolute/path/to/S3/tools/s3_memory_gate.py"
+timeout_secs = 30
+targets = ["_rules", "procedures"]
+min_delta = 0.0

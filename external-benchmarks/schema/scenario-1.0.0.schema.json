@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s3-lang.local/external-benchmarks/scenario-1.0.0.schema.json",
+  "title": "S3 External Benchmark Scenario 1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scenario_id", "version", "category", "objective", "critical_invariants", "oracle"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "scenario_id": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "category": {"type": "string", "minLength": 1},
+    "objective": {"type": "string", "minLength": 1},
+    "task": {"type": "string"},
+    "critical_invariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "description": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "oracle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "argv"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "argv": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+              "timeout_seconds": {"type": "number", "exclusiveMinimum": 0}
+            }
+          }
+        },
+        "required_patterns": {"$ref": "#/$defs/patternChecks"},
+        "forbidden_patterns": {"$ref": "#/$defs/patternChecks"}
+      }
+    }
+  },
+  "$defs": {
+    "patternChecks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "glob", "pattern"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "glob": {"type": "string", "minLength": 1},
+          "pattern": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

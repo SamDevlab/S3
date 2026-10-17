@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0.0",
+  "scenario_id": "memory.cross-agent.v1",
+  "version": "1.0.0",
+  "category": "agent-memory",
+  "objective": "Measure whether S3 architectural invariants survive a handoff between different coding agents through a shared external memory system.",
+  "task": "Agent A studies the relevant S3 contracts and records the handoff in the memory system. Agent B must be a distinct agent/harness identity, receives no Agent A transcript, and performs a compiler/runtime refactor using only the repository plus shared durable memory.",
+  "critical_invariants": [
+    {
+      "id": "cross-agent-balanced-subtraction",
+      "description": "The receiving agent preserves balanced trit/tryte subtraction as INVERT + ADD and keeps machine numeric difference separate."
+    },
+    {
+      "id": "cross-agent-i64-checked",
+      "description": "The receiving agent preserves checked i64 semantics without silent wrapping."
+    },
+    {
+      "id": "cross-agent-mut-no-machine-noalias",
+      "description": "The receiving agent does not import an automatic machine noalias promise from source &mut."
+    },
+    {
+      "id": "cross-agent-host-no-shell",
+      "description": "The receiving agent preserves shell-free external process execution."
+    }
+  ],
+  "oracle": {
+    "commands": [
+      {
+        "id": "cross-agent-focused-regressions",
+        "argv": ["{python}", "-m", "pytest", "-q", "tests/test_compiler.py", "tests/test_numeric_domains.py", "tests/test_numeric_closure.py", "tests/test_s3_alias_analysis.py", "tests/test_advanced_reference_semantics.py", "tests/test_host_services.py"],
+        "timeout_seconds": 240
+      }
+    ],
+    "required_patterns": [
+      {
+        "id": "cross-agent-invert-mapping",
+        "glob": "bootstrap/s3/codegen.py",
+        "pattern": "IROpcode.INVERT: AssemblyOpcode.TINV"
+      },
+      {
+        "id": "cross-agent-tn-difference-mapping",
+        "glob": "bootstrap/s3/codegen.py",
+        "pattern": "IROpcode.NUMERIC_DIFFERENCE: AssemblyOpcode.TNDIFF"
+      },
+      {
+        "id": "cross-agent-may-alias",
+        "glob": "bootstrap/s3/alias_analysis.py",
+        "pattern": "MAY_ALIAS = \"MayAlias\""
+      }
+    ],
+    "forbidden_patterns": [
+      {
+        "id": "cross-agent-no-generic-tsub",
+        "glob": "bootstrap/s3/assembly.py",
+        "pattern": "TSUB"
+      },
+      {
+        "id": "cross-agent-no-shell-true-bootstrap",
+        "glob": "bootstrap/**/*.py",
+        "pattern": "shell=True"
+      },
+      {
+        "id": "cross-agent-no-os-system-bootstrap",
+        "glob": "bootstrap/**/*.py",
+        "pattern": "os.system("
+      },
+      {
+        "id": "cross-agent-no-shell-true-tools",
+        "glob": "tools/**/*.py",
+        "pattern": "shell=True"
+      },
+      {
+        "id": "cross-agent-no-os-system-tools",
+        "glob": "tools/**/*.py",
+        "pattern": "os.system("
+      }
+    ]
+  }
+}

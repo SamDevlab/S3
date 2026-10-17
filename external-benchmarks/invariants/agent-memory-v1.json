@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0.0",
+  "invariants": [
+    {
+      "id": "balanced-subtraction-is-not-tndiff",
+      "description": "Balanced trit/tryte subtraction remains distinct from machine NUMERIC_DIFFERENCE/TNDIFF.",
+      "evidence": [
+        {
+          "path": "bootstrap/s3/codegen.py",
+          "required_literals": [
+            "IROpcode.INVERT: AssemblyOpcode.TINV,",
+            "IROpcode.NUMERIC_DIFFERENCE: AssemblyOpcode.TNDIFF,"
+          ]
+        }
+      ],
+      "contradiction_patterns": [
+        "(?is)\\b(?:balanced\\s+)?(?:trit|tryte|ternary)\\s+subtraction\\b.{0,120}(?<!not )(?<!never )\\b(?:uses?|lowers?\\s+to|implemented\\s+(?:with|by))\\b.{0,80}\\bTNDIFF\\b",
+        "(?is)\\bTNDIFF\\b\\s+(?:is|implements|handles)\\s+(?!not\\b)(?:the\\s+)?(?:balanced|trit|tryte|ternary)\\s+subtraction\\b"
+      ]
+    },
+    {
+      "id": "i64-is-checked-not-wrapping",
+      "description": "S3 i64 arithmetic is checked and division has deterministic failure cases.",
+      "evidence": [
+        {
+          "path": "bootstrap/s3/numeric.py",
+          "required_literals": [
+            "return validate_i64(validate_i64(left) + validate_i64(right))",
+            "if left == I64_MIN and right == -1:"
+          ]
+        }
+      ],
+      "contradiction_patterns": [
+        "(?is)\\bi64\\b.{0,60}\\b(?:uses?|allows?|has)\\b.{0,30}\\bwrapping\\s+arithmetic\\b",
+        "(?is)\\bi64\\b.{0,80}\\boverflow\\b.{0,30}(?<!not )(?<!never )\\bwraps?\\b",
+        "(?is)\\bi64\\s+division\\s+by\\s+zero\\b.{0,80}(?<!not )(?<!never )\\b(?:returns?|yields?)\\s+(?:0|nan|inf|infinity)\\b",
+        "(?is)INT64_MIN\\s*/\\s*-1.{0,80}(?<!not )(?<!never )\\b(?:is\\s+valid|returns?|yields?)\\b"
+      ]
+    },
+    {
+      "id": "mut-does-not-imply-noalias",
+      "description": "Mutable source references do not automatically imply a machine-level noalias promise.",
+      "evidence": [
+        {
+          "path": "bootstrap/s3/alias_analysis.py",
+          "required_literals": [
+            "MAY_ALIAS = \"MayAlias\"",
+            "if mem1 is None or mem2 is None:"
+          ]
+        }
+      ],
+      "contradiction_patterns": [
+        "(?is)&mut.{0,80}(?<!not )(?<!never )\\b(?:implies|guarantees|provides|means)\\b.{0,40}\\bnoalias\\b",
+        "(?is)\\bnoalias\\b.{0,60}\\b(?:from|because\\s+of|for)\\b.{0,30}&mut"
+      ]
+    },
+    {
+      "id": "host-processes-are-shell-free",
+      "description": "Host process execution uses argument vectors and does not introduce implicit shell execution.",
+      "evidence": [
+        {
+          "path": "bootstrap/s3/os_services.py",
+          "required_literals": [
+            "command_line = (command, *normalized_args)",
+            "shell=False,"
+          ]
+        }
+      ],
+      "contradiction_patterns": [
+        "(?is)(?<!not )(?<!never )\\b(?:use|enable|prefer|require)\\b.{0,40}\\bshell=True\\b",
+        "(?is)(?<!not )(?<!never )\\b(?:use|enable|prefer|require)\\b.{0,40}\\bos\\.system\\s*\\("
+      ]
+    },
+    {
+      "id": "ffi-boundary-exists",
+      "description": "The current S3 line has an executable FFI boundary with foreign fn, export fn, and ffi-build.",
+      "evidence": [
+        {
+          "path": "docs/milestone-1.34.md",
+          "required_literals": [
+            "`foreign fn` declares a host-provided symbol",
+            "`ffi-build` emits a real Linux shared object"
+          ]
+        }
+      ],
+      "contradiction_patterns": [
+        "(?is)\\bFFI\\b\\s+(?:is|remains)\\s+(?!not\\b)(?:unavailable|not\\s+implemented|future\\s+work)\\b",
+        "(?is)\\b(?:foreign\\s+fn|ffi-build)\\b\\s+(?:is|remains)\\s+(?!not\\b)(?:unavailable|not\\s+implemented|future\\s+work)\\b"
+      ]
+    }
+  ]
+}
