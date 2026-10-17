@@ -46,6 +46,7 @@
     }
   },
   "shards": {
+    "quantum-foundation": ["tests/test_quantum_foundation.py"],
     "compiler": ["tests/test_compiler.py", "tests/test_cli_source_syntax.py"],
     "m139-m140": ["tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"],
     "m151": [
