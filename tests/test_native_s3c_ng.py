@@ -182,6 +182,14 @@ _INVALID_PROVIDER_SOURCES = {
     "wrong-resource-open-type": {
         "app.s3": "module app\nfn main() -> i64:\n    mut handle: resource_handle = resource_open(1)\n    return 0\n",
     },
+    "duplicate-function": {
+        "app.s3": (
+            "module app\n"
+            "fn repeated() -> i64:\n    return 1\n"
+            "fn repeated() -> i64:\n    return 2\n"
+            "fn main() -> i64:\n    return 0\n"
+        ),
+    },
 }
 
 
@@ -1012,6 +1020,7 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
         "wrong-bytes-builtin-type": -14,
         "wrong-i64-vector-capacity-type": -14,
         "wrong-resource-open-type": -14,
+        "duplicate-function": -8,
     }
     structured_diagnostics = {
         "missing-module": DiagnosticCode.MODULE_NOT_FOUND,
@@ -1056,6 +1065,20 @@ def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
                     executable=artifact.executable,
                     entry_module=entry_module,
                 )
+
+    function_lines = ["module main"]
+    for index in range(130):
+        function_lines.extend((f"fn work_{index:02d}() -> i64:", f"    return {index}"))
+    function_lines.extend(("fn main() -> i64:", "    return work_129()"))
+    _assert_native_compile(
+        artifact,
+        {"main.s3": "\n".join(function_lines) + "\n"},
+        expected_result=129,
+        tmp_path=tmp_path / "many-functions",
+        entry_module="main",
+        context="native 131-function source set",
+        execute_native=False,
+    )
 
 
 @pytest.mark.s3_native

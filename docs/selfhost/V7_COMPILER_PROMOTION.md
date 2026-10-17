@@ -443,6 +443,30 @@ work is not a release qualification.
   regression from the UTF-8 fix. No full suite or full characterization was
   run again.
 
+## Function-name duplicate-check optimization — 2026-10-17
+
+- The module pipeline built an open-addressed function lookup index, then ran a
+  second pairwise scan over all functions to reject duplicate local names. The
+  duplicate check now happens during index insertion, with exact source-span
+  equality after the module/hash filter and the existing `-8` rejection status.
+  The separate scan was removed. Global internal-name uniqueness in the IR
+  checker remains unchanged.
+- Focused Windows checks passed 2/2. The Linux x86-64 native provider test
+  passed duplicate-function rejection and compared a 131-function valid source
+  set against reference IR. No full suite or full characterization ran.
+- Exploratory same-host A/B used alternating native-process timings for
+  synthetic 1-, 51-, and 201-function inputs (two samples per candidate/cell).
+  The new candidate medians were 13.531 ms, 204.745 ms, and 7,360.925 ms;
+  baseline medians were 15.744 ms, 236.984 ms, and 8,130.915 ms. The two 201-
+  function candidate samples varied from 3,712 to 11,010 ms, so this is only a
+  directional signal, not a stable performance claim or official benchmark.
+  Official characterization and provider-performance baselines were not
+  changed.
+- Candidate was ephemeral: `/tmp/pytest-of-root/pytest-22/test_native_s3c_ng_rejects_ref0/native-b/s3c-ng-b`,
+  SHA-256 `8a1513a698003ed6be7a279da175bdf3e90c4b81668f9171b21dd98a80189ea1`,
+  30,048,360 bytes. All 18 feature families remain `PARTIAL`; Python remains
+  the reference and default, and the seed remains unpublished.
+
 Next engineering work remains performance/memory root-cause attribution and
 expansion of repository-derived positive and negative differential coverage.
 No family is promoted by this checkpoint.

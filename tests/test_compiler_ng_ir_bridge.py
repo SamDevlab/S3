@@ -3376,7 +3376,7 @@ fn main() -> i64:
     while bucket_index < {function_count * 2 + 1}:
         discard vector_push<i64>(&mut bucket_slots, 0)
         bucket_index = bucket_index + 1
-    build_status = ng_build_function_lookup_index(&functions, &mut bucket_slots)
+    build_status = ng_build_function_lookup_index(&source, &functions, &mut bucket_slots)
     match build_status <=> 0:
         0:
             build_status = build_status

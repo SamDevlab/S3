@@ -376,6 +376,52 @@
         "merge_authorized": false,
         "tag_or_release_authorized": false
       }
+    },
+    "function_duplicate_index_followup": {
+      "date": "2026-10-17",
+      "status": "FOCUSED_PASS",
+      "root_cause": "pairwise module-local duplicate-function validation ran after an open-addressed lookup index had already been built",
+      "implementation": "duplicate local names are rejected during lookup-index insertion after exact source-span equality; global IR function-name uniqueness remains unchanged",
+      "duplicate_rejection_status": -8,
+      "focused_gates": {
+        "windows": {"passed": 2, "failed": 0},
+        "linux_x86_64_native": {
+          "status": "PASS",
+          "case": "duplicate rejection plus 131-function reference-IR comparison"
+        },
+        "full_suite_run": false,
+        "full_characterization_run": false
+      },
+      "candidate": {
+        "target": "linux-x86_64",
+        "ephemeral": true,
+        "trusted_seed": false,
+        "sha256": "8a1513a698003ed6be7a279da175bdf3e90c4b81668f9171b21dd98a80189ea1",
+        "bytes": 30048360,
+        "source_commit": "ea88567a734596cc551616ba43371ca0398271d6",
+        "source_graph_sha256": "019a7c053960ccc3e10f362d29ea54a2e49201fb37f1b29efa5635fc6778613d"
+      },
+      "exploratory_function_scaling": {
+        "protocol": "same-host Linux x86-64 WSL; alternating native subprocess timings; two samples per candidate per cell; synthetic source only; not official characterization",
+        "baseline_candidate_sha256": "52409e44e0115da051180d15725ed686a526c4f985563f571c1c66d9c4fa70c7",
+        "candidate_sha256": "8a1513a698003ed6be7a279da175bdf3e90c4b81668f9171b21dd98a80189ea1",
+        "cells": [
+          {"functions": 1, "source_bytes": 42, "baseline_median_ms": 15.744, "candidate_median_ms": 13.531},
+          {"functions": 51, "source_bytes": 1572, "baseline_median_ms": 236.984, "candidate_median_ms": 204.745},
+          {"functions": 201, "source_bytes": 6422, "baseline_median_ms": 8130.915, "candidate_median_ms": 7360.925, "candidate_samples_ms": [11009.553, 3712.298], "classification": "HIGH_DISPERSION_DIRECTIONAL_ONLY"}
+        ],
+        "official_baseline_updated": false,
+        "speedup_claim": false,
+        "performance_status": "EXPLORATORY_NOT_QUALIFIED"
+      },
+      "promotion": {
+        "python_reference_preserved": true,
+        "default_compiler": "PYTHON",
+        "seed_release": "UNPUBLISHED",
+        "feature_families_promoted": 0,
+        "pr_state": "OPEN_DRAFT",
+        "merge_authorized": false
+      }
     }
   }
 }
