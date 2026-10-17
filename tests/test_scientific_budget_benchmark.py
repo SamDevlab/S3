@@ -11,7 +11,7 @@ from bootstrap.s3.assembly import (
 from tools.scientific_budget_benchmark import _assembly_program_sha256
 
 
-def _program_with_tmul(destination: int) -> AssemblyProgram:
+def _program_with_opcode(opcode: AssemblyOpcode, destination: int) -> AssemblyProgram:
     return AssemblyProgram(
         functions=(
             AssemblyFunction(
@@ -28,7 +28,7 @@ def _program_with_tmul(destination: int) -> AssemblyProgram:
                         label="entry",
                         instructions=(
                             AssemblyInstruction(
-                                opcode=AssemblyOpcode.TMUL,
+                                opcode=opcode,
                                 registers=(destination, 0, 1),
                             ),
                             AssemblyInstruction(
@@ -43,6 +43,10 @@ def _program_with_tmul(destination: int) -> AssemblyProgram:
     )
 
 
+def _program_with_tmul(destination: int) -> AssemblyProgram:
+    return _program_with_opcode(AssemblyOpcode.TMUL, destination)
+
+
 def test_assembly_program_fingerprint_handles_opcodes_outside_text_adapter() -> None:
     program = _program_with_tmul(2)
 
@@ -52,3 +56,12 @@ def test_assembly_program_fingerprint_handles_opcodes_outside_text_adapter() -> 
     assert len(first) == 64
     assert first == second
     assert first != _assembly_program_sha256(_program_with_tmul(3))
+
+
+def test_assembly_program_fingerprint_handles_tndiff_without_text_adapter() -> None:
+    program = _program_with_opcode(AssemblyOpcode.TNDIFF, 2)
+
+    assert len(_assembly_program_sha256(program)) == 64
+    assert _assembly_program_sha256(program) != _assembly_program_sha256(
+        _program_with_tmul(2)
+    )

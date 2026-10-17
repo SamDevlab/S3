@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from bootstrap.s3.assembly_fingerprint import assembly_program_sha256
 from bootstrap.s3.compiler_provider import CompilerKind, compile_source_set_with_provider
 from bootstrap.s3.native_compiler import require_s3c_ng_executable
 from bootstrap.s3.optimizer import OptimizationLevel
@@ -86,7 +87,7 @@ def _compile_and_hash(
     elapsed = time.perf_counter_ns() - started
     ir, assembly = output.require_ordinary_artifacts()
     ir_hash = hashlib.sha256(serialize_ir(ir).encode("utf-8")).hexdigest()
-    assembly_hash = hashlib.sha256(assembly.render().encode("utf-8")).hexdigest()
+    assembly_hash = assembly_program_sha256(assembly)
     return elapsed, ir_hash, assembly_hash
 
 
