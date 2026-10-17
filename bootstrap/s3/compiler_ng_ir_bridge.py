@@ -54,17 +54,31 @@ counter suffix; current V22 streams require exactly one descriptor per block.
 Kind 29 marks a result-producing CALL whose canonical scalar ``result`` field
 is absent even though its result cells are transported for register identity,
 including value-projected calls whose result type has only one cell.
+V23 adds builtin type kinds 11 and 12 for ``host_capability`` and
+``resource_handle``. These source-level types map to canonical ``i64`` values;
+the descriptors preserve semantic checking across the native frontend boundary.
+V24 adds slice type kind 13, explicit hidden i64 length parameters for borrowed
+slice references, and opcode 23 for checked indexed loads. Slice descriptors
+carry the element type; malformed parameter records remain fail-closed rather
+than having their lengths inferred from source. Slice-length and slice-store
+opcodes are not part of the implemented V24 interchange surface.
+V25 adds internal static-array type kind 14. Array descriptors preserve their
+scalar element type and positive fixed length; arrays are represented at
+runtime by the existing typed memory objects and indexed LOAD/STORE opcodes,
+not as register values. The decoder rejects array descriptors in value
+positions and validates their element and length metadata.
 The decoder only
 validates descriptor structure and maps runtime-representable categories; it
 does not resolve source-level names or perform semantic analysis.
 Unsupported types, opcodes, fields, or record order fail closed. Earlier streams
 carry no static-string data; V13 reconstructs only strings explicitly referenced
-by CONST_STR instructions.
+by CONST_STR instructions. Their IDs follow canonical function order, then
+source order within each function.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 
 from .ir import (
@@ -84,7 +98,7 @@ from .diagnostics import SourceLocation
 from .vector_types import composite_vector_runtime_name_from_key
 
 
-NG_IR_FORMAT_VERSION = 22
+NG_IR_FORMAT_VERSION = 25
 NG_IR_RECORD_WIDTH = 8
 
 _BLOCK_NAME_PREFIXES = {
@@ -153,6 +167,8 @@ _TYPE_KINDS_V3 = {
     8: IRType.VECTOR,
     9: IRType.REFERENCE,
     10: IRType.STRING,
+    11: IRType.I64,
+    12: IRType.I64,
 }
 _COMPOSITE_VECTOR_FIELD_KINDS = frozenset(_TYPE_KINDS_V3) - {9}
 _OPCODE_CODES = {
@@ -177,6 +193,7 @@ _OPCODE_CODES = {
     19: IROpcode.CONST_STR,
     20: IROpcode.INVERT,
     21: IROpcode.REFERENCE_STORE,
+    23: IROpcode.SLICE_LOAD,
 }
 
 
@@ -206,6 +223,25 @@ class _InstructionRecord:
     results: tuple[int, ...] = ()
     call_result_field_absent: bool = False
     location: SourceLocation | None = None
+
+
+def _ordered_static_string_occurrences(
+    functions: Iterable[Iterable[_InstructionRecord]],
+) -> tuple[tuple[int | None, str], ...]:
+    """Order literals by canonical function order, then source order per function."""
+
+    ordered: list[tuple[int | None, str]] = []
+    for instructions in functions:
+        in_function = sorted(
+            (
+                (record.static_string_offset, record.static_string_value)
+                for record in instructions
+                if record.static_string_value is not None
+            ),
+            key=lambda item: -1 if item[0] is None else item[0],
+        )
+        ordered.extend((offset, value) for offset, value in in_function if value is not None)
+    return tuple(ordered)
 
 
 @dataclass(frozen=True, slots=True)
@@ -243,7 +279,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
     version = header[1]
     if (
         header[0] != 0
-        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22}
+        or version not in {*_TYPE_CODES_BY_VERSION, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25}
         or header[2] != NG_IR_RECORD_WIDTH
         or any(header[3:])
     ):
@@ -358,9 +394,13 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
         try:
             return _TYPE_KINDS_V3[descriptor.kind]
         except KeyError as exc:
-            raise NGIRDecodeError(
-                f"nominal type descriptor {code} must be lowered to field cells before {context}"
-            ) from exc
+            if descriptor.kind == 7:
+                message = f"nominal type descriptor {code} must be lowered to field cells before {context}"
+            elif descriptor.kind == 14:
+                message = f"static array type descriptor {code} is not a runtime value in {context}"
+            else:
+                message = f"type descriptor {code} is not a runtime value in {context}"
+            raise NGIRDecodeError(message) from exc
 
     def source_name(start: int, end: int, context: str) -> str:
         if start < 0 or end <= start or end > len(source):
@@ -435,20 +475,31 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             return type_name
         return f"__s3mod_{module_name.replace('.', '_')}__type_{type_name}"
 
-    def reference_metadata(type_id: int, context: str) -> tuple[IRType | None, bool, str | None]:
+    def reference_metadata(
+        type_id: int, context: str
+    ) -> tuple[IRType | None, bool, str | None, bool]:
         if version < 3:
-            return None, False, None
+            return None, False, None, False
         type_for(type_id, context)
         descriptor = type_descriptors[type_id]
         if descriptor.kind != 9:
-            return None, False, None
+            return None, False, None, False
         target = type_descriptors[descriptor.target_type]
         if target.kind == 7:
             aggregate = source_name(target.name_start, target.name_end, f"reference target of {context}")
-            return None, bool(descriptor.mutable), aggregate
+            return None, bool(descriptor.mutable), aggregate, False
         if target.kind == 9:
             raise NGIRDecodeError(f"nested reference target is not representable in {context}")
-        return type_for(target.id, f"reference target of {context}"), bool(descriptor.mutable), None
+        if target.kind == 13:
+            if version < 24:
+                raise NGIRDecodeError("slice reference descriptors require NG IR V24")
+            return (
+                type_for(target.element_type, f"slice element of {context}"),
+                bool(descriptor.mutable),
+                None,
+                True,
+            )
+        return type_for(target.id, f"reference target of {context}"), bool(descriptor.mutable), None, False
 
     if version >= 3:
         while cursor < len(records) and records[cursor][0] == 12:
@@ -458,10 +509,12 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             _, detail_id, target_type, mutable, first_field, field_count, reserved0, reserved1 = detail
             if type_id != len(type_descriptors) + 1 or detail_id != type_id:
                 raise NGIRDecodeError("type descriptor IDs must be contiguous and ordered")
-            if kind not in range(1, 11) or any((reserved0, reserved1)):
+            if kind not in range(1, 15) or any((reserved0, reserved1)):
                 raise NGIRDecodeError(f"malformed type descriptor {type_id}")
             if kind == 10 and version < 13:
                 raise NGIRDecodeError("STRING type descriptor requires NG IR V13")
+            if kind in (11, 12) and version < 23:
+                raise NGIRDecodeError("host/resource type descriptors require NG IR V23")
             type_descriptors[type_id] = _TypeDescriptorRecord(
                 type_id, kind, module_start, module_end, name_start, name_end,
                 element_type, target_type, mutable, first_field, field_count,
@@ -521,7 +574,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     ) != (-1, -1, -1, -1)
                 ):
                     raise NGIRDecodeError(f"malformed reference type descriptor {type_id}")
-            else:
+            elif descriptor.kind == 10:
                 if (
                     version < 13
                     or (
@@ -532,6 +585,51 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     ) != (-1, -1, -1, -1, -1, -1, 0, 0, 0)
                 ):
                     raise NGIRDecodeError(f"malformed string type descriptor {type_id}")
+            elif descriptor.kind == 13:
+                element = type_descriptors.get(descriptor.element_type)
+                if (
+                    version < 24
+                    or element is None
+                    or element.kind not in {1, 2, 3, 4, 5, 6, 11, 12}
+                    or descriptor.target_type != -1
+                    or descriptor.mutable != 0
+                    or descriptor.first_field != 0
+                    or descriptor.field_count != 0
+                    or (
+                        descriptor.module_start, descriptor.module_end,
+                        descriptor.name_start, descriptor.name_end,
+                    ) != (-1, -1, -1, -1)
+                ):
+                    raise NGIRDecodeError(f"malformed slice type descriptor {type_id}")
+            elif descriptor.kind == 14:
+                element = type_descriptors.get(descriptor.element_type)
+                if (
+                    version < 25
+                    or element is None
+                    or descriptor.element_type >= type_id
+                    or element.kind not in {1, 2, 3, 4, 5, 6}
+                    or descriptor.target_type != -1
+                    or descriptor.mutable != 0
+                    or descriptor.first_field != 0
+                    or not 1 <= descriptor.field_count <= 365
+                    or (
+                        descriptor.module_start, descriptor.module_end,
+                        descriptor.name_start, descriptor.name_end,
+                    ) != (-1, -1, -1, -1)
+                ):
+                    raise NGIRDecodeError(f"malformed static array type descriptor {type_id}")
+            else:
+                if (
+                    version < 23
+                    or type_id != descriptor.kind - 4
+                    or (
+                        descriptor.module_start, descriptor.module_end,
+                        descriptor.name_start, descriptor.name_end,
+                        descriptor.element_type, descriptor.target_type,
+                        descriptor.mutable, descriptor.first_field, descriptor.field_count,
+                    ) != (-1, -1, -1, -1, -1, -1, 0, 0, 0)
+                ):
+                    raise NGIRDecodeError(f"malformed V23 builtin type descriptor {type_id}")
         field_orders: dict[int, int] = {}
         field_positions: dict[int, list[int]] = {}
         for field_index, (owner_type, order, name_start, name_end, field_type) in enumerate(descriptor_fields):
@@ -610,7 +708,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             result_types = (return_type,)
 
         parameters: list[IRParameter] = []
-        for parameter_index in range(parameter_count):
+        parameter_index = 0
+        while parameter_index < parameter_count:
             item = take(2, f"parameter {parameter_index} of {function_name}")
             _, owner, ordinal, type_code, register, parameter_start, parameter_end, metadata = item
             if owner != function_index or ordinal != parameter_index:
@@ -640,7 +739,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     raise NGIRDecodeError("V15 parameter registers must occupy the leading contiguous register range")
             elif metadata != 0:
                 raise NGIRDecodeError("malformed parameter reserved field")
-            reference_target, reference_mutable, reference_aggregate = reference_metadata(
+            reference_target, reference_mutable, reference_aggregate, reference_is_slice = reference_metadata(
                 type_code, f"parameter {parameter_index} of {function_name}"
             )
             parameters.append(
@@ -651,9 +750,38 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     location=source_location(2, function_index, parameter_index),
                     reference_target=reference_target,
                     reference_mutable=reference_mutable,
+                    reference_is_slice=reference_is_slice,
+                    slice_length_register=register + 1 if reference_is_slice else None,
                     reference_aggregate=reference_aggregate,
                 )
             )
+            parameter_index += 1
+            if reference_is_slice:
+                if version < 24:
+                    raise NGIRDecodeError("slice parameters require NG IR V24")
+                length_item = take(34, f"slice length parameter of {function_name}")
+                (
+                    _, length_owner, length_ordinal, length_type, length_register,
+                    length_start, length_end, reserved,
+                ) = length_item
+                if (
+                    length_owner != function_index
+                    or length_ordinal != parameter_index
+                    or length_type != 1
+                    or length_register != register + 1
+                    or (length_start, length_end) != (parameter_start, parameter_end)
+                    or reserved != 0
+                ):
+                    raise NGIRDecodeError("malformed V24 slice length parameter")
+                parameters.append(
+                    IRParameter(
+                        parameter_name + "__length",
+                        length_register,
+                        IRType.I64,
+                        location=source_location(2, function_index, parameter_index),
+                    )
+                )
+                parameter_index += 1
 
         registers: list[IRRegister] = []
         register_type_ids: list[int] = []
@@ -662,7 +790,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             _, owner, register_index, type_code, reserved0, reserved1, reserved2, reserved3 = item
             if owner != function_index or register_index != len(registers) or any((reserved0, reserved1, reserved2, reserved3)):
                 raise NGIRDecodeError("register identities must be contiguous with zero reserved fields")
-            reference_target, reference_mutable, reference_aggregate = reference_metadata(
+            reference_target, reference_mutable, reference_aggregate, reference_is_slice = reference_metadata(
                 type_code, f"register {register_index} of {function_name}"
             )
             registers.append(
@@ -672,6 +800,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     location=source_location(3, function_index, register_index),
                     reference_target=reference_target,
                     reference_mutable=reference_mutable,
+                    reference_is_slice=reference_is_slice,
                     reference_aggregate=reference_aggregate,
                 )
             )
@@ -747,6 +876,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 raise NGIRDecodeError("INVERT opcode requires NG IR format V18")
             if opcode is IROpcode.REFERENCE_STORE and version < 19:
                 raise NGIRDecodeError("REFERENCE_STORE opcode requires NG IR format V19")
+            if opcode is IROpcode.SLICE_LOAD and version < 24:
+                raise NGIRDecodeError("SLICE_LOAD opcode requires NG IR format V24")
 
             result = None if result_id == -1 else result_id
             callee_index: int | None = None
@@ -1378,7 +1509,7 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                     raise NGIRDecodeError("ADDRESS_OF opcode requires NG IR V10")
                 if result is None or not 0 <= result < len(register_type_ids) or immediate != 0:
                     raise NGIRDecodeError("malformed ADDRESS_OF result or immediate")
-                reference_target, reference_mutable, reference_aggregate = reference_metadata(
+                reference_target, reference_mutable, reference_aggregate, reference_is_slice = reference_metadata(
                     register_type_ids[result], f"ADDRESS_OF result in {function_name}"
                 )
                 if reference_target is None or reference_aggregate is not None:
@@ -1464,6 +1595,33 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
                 reference_target = type_for(reference_descriptor.target_type, "REFERENCE_STORE target")
                 reference_mutable = True
                 operands = (operand0, operand1)
+                decoded_immediate = None
+            elif opcode is IROpcode.SLICE_LOAD:
+                if (
+                    result is None
+                    or not 0 <= result < len(register_type_ids)
+                    or operand_count != 3
+                    or not 0 <= operand0 < len(register_type_ids)
+                    or not 0 <= operand1 < len(register_type_ids)
+                    or not 0 <= immediate < len(register_type_ids)
+                ):
+                    raise NGIRDecodeError("malformed SLICE_LOAD record")
+                reference_descriptor = type_descriptors.get(register_type_ids[operand0])
+                slice_descriptor = (
+                    type_descriptors.get(reference_descriptor.target_type)
+                    if reference_descriptor is not None and reference_descriptor.kind == 9
+                    else None
+                )
+                if (
+                    slice_descriptor is None
+                    or slice_descriptor.kind != 13
+                    or type_for(register_type_ids[immediate], "SLICE_LOAD length") is not IRType.I64
+                    or type_for(register_type_ids[operand1], "SLICE_LOAD index") not in {IRType.I64, IRType.TRYTE}
+                    or register_type_ids[result] != slice_descriptor.element_type
+                ):
+                    raise NGIRDecodeError("SLICE_LOAD register metadata disagrees with its slice descriptor")
+                reference_target = type_for(slice_descriptor.element_type, "SLICE_LOAD element")
+                operands = (operand0, immediate, operand1)
                 decoded_immediate = None
             elif opcode is IROpcode.BRANCH3:
                 if result is not None or operand_count != 1 or operand1 != -1 or immediate != 0:
@@ -1637,14 +1795,8 @@ def decode_ng_ir_events(source: bytes, cells: Sequence[int]) -> IRModule:
             if actual_types != tuple(callee["result_types"]):
                 raise NGIRDecodeError(f"CALL result cells disagree with callee signature in {function['name']}")
 
-    ordered_static_values = sorted(
-        (
-            (record.static_string_offset, record.static_string_value)
-            for raw in raw_functions
-            for record in raw["instructions"]
-            if record.static_string_value is not None
-        ),
-        key=lambda item: item[0],
+    ordered_static_values = _ordered_static_string_occurrences(
+        raw["instructions"] for raw in raw_functions
     )
     static_ids: dict[str, str] = {}
     static_strings: list[IRStaticString] = []

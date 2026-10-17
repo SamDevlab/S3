@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+from types import SimpleNamespace
+
 import pytest
 
 from bootstrap.s3.project_container import (
@@ -80,6 +83,87 @@ base = "ubuntu"
     plan = tooling.container_plan()
     assert plan["kind"] == "s3.container.plan.v1"
     assert plan["capabilities"] == {"filesystem.read": "enforced", "process.spawn": "declared"}
+
+
+def test_project_tooling_forwards_explicit_compiler_to_shared_provider(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (tmp_path / "src").mkdir()
+    source = "module main\nfn main() -> i64:\n    return 7\n"
+    (tmp_path / "src" / "main.s3").write_text(source, encoding="ascii")
+    (tmp_path / "s3.toml").write_text(
+        "[project]\nname='app'\nversion='1'\nentrypoint='main'\n"
+        "source_roots=['src']\nprofile='hosted'\n",
+        encoding="ascii",
+    )
+    calls: list[dict[str, object]] = []
+    fake_ir = object()
+    fake_assembly = SimpleNamespace(functions=())
+
+    def fake_compile(sources, **kwargs):
+        calls.append({"sources": sources, **kwargs})
+        return SimpleNamespace(
+            ir=fake_ir,
+            assembly=fake_assembly,
+            require_ordinary_artifacts=lambda: (fake_ir, fake_assembly),
+        )
+
+    monkeypatch.setattr(
+        "bootstrap.s3.project_container.compile_source_set_with_provider",
+        fake_compile,
+    )
+    executable = tmp_path / "s3c-ng"
+    tooling = ProjectTooling(
+        tmp_path,
+        compiler="s3c-ng",
+        executable=executable,
+        container_executable="/opt/s3/s3c-ng",
+    )
+
+    assert tooling.build().ir is fake_ir
+    assert tooling.container_run_command() == (
+        "s3",
+        "run",
+        "/app/main.s3",
+        "--compiler",
+        "s3c-ng",
+        "--s3c-ng-executable",
+        "/opt/s3/s3c-ng",
+    )
+    assert calls == [
+        {
+            "sources": {"src/main.s3": source},
+            "compiler": "s3c-ng",
+            "executable": executable,
+            "entry_module": "main",
+        }
+    ]
+
+
+def test_project_docker_context_embeds_selected_runtime_compiler(tmp_path: Path) -> None:
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "main.s3").write_text(
+        "module main\nfn main() -> i64:\n    return 7\n", encoding="ascii"
+    )
+    (tmp_path / "s3.toml").write_text(
+        "[project]\nname='app'\nversion='1'\nentrypoint='main'\n"
+        "source_roots=['src']\nprofile='hosted'\n",
+        encoding="ascii",
+    )
+    tooling = ProjectTooling(
+        tmp_path,
+        compiler="s3c-ng",
+        container_executable="/opt/s3/s3c-ng",
+    )
+    context, owner = tooling.docker_context(DockerProvider(), image="s3/runtime:1.38")
+    try:
+        assert (context / "Dockerfile").read_text(encoding="ascii").endswith(
+            'ENTRYPOINT ["s3","run","/app/main.s3","--compiler","s3c-ng",'
+            '"--s3c-ng-executable","/opt/s3/s3c-ng"]\n'
+        )
+    finally:
+        owner.cleanup()
 
 
 def test_manifest_rejects_missing_source_root(tmp_path) -> None:

@@ -1788,9 +1788,49 @@ def test_qbe_native_executes_s3c_ng_origin_ir_when_linux_toolchain_exists(
 @pytest.mark.s3_native
 def test_qbe_native_executes_s3c_ng_real_multimodule_ir_when_available(tmp_path) -> None:
     qbe, cc = _require_qbe_native_tools()
-    reference_ir = compile_sources(_REAL_NG_MODULE_SOURCES, entry_module="app").ir
+    # This linked QBE workload intentionally avoids dynamic text builtins; the
+    # candidate bridge's separate multi-module fixture covers static strings.
+    sources = {
+        "app.s3": """\
+module app
+from math import transform as increment
+from policy import transform as augment
+from decision import choose as choose_value
+fn selector() -> i64:
+    return 0
+fn main() -> i64:
+    mut total: i64 = increment(1)
+    total = total + augment(2)
+    total = total + choose_value(selector())
+    return total
+""",
+        "math.s3": """\
+module math
+export fn transform(value: i64) -> i64:
+    mut result: i64 = value
+    result = result + 1
+    return result
+""",
+        "policy.s3": """\
+module policy
+export fn transform(value: i64) -> i64:
+    return value + 10
+""",
+        "decision.s3": """\
+module decision
+export fn choose(value: i64) -> i64:
+    match value <=> 0:
+        -1:
+            return 1
+        0:
+            return 2
+        1:
+            return 3
+""",
+    }
+    reference_ir = compile_sources(sources, entry_module="app").ir
     assert reference_ir is not None
-    source, cells = _emit_ng_source_set_events(_REAL_NG_MODULE_SOURCES, entry_module="app")
+    source, cells = _emit_ng_source_set_events(sources, entry_module="app")
     ng_ir = decode_ng_ir_events(source, cells)
     verify_ir(ng_ir)
     expected = execute_ir(reference_ir)

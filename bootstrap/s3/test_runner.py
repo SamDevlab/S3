@@ -24,6 +24,13 @@ from .backends.x86_64 import (
 from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, Emulator
 from .ir_emulator import execute_ir
 from .optimizer import OptimizationLevel
+from .compiler_provider import (
+    DEFAULT_COMPILER,
+    CompilerKind,
+    CompilationOutput,
+    compilation_requires_ir_execution,
+    compile_source_set_with_provider,
+)
 from .pipeline import compile_source, compile_sources
 
 
@@ -217,10 +224,26 @@ def _compile_test_sources(
     sources: dict[str, str],
     optimization: str,
     entry: str,
-):
+    *,
+    compiler: CompilerKind | str = DEFAULT_COMPILER,
+    executable: Path | None = None,
+    entry_module: str = "main",
+) -> CompilationOutput:
+    selected = CompilerKind(compiler)
+    if selected is CompilerKind.PYTHON:
+        if len(sources) == 1:
+            return compile_source(next(iter(sources.values())), optimization)
+        return compile_sources(sources, optimization, entry_module=entry)
+    native_sources = sources
     if len(sources) == 1:
-        return compile_source(next(iter(sources.values())), optimization)
-    return compile_sources(sources, optimization, entry_module=entry)
+        native_sources = {f"{entry_module}.s3": next(iter(sources.values()))}
+    return compile_source_set_with_provider(
+        native_sources,
+        optimization,
+        compiler=selected,
+        executable=executable,
+        entry_module=entry_module,
+    )
 
 
 def _hosted_worker(
@@ -230,10 +253,20 @@ def _hosted_worker(
     max_frames: int,
     max_instructions: int,
     result_queue: Any,
+    compiler: str,
+    executable: Path | None,
+    entry_module: str,
 ) -> None:
     try:
-        compilation = _compile_test_sources(sources, optimization, entry)
-        if compilation.semantic_model.contains_references or compilation.semantic_model.contains_dynamic:
+        compilation = _compile_test_sources(
+            sources,
+            optimization,
+            entry,
+            compiler=compiler,
+            executable=executable,
+            entry_module=entry_module,
+        )
+        if compilation_requires_ir_execution(compilation):
             ir, _ = compilation.require_ordinary_artifacts()
             value = execute_ir(ir, entry, optimization)
         else:
@@ -255,9 +288,34 @@ def _hosted_worker(
 
 
 class S3TestRunner:
-    def __init__(self, manifest: S3TestManifest) -> None:
+    def __init__(
+        self,
+        manifest: S3TestManifest,
+        *,
+        compiler: CompilerKind | str = DEFAULT_COMPILER,
+        executable: Path | None = None,
+        entry_module: str = "main",
+    ) -> None:
         self.manifest = manifest
         self.root = manifest.path.parent
+        self.compiler = CompilerKind(compiler)
+        self.executable = executable
+        self.entry_module = entry_module
+
+    def _compile_sources(
+        self,
+        sources: dict[str, str],
+        optimization: str,
+        entry: str,
+    ) -> CompilationOutput:
+        return _compile_test_sources(
+            sources,
+            optimization,
+            entry,
+            compiler=self.compiler,
+            executable=self.executable,
+            entry_module=self.entry_module,
+        )
 
     def _load_sources(self, case: S3TestCase) -> dict[str, str]:
         sources: dict[str, str] = {}
@@ -293,6 +351,9 @@ class S3TestRunner:
                 self.manifest.max_frames,
                 self.manifest.max_instructions,
                 result_queue,
+                self.compiler.value,
+                self.executable,
+                self.entry_module,
             ),
         )
         process.start()
@@ -323,7 +384,11 @@ class S3TestRunner:
 
     def _run_native(self, case: S3TestCase, sources: dict[str, str]) -> dict[str, object]:
         try:
-            compilation = _compile_test_sources(sources, self.manifest.optimization, case.entry)
+            compilation = self._compile_sources(
+                sources,
+                self.manifest.optimization,
+                case.entry,
+            )
             _, assembly = compilation.require_ordinary_artifacts()
             native = generate_native_assembly(assembly)
             toolchain = NativeToolchain.detect()
@@ -452,8 +517,10 @@ class S3TestRunner:
         )
         return {
             "schema": "s3-test-report",
-            "schema_version": "s3.test-report.v1",
+            "schema_version": "s3.test-report.v2",
             "project": self.root.name,
+            "compiler": self.compiler.value,
+            "entry_module": self.entry_module,
             "target": "linux-x86_64",
             "profile": self.manifest.optimization,
             "manifest_sha256": self.manifest.manifest_sha256,
@@ -481,5 +548,17 @@ def render_test_report(report: Mapping[str, object]) -> str:
     return json.dumps(report, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
 
 
-def run_test_manifest(path: str | Path, *, mode: str | None = None) -> dict[str, object]:
-    return S3TestRunner(S3TestManifest.load(path)).run(mode)
+def run_test_manifest(
+    path: str | Path,
+    *,
+    mode: str | None = None,
+    compiler: CompilerKind | str = DEFAULT_COMPILER,
+    executable: Path | None = None,
+    entry_module: str = "main",
+) -> dict[str, object]:
+    return S3TestRunner(
+        S3TestManifest.load(path),
+        compiler=compiler,
+        executable=executable,
+        entry_module=entry_module,
+    ).run(mode)

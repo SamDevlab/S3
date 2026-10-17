@@ -1,0 +1,427 @@
+{
+  "schema_version": 2,
+  "campaign": "S3_V7_COMPILER_PROMOTION_AND_BOOTSTRAP_INDEPENDENCE_V1",
+  "baseline_commit": "2eab8a43f07b7fc842c4036ea0fb0203a9d41d6c",
+  "reference_compiler": "PYTHON",
+  "default_compiler": "PYTHON",
+  "platform_scope": {
+    "native_candidate_target": "linux-x86_64",
+    "trusted_bootstrap_targets": ["linux-x86_64"],
+    "s3c_ng_supported_now_applies_only_to": "linux-x86_64",
+    "global_promotion": false
+  },
+  "s3c_ng_ir_format": 25,
+  "qualification_status": "S3C_NG_SELECTABLE_QUALIFICATION_INCOMPLETE",
+  "campaign_closeout": {
+    "status": "PARTIAL_CLOSED",
+    "technical_promotion_complete": false,
+    "date": "2026-10-17",
+    "pr": 331,
+    "pr_state": "OPEN_DRAFT",
+    "tested_source_head": "ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99",
+    "final_closeout_is_documentation_only": true,
+    "ci_run": 39040792079,
+    "ci_head": "ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99",
+    "ci_status_at_closeout": "PENDING",
+    "ci_jobs": {"success": 11, "failure": 0, "pending": 4},
+    "partial_feature_family_count": 18,
+    "v8_started": false,
+    "v8_gate": "BLOCKED_PENDING_V7_TECHNICAL_COMPLETION",
+    "merge_performed": false,
+    "release_or_tag_published": false,
+    "default_changed": false,
+    "remaining_blockers": [
+      "complete repository-derived differential feature-family parity",
+      "broad invalid-program, diagnostic, and source-span parity",
+      "broader CLI and ProjectTooling qualification",
+      "material measured S3C-NG slowdown and aggregate child-memory risk",
+      "durable Linux seed publication and lock pin require explicit owner confirmation",
+      "exact-head natural CI still had four unit/renderer shards pending at closeout"
+    ]
+  },
+  "comparison_levels": [
+    "STRUCTURAL_IR_PARITY",
+    "SERIALIZED_IR_PARITY",
+    "DIAGNOSTIC_PARITY",
+    "HOSTED_EXECUTION_PARITY",
+    "NATIVE_EXECUTION_PARITY",
+    "ASSEMBLY_PARITY",
+    "ELF_BEHAVIOR_PARITY"
+  ],
+  "evidence_scope": {
+    "hosted_bridge_tests": "S3C-NG source logic is compiled into reference IR and executed by the hosted IR emulator; these tests establish focused hosted parity, not native-candidate qualification",
+    "native_candidate_tests": "Only Linux x86-64 tests marked s3c_ng_promotion exercise the actual native candidate"
+  },
+  "invalid_program_corpus": {
+    "state": "REJECTION_PARITY_WITH_FOCUSED_STRUCTURED_DIAGNOSTICS",
+    "native_test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback",
+    "cases": [
+      {"id": "missing-module", "expected_native_status": -3},
+      {"id": "missing-symbol", "expected_native_status": -4},
+      {"id": "wrong-arity", "expected_native_status": -14},
+      {"id": "wrong-argument-type", "expected_native_status": -14},
+      {"id": "private-symbol", "expected_native_status": -5},
+      {"id": "duplicate-module-identity", "expected_native_status": -2},
+      {"id": "dependency-cycle", "expected_native_status": -6},
+      {"id": "unknown-reference-field", "expected_native_status": -15},
+      {"id": "wrong-bytes-builtin-type", "expected_native_status": -14},
+      {"id": "wrong-resource-open-type", "expected_native_status": -14}
+    ],
+    "qualification_note": "The existing ten-case corpus still proves rejection/status only. A separate native test now targets source-set missing-module, unknown-import-symbol, and private-import-symbol diagnostics; the broader negative corpus and diagnostic parity remain unqualified."
+  },
+  "structured_diagnostic_transport": {
+    "protocol": "S3NGOUT2",
+    "legacy_protocol": "S3NGOUT1 remains decoded for existing artifacts",
+    "record_fields": ["category_id", "phase_id", "code_id", "source_unit_index", "start_byte", "end_byte", "message_id"],
+    "implemented_codes": [
+      {"id": 1, "code": "S3E_MODULE_NOT_FOUND"},
+      {"id": 2, "code": "S3E_MODULE_CYCLE"},
+      {"id": 3, "code": "S3E_IMPORT_UNKNOWN_SYMBOL"},
+      {"id": 4, "code": "S3E_IMPORT_PRIVATE_SYMBOL"}
+    ],
+    "native_test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint",
+    "provider_tests": "tests/test_compiler_provider.py",
+    "scope": "The native implementation records missing-module, direct-self-cycle, unknown-import-symbol, and private-import-symbol failures in the named native test. The direct-cycle record uses an all-negative source/span sentinel because the Python reference supplies no location. Other negative statuses without a diagnostic record fail closed as NativeS3CTransportError.",
+    "parity_status": "FOCUSED_IMPLEMENTATION_PASS_EXACT_HEAD_AC6B0F0D",
+    "message_parity": "UNQUALIFIED",
+    "qualification_note": "Stable category/phase/code/message identifiers and local UTF-8 byte spans are transported separately from IR events. The focused native test compares category, phase, code, and reference source-location policy for four import failures. Python converts and formats the record without semantic recompilation. Exact message parity, full invalid-program parity, and complete structured-diagnostic parity are not qualified."
+  },
+  "native_cli_sample": {
+    "state": "EVIDENCE_GATED_SAMPLES_ONLY",
+    "test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point",
+    "source_case": "single-module answer(42) program, compared with the Python reference",
+    "commands": ["check", "ir", "ir-json", "inspect(summary)", "inspect(ir)", "asm", "run", "native-asm", "build", "run-native", "ffi-build", "test"],
+    "assertions": ["canonical IR or Assembly parity where applicable", "hosted and native result parity", "explicit S3C-NG does not call the Python single-source compile path"],
+    "additional_workloads": [
+      {"case": "relational-match", "commands": ["ir-json", "run", "build", "run-native"], "expected_result": 10},
+      {"case": "multimodule", "commands": ["ir-json", "run", "build", "run-native"], "expected_result": 16}
+    ],
+    "qualification_note": "These Linux candidate CLI samples extend command routing to control-flow and multimodule workloads; they do not qualify the complete CLI workload or language parity matrices"
+  },
+  "native_real_workloads": {
+    "state": "PASS_FOCUSED_EXACT_HEAD_ED394E26",
+    "ci_run": 38769827678,
+    "ci_job": "native-x86-64 (176 passed)",
+    "previous_ci_run": 38683054022,
+    "test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_matches_existing_language_maturity_workloads",
+    "source_corpus": "Existing examples/language_maturity implementations and tests/test_language_maturity_workloads.py program builders",
+    "cases": [
+      {"id": "ordering-search", "capabilities": ["multi-module imports", "mutable runtime vectors", "loops", "match", "sorting", "binary search"], "expected_result": 0},
+      {"id": "hex-encoding", "capabilities": ["multi-module imports", "bytes", "loops", "numeric conversion"], "expected_result": 0},
+      {"id": "csv-integer-parser", "capabilities": ["text", "bytes", "records", "checked arithmetic", "validation branches"], "expected_result": 0},
+      {"id": "checked-i64-arithmetic", "capabilities": ["parameterized function call", "checked i64 multiply/add", "native execution parity"], "expected_result": 0},
+      {"id": "generic-scalar-vector-mutation", "capabilities": ["vector<i64>", "push", "set", "get", "pop", "native execution parity"], "expected_result": 0}
+    ],
+    "assertions": ["canonical serialized IR parity", "source-location parity", "shared verifier acceptance", "native execution result parity"],
+    "qualification_note": "The actual native candidate passed this five-case focused corpus on Linux x86-64 at exact HEAD ed394e26b2aa8f4caa1a579daa8a77462910d6f5 in Tests run 38769827678; these samples do not upgrade the complete supported-language matrix to PARITY_PASS"
+  },
+  "project_tooling": {
+    "state": "PASS_EXACT_HEAD_042AF57F_RUN_38721603135",
+    "test": "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point",
+    "case": "single-module i64 project build/run plus two-manifest project test discovery through Python and explicit S3C-NG providers",
+    "assertions": ["canonical IR equality", "execution result equality", "deterministic manifest order", "name-filter parity", "per-test hosted outcome parity"],
+    "qualification_note": "This focused Linux native sample passed in exact-head CI; it does not qualify the full ProjectTooling API, broad project corpus, or every discovery/filter combination."
+  },
+  "hosted_real_workloads": {
+    "state": "PASS_FOCUSED_LOCAL_WORKTREE",
+    "test": "tests/test_compiler_ng_ir_bridge.py::test_ng_existing_language_maturity_workloads_match_reference",
+    "cases": ["ordering-search", "hex-encoding", "csv-integer-parser"],
+    "assertions": ["canonical serialized IR parity", "shared verifier acceptance", "hosted execution result parity"],
+    "qualification_note": "The focused hosted comparison passed locally; the hosted bridge exercises S3C-NG source logic through reference IR and the hosted emulator. The separate native candidate workload test passed in exact-head Linux CI run 38683054022"
+  },
+  "contextual_numeric_regressions": {
+    "state": "PASS_FOCUSED_LOCAL_WORKTREE",
+    "tests": [
+      "tests/test_compiler_ng_ir_bridge.py::test_ng_constant_integer_expression_preserves_contextual_numeric_type",
+      "tests/test_compiler_ng_ir_bridge.py::test_ng_contextual_constant_integer_overflow_matches_reference",
+      "tests/test_compiler_ng_semantic.py::test_nextgen_semantics_accepts_signed_contextual_numeric_boundaries",
+      "tests/test_compiler_ng_semantic.py::test_nextgen_semantics_rejects_signed_contextual_numeric_out_of_range"
+    ],
+    "cases": ["contextual i64/tryte result types", "parenthesized and negated tryte boundaries", "dynamic tryte addition", "constant trit/tryte overflow and underflow rejection"],
+    "qualification_note": "Focused local checker and canonical IR parity evidence only; complete numeric parity and exact-head CI remain separate promotion gates"
+  },
+  "performance_characterization": {
+    "state": "PASS_EXACT_HEAD_LINUX_X86_64",
+    "tool": "tools/characterize_s3c_ng_provider.py",
+    "ci_job": "s3c-ng-clean-bootstrap",
+    "ci_run": 39040792079,
+    "source_commit": "ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99",
+    "source_graph_sha256": "07143ec7fe5a5f7cb7a1d97efe4eadefdc97b25db81e2cd548be867d041d3278",
+    "workloads": ["small", "multimodule-ordering-search", "real-pebble-workload", "self-source"],
+    "cli_startup": "small check command measured in fresh Python processes",
+    "protocol": "one warmup and three alternating paired O0 measurements per provider; compare canonical IR and Assembly before accepting timing samples; record process and aggregate child peak RSS, not attributed per provider",
+    "s3c_ng_to_python_ratios": {
+      "small": 20.235,
+      "multimodule_ordering_search": 2.311,
+      "real_pebble_workload": 1.523,
+      "self_source": 2.369,
+      "fresh_cli_startup": 1.078
+    },
+    "process_peak_rss_kib": 341980,
+    "max_child_peak_rss_kib": 4144716,
+    "rss_attribution": "COMBINED_MEASUREMENT_NOT_ATTRIBUTED_PER_PROVIDER",
+    "performance_result": "S3C_NG_SLOWER_ON_ALL_FIVE_MEASURED_CASES; MATERIAL_PERFORMANCE_AND_MEMORY_RISK; NO_SPEEDUP_CLAIM",
+    "performance_report_sha256": "c097518caf77fb163bbfb41c282f2c177ea732ba880efcf537e9f8c826616569",
+    "threshold_policy": "no fixed speedup threshold; review pathological slowdown, memory explosion, and unusable startup",
+    "classification": "CHARACTERIZATION_ONLY",
+    "stable_result_artifact": "s3c-ng-provider-performance-ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99",
+    "candidate_executable_sha256": "390f4c04f056396ec70352919b2e71d9be50fc6d9ba2f891eddfb8f4a6e216f8",
+    "full_workflow_status_at_closeout": "11_SUCCESS_0_FAILURE_4_PENDING"
+  },
+  "feature_matrix_policy": {
+    "allowed_states": ["PARITY_PASS", "PARTIAL", "S3C_NG_MISSING", "REFERENCE_ONLY", "EXPECTED_DIFFERENCE", "UNTESTED"],
+    "UNTESTED": "The full repository-derived feature-family corpus is not qualified; evidence entries may describe narrower passing samples.",
+    "PARTIAL": "One or more focused existing differential tests pass, but the full repository-derived feature-family corpus or required parity levels remain unqualified.",
+    "S3C_NG_MISSING": "A specific existing reference capability is known not to be implemented by S3C-NG.",
+    "coverage_basis": "The matrix must be derived from existing Python-supported tests and specifications, not a hand-selected sample."
+  },
+  "features": [
+    {"family": "numeric literals and balanced ternary", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v18_executes_typed_unary_negation", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v7_relational_match_selector_preserves_distinct_arms", "tests/test_compiler_ng_ir_bridge.py::test_ng_constant_integer_expression_preserves_contextual_numeric_type", "tests/test_compiler_ng_ir_bridge.py::test_ng_contextual_constant_integer_overflow_matches_reference"]},
+    {"family": "checked i64 arithmetic", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_checked_i64_arithmetic_matches_reference (hosted canonical IR parity, valid arithmetic, overflow, and division-by-zero behavior)", "tests/test_native_s3c_ng.py::test_native_s3c_ng_matches_existing_language_maturity_workloads (focused native parameterized i64 multiply/add workload; exact HEAD ed394e26, run 38769827678)"]},
+    {"family": "comparisons and logical operators", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_v22_relation_and_match_names_match_reference_lowering", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v7_f64_relational_opcode_executes_and_is_not_valid_in_v6"]},
+    {"family": "functions, parameters, and returns", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_canonical_ir_round_trip_covers_calls_mutation_matches_and_types", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_flattens_record_argument_for_function_call", "tests/test_compiler_ng_ir_bridge.py::test_ng_aggregate_returns_inside_match_and_while_match_reference", "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point (Linux native candidate: provider, function call, multi-module calls, canonical IR, Assembly, native execution, B/C/D fixed point)"]},
+    {"family": "scopes and mutation", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_local_declarations_in_match_arms_are_scoped_per_arm", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v19_mutable_dereference_assignment_matches_reference_ir"]},
+    {"family": "control flow, match, and loops", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_emits_and_executes_while_with_nested_match_and_backedge", "tests/test_compiler_ng_ir_bridge.py::test_ng_break_in_nested_match_targets_the_nearest_loop_exit", "tests/test_compiler_ng_ir_bridge.py::test_branches_ng_output_decodes_verifies_executes_and_matches_reference", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate: while, nested match, relational match, native execution)", "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point (Linux native candidate: relational match and native execution)"]},
+    {"family": "records and fields", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_lowers_record_constructor_field_projection", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_lowers_mutable_record_field_assignment", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v4_lowers_and_executes_aggregate_reference_field_load", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate: nested records, field reads, canonical IR and native execution)"]},
+    {"family": "references", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v12_dereference_and_reborrow_match_reference_ir", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v19_mutable_dereference_assignment_matches_reference_ir", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_rejects_mutable_borrow_of_immutable_record_field", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate: reference parameters and vector reference operations)", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_python_for_borrowed_slice_indexing (hosted V24 canonical IR and execution parity for immutable borrowed-slice indexing)"]},
+    {"family": "borrowed slices", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_python_for_borrowed_slice_indexing (hosted canonical IR, verifier, and direct function execution parity)", "tests/test_native_s3c_ng.py::test_native_s3c_ng_ffi_build_uses_selected_compiler_and_matches_reference (exact-head Linux x86-64: immutable &[i64] pointer-plus-length ABI and slice forwarding through relay; mutable slice stores and broader slice corpus remain unqualified)"]},
+    {"family": "vectors and generic vector operations", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_executes_composite_vector_new_push_and_len", "tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v16_generic_vector_get_is_explicit_and_executable", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_emits_and_executes_v21_composite_vector_pop", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_python_for_legacy_vector_ordering_workload (real i64_vector multi-module ordering workload)", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_python_for_legacy_typed_vector_operations (tryte_vector and f64_vector new/len/push/pop/get/set)", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate: composite vector new/push/len through native compilation and execution)", "tests/test_native_s3c_ng.py::test_native_s3c_ng_matches_existing_language_maturity_workloads (focused vector<i64> push/set/get/pop native workload; exact HEAD ed394e26, run 38769827678)"]},
+    {"family": "generics", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v7_generic_vector_new_is_explicit_and_executable", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_resolves_imported_nominal_type_inside_vector_reference"]},
+    {"family": "imports and multi-module programs", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_real_multimodule_program_is_order_independent_and_matches_reference (hosted IR execution; native execution is a separate Linux-only gate)", "tests/test_native_s3c_ng.py::test_native_s3c_ng_reaches_native_compiler_fixed_point (Linux native candidate gate)"]},
+    {"family": "host/resource operations", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_reference_for_host_resource_lifecycle (hosted canonical IR and execution parity; focused invalid type/arity/mutability rejection)"]},
+    {"family": "strings, bytes, and text", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_ir_v13_static_strings_match_reference_ir_and_fail_closed", "tests/test_compiler_ng_ir_bridge.py::test_ng_real_multimodule_program_is_order_independent_and_matches_reference (cross-module canonical string identity; hosted IR execution)"]},
+    {"family": "FFI-relevant compilation", "state": "PARTIAL", "evidence": ["tests/test_native_s3c_ng.py::test_native_s3c_ng_ffi_build_uses_selected_compiler_and_matches_reference (exact-head Linux x86-64 candidate CLI ffi-build parity for i64/f64 and immutable borrowed slices)", "tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_matches_python_for_borrowed_slice_indexing (hosted V24 slice parameter and indexed-load parity)"]},
+    {"family": "invalid-program rejection", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_source_set_rejects_invalid_module_graphs_and_calls", "tests/test_native_s3c_ng.py::test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint (three focused import diagnostics; full negative corpus remains unqualified)"]},
+    {"family": "structured diagnostic parity", "state": "PARTIAL", "evidence": ["tests/test_compiler_provider.py::test_native_output_envelopes_keep_v1_and_validate_v2_diagnostics (S3NGOUT2 malformed record rejection and legacy envelope compatibility)", "tests/test_compiler_provider.py::test_s3c_ng_structured_import_diagnostics_preserve_source_identity_and_span (stable import codes, source identity, span, and no Python semantic fallback)", "tests/test_compiler_provider.py::test_s3c_ng_unlocated_cycle_diagnostic_preserves_reference_location_policy", "tests/test_compiler_provider.py::test_s3c_ng_diagnostic_converts_utf8_byte_span_to_codepoint_location", "tests/test_native_s3c_ng.py::test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint (Linux native candidate gate)"] , "qualification_note": "Focused transport and import-diagnostic coverage only; complete invalid-program, message, code, location, span, and note parity remains unqualified."},
+    {"family": "source locations and spans", "state": "PARTIAL", "evidence": ["tests/test_compiler_ng_ir_bridge.py::test_ng_v22_preserves_utf8_source_locations_through_lowering", "tests/test_native_s3c_ng.py::test_native_s3c_ng_preserves_record_parameter_and_while_locations (Linux native candidate gate)"]}
+  ],
+  "command_matrix_policy": {
+    "meaning": "semantic_compilation classifies the command result; s3c_ng_supported_now means provider routing is implemented, not parity-qualified",
+    "container_cli": "inspect is metadata-only; plan describes the selected runtime compiler; build embeds its selected s3 run invocation; run invokes s3 run through Docker; ProjectTooling compiler-aware APIs are separate"
+  },
+  "cli_commands": [
+    {"command": "doctor", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "HOST_DIAGNOSTIC_WITH_CANDIDATE_IDENTITY_AND_BOOTSTRAP_PIN"},
+    {"command": "targets", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "TARGET_METADATA_TOOLING"},
+    {"command": "bootstrap install s3c-ng", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "EXPLICIT_RELEASE_INSTALLER_LOCK_UNPUBLISHED"},
+    {"command": "tokens", "semantic_compilation": false, "python_reference_only": true, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "PYTHON_FRONTEND_TOOLING"},
+    {"command": "ast", "semantic_compilation": false, "python_reference_only": true, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "PYTHON_FRONTEND_TOOLING"},
+    {"command": "check", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
+    {"command": "ir", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
+    {"command": "ir-json", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
+    {"command": "inspect", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
+    {"command": "verify-ir", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "SHARED_IR_VERIFIER"},
+    {"command": "asm", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
+    {"command": "run", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
+    {"command": "native-asm", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
+    {"command": "build", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
+    {"command": "run-native", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
+    {"command": "ffi-build", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
+    {"command": "format", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "PYTHON_SOURCE_TOOLING"},
+    {"command": "docs", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "PYTHON_DOCUMENTATION_TOOLING"},
+    {"command": "test", "semantic_compilation": true, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "S3C_NG_SELECTABLE_UNQUALIFIED"},
+    {"command": "container inspect", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": false, "s3c_ng_supported_now": false, "promotion_blocker_if_unsupported": false, "state": "PROJECT_METADATA_TOOLING"},
+    {"command": "container plan", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "DOCKER_PLAN_WITH_COMPILER_SELECTION"},
+    {"command": "container build", "semantic_compilation": false, "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "DOCKER_IMAGE_WITH_SELECTED_S3_RUNTIME_COMPILER"},
+    {"command": "container run", "semantic_compilation": "INDIRECT", "python_reference_only": false, "s3c_ng_required_for_promotion": true, "s3c_ng_supported_now": true, "promotion_blocker_if_unsupported": true, "state": "DOCKER_RUNTIME_S3C_NG_SELECTABLE_UNQUALIFIED"}
+  ],
+  "bootstrap": {
+    "clean_checkout": "PASS_EXACT_HEAD_AC6B0F0D_RUN_39040792079",
+    "strict_fixed_point": "PASS_MAINTAINED_NATIVE_B_C_D_AND_CLEAN_CHECKOUT_B_TO_C_EXACT_HEAD_AC6B0F0D_RUN_39040792079",
+    "artifact_distribution_policy": "VERSIONED_GITHUB_RELEASE_ASSET; EXPLICIT_INSTALL_ONLY; LOCK_UNPUBLISHED_PENDING_FINAL_CANDIDATE_AND_HUMAN_PUBLICATION_CONFIRMATION",
+    "release_asset_name": "s3c-ng-bootstrap-linux-x86_64.tar.gz",
+    "release_lock": "bootstrap/s3/s3c_ng_bootstrap_lock.json",
+    "install_command": "s3 bootstrap install s3c-ng",
+    "download_during_compilation": false,
+    "release_published": false,
+    "pinned_release_sha256": false,
+    "candidate_builder": "tools/build_s3c_ng_candidate.py",
+    "candidate_packager_source_identity": "REQUIRES_CHECKOUT_HEAD_AND_CLEAN_COMPILER_INPUTS_AND_RECOMPUTED_SOURCE_GRAPH_TO_MATCH_MANIFEST",
+    "candidate_seed": "PYTHON_REFERENCE_STAGE0",
+    "candidate_manifest_schema": 2,
+    "candidate_source_commit": "ac6b0f0d1b55d23279f42cbc4e6482b36fdffd99",
+    "candidate_source_graph_sha256": "07143ec7fe5a5f7cb7a1d97efe4eadefdc97b25db81e2cd548be867d041d3278",
+    "candidate_executable_sha256": "390f4c04f056396ec70352919b2e71d9be50fc6d9ba2f891eddfb8f4a6e216f8",
+    "candidate_executable_bytes": 29531464,
+    "ci_run": 39040792079,
+    "ephemeral_package_sha256": "3a8b262cd4e4e40da16549ddf06dfa47229f2614bd1d2f2d4edcff18047e9ee4",
+    "ephemeral_package_bytes": 2669759,
+    "trusted_s3c_ng_seed": "PYTHON_REFERENCE_STAGE0_PARENT; EXACT_HEAD_AND_SAME_WORKFLOW_RUN_ARTIFACT; CLEAN_CHECKOUT_B_TO_C_PASS_RUN_39040792079; EPHEMERAL_NOT_DURABLE; RELEASE_LOCK_UNPUBLISHED"
+  },
+  "promoted_default": false,
+  "r2_implementation_checkpoint": {
+    "date": "2026-10-17",
+    "result": "PARTIAL",
+    "pr": 331,
+    "branch": "feat/s3-v7-compiler-promotion-bootstrap-independence",
+    "source_head_at_checkpoint": "864a5f48c1274572c70f352d28a39d0feddeedb9",
+    "candidate": {
+      "target": "linux-x86_64",
+      "ephemeral": true,
+      "trusted_seed": false,
+      "path_on_build_host": "/tmp/s3-v7-r2-current6/s3c-ng",
+      "sha256": "e726901465c72b83cd5a5bd6c47fc098bd577e7cd90fbc9410df82c07801f5ce",
+      "bytes": 30097512,
+      "source_commit": "864a5f48c1274572c70f352d28a39d0feddeedb9",
+      "source_graph_sha256": "4b6dc2bf765e0e29b09d10bd729354c891e5eeab6691735f6ccbce7fdcd41b75"
+    },
+    "differential_corpus": {
+      "status": "PASS",
+      "selected": 12,
+      "passed": 12,
+      "failed": 0,
+      "families_sampled": 12,
+      "levels": ["canonical_ir", "hosted_execution"],
+      "family_claim": "NONE_CASE_SAMPLES_ONLY",
+      "all_18_feature_families": "PARTIAL"
+    },
+    "native_frontend_diagnostics": {
+      "focused_cases": 4,
+      "matched_fields": ["category", "phase", "code", "source_unit", "utf8_byte_span", "host_location"],
+      "cases": ["invalid_byte", "unsupported_punctuation", "unterminated_string", "unexpected_token"],
+      "complete_diagnostic_parity": false
+    },
+    "focused_tests": {
+      "linux_x86_64": {"passed": 53, "failed": 0, "elapsed_seconds": 36.53},
+      "additional_native_regressions": {"passed": 4, "failed": 0},
+      "windows": {"passed": 52, "skipped_linux_only": 13, "failed": 0},
+      "compileall": "PASS",
+      "diff_check": "PASS",
+      "full_suite_run": false
+    },
+    "implemented": [
+      "bounded successful native artifact SHA-256 validation cache with identity rechecks",
+      "structured native lexer/parser diagnostics mapped fail-closed to reference errors",
+      "supported-single-symbol lexer fast path",
+      "bounded differential case-sample harness for canonical IR and hosted execution",
+      "focused CLI and ProjectTooling provider workflow tests",
+      "exact-head candidate-focused tests in clean-bootstrap CI job"
+    ],
+    "performance": {
+      "repeat_validation_cache": {
+        "candidate_bytes": 30097512,
+        "cold_inspection_ms": 91.437,
+        "warm_inspection_median_ms": 1.751,
+        "direct_sha256_median_ms": 39.373,
+        "hash_calls_across_cold_plus_7_warm_inspections": 1
+      },
+      "same_host_exploratory_pebble": {
+        "current_candidate_median_ms": 96316.260,
+        "current_candidate_ratio_vs_python": 164.982,
+        "older_artifact_median_ms": 94216.738,
+        "older_artifact_ratio_vs_python": 160.575,
+        "causal_attribution": "NONE_DIFFERENT_SOURCE_SNAPSHOTS",
+        "speedup_claim": false
+      },
+      "full_characterization": "120S_TIMEOUT_DURING_SELF_SOURCE",
+      "memory_attribution": "UNAVAILABLE",
+      "microarchitecture_counters": "UNAVAILABLE_PERF_NOT_INSTALLED"
+    },
+    "promotion": {
+      "python_reference_preserved": true,
+      "default_compiler": "PYTHON",
+      "seed_release": "UNPUBLISHED",
+      "family_states_promoted": 0,
+      "pr_state": "OPEN_DRAFT",
+      "merge_authorized": false,
+      "tag_or_release_authorized": false
+    },
+    "utf8_diagnostics_followup": {
+      "source_base_commit": "77970b24237b5f9858daef4f08b479c6d8bf2330",
+      "candidate": {
+        "target": "linux-x86_64",
+        "ephemeral": true,
+        "trusted_seed": false,
+        "sha256": "52409e44e0115da051180d15725ed686a526c4f985563f571c1c66d9c4fa70c7",
+        "bytes": 30068920,
+        "source_graph_sha256": "586f3b938e9cf31f2f24464d80d835f034c97192c4b91b6b70df8348d0af0689"
+      },
+      "root_cause": "UTF8 width calculation used the wrong quote-discriminator arm and treated boolean relation results as three-way comparisons",
+      "native_frontend_diagnostics": {
+        "status": "PASS",
+        "cases": 7,
+        "matched_fields": ["category", "phase", "code", "source_unit", "utf8_byte_span", "host_location"],
+        "invalid_utf8_span_byte_lengths": [1, 2, 3, 4]
+      },
+      "focused_tests": {
+        "linux_x86_64": {"passed": 8, "failed": 0, "elapsed_seconds": 49.34},
+        "windows_hosted_diagnostics": {"passed": 7, "failed": 0},
+        "compileall": "PASS",
+        "diff_check": "PASS",
+        "full_suite_run": false
+      },
+      "differential_corpus": {
+        "final_candidate_non_pebble": {"selected": 11, "passed": 11, "failed": 0, "families_sampled": 11},
+        "claim": "NONE_CASE_SAMPLES_ONLY",
+        "all_18_feature_families": "PARTIAL",
+        "earlier_candidate_full_selection": {
+          "candidate_sha256": "e726901465c72b83cd5a5bd6c47fc098bd577e7cd90fbc9410df82c07801f5ce",
+          "selected": 12,
+          "passed": 12,
+          "stale_after_utf8_source_change": true
+        },
+        "near_final_candidate_pebble_diagnosis": {
+          "candidate_sha256": "d870e767cb3ea7f1adf7bd0873d99c9894bf056964c7d54b1d9e04e7cb34e9c1",
+          "case": "maturity-pebble-compiler",
+          "native_process_timeout_seconds": 120.0,
+          "timeout_confirmed_by_single_case_diagnosis": true,
+          "final_candidate_pebble_rerun": false
+        }
+      },
+      "promotion": {
+        "python_reference_preserved": true,
+        "default_compiler": "PYTHON",
+        "seed_release": "UNPUBLISHED",
+        "family_states_promoted": 0,
+        "pr_state": "OPEN_DRAFT",
+        "merge_authorized": false,
+        "tag_or_release_authorized": false
+      }
+    },
+    "function_duplicate_index_followup": {
+      "date": "2026-10-17",
+      "status": "FOCUSED_PASS",
+      "root_cause": "pairwise module-local duplicate-function validation ran after an open-addressed lookup index had already been built",
+      "implementation": "duplicate local names are rejected during lookup-index insertion after exact source-span equality; global IR function-name uniqueness remains unchanged",
+      "duplicate_rejection_status": -8,
+      "focused_gates": {
+        "windows": {"passed": 2, "failed": 0},
+        "linux_x86_64_native": {
+          "status": "PASS",
+          "case": "duplicate rejection plus 131-function reference-IR comparison"
+        },
+        "full_suite_run": false,
+        "full_characterization_run": false
+      },
+      "candidate": {
+        "target": "linux-x86_64",
+        "ephemeral": true,
+        "trusted_seed": false,
+        "sha256": "8a1513a698003ed6be7a279da175bdf3e90c4b81668f9171b21dd98a80189ea1",
+        "bytes": 30048360,
+        "source_commit": "ea88567a734596cc551616ba43371ca0398271d6",
+        "source_graph_sha256": "019a7c053960ccc3e10f362d29ea54a2e49201fb37f1b29efa5635fc6778613d"
+      },
+      "exploratory_function_scaling": {
+        "protocol": "same-host Linux x86-64 WSL; alternating native subprocess timings; two samples per candidate per cell; synthetic source only; not official characterization",
+        "baseline_candidate_sha256": "52409e44e0115da051180d15725ed686a526c4f985563f571c1c66d9c4fa70c7",
+        "candidate_sha256": "8a1513a698003ed6be7a279da175bdf3e90c4b81668f9171b21dd98a80189ea1",
+        "cells": [
+          {"functions": 1, "source_bytes": 42, "baseline_median_ms": 15.744, "candidate_median_ms": 13.531},
+          {"functions": 51, "source_bytes": 1572, "baseline_median_ms": 236.984, "candidate_median_ms": 204.745},
+          {"functions": 201, "source_bytes": 6422, "baseline_median_ms": 8130.915, "candidate_median_ms": 7360.925, "candidate_samples_ms": [11009.553, 3712.298], "classification": "HIGH_DISPERSION_DIRECTIONAL_ONLY"}
+        ],
+        "official_baseline_updated": false,
+        "speedup_claim": false,
+        "performance_status": "EXPLORATORY_NOT_QUALIFIED"
+      },
+      "promotion": {
+        "python_reference_preserved": true,
+        "default_compiler": "PYTHON",
+        "seed_release": "UNPUBLISHED",
+        "feature_families_promoted": 0,
+        "pr_state": "OPEN_DRAFT",
+        "merge_authorized": false
+      }
+    }
+  }
+}

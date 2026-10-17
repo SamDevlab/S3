@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -7,6 +8,7 @@ from pathlib import Path
 import pytest
 
 import bootstrap.s3.cli as cli
+import bootstrap.s3.native_compiler as native_compiler
 from bootstrap.s3.ir_serialization import serialize_ir
 from bootstrap.s3.pipeline import compile_source
 
@@ -22,6 +24,116 @@ def _json_stderr(capsys: pytest.CaptureFixture[str]) -> dict[str, object]:
     assert captured.out == ""
     assert captured.err.count("\n") == 1
     return json.loads(captured.err)
+
+
+def test_container_plan_forwards_compiler_selection_into_runtime_command(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write_source(tmp_path / "src" / "main.s3", "module main\nfn main() -> i64:\n    return 7\n")
+    (tmp_path / "s3.toml").write_text(
+        "[project]\nname='app'\nversion='1'\nentrypoint='main'\n"
+        "source_roots=['src']\nprofile='hosted'\n",
+        encoding="ascii",
+    )
+    captured: list[tuple[str, ...]] = []
+
+    class RecordingDockerProvider:
+        def plan(self, spec):
+            captured.append(spec.command)
+            return {"command": spec.command}
+
+    monkeypatch.setattr(cli, "DockerProvider", RecordingDockerProvider)
+
+    assert cli.main(
+        [
+            "container", "plan", str(tmp_path), "--image", "s3/runtime:1.38",
+            "--compiler", "s3c-ng", "--s3c-ng-executable", "/opt/s3/s3c-ng",
+        ]
+    ) == 0
+    assert captured == [
+        (
+            "s3", "run", "/app/main.s3", "--compiler", "s3c-ng",
+            "--s3c-ng-executable", "/opt/s3/s3c-ng",
+        )
+    ]
+    assert json.loads(capsys.readouterr().out)["command"] == list(captured[0])
+
+
+def test_container_run_forwards_compiler_selection_to_docker_command(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write_source(tmp_path / "src" / "main.s3", "module main\nfn main() -> i64:\n    return 7\n")
+    (tmp_path / "s3.toml").write_text(
+        "[project]\nname='app'\nversion='1'\nentrypoint='main'\n"
+        "source_roots=['src']\nprofile='hosted'\n",
+        encoding="ascii",
+    )
+    captured: list[tuple[str, ...]] = []
+
+    class Result:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def fake_run(_provider, spec):
+        captured.append(spec.command)
+        return Result()
+
+    monkeypatch.setattr(cli.DockerProvider, "run", fake_run)
+
+    assert cli.main(
+        [
+            "container", "run", str(tmp_path), "--image", "s3/runtime:1.38",
+            "--compiler", "s3c-ng", "--s3c-ng-executable", "/opt/s3/s3c-ng",
+        ]
+    ) == 0
+    assert captured == [
+        (
+            "s3", "run", "/app/main.s3", "--compiler", "s3c-ng",
+            "--s3c-ng-executable", "/opt/s3/s3c-ng",
+        )
+    ]
+    assert capsys.readouterr().out == ""
+
+
+def test_container_build_embeds_compiler_selection_in_image_entrypoint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _write_source(tmp_path / "src" / "main.s3", "module main\nfn main() -> i64:\n    return 7\n")
+    (tmp_path / "s3.toml").write_text(
+        "[project]\nname='app'\nversion='1'\nentrypoint='main'\n"
+        "source_roots=['src']\nprofile='hosted'\n",
+        encoding="ascii",
+    )
+    dockerfiles: list[str] = []
+
+    class Result:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def fake_build(_provider, context, _tag):
+        dockerfiles.append((context / "Dockerfile").read_text(encoding="utf-8"))
+        return Result()
+
+    monkeypatch.setattr(cli.DockerProvider, "build", fake_build)
+
+    assert cli.main(
+        [
+            "container", "build", str(tmp_path), "--image", "s3/app:1",
+            "--compiler", "s3c-ng", "--s3c-ng-executable", "/opt/s3/s3c-ng",
+        ]
+    ) == 0
+    assert len(dockerfiles) == 1
+    assert '"--compiler","s3c-ng"' in dockerfiles[0]
+    assert '"--s3c-ng-executable","/opt/s3/s3c-ng"' in dockerfiles[0]
+    assert capsys.readouterr().out == ""
 
 
 def test_native_policy_is_explicitly_forwarded_by_native_asm_cli(
@@ -60,11 +172,11 @@ def test_ffi_build_forwards_explicit_instruction_limit(
     )
     received: list[dict[str, object]] = []
 
-    def fake_build_shared_library(_source, output, **kwargs: object) -> Path:
+    def fake_build_shared_library(_assembly, output, **kwargs: object) -> Path:
         received.append(kwargs)
         return output
 
-    monkeypatch.setattr(cli, "build_shared_library", fake_build_shared_library)
+    monkeypatch.setattr(cli, "build_shared_library_from_assembly", fake_build_shared_library)
 
     assert cli.main(
         [
@@ -79,8 +191,7 @@ def test_ffi_build_forwards_explicit_instruction_limit(
         ]
     ) == 0
     assert received[0]["max_instructions"] == 100_000_000
-    assert received[0]["optimization"] == cli.OptimizationLevel.O1
-    assert received[0]["mode"] is cli.SyntaxMode.V0_5
+    assert "native_policy" in received[0]
     assert capsys.readouterr().out.endswith("libffi-budget.so\n")
 
 
@@ -535,6 +646,114 @@ def test_doctor_command_reports_environment_and_internal_architecture(
     assert "\nNative assembly:\n  linux-x86_64\n" in captured.out
     assert "\nNative toolchain:\n" in captured.out
     assert "\n  available: " in captured.out
+    assert "\nCompiler:\n" in captured.out
+    assert "  default: python" in captured.out
+    assert "  reference: python" in captured.out
+    assert "  python available: yes" in captured.out
+    assert "trusted bootstrap seed: unpublished" in captured.out
+
+
+def test_doctor_reports_valid_s3c_ng_candidate_identity(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    executable = tmp_path / "s3c-ng"
+    executable.write_bytes(b"candidate")
+    executable.with_suffix(".manifest.json").write_text(
+        json.dumps(
+            {
+                "target": "linux-x86_64",
+                "source_commit": "a" * 40,
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        cli,
+        "inspect_s3c_ng_executable",
+        lambda: native_compiler.S3CNgAvailability(executable, True),
+    )
+    monkeypatch.setattr(cli, "pinned_install_path", lambda: None)
+
+    assert cli.main(["doctor"]) == 0
+    output = capsys.readouterr().out
+    assert "s3c-ng target: linux-x86_64" in output
+    assert f"s3c-ng artifact sha256: {hashlib.sha256(b'candidate').hexdigest()}" in output
+    assert f"s3c-ng source commit: {'a' * 40}" in output
+    assert "trusted bootstrap seed: unpublished" in output
+
+
+def test_doctor_distinguishes_invalid_pinned_cache(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    pinned = tmp_path / "pinned" / "s3c-ng"
+    pinned.parent.mkdir()
+    pinned.write_bytes(b"incomplete")
+    monkeypatch.setattr(
+        cli,
+        "inspect_s3c_ng_executable",
+        lambda: native_compiler.S3CNgAvailability(pinned, False, "manifest missing"),
+    )
+    monkeypatch.setattr(cli, "pinned_install_path", lambda: pinned)
+
+    assert cli.main(["doctor"]) == 0
+    output = capsys.readouterr().out
+    assert "s3c-ng available: no" in output
+    assert "trusted bootstrap seed: pinned release cache invalid or unavailable" in output
+
+
+def test_explicit_s3c_ng_cli_request_fails_closed_without_python_fallback(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_source(tmp_path / "program.s3", "fn main() -> i64:\n    return 3\n")
+
+    def forbidden(*_args, **_kwargs):
+        pytest.fail("explicit S3C-NG request must not invoke Python compilation")
+
+    monkeypatch.setattr(cli, "compile_source", forbidden)
+
+    assert cli.main(["ir", str(source), "--compiler", "s3c-ng"]) == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "S3C-NG" in captured.err
+
+
+def test_compiler_selection_is_not_accepted_by_reference_tooling_commands(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = _write_source(tmp_path / "program.s3", "fn main() -> i64:\n    return 3\n")
+
+    assert cli.main(["tokens", str(source), "--compiler", "s3c-ng"]) == 2
+    captured = capsys.readouterr()
+    assert "unrecognized arguments" in captured.err
+
+
+def test_cli_compiles_source_directory_through_selected_reference_provider(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    project = tmp_path / "project"
+    _write_source(
+        project / "main.s3",
+        "module main\nfrom helper import increment\n"
+        "fn main() -> i64:\n    return increment(4)\n",
+    )
+    _write_source(
+        project / "helper.s3",
+        "module helper\nexport fn increment(value: i64) -> i64:\n"
+        "    return value + 1\n",
+    )
+
+    assert cli.main(["check", str(project), "--compiler", "python"]) == 0
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert "status: ok" in captured.out
 
 
 def test_inspect_command_reports_compilation_summary_without_running(

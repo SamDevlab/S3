@@ -9,7 +9,8 @@ Status: COMPLETE.
 - fixed seed, bounded timeout, frame and instruction limits;
 - hosted reference execution and Linux x86-64 native differential execution;
 - explicit capability declaration and capability-denial results;
-- machine-readable `s3.test-report.v1` reports with stable result taxonomy;
+- machine-readable test reports identify the selected compiler and use the
+  `s3.test-report.v2` schema;
 - timeout, resource-limit, and infrastructure failures kept distinct.
 
 The runner does not add a property-testing language, debugger, benchmark

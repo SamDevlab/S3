@@ -137,11 +137,33 @@ def build_shared_library(
 ) -> Path:
     """Compile ordinary S3 source into a real Linux FFI shared object."""
 
-    from .backends.x86_64 import NativeToolchain, generate_ffi_assembly
     from .pipeline import compile_source
 
     result = compile_source(source, optimization, mode=mode)
     _, ordinary_assembly = result.require_ordinary_artifacts()
+    return build_shared_library_from_assembly(
+        ordinary_assembly,
+        output,
+        extra_objects=extra_objects,
+        keep_assembly=keep_assembly,
+        max_instructions=max_instructions,
+        native_policy=native_policy,
+    )
+
+
+def build_shared_library_from_assembly(
+    ordinary_assembly,
+    output: Path,
+    *,
+    extra_objects: tuple[Path, ...] = (),
+    keep_assembly: Path | None = None,
+    max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
+    native_policy: str | None = None,
+) -> Path:
+    """Build an FFI library from the canonical Assembly produced by a provider."""
+
+    from .backends.x86_64 import NativeToolchain, generate_ffi_assembly
+
     assembly = generate_ffi_assembly(
         ordinary_assembly,
         max_instructions=max_instructions,

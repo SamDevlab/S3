@@ -6,6 +6,7 @@ import fnmatch
 from dataclasses import replace
 from pathlib import Path
 
+from .compiler_provider import DEFAULT_COMPILER, CompilerKind
 from .test_runner import S3TestManifest, S3TestRunner, TestRunnerError
 
 
@@ -21,6 +22,9 @@ def run_project_tests(
     *,
     mode: str | None = None,
     name_pattern: str | None = None,
+    compiler: CompilerKind | str = DEFAULT_COMPILER,
+    executable: Path | None = None,
+    entry_module: str = "main",
 ) -> dict[str, object]:
     """Discover, order and execute manifests with one stable aggregate result."""
 
@@ -39,7 +43,14 @@ def run_project_tests(
                 continue
             manifest = replace(manifest, tests=tests)
         selected_manifests.append(manifest_path)
-        reports.append(S3TestRunner(manifest).run(mode))
+        reports.append(
+            S3TestRunner(
+                manifest,
+                compiler=compiler,
+                executable=executable,
+                entry_module=entry_module,
+            ).run(mode)
+        )
     if not reports:
         raise TestRunnerError("test discovery selected no tests")
     summaries = [report["summary"] for report in reports]
@@ -65,7 +76,9 @@ def run_project_tests(
         status = "SKIP"
     return {
         "schema": "s3-project-test-report",
-        "schema_version": "1",
+        "schema_version": "2",
+        "compiler": CompilerKind(compiler).value,
+        "entry_module": entry_module,
         "manifests": [str(path.relative_to(Path(root).resolve()).as_posix()) for path in selected_manifests],
         "reports": reports,
         "summary": {

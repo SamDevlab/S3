@@ -265,6 +265,184 @@ fn ng_tryte_literal_fits(source: &bytes, node: NgAstNode) -> trit:
 fn ng_i64_literal_fits(source: &bytes, node: NgAstNode) -> trit:
     return ng_literal_magnitude_fits(source, node, 922337203685477580, 7)
 
+fn ng_contextual_constant_integer_value(source: &bytes, nodes: &vector<NgAstNode>, node_id: i64, expected_type: i64, value: &mut i64) -> i64:
+    mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    mut index: i64 = node.start
+    mut digit: i64 = 0
+    mut negative: i64 = 0
+    mut left_value: i64 = 0
+    mut right_value: i64 = 0
+    mut left_status: i64 = 0
+    mut right_status: i64 = 0
+    match node.kind <=> 1:
+        -1:
+            return 0
+        0:
+            index = node.start
+            match index < node.end:
+                -1:
+                    match to_i64(bytes_get(source, index)) <=> 45:
+                        0:
+                            negative = 1
+                            index = index + 1
+                        -1:
+                            negative = 0
+                        1:
+                            negative = 0
+                0:
+                    return 0
+                1:
+                    return 0
+            match index < node.end:
+                -1:
+                    *value = 0
+                    while index < node.end:
+                        digit = to_i64(bytes_get(source, index)) - 48
+                        match digit < 0:
+                            -1:
+                                return 0
+                            0:
+                                match digit > 9:
+                                    -1:
+                                        return 0
+                                    0:
+                                        *value = *value * 10 + digit
+                                    1:
+                                        *value = *value * 10 + digit
+                                index = index + 1
+                            1:
+                                return 0
+                    match negative <=> 1:
+                        0:
+                            *value = 0 - *value
+                        -1:
+                            *value = *value
+                        1:
+                            *value = *value
+                    return ng_contextual_integer_value_fits(expected_type, *value)
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            match node.kind <=> 3:
+                -1:
+                    return 0
+                0:
+                    return ng_contextual_constant_integer_value(source, nodes, node.left, expected_type, value)
+                1:
+                    match node.kind <=> 4:
+                        -1:
+                            return 0
+                        0:
+                            match node.operation <=> 343:
+                                -1:
+                                    return 0
+                                0:
+                                    left_status = ng_contextual_constant_integer_value(source, nodes, node.left, expected_type, &mut left_value)
+                                    right_status = ng_contextual_constant_integer_value(source, nodes, node.right, expected_type, &mut right_value)
+                                    match left_status <=> 0:
+                                        -1:
+                                            return -1
+                                        0:
+                                            match right_status <=> 0:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        1:
+                                            match right_status <=> 0:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    return 0
+                                                1:
+                                                    *value = left_value + right_value
+                                                    return ng_contextual_integer_value_fits(expected_type, *value)
+                                1:
+                                    match node.operation <=> 345:
+                                        -1:
+                                            return 0
+                                        0:
+                                            left_status = ng_contextual_constant_integer_value(source, nodes, node.left, expected_type, &mut left_value)
+                                            right_status = ng_contextual_constant_integer_value(source, nodes, node.right, expected_type, &mut right_value)
+                                            match left_status <=> 0:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    match right_status <=> 0:
+                                                        -1:
+                                                            return -1
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                1:
+                                                    match right_status <=> 0:
+                                                        -1:
+                                                            return -1
+                                                        0:
+                                                            return 0
+                                                        1:
+                                                            *value = left_value - right_value
+                                                            return ng_contextual_integer_value_fits(expected_type, *value)
+                                        1:
+                                            return 0
+                        1:
+                            match node.kind <=> 22:
+                                -1:
+                                    return 0
+                                0:
+                                    left_status = ng_contextual_constant_integer_value(source, nodes, node.left, expected_type, &mut left_value)
+                                    match left_status <=> 0:
+                                        -1:
+                                            return -1
+                                        0:
+                                            return 0
+                                        1:
+                                            *value = 0 - left_value
+                                            return ng_contextual_integer_value_fits(expected_type, *value)
+                                1:
+                                    return 0
+
+fn ng_contextual_integer_value_fits(expected_type: i64, value: i64) -> i64:
+    match expected_type <=> 2:
+        -1:
+            return 0
+        0:
+            match value < -1:
+                -1:
+                    return -1
+                0:
+                    return ng_contextual_integer_upper_value_fits(value, 1)
+                1:
+                    return ng_contextual_integer_upper_value_fits(value, 1)
+        1:
+            match expected_type <=> 3:
+                -1:
+                    return 0
+                0:
+                    match value < -364:
+                        -1:
+                            return -1
+                        0:
+                            return ng_contextual_integer_upper_value_fits(value, 364)
+                        1:
+                            return ng_contextual_integer_upper_value_fits(value, 364)
+                1:
+                    return 0
+
+fn ng_contextual_integer_upper_value_fits(value: i64, limit: i64) -> i64:
+    match value > limit:
+        -1:
+            return -1
+        0:
+            return 1
+        1:
+            return 1
+
 fn ng_span_matches_text(source: &bytes, start: i64, end: i64, wanted: text) -> trit:
     mut expected_length: i64 = text_len(&wanted)
     mut index: i64 = 0
@@ -502,11 +680,84 @@ fn ng_record_constructor_type(source: &bytes, types: &vector<NgTypeDescriptor>, 
         1:
             return -14
 
+fn ng_static_array_literal_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode, expected_type: i64) -> i64:
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut link: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut value_type: i64 = -1
+    mut link_id: i64 = node.left
+    mut count: i64 = 0
+    match expected_type > 0:
+        -1:
+            match expected_type <= vector_len<NgTypeDescriptor>(types):
+                -1:
+                    descriptor = vector_get<NgTypeDescriptor>(types, expected_type - 1)
+                    match descriptor.kind <=> 14:
+                        0:
+                            while link_id >= 0:
+                                match link_id < vector_len<NgAstNode>(nodes):
+                                    -1:
+                                        link = vector_get<NgAstNode>(nodes, link_id)
+                                        match link.kind <=> 6:
+                                            0:
+                                                value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, link.left, descriptor.element_type)
+                                                match ng_type_equal(source, types, value_type, descriptor.element_type) <=> -1:
+                                                    0:
+                                                        count = count + 1
+                                                        link_id = link.right
+                                                    -1:
+                                                        return -14
+                                                    1:
+                                                        return -14
+                                            -1:
+                                                return -14
+                                            1:
+                                                return -14
+                                    0:
+                                        return -14
+                                    1:
+                                        return -14
+                            match count <=> descriptor.field_count:
+                                0:
+                                    match node.operation <=> count:
+                                        0:
+                                            return expected_type
+                                        -1:
+                                            return -14
+                                        1:
+                                            return -14
+                                -1:
+                                    return -14
+                                1:
+                                    return -14
+                        -1:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+        0:
+            return -14
+        1:
+            return -14
+
 fn ng_contextual_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node_id: i64, expected_type: i64) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
     mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut base: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut constructor_type: i64 = -1
+    mut contextual_operand_type: i64 = 0
+    mut binary_type: i64 = 0
+    mut constant_status: i64 = 0
+    mut constant_value: i64 = 0
+    match node.kind <=> 24:
+        0:
+            return ng_static_array_literal_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node, expected_type)
+        -1:
+            node = node
+        1:
+            node = node
     match node.kind <=> 14:
         0:
             base = vector_get<NgAstNode>(nodes, node.left)
@@ -556,6 +807,61 @@ fn ng_contextual_expression_type(source: &bytes, types: &vector<NgTypeDescriptor
                     return ng_call_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node)
                 1:
                     return -14
+        -1:
+            node = node
+        1:
+            node = node
+    match node.kind <=> 3:
+        -1:
+            node = node
+        0:
+            return ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left, expected_type)
+        1:
+            node = node
+    match node.kind <=> 22:
+        -1:
+            node = node
+        0:
+            match ng_is_numeric_type(expected_type):
+                -1:
+                    contextual_operand_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left, expected_type)
+                    match contextual_operand_type <=> expected_type:
+                        0:
+                            constant_status = ng_contextual_constant_integer_value(source, nodes, node_id, expected_type, &mut constant_value)
+                            match constant_status < 0:
+                                -1:
+                                    return -14
+                                0:
+                                    return expected_type
+                                1:
+                                    return expected_type
+                        -1:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    node = node
+                1:
+                    node = node
+        1:
+            node = node
+    match node.kind <=> 4:
+        0:
+            binary_type = ng_binary_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node, expected_type)
+            match ng_is_numeric_type(binary_type):
+                -1:
+                    constant_status = ng_contextual_constant_integer_value(source, nodes, node_id, binary_type, &mut constant_value)
+                    match constant_status < 0:
+                        -1:
+                            return -14
+                        0:
+                            return binary_type
+                        1:
+                            return binary_type
+                0:
+                    return binary_type
+                1:
+                    return binary_type
         -1:
             node = node
         1:
@@ -766,7 +1072,304 @@ fn ng_vector_reference_matches(source: &bytes, types: &vector<NgTypeDescriptor>,
         1:
             return 0
 
+fn ng_span_starts_with_text(source: &bytes, start: i64, end: i64, wanted: text) -> trit:
+    mut wanted_length: i64 = text_len(&wanted)
+    match end - start >= wanted_length:
+        -1:
+            return ng_span_matches_text(source, start, start + wanted_length, wanted)
+        0:
+            return 0
+        1:
+            return 0
+
+fn ng_span_ends_with_text(source: &bytes, start: i64, end: i64, wanted: text) -> trit:
+    mut wanted_length: i64 = text_len(&wanted)
+    match end - start >= wanted_length:
+        -1:
+            return ng_span_matches_text(source, end - wanted_length, end, wanted)
+        0:
+            return 0
+        1:
+            return 0
+
+export fn ng_legacy_vector_builtin_code(source: &bytes, start: i64, end: i64) -> i64:
+    mut element_type: i64 = 0
+    mut operation: i64 = 0
+    match ng_span_starts_with_text(source, start, end, text_from_static("i64_vector_")):
+        -1:
+            element_type = 1
+        0:
+            match ng_span_starts_with_text(source, start, end, text_from_static("tryte_vector_")):
+                -1:
+                    element_type = 3
+                0:
+                    match ng_span_starts_with_text(source, start, end, text_from_static("f64_vector_")):
+                        -1:
+                            element_type = 4
+                        0:
+                            element_type = 0
+                        1:
+                            element_type = 0
+                1:
+                    element_type = 0
+        1:
+            element_type = 0
+    match element_type > 0:
+        -1:
+            match ng_span_ends_with_text(source, start, end, text_from_static("_len")):
+                -1:
+                    operation = 1
+                0:
+                    match ng_span_ends_with_text(source, start, end, text_from_static("_push")):
+                        -1:
+                            operation = 2
+                        0:
+                            match ng_span_ends_with_text(source, start, end, text_from_static("_get")):
+                                -1:
+                                    operation = 3
+                                0:
+                                    match ng_span_ends_with_text(source, start, end, text_from_static("_set")):
+                                        -1:
+                                            operation = 4
+                                        0:
+                                            match ng_span_ends_with_text(source, start, end, text_from_static("_new")):
+                                                -1:
+                                                    operation = 5
+                                                0:
+                                                    match ng_span_ends_with_text(source, start, end, text_from_static("_pop")):
+                                                        -1:
+                                                            operation = 6
+                                                        0:
+                                                            match ng_span_ends_with_text(source, start, end, text_from_static("_capacity")):
+                                                                -1:
+                                                                    operation = 7
+                                                                0:
+                                                                    operation = 0
+                                                                1:
+                                                                    operation = 0
+                                                        1:
+                                                            operation = 0
+                                                1:
+                                                    operation = 0
+                                        1:
+                                            operation = 0
+                                1:
+                                    operation = 0
+                        1:
+                            operation = 0
+                1:
+                    operation = 0
+            match operation > 0:
+                -1:
+                    return element_type * 10 + operation
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+export fn ng_legacy_vector_builtin_element_type(code: i64) -> i64:
+    match code >= 40:
+        -1:
+            return 4
+        0:
+            match code >= 30:
+                -1:
+                    return 3
+                0:
+                    match code >= 10:
+                        -1:
+                            return 1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+export fn ng_legacy_vector_builtin_operation(code: i64) -> i64:
+    mut element_type: i64 = ng_legacy_vector_builtin_element_type(code)
+    match element_type > 0:
+        -1:
+            return code - element_type * 10
+        0:
+            return 0
+        1:
+            return 0
+
+fn ng_resource_builtin_call_kind(source: &bytes, name_start: i64, name_end: i64) -> i64:
+    match ng_span_matches_text(source, name_start, name_end, text_from_static("host_capability_grant")):
+        -1:
+            return 14
+        0:
+            match ng_span_matches_text(source, name_start, name_end, text_from_static("resource_open")):
+                -1:
+                    return 15
+                0:
+                    match ng_span_matches_text(source, name_start, name_end, text_from_static("resource_is_open")):
+                        -1:
+                            return 16
+                        0:
+                            match ng_span_matches_text(source, name_start, name_end, text_from_static("resource_kind")):
+                                -1:
+                                    return 17
+                                0:
+                                    match ng_span_matches_text(source, name_start, name_end, text_from_static("resource_invoke")):
+                                        -1:
+                                            return 18
+                                        0:
+                                            match ng_span_matches_text(source, name_start, name_end, text_from_static("resource_close")):
+                                                -1:
+                                                    return 19
+                                                0:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        1:
+                                            return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn ng_resource_builtin_result_type(builtin_kind: i64) -> i64:
+    match builtin_kind <=> 14:
+        -1:
+            return 0
+        0:
+            return 7
+        1:
+            match builtin_kind <=> 15:
+                -1:
+                    return 0
+                0:
+                    return 8
+                1:
+                    match builtin_kind <=> 16:
+                        -1:
+                            return 0
+                        0:
+                            return 2
+                        1:
+                            match builtin_kind <=> 17:
+                                -1:
+                                    return 0
+                                0:
+                                    return 1
+                                1:
+                                    match builtin_kind <=> 18:
+                                        -1:
+                                            return 0
+                                        0:
+                                            return 3
+                                        1:
+                                            match builtin_kind <=> 19:
+                                                -1:
+                                                    return 0
+                                                0:
+                                                    return 3
+                                                1:
+                                                    return 0
+
+fn ng_resource_builtin_argument_type(builtin_kind: i64, argument_index: i64) -> i64:
+    match builtin_kind <=> 14:
+        -1:
+            return 0
+        0:
+            match argument_index <=> 0:
+                0:
+                    return 1
+                -1:
+                    return 0
+                1:
+                    return 0
+        1:
+            match builtin_kind <=> 15:
+                -1:
+                    return 0
+                0:
+                    match argument_index <=> 0:
+                        0:
+                            return 7
+                        -1:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    match builtin_kind <=> 16:
+                        -1:
+                            return 0
+                        0:
+                            match argument_index <=> 0:
+                                0:
+                                    return 9
+                                -1:
+                                    return 0
+                                1:
+                                    return 0
+                        1:
+                            match builtin_kind <=> 17:
+                                -1:
+                                    return 0
+                                0:
+                                    match argument_index <=> 0:
+                                        0:
+                                            return 9
+                                        -1:
+                                            return 0
+                                        1:
+                                            return 0
+                                1:
+                                    match builtin_kind <=> 18:
+                                        -1:
+                                            return 0
+                                        0:
+                                            match argument_index <=> 0:
+                                                0:
+                                                    return 9
+                                                1:
+                                                    match argument_index <=> 1:
+                                                        0:
+                                                            return 1
+                                                        -1:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                -1:
+                                                    return 0
+                                        1:
+                                            match builtin_kind <=> 19:
+                                                -1:
+                                                    return 0
+                                                0:
+                                                    match argument_index <=> 0:
+                                                        0:
+                                                            return 10
+                                                        -1:
+                                                            return 0
+                                                        1:
+                                                            return 0
+                                                1:
+                                                    return 0
+
 export fn ng_builtin_call_kind(source: &bytes, name_start: i64, name_end: i64) -> i64:
+    mut resource_kind: i64 = ng_resource_builtin_call_kind(source, name_start, name_end)
+    match resource_kind > 0:
+        -1:
+            return resource_kind
+        0:
+            resource_kind = resource_kind
+        1:
+            resource_kind = resource_kind
     mut name_length: i64 = name_end - name_start
     match name_length <=> 9:
         -1:
@@ -903,6 +1506,14 @@ export fn ng_builtin_call_kind(source: &bytes, name_start: i64, name_end: i64) -
                                     return -13
 
 export fn ng_builtin_result_type(builtin_kind: i64) -> i64:
+    mut resource_result: i64 = ng_resource_builtin_result_type(builtin_kind)
+    match resource_result > 0:
+        -1:
+            return resource_result
+        0:
+            resource_result = resource_result
+        1:
+            resource_result = resource_result
     match builtin_kind <=> 1:
         -1:
             return -13
@@ -984,6 +1595,14 @@ export fn ng_builtin_result_type(builtin_kind: i64) -> i64:
                                                                                                             return -13
 
 export fn ng_builtin_argument_type(builtin_kind: i64, argument_index: i64) -> i64:
+    mut resource_argument: i64 = ng_resource_builtin_argument_type(builtin_kind, argument_index)
+    match resource_argument > 0:
+        -1:
+            return resource_argument
+        0:
+            resource_argument = resource_argument
+        1:
+            resource_argument = resource_argument
     match builtin_kind <=> 3:
         0:
             match argument_index <=> 0:
@@ -1093,6 +1712,33 @@ fn ng_builtin_reference_matches(source: &bytes, types: &vector<NgTypeDescriptor>
         1:
             return 0
 
+fn ng_address_target_kind_supported(kind: i64) -> trit:
+    match kind <= 6:
+        -1:
+            return -1
+        0:
+            match kind <=> 8:
+                0:
+                    return -1
+                -1:
+                    return 0
+                1:
+                    match kind <=> 11:
+                        0:
+                            return -1
+                        -1:
+                            return 0
+                        1:
+                            match kind <=> 12:
+                                0:
+                                    return -1
+                                -1:
+                                    return 0
+                                1:
+                                    return 0
+        1:
+            return 0
+
 fn ng_builtin_conversion_result_type(builtin_kind: i64, source_type: i64) -> i64:
     match builtin_kind <=> 1:
         0:
@@ -1195,7 +1841,108 @@ fn ng_static_text_builtin_call_type(types: &vector<NgTypeDescriptor>, nodes: &ve
         1:
             return -14
 
+fn ng_resource_builtin_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, builtin_kind: i64, argument_count: i64) -> i64:
+    mut expected_count: i64 = 1
+    mut expected_type: i64 = 0
+    mut actual_type: i64 = 0
+    mut result_type: i64 = ng_resource_builtin_result_type(builtin_kind)
+    mut argument_id: i64 = call_node.left
+    mut argument_index: i64 = 0
+    mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    match builtin_kind <=> 18:
+        0:
+            expected_count = 2
+        -1:
+            expected_count = expected_count
+        1:
+            expected_count = expected_count
+    match result_type > 0:
+        -1:
+            result_type = result_type
+        0:
+            return -13
+        1:
+            return -13
+    match argument_count <=> expected_count:
+        0:
+            expected_count = expected_count
+        -1:
+            return -14
+        1:
+            return -14
+    while argument_id >= 0:
+        argument = vector_get<NgAstNode>(nodes, argument_id)
+        match argument.kind <=> 6:
+            0:
+                expected_type = ng_resource_builtin_argument_type(builtin_kind, argument_index)
+                match expected_type > 0:
+                    -1:
+                        actual_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, argument.left, expected_type)
+                        match actual_type > 0:
+                            -1:
+                                match expected_type <=> 9:
+                                    -1:
+                                        match ng_type_equal(source, types, actual_type, expected_type) <=> -1:
+                                            0:
+                                                actual_type = actual_type
+                                            -1:
+                                                return -14
+                                            1:
+                                                return -14
+                                    0:
+                                        match ng_builtin_reference_matches(source, types, actual_type, 8, 0) <=> -1:
+                                            0:
+                                                actual_type = actual_type
+                                            -1:
+                                                return -14
+                                            1:
+                                                return -14
+                                    1:
+                                        match expected_type <=> 10:
+                                            0:
+                                                match ng_builtin_reference_matches(source, types, actual_type, 8, 1) <=> -1:
+                                                    0:
+                                                        actual_type = actual_type
+                                                    -1:
+                                                        return -14
+                                                    1:
+                                                        return -14
+                                            1:
+                                                match ng_type_equal(source, types, actual_type, expected_type) <=> -1:
+                                                    0:
+                                                        actual_type = actual_type
+                                                    -1:
+                                                        return -14
+                                                    1:
+                                                        return -14
+                                            -1:
+                                                return -14
+                            1:
+                                return actual_type
+                            0:
+                                return -14
+                        argument_id = argument.right
+                        argument_index = argument_index + 1
+                    0:
+                        return -13
+                    1:
+                        return -13
+            -1:
+                return -14
+            1:
+                return -14
+    return result_type
+
 fn ng_builtin_dynamic_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, builtin_kind: i64, argument_count: i64) -> i64:
+    match builtin_kind > 13:
+        -1:
+            return ng_resource_builtin_call_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+        0:
+            return ng_builtin_dynamic_call_type_existing(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+        1:
+            return ng_builtin_dynamic_call_type_existing(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+
+fn ng_builtin_dynamic_call_type_existing(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, builtin_kind: i64, argument_count: i64) -> i64:
     match builtin_kind <=> 10:
         0:
             return ng_bytes_concat_call_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, argument_count)
@@ -1537,6 +2284,15 @@ fn ng_builtin_dynamic_call_type_legacy(source: &bytes, types: &vector<NgTypeDesc
             return -13
 
 fn ng_builtin_dispatch_v2(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, builtin_kind: i64, argument_count: i64) -> i64:
+    match builtin_kind > 13:
+        -1:
+            return ng_builtin_dynamic_call_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+        0:
+            return ng_builtin_dispatch_v2_existing(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+        1:
+            return ng_builtin_dispatch_v2_existing(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, builtin_kind, argument_count)
+
+fn ng_builtin_dispatch_v2_existing(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, builtin_kind: i64, argument_count: i64) -> i64:
     mut first_argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut argument_type: i64 = -1
     mut expected_type: i64 = 0
@@ -2042,10 +2798,142 @@ fn ng_generic_vector_set_type(source: &bytes, types: &vector<NgTypeDescriptor>, 
         1:
             return -14
 
+fn ng_generic_vector_new_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64) -> i64:
+    mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut expected: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut argument_type: i64 = 0
+    match call_node.right > 0:
+        -1:
+            match call_node.right <= vector_len<NgTypeDescriptor>(types):
+                -1:
+                    match expected_type > 0:
+                        -1:
+                            match expected_type <= vector_len<NgTypeDescriptor>(types):
+                                -1:
+                                    expected = vector_get<NgTypeDescriptor>(types, expected_type - 1)
+                                    match expected.kind <=> 8:
+                                        0:
+                                            match ng_type_equal(source, types, expected.element_type, call_node.right) <=> -1:
+                                                0:
+                                                    match ng_vector_element_supported(types, fields, call_node.right):
+                                                        -1:
+                                                            match call_node.left >= 0:
+                                                                -1:
+                                                                    argument = vector_get<NgAstNode>(nodes, call_node.left)
+                                                                    match argument.kind <=> 6:
+                                                                        0:
+                                                                            match argument.right <=> -1:
+                                                                                0:
+                                                                                    argument_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, argument.left, 1)
+                                                                                    match argument_type <=> 1:
+                                                                                        0:
+                                                                                            return expected_type
+                                                                                        -1:
+                                                                                            return argument_type
+                                                                                        1:
+                                                                                            return -14
+                                                                                -1:
+                                                                                    return -14
+                                                                                1:
+                                                                                    return -14
+                                                                        -1:
+                                                                            return -14
+                                                                        1:
+                                                                            return -14
+                                                                0:
+                                                                    return -14
+                                                                1:
+                                                                    return -14
+                                                        0:
+                                                            return -14
+                                                        1:
+                                                            return -14
+                                                -1:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        -1:
+                                            return -14
+                                        1:
+                                            return -14
+                                0:
+                                    return -14
+                                1:
+                                    return -14
+                        0:
+                            return -14
+                        1:
+                            return -14
+                0:
+                    return -14
+                1:
+                    return -14
+        0:
+            return -14
+        1:
+            return -14
+
+fn ng_legacy_vector_builtin_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64, builtin_code: i64) -> i64:
+    mut generic_call: NgAstNode = call_node
+    mut element_type: i64 = ng_legacy_vector_builtin_element_type(builtin_code)
+    mut operation: i64 = ng_legacy_vector_builtin_operation(builtin_code)
+    generic_call.right = element_type
+    match operation <=> 1:
+        0:
+            return ng_generic_vector_len_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+        1:
+            match operation <=> 2:
+                0:
+                    return ng_generic_vector_push_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                1:
+                    match operation <=> 3:
+                        0:
+                            return ng_generic_vector_get_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                        1:
+                            match operation <=> 4:
+                                0:
+                                    return ng_generic_vector_set_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                                1:
+                                    match operation <=> 5:
+                                        0:
+                                            return ng_generic_vector_new_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                                        1:
+                                            match operation <=> 6:
+                                                0:
+                                                    return ng_generic_vector_pop_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                                                1:
+                                                    match operation <=> 7:
+                                                        0:
+                                                            return ng_generic_vector_len_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, generic_call, expected_type)
+                                                        -1:
+                                                            return -13
+                                                        1:
+                                                            return -13
+                                                -1:
+                                                    return -13
+                                        -1:
+                                            return -13
+                                -1:
+                                    return -13
+                        -1:
+                            return -13
+                -1:
+                    return -13
+        -1:
+            return -13
+
 fn ng_generic_call_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, caller_first_parameter: i64, caller_parameter_count: i64, call_node: NgAstNode, expected_type: i64) -> i64:
     mut argument: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
     mut expected: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
     mut argument_type: i64 = 0
+    mut legacy_vector_code: i64 = ng_legacy_vector_builtin_code(source, call_node.start, call_node.operation)
+    match legacy_vector_code > 0:
+        -1:
+            return ng_legacy_vector_builtin_call_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type, legacy_vector_code)
+        0:
+            legacy_vector_code = 0
+        1:
+            return -13
     match ng_span_matches_text(source, call_node.start, call_node.operation, text_from_static("vector_len")):
         -1:
             return ng_generic_vector_len_type(source, types, fields, functions, nodes, parameters, locals, caller_first_parameter, caller_parameter_count, call_node, expected_type)
@@ -2291,8 +3179,29 @@ fn ng_trit_binary_expression_type(source: &bytes, types: &vector<NgTypeDescripto
         1:
             return -14
 
-fn ng_binary_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode) -> i64:
-    mut left_type: i64 = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+fn ng_binary_expression_left_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode, expected_type: i64) -> i64:
+    match ng_is_relational_operator(node.operation):
+        -1:
+            return ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+        0:
+            match ng_is_numeric_type(expected_type):
+                -1:
+                    return ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left, expected_type)
+                0:
+                    return ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+                1:
+                    return ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+        1:
+            match ng_is_numeric_type(expected_type):
+                -1:
+                    return ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left, expected_type)
+                0:
+                    return ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+                1:
+                    return ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+
+fn ng_binary_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode, expected_type: i64) -> i64:
+    mut left_type: i64 = ng_binary_expression_left_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node, expected_type)
     mut right_type: i64 = 0
     match left_type <=> 0:
         -1:
@@ -2339,8 +3248,175 @@ fn ng_binary_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, f
                         1:
                             return -14
 
+fn ng_static_integer_expression_shape(nodes: &vector<NgAstNode>, node_id: i64) -> trit:
+    mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    match node.kind <=> 1:
+        0:
+            return -1
+        -1:
+            match node.kind <=> 3:
+                0:
+                    return ng_static_integer_expression_shape(nodes, node.left)
+                -1:
+                    match node.kind <=> 22:
+                        0:
+                            return ng_static_integer_expression_shape(nodes, node.left)
+                        -1:
+                            match node.kind <=> 4:
+                                0:
+                                    match ng_static_integer_expression_shape(nodes, node.left) <=> -1:
+                                        0:
+                                            return ng_static_integer_expression_shape(nodes, node.right)
+                                        -1:
+                                            return 0
+                                        1:
+                                            return 0
+                                -1:
+                                    return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn ng_static_array_index_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode, array_type: NgTypeDescriptor) -> i64:
+    mut index_type_id: i64 = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.right)
+    mut contextual_index_type: i64 = -1
+    mut constant_value: i64 = 0
+    mut constant_status: i64 = 0
+    mut static_shape: trit = ng_static_integer_expression_shape(nodes, node.right)
+    match static_shape <=> -1:
+        0:
+            contextual_index_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.right, 3)
+            match contextual_index_type <=> 3:
+                -1:
+                    return -14
+                0:
+                    constant_status = ng_contextual_constant_integer_value(source, nodes, node.right, 3, &mut constant_value)
+                    match constant_status <=> 1:
+                        0:
+                            match constant_value >= 0:
+                                -1:
+                                    match constant_value < array_type.field_count:
+                                        -1:
+                                            return array_type.element_type
+                                        0:
+                                            return -14
+                                        1:
+                                            return -14
+                                0:
+                                    return -14
+                                1:
+                                    return -14
+                        -1:
+                            return -14
+                        1:
+                            return -14
+                1:
+                    return -14
+        -1:
+            return -14
+        1:
+            match static_shape <=> 0:
+                -1:
+                    return -14
+                0:
+                    index_type_id = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.right)
+                    match index_type_id <=> 1:
+                        0:
+                            contextual_index_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.right, 1)
+                            match contextual_index_type <=> 1:
+                                0:
+                                    return array_type.element_type
+                                -1:
+                                    return -14
+                                1:
+                                    return -14
+                        -1:
+                            return -14
+                        1:
+                            match index_type_id <=> 3:
+                                -1:
+                                    return -14
+                                0:
+                                    contextual_index_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.right, 3)
+                                    match contextual_index_type <=> 3:
+                                        0:
+                                            return array_type.element_type
+                                        -1:
+                                            return -14
+                                        1:
+                                            return -14
+                                1:
+                                    return -14
+                1:
+                    return -14
+
+fn ng_slice_index_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node: NgAstNode) -> i64:
+    mut reference_type_id: i64 = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.left)
+    mut index_type_id: i64 = -1
+    mut reference_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut slice_type: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    match reference_type_id > 0:
+        -1:
+            reference_type = vector_get<NgTypeDescriptor>(types, reference_type_id - 1)
+            match reference_type.kind <=> 14:
+                0:
+                    index_type_id = ng_static_array_index_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node, reference_type)
+                    match index_type_id > 0:
+                        -1:
+                            return index_type_id
+                        0:
+                            return index_type_id
+                        1:
+                            return index_type_id
+                -1:
+                    match reference_type.kind <=> 9:
+                        0:
+                            slice_type = vector_get<NgTypeDescriptor>(types, reference_type.target_type - 1)
+                            match slice_type.kind <=> 13:
+                                0:
+                                    index_type_id = ng_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node.right)
+                                    match index_type_id <=> 1:
+                                        0:
+                                            return slice_type.element_type
+                                        -1:
+                                            match index_type_id <=> 3:
+                                                0:
+                                                    return slice_type.element_type
+                                                -1:
+                                                    return -14
+                                                1:
+                                                    return -14
+                                        1:
+                                            return -14
+                                -1:
+                                    return -14
+                                1:
+                                    return -14
+                        -1:
+                            return -14
+                        1:
+                            return -14
+                1:
+                    return -14
+        0:
+            return reference_type_id
+        1:
+            return -14
+
 fn ng_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, first_parameter: i64, parameter_count: i64, node_id: i64) -> i64:
     mut node: NgAstNode = vector_get<NgAstNode>(nodes, node_id)
+    match node.kind <=> 23:
+        0:
+            return ng_slice_index_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node)
+        -1:
+            node = node
+        1:
+            return -11
     match node.kind == 22:
         -1:
             return ng_negation_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node)
@@ -2370,7 +3446,7 @@ fn ng_expression_type(source: &bytes, types: &vector<NgTypeDescriptor>, fields: 
                                 -1:
                                     return -11
                                 0:
-                                    return ng_binary_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node)
+                                    return ng_binary_expression_type(source, types, fields, functions, nodes, parameters, locals, first_parameter, parameter_count, node, 0)
                                 1:
                                     match node.kind <=> 5:
                                         -1:
@@ -2467,6 +3543,15 @@ export fn ng_function_index_for_node(functions: &vector<NgFunction>, node_index:
             return -1
 
 fn ng_scope_has_right_child(kind: i64) -> trit:
+    match kind <=> 23:
+        0:
+            return -1
+        -1:
+            return ng_scope_has_right_child_legacy(kind)
+        1:
+            return -1
+
+fn ng_scope_has_right_child_legacy(kind: i64) -> trit:
     match kind == 4:
         -1:
             return -1
@@ -3748,17 +4833,11 @@ fn ng_resolve_address_nodes_indexed(source: &bytes, types: &mut vector<NgTypeDes
                                                                 match target_type <= vector_len<NgTypeDescriptor>(&*types):
                                                                     -1:
                                                                         descriptor = vector_get<NgTypeDescriptor>(&*types, target_type - 1)
-                                                                        match descriptor.kind <= 6:
-                                                                            -1:
-                                                                                descriptor = descriptor
+                                                                        match ng_address_target_kind_supported(descriptor.kind) <=> -1:
                                                                             0:
-                                                                                match descriptor.kind <=> 8:
-                                                                                    0:
-                                                                                        descriptor = descriptor
-                                                                                    -1:
-                                                                                        return -14
-                                                                                    1:
-                                                                                        return -14
+                                                                                descriptor = descriptor
+                                                                            -1:
+                                                                                return -14
                                                                             1:
                                                                                 return -14
                                                                         match node.operation <=> 1:
@@ -3873,17 +4952,11 @@ fn ng_resolve_address_nodes_indexed(source: &bytes, types: &mut vector<NgTypeDes
                                                         match target_type <= vector_len<NgTypeDescriptor>(&*types):
                                                             -1:
                                                                 descriptor = vector_get<NgTypeDescriptor>(&*types, target_type - 1)
-                                                                match descriptor.kind <= 6:
-                                                                    -1:
-                                                                        descriptor = descriptor
+                                                                match ng_address_target_kind_supported(descriptor.kind) <=> -1:
                                                                     0:
-                                                                        match descriptor.kind <=> 8:
-                                                                            0:
-                                                                                descriptor = descriptor
-                                                                            -1:
-                                                                                return -14
-                                                                            1:
-                                                                                return -14
+                                                                        descriptor = descriptor
+                                                                    -1:
+                                                                        return -14
                                                                     1:
                                                                         return -14
                                                                 match node.operation <=> 0:
@@ -4091,15 +5164,21 @@ fn ng_assignment_root_node(nodes: &vector<NgAstNode>, target_node_id: i64) -> i6
             match target_node_id < vector_len<NgAstNode>(nodes):
                 -1:
                     current = vector_get<NgAstNode>(nodes, target_node_id)
-                    match current.kind <=> 14:
+                    match current.kind <=> 23:
                         0:
                             return ng_assignment_root_node(nodes, current.left)
                         -1:
-                            match current.kind <=> 2:
+                            match current.kind <=> 14:
                                 0:
-                                    return target_node_id
+                                    return ng_assignment_root_node(nodes, current.left)
                                 -1:
-                                    return -1
+                                    match current.kind <=> 2:
+                                        0:
+                                            return target_node_id
+                                        -1:
+                                            return -1
+                                        1:
+                                            return -1
                                 1:
                                     return -1
                         1:
@@ -4175,6 +5254,65 @@ fn ng_check_dereference_assignment_valid(source: &bytes, types: &vector<NgTypeDe
         1:
             return reference_type_id
 
+fn ng_check_static_array_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, function: NgFunction, statement: NgAstNode, target_node_id: i64) -> i64:
+    mut target: NgAstNode = vector_get<NgAstNode>(nodes, target_node_id)
+    mut root_id: i64 = ng_assignment_root_node(nodes, target_node_id)
+    mut root: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
+    mut local_id: i64 = -1
+    mut local: NgLocal = NgLocal(name_start=0, name_end=0, type_kind=0, mutable=0)
+    mut descriptor: NgTypeDescriptor = NgTypeDescriptor(kind=0, module_start=0, module_end=0, name_start=0, name_end=0, element_type=0, target_type=0, mutable=0, first_field=0, field_count=0)
+    mut target_type: i64 = -1
+    mut value_type: i64 = -1
+    match root_id >= 0:
+        -1:
+            root = vector_get<NgAstNode>(nodes, root_id)
+            local_id = ng_local_index(source, locals, root.start, root.end)
+            match local_id >= 0:
+                -1:
+                    local = vector_get<NgLocal>(locals, local_id)
+                    match local.mutable <=> 1:
+                        0:
+                            match local.type_kind > 0:
+                                -1:
+                                    descriptor = vector_get<NgTypeDescriptor>(types, local.type_kind - 1)
+                                    match descriptor.kind <=> 14:
+                                        0:
+                                            target_type = ng_static_array_index_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, target, descriptor)
+                                            match target_type > 0:
+                                                -1:
+                                                    value_type = ng_contextual_expression_type(source, types, fields, functions, nodes, parameters, locals, function.first_parameter, function.parameter_count, statement.left, target_type)
+                                                    match ng_type_equal(source, types, value_type, target_type) <=> -1:
+                                                        0:
+                                                            return 0
+                                                        -1:
+                                                            return -14
+                                                        1:
+                                                            return -14
+                                                0:
+                                                    return target_type
+                                                1:
+                                                    return target_type
+                                        -1:
+                                            return -16
+                                        1:
+                                            return -16
+                                0:
+                                    return -16
+                                1:
+                                    return -16
+                        -1:
+                            return -16
+                        1:
+                            return -16
+                0:
+                    return -12
+                1:
+                    return -12
+        0:
+            return -12
+        1:
+            return -12
+
 fn ng_check_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields: &vector<NgField>, functions: &vector<NgFunction>, nodes: &vector<NgAstNode>, parameters: &vector<NgParameter>, locals: &vector<NgLocal>, function: NgFunction, statement: NgAstNode) -> i64:
     mut root_id: i64 = -1
     mut root: NgAstNode = NgAstNode(kind=0, start=0, end=0, left=-1, right=-1, operation=0)
@@ -4185,6 +5323,13 @@ fn ng_check_assignment(source: &bytes, types: &vector<NgTypeDescriptor>, fields:
     match statement.right >= 0:
         -1:
             root = vector_get<NgAstNode>(nodes, statement.right)
+            match root.kind <=> 23:
+                0:
+                    return ng_check_static_array_assignment(source, types, fields, functions, nodes, parameters, locals, function, statement, statement.right)
+                -1:
+                    root = root
+                1:
+                    root = root
             match root.kind <=> 14:
                 0:
                     root_id = ng_assignment_root_node(nodes, statement.right)

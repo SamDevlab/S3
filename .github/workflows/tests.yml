@@ -78,13 +78,13 @@ jobs:
         include:
           - python-version: "3.11"
             group_name: unit
-            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime)'
+            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime or s3c_ng_promotion)'
           - python-version: "3.12"
             group_name: unit
-            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime)'
+            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime or s3c_ng_promotion)'
           - python-version: "3.13"
             group_name: unit
-            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime)'
+            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime or s3c_ng_promotion)'
           - python-version: "3.13"
             group_name: renderer
             group_filter: 'renderer or adapter or fixture_output'
@@ -151,6 +151,164 @@ jobs:
           tests/test_native_x86_64_integration.py
           tests/test_instruction_limit_e3.py
           tests/test_external_jsmn_native.py
+
+  s3c-ng-promotion:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate native compiler toolchain
+        run: |
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+          cc --version
+          as --version
+          ld --version
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run S3C-NG provider, ordinary workload, and strict fixed-point gate
+        env:
+          S3_NATIVE_REQUIRED: "1"
+        run: python -m pytest -q tests/test_native_s3c_ng.py
+
+  s3c-ng-bootstrap-seed:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate native compiler toolchain
+        run: |
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+          cc --version
+          as --version
+          ld --version
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Build exact-head S3C-NG bootstrap candidate
+        run: python -m tools.build_s3c_ng_candidate --output-directory "$RUNNER_TEMP/s3c-ng-bootstrap"
+
+      - name: Package deterministic Linux x86-64 release candidate
+        run: >-
+          python -m tools.package_s3c_ng_bootstrap
+          "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng"
+          --output
+          "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng-bootstrap-linux-x86_64.tar.gz"
+
+      - name: Upload immutable exact-head bootstrap artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: s3c-ng-bootstrap-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/s3c-ng-bootstrap/*
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: true
+
+  s3c-ng-clean-bootstrap:
+    needs: s3c-ng-bootstrap-seed
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out clean repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate native compiler toolchain
+        run: |
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+          cc --version
+          as --version
+          ld --version
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Download bootstrap artifact from this exact workflow run
+        uses: actions/download-artifact@v5
+        with:
+          name: s3c-ng-bootstrap-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/s3c-ng-bootstrap
+
+      - name: Restore downloaded compiler execute permission
+        run: |
+          chmod u+x "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng"
+          test -x "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng"
+
+      - name: Verify V7 provider parity against exact-head bootstrap artifact
+        env:
+          S3C_NG_BOOTSTRAP_EXECUTABLE: ${{ runner.temp }}/s3c-ng-bootstrap/s3c-ng
+        run: >-
+          python -m pytest -q
+          tests/test_s3c_ng_artifact_validation_cache.py
+          tests/test_v7_native_frontend_diagnostics.py
+          tests/test_v7_differential_corpus.py
+          tests/test_v7_project_tooling_parity.py
+          tests/test_v7_cli_provider_workflows.py
+
+      - name: Characterize equivalent Python and S3C-NG workloads
+        env:
+          S3C_NG_BOOTSTRAP_EXECUTABLE: ${{ runner.temp }}/s3c-ng-bootstrap/s3c-ng
+        run: >-
+          python -m tools.characterize_s3c_ng_provider
+          --runs 3
+          --output "$RUNNER_TEMP/s3c-ng-provider-performance.json"
+
+      - name: Verify pinned bootstrap and clean-checkout B-to-C fixed point
+        env:
+          S3_NATIVE_REQUIRED: "1"
+          S3C_NG_BOOTSTRAP_EXECUTABLE: ${{ runner.temp }}/s3c-ng-bootstrap/s3c-ng
+          S3C_NG_BOOTSTRAP_ARCHIVE: ${{ runner.temp }}/s3c-ng-bootstrap/s3c-ng-bootstrap-linux-x86_64.tar.gz
+        run: >-
+          python -m pytest -q
+          tests/test_native_s3c_ng.py
+          -k clean_checkout_bootstraps_from_exact_head_artifact
+
+      - name: Preserve provider performance characterization
+        uses: actions/upload-artifact@v4
+        with:
+          name: s3c-ng-provider-performance-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/s3c-ng-provider-performance.json
+          if-no-files-found: error
+          retention-days: 90
 
   numeric-domain-closure:
     runs-on: ubuntu-24.04

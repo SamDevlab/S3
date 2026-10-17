@@ -344,71 +344,111 @@ fn ng_is_multi_symbol_start(unit: i64) -> trit:
                 1:
                     return 0
 
-fn ng_other_symbol_class(unit: i64) -> i64:
-    match unit < 128:
+fn ng_printable_symbol_class(unit: i64) -> i64:
+    match ng_is_multi_symbol_start(unit):
         -1:
-            match ng_is_multi_symbol_start(unit):
-                -1:
-                    return 8
-                0:
-                    return 9
-                1:
-                    return 9
+            return 8
         0:
-            return 10
+            return 9
         1:
+            return 9
+
+fn ng_other_symbol_class(unit: i64) -> i64:
+    match unit < 32:
+        -1:
             return 10
+        0:
+            match unit < 127:
+                -1:
+                    return ng_printable_symbol_class(unit)
+                0:
+                    return 10
+                1:
+                    return 10
+        1:
+            match unit < 127:
+                -1:
+                    return ng_printable_symbol_class(unit)
+                0:
+                    return 10
+                1:
+                    return 10
 
 fn ng_character_class(unit: i64) -> i64:
+    return ng_character_class_exact(unit)
+
+fn ng_character_class_exact(unit: i64) -> i64:
+    mut unused: i64 = 0
     match ng_is_digit(unit):
         -1:
             return 1
         0:
-            match ng_is_alpha(unit):
-                -1:
-                    return 2
-                0:
-                    match unit == 95:
-                        -1:
-                            return 3
-                        0:
-                            match ng_is_space(unit):
-                                -1:
-                                    return 4
-                                0:
-                    # Reserve distinct classes so ordinary symbols bypass comment and quote checks.
-                                    match unit == 35:
-                                        -1:
-                                            return 5
-                                        0:
-                                            match unit == 47:
-                                                -1:
-                                                    return 6
-                                                0:
-                                                    match unit == 34:
-                                                        -1:
-                                                            return 7
-                                                        0:
-                                                            return ng_other_symbol_class(unit)
-                                                        1:
-                                                            return ng_other_symbol_class(unit)
-                                                1:
-                                                    return ng_other_symbol_class(unit)
-                                        1:
-                                            return ng_other_symbol_class(unit)
-                                1:
-                                    return ng_other_symbol_class(unit)
-                        1:
-                            return ng_other_symbol_class(unit)
-                1:
-                    return 2
+            unused = unused
         1:
-            return 1
+            unused = unused
+    match ng_is_alpha(unit):
+        -1:
+            return 2
+        0:
+            unused = unused
+        1:
+            unused = unused
+    match unit <=> 95:
+        -1:
+            unused = unused
+        0:
+            return 3
+        1:
+            unused = unused
+    match ng_is_space(unit):
+        -1:
+            return 4
+        0:
+            unused = unused
+        1:
+            unused = unused
+    match unit <=> 35:
+        -1:
+            unused = unused
+        0:
+            return 5
+        1:
+            unused = unused
+    match unit <=> 47:
+        -1:
+            unused = unused
+        0:
+            return 6
+        1:
+            unused = unused
+    match unit <=> 34:
+        -1:
+            unused = unused
+        0:
+            return 7
+        1:
+            unused = unused
+    return ng_other_symbol_class(unit)
 
 fn ng_build_character_class_table(classes: &mut vector<i64>) -> i64:
     mut unit: i64 = 0
+    mut character_class: i64 = 0
     while unit < 256:
-        discard vector_push<i64>(&mut *classes, ng_character_class(unit))
+        character_class = ng_character_class_exact(unit)
+        match character_class <=> 9:
+            0:
+                match ng_is_supported_single_symbol(unit) < 0:
+                    -1:
+                        character_class = character_class
+                    0:
+                        character_class = 10
+                    1:
+                        character_class = 10
+            -1:
+                character_class = character_class
+            1:
+                character_class = character_class
+        discard vector_push<i64>(&mut *classes, character_class)
         unit = unit + 1
     return 0
 
@@ -628,9 +668,88 @@ fn ng_symbol_kind(source: &bytes, cursor: i64, length: i64) -> i64:
                         1:
                             return kind
 
+fn ng_is_supported_single_symbol(unit: i64) -> trit:
+    mut supported: trit = 0
+    match unit <=> 38:
+        -1:
+            supported = supported
+        0:
+            supported = -1
+        1:
+            supported = supported
+    match unit <=> 91:
+        -1:
+            supported = supported
+        0:
+            supported = -1
+        1:
+            supported = supported
+    match unit <=> 93:
+        -1:
+            supported = supported
+        0:
+            supported = -1
+        1:
+            supported = supported
+    match unit <=> 40:
+        -1:
+            supported = supported
+        0:
+            supported = -1
+        1:
+            match unit <=> 48:
+                -1:
+                    supported = -1
+                0:
+                    supported = supported
+                1:
+                    supported = supported
+    match unit <=> 58:
+        -1:
+            supported = supported
+        0:
+            supported = -1
+        1:
+            match unit <=> 63:
+                -1:
+                    supported = -1
+                0:
+                    supported = supported
+                1:
+                    supported = supported
+    match unit <=> 123:
+        -1:
+            supported = supported
+        0:
+            supported = -1
+        1:
+            match unit <=> 127:
+                -1:
+                    supported = -1
+                0:
+                    supported = supported
+                1:
+                    supported = supported
+    return supported
+
 fn ng_scan_symbol(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<NgToken>, indent: i64, base: i64) -> i64:
     mut kind: i64 = ng_symbol_kind(source, cursor, length)
     mut width: i64 = 1
+    mut supported: trit = 0
+    match kind < 300:
+        -1:
+            supported = -1
+        0:
+            supported = ng_is_supported_single_symbol(to_i64(bytes_get(source, cursor)))
+        1:
+            supported = ng_is_supported_single_symbol(to_i64(bytes_get(source, cursor)))
+    match supported < 0:
+        -1:
+            width = 1
+        0:
+            return -1
+        1:
+            return -1
     match kind < 0:
         -1:
             return -1
@@ -663,6 +782,10 @@ fn ng_scan_symbol(source: &bytes, cursor: i64, length: i64, tokens: &mut vector<
                 1:
                     width = 1
     return ng_emit_at(tokens, kind, cursor, cursor + width, indent, base)
+
+fn ng_scan_single_symbol(source: &bytes, cursor: i64, tokens: &mut vector<NgToken>, indent: i64, base: i64) -> i64:
+    mut kind: i64 = 300 + to_i64(bytes_get(source, cursor))
+    return ng_emit_at(tokens, kind, cursor, cursor + 1, indent, base)
 
 fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>, tokens: &mut vector<NgToken>, state: &mut vector<i64>, base: i64) -> i64:
     mut next: i64 = cursor
@@ -740,13 +863,13 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
                                 -1:
                                     return ng_skip_line_comment(source, token_start + 2, length)
                                 0:
-                                    return ng_scan_symbol(source, token_start, length, tokens, indent, base)
+                                    return ng_scan_single_symbol(source, token_start, tokens, indent, base)
                                 1:
-                                    return ng_scan_symbol(source, token_start, length, tokens, indent, base)
+                                    return ng_scan_single_symbol(source, token_start, tokens, indent, base)
                         0:
-                            return ng_scan_symbol(source, token_start, length, tokens, indent, base)
+                            return ng_scan_single_symbol(source, token_start, tokens, indent, base)
                         1:
-                            return ng_scan_symbol(source, token_start, length, tokens, indent, base)
+                            return ng_scan_single_symbol(source, token_start, tokens, indent, base)
                 1:
                     next = ng_scan_string(source, token_start, length, tokens, indent, base)
                     match next < 0:
@@ -765,16 +888,144 @@ fn ng_scan_next(source: &bytes, cursor: i64, length: i64, classes: &vector<i64>,
             match character_class < 10:
                 -1:
                     discard vector_set<i64>(&mut *state, 1, 0)
-                    return ng_emit_at(tokens, 300 + unit, token_start, token_start + 1, indent, base)
+                    return ng_scan_single_symbol(source, token_start, tokens, indent, base)
                 0:
                     return -1
                 1:
                     return -1
 
+fn ng_utf8_failure_width(lead_byte: i64) -> i64:
+    mut width: i64 = 1
+    match lead_byte >= 194:
+        -1:
+            width = 2
+        0:
+            width = 1
+        1:
+            width = width
+    match lead_byte >= 224:
+        -1:
+            width = 3
+        0:
+            width = width
+        1:
+            width = width
+    match lead_byte >= 240:
+        -1:
+            width = 4
+        0:
+            width = width
+        1:
+            width = width
+    return width
+
+fn ng_record_lex_failure(source: &bytes, cursor: i64, length: i64, base: i64, failure: &mut vector<i64>) -> i64:
+    mut code: i64 = 10
+    mut start: i64 = cursor
+    mut end: i64 = cursor + 1
+    mut unit: i64 = to_i64(bytes_get(source, cursor))
+    mut escaped: i64 = 0
+    mut scanning: i64 = 1
+    while scanning == 1:
+        match start < length:
+            -1:
+                unit = to_i64(bytes_get(source, start))
+                match unit == 32:
+                    -1:
+                        start = start + 1
+                    0:
+                        match unit == 9:
+                            -1:
+                                start = start + 1
+                            0:
+                                match unit == 10:
+                                    -1:
+                                        start = start + 1
+                                    0:
+                                        match unit == 13:
+                                            -1:
+                                                start = start + 1
+                                            0:
+                                                scanning = 0
+                                            1:
+                                                scanning = 0
+                                    1:
+                                        scanning = 0
+                            1:
+                                scanning = 0
+                    1:
+                        scanning = 0
+            0:
+                scanning = 0
+            1:
+                scanning = 0
+    unit = to_i64(bytes_get(source, start))
+    end = start + 1
+    match unit <=> 34:
+        0:
+            code = 11
+            end = start + 1
+            scanning = 1
+            while scanning == 1:
+                match end < length:
+                    -1:
+                        unit = to_i64(bytes_get(source, end))
+                        match escaped == 1:
+                            -1:
+                                escaped = 0
+                                end = end + 1
+                            0:
+                                match unit == 92:
+                                    -1:
+                                        escaped = 1
+                                        end = end + 1
+                                    0:
+                                        match unit == 10:
+                                            -1:
+                                                scanning = 0
+                                            0:
+                                                match unit == 13:
+                                                    -1:
+                                                        scanning = 0
+                                                    0:
+                                                        end = end + 1
+                                                    1:
+                                                        end = end + 1
+                                            1:
+                                                end = end + 1
+                                    1:
+                                        end = end + 1
+                            1:
+                                escaped = 0
+                                end = end + 1
+                    0:
+                        scanning = 0
+                    1:
+                        scanning = 0
+        -1:
+            end = start + ng_utf8_failure_width(unit)
+        1:
+            end = start + ng_utf8_failure_width(unit)
+    match end > length:
+        -1:
+            end = length
+        0:
+            end = end
+        1:
+            end = end
+    discard vector_push<i64>(failure, code)
+    discard vector_push<i64>(failure, start + base)
+    discard vector_push<i64>(failure, end + base)
+    return 0
+
 export fn ng_lex(source: &bytes, tokens: &mut vector<NgToken>) -> i64:
     return ng_lex_at(source, tokens, 0)
 
 export fn ng_lex_at(source: &bytes, tokens: &mut vector<NgToken>, base: i64) -> i64:
+    mut failure: vector<i64> = vector_new<i64>(3)
+    return ng_lex_at_with_error(source, tokens, base, &mut failure)
+
+export fn ng_lex_at_with_error(source: &bytes, tokens: &mut vector<NgToken>, base: i64, failure: &mut vector<i64>) -> i64:
     mut cursor: i64 = 0
     mut length: i64 = bytes_len(source)
     mut next: i64 = 0
@@ -788,6 +1039,7 @@ export fn ng_lex_at(source: &bytes, tokens: &mut vector<NgToken>, base: i64) -> 
         next = ng_scan_next(source, cursor, length, &character_classes, tokens, &mut indent_state, base)
         match next < 0:
             -1:
+                discard ng_record_lex_failure(source, cursor, length, base, failure)
                 failed = 1
                 cursor = length
             0:

@@ -11,8 +11,6 @@ import statistics
 import subprocess
 import sys
 import time
-from dataclasses import fields, is_dataclass
-from enum import Enum
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +21,7 @@ from bootstrap.s3.backends.x86_64 import (  # noqa: E402
     NativeToolchain,
     X8664Backend,
 )
+from bootstrap.s3.assembly_fingerprint import assembly_program_sha256
 from bootstrap.s3.optimizer import OptimizationLevel  # noqa: E402
 from bootstrap.s3.pipeline import compile_sources  # noqa: E402
 from bootstrap.s3.stdlib import standard_library_sources  # noqa: E402
@@ -36,40 +35,8 @@ DEFAULT_RUNS = 9
 MAX_INSTRUCTIONS = 100_000_000
 
 
-def _canonical_assembly_value(value: object) -> object:
-    if isinstance(value, Enum):
-        return {"enum": type(value).__qualname__, "value": value.value}
-    if is_dataclass(value) and not isinstance(value, type):
-        return {
-            field.name: _canonical_assembly_value(getattr(value, field.name))
-            for field in fields(value)
-        }
-    if isinstance(value, float):
-        return {"float_hex": value.hex()}
-    if isinstance(value, (tuple, list)):
-        return [_canonical_assembly_value(item) for item in value]
-    if isinstance(value, dict):
-        return {
-            str(key): _canonical_assembly_value(item)
-            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
-        }
-    if value is None or type(value) in {bool, int, str}:
-        return value
-    raise TypeError(
-        "unsupported AssemblyProgram fingerprint value: "
-        f"{type(value)!r}"
-    )
-
-
 def _assembly_program_sha256(program: object) -> str:
-    payload = json.dumps(
-        _canonical_assembly_value(program),
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=True,
-        allow_nan=False,
-    ).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()
+    return assembly_program_sha256(program)
 
 
 def _workload_source(kernel: str, repeats: int) -> tuple[str, float]:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import sys
@@ -31,12 +32,24 @@ from .diagnostics import (
 )
 from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, Emulator
 from .docs_generator import DocumentationError, render_json, render_markdown
-from .ffi import build_shared_library
+from .ffi import build_shared_library_from_assembly
 from .formatter import FormatterError, format_source
 from .ir_serialization import deserialize_ir, serialize_ir
 from .lexer import SyntaxMode
 from .optimizer import OptimizationLevel, instruction_count
-from .pipeline import CompilationResult, compile_source
+from .compiler_provider import (
+    DEFAULT_COMPILER,
+    CompilerKind,
+    CompilationOutput,
+    compile_source_set_with_provider,
+)
+from .native_compiler import inspect_s3c_ng_executable
+from .s3c_ng_distribution import (
+    BootstrapDistributionError,
+    install_s3c_ng_bootstrap,
+    pinned_install_path,
+)
+from .pipeline import compile_source
 from .project_container import ProjectTooling
 from .s3_docker import DockerProvider, DockerSpec
 from .targets import BUILTIN_TARGETS
@@ -122,10 +135,9 @@ def _parser() -> argparse.ArgumentParser:
         default=NativeCodegenPolicy.BASELINE.value,
         help="native code-generation policy (default: baseline)",
     )
-
     # --- Parent parser for subcommands (without defaults, so they don't overwrite) ---
     parent = argparse.ArgumentParser(add_help=False)
-    parent.add_argument("source", type=Path, help="path to an S3 source file")
+    parent.add_argument("source", type=Path, help="S3 source file or source directory")
     parent.add_argument(
         "-o",
         "--output",
@@ -172,6 +184,35 @@ def _parser() -> argparse.ArgumentParser:
         default=argparse.SUPPRESS,
         help=argparse.SUPPRESS,
     )
+    compiler_parent = argparse.ArgumentParser(add_help=False)
+    compiler_parent.add_argument(
+        "--compiler",
+        choices=tuple(compiler.value for compiler in CompilerKind),
+        default=DEFAULT_COMPILER.value,
+        help=f"source compiler (default: {DEFAULT_COMPILER.value})",
+    )
+    compiler_parent.add_argument(
+        "--s3c-ng-executable",
+        type=Path,
+        help="S3C-NG ELF path (defaults to the repository-local candidate)",
+    )
+    compiler_parent.add_argument(
+        "--entry-module",
+        default="main",
+        help="entry module for source directories (default: main)",
+    )
+    container_compiler_parent = argparse.ArgumentParser(add_help=False)
+    container_compiler_parent.add_argument(
+        "--compiler",
+        choices=tuple(compiler.value for compiler in CompilerKind),
+        default=DEFAULT_COMPILER.value,
+        help=f"compiler selected by the S3 process inside the container (default: {DEFAULT_COMPILER.value})",
+    )
+    container_compiler_parent.add_argument(
+        "--s3c-ng-executable",
+        type=str,
+        help="S3C-NG ELF path inside the container image",
+    )
 
     subparsers = parser.add_subparsers(
         dest="command",
@@ -183,12 +224,21 @@ def _parser() -> argparse.ArgumentParser:
     subparsers.add_parser("doctor")
     subparsers.add_parser("targets")
 
+    bootstrap = subparsers.add_parser("bootstrap", help="install a pinned native compiler bootstrap")
+    bootstrap_actions = bootstrap.add_subparsers(dest="bootstrap_action", required=True)
+    bootstrap_install = bootstrap_actions.add_parser("install")
+    bootstrap_install.add_argument("artifact", choices=("s3c-ng",))
+    bootstrap_install.set_defaults(diagnostic_format="text", debug=False)
+
     container = subparsers.add_parser(
         "container", help="inspect, plan, build, or run an S3 project container"
     )
     container_actions = container.add_subparsers(dest="container_action", required=True)
     for action in ("inspect", "plan", "build", "run"):
-        action_parser = container_actions.add_parser(action)
+        parents = []
+        if action in {"plan", "build", "run"}:
+            parents = [container_compiler_parent]
+        action_parser = container_actions.add_parser(action, parents=parents)
         action_parser.add_argument("root", type=Path, help="project root containing s3.toml")
         action_parser.add_argument("--image", required=True, help="Docker image reference")
 
@@ -209,8 +259,13 @@ def _parser() -> argparse.ArgumentParser:
         "format",
         "docs",
     )
+    provider_commands = {
+        "check", "ir", "ir-json", "inspect", "asm", "run", "native-asm",
+        "build", "run-native", "ffi-build",
+    }
     for cmd in commands:
-        p = subparsers.add_parser(cmd, parents=[parent])
+        parents = [parent, compiler_parent] if cmd in provider_commands else [parent]
+        p = subparsers.add_parser(cmd, parents=parents)
         if cmd == "inspect":
             p.add_argument(
                 "--emit",
@@ -239,7 +294,7 @@ def _parser() -> argparse.ArgumentParser:
                 default=argparse.SUPPRESS,
                 help="native code-generation policy",
             )
-    test_parser = subparsers.add_parser("test")
+    test_parser = subparsers.add_parser("test", parents=[compiler_parent])
     test_parser.add_argument("manifest", type=Path, help="path to an s3-test.toml manifest")
     test_parser.add_argument(
         "--mode",
@@ -310,6 +365,47 @@ def _print_targets() -> None:
 
 def _print_doctor() -> None:
     registry = create_builtin_backend_registry()
+    s3c_ng = inspect_s3c_ng_executable()
+    if s3c_ng.available:
+        try:
+            artifact_sha256 = hashlib.sha256(s3c_ng.executable.read_bytes()).hexdigest()
+            manifest = json.loads(
+                s3c_ng.executable.with_suffix(".manifest.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            artifact_sha256 = "unavailable"
+            manifest = {}
+        if isinstance(manifest, dict):
+            target = manifest.get("target", "unavailable")
+            source_commit = manifest.get("source_commit", "unavailable")
+        else:
+            target = "unavailable"
+            source_commit = "unavailable"
+    else:
+        artifact_sha256 = "unavailable"
+        target = "unavailable"
+        source_commit = "unavailable"
+    try:
+        pinned_path = pinned_install_path()
+    except BootstrapDistributionError:
+        bootstrap_seed_status = "invalid release lock"
+    else:
+        if pinned_path is None:
+            bootstrap_seed_status = "unpublished"
+        elif not pinned_path.is_file():
+            bootstrap_seed_status = "pinned release not installed"
+        elif not s3c_ng.available:
+            bootstrap_seed_status = "pinned release cache invalid or unavailable"
+        else:
+            try:
+                active_is_pinned = s3c_ng.executable.resolve() == pinned_path.resolve()
+            except OSError:
+                active_is_pinned = False
+            bootstrap_seed_status = "pinned release active"
+            if not active_is_pinned:
+                bootstrap_seed_status = "pinned release installed, not active"
     lines = [
         "S3 doctor",
         "",
@@ -320,6 +416,17 @@ def _print_doctor() -> None:
         "Host:",
         f"  system: {platform.system()}",
         f"  machine: {platform.machine()}",
+        "",
+        "Compiler:",
+        f"  default: {DEFAULT_COMPILER.value}",
+        f"  reference: {CompilerKind.PYTHON.value}",
+        "  python available: yes",
+        f"  s3c-ng available: {'yes' if s3c_ng.available else 'no'}",
+        f"  s3c-ng executable: {s3c_ng.executable}",
+        f"  s3c-ng target: {target}",
+        f"  s3c-ng artifact sha256: {artifact_sha256}",
+        f"  s3c-ng source commit: {source_commit}",
+        f"  trusted bootstrap seed: {bootstrap_seed_status}",
         "",
         "Targets:",
     ]
@@ -342,18 +449,20 @@ def _print_doctor() -> None:
                 f"  linker: {toolchain.linker or 'not found'}",
             )
         )
+    if s3c_ng.reason:
+        lines.append(f"  s3c-ng reason: {s3c_ng.reason}")
     print("\n".join(lines))
 
 
 def _print_inspection(
     source_path: Path,
-    compilation: CompilationResult,
+    compilation: CompilationOutput,
     *,
     syntax: str,
     optimization: OptimizationLevel,
 ) -> None:
     ir, assembly = compilation.require_ordinary_artifacts()
-    function_names = tuple(function.name for function in compilation.ast.functions)
+    function_names = tuple(function.name for function in ir.functions)
     assembly_instructions = sum(
         len(block.instructions)
         for function in assembly.functions
@@ -425,6 +534,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     try:
+        if args.command == "bootstrap":
+            executable = install_s3c_ng_bootstrap()
+            print(executable)
+            return 0
         if args.command == "doctor":
             _print_doctor()
             return 0
@@ -432,13 +545,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             _print_targets()
             return 0
         if args.command == "container":
-            tooling = ProjectTooling(args.root)
+            tooling = ProjectTooling(
+                args.root,
+                compiler=getattr(args, "compiler", DEFAULT_COMPILER),
+                container_executable=getattr(args, "s3c_ng_executable", None),
+            )
             provider = DockerProvider()
             if args.container_action == "inspect":
                 print(json.dumps(tooling.inspect(), indent=2, sort_keys=True))
                 return 0
             if args.container_action == "plan":
-                spec = DockerSpec(args.image, ("s3", "run", f"/app/{tooling.manifest.entrypoint}.s3"))
+                spec = DockerSpec(args.image, tooling.container_run_command())
                 print(json.dumps(provider.plan(spec), indent=2, sort_keys=True))
                 return 0
             context, owner = tooling.docker_context(provider, image=args.image)
@@ -446,9 +563,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if args.container_action == "build":
                     result = provider.build(context, args.image)
                 else:
-                    result = provider.run(
-                        DockerSpec(args.image, ("s3", "run", f"/app/{tooling.manifest.entrypoint}.s3"))
-                    )
+                    result = provider.run(DockerSpec(args.image, tooling.container_run_command()))
                 if result.stdout:
                     print(result.stdout, end="")
                 if result.stderr:
@@ -457,7 +572,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             finally:
                 owner.cleanup()
         if args.command == "test":
-            report = run_test_manifest(args.manifest, mode=args.mode)
+            report = run_test_manifest(
+                args.manifest,
+                mode=args.mode,
+                compiler=args.compiler,
+                executable=args.s3c_ng_executable,
+                entry_module=args.entry_module,
+            )
             rendered = render_test_report(report)
             if args.report is not None:
                 args.report.parent.mkdir(parents=True, exist_ok=True)
@@ -477,14 +598,52 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.max_frames < 1:
             raise NativeBackendError("--max-frames must be at least 1")
-        source = args.source.read_text(encoding="utf-8")
+        if args.source.is_dir():
+            source_files = sorted(args.source.rglob("*.s3"))
+            if not source_files:
+                raise FileNotFoundError(f"no .s3 source files found under {args.source}")
+            sources = {
+                path.relative_to(args.source).as_posix(): path.read_text(encoding="utf-8")
+                for path in source_files
+            }
+            source = None
+        else:
+            sources = None
+            source = args.source.read_text(encoding="utf-8")
         if args.command == "verify-ir":
+            if source is None:
+                raise _CLIUsageError("verify-ir expects an IR file, not a source directory")
             module = deserialize_ir(source)
             print(f"IR verified: {len(module.functions)} function(s)")
             return 0
         optimization = OptimizationLevel.parse(args.optimization)
         mode = _SOURCE_SYNTAX_MODES[args.source_syntax]
-        compilation = compile_source(source, optimization, mode=mode)
+        if args.command in ("tokens", "ast"):
+            if source is None:
+                raise _CLIUsageError(f"{args.command} expects one source file")
+            compilation: CompilationOutput = compile_source(source, optimization, mode=mode)
+        elif sources is not None:
+            compilation = compile_source_set_with_provider(
+                sources,
+                optimization,
+                compiler=args.compiler,
+                mode=mode,
+                executable=args.s3c_ng_executable,
+                entry_module=args.entry_module,
+            )
+        elif args.compiler == CompilerKind.S3C_NG.value:
+            assert source is not None
+            compilation = compile_source_set_with_provider(
+                {"main.s3": source},
+                optimization,
+                compiler=args.compiler,
+                mode=mode,
+                executable=args.s3c_ng_executable,
+                entry_module=args.entry_module,
+            )
+        else:
+            assert source is not None
+            compilation = compile_source(source, optimization, mode=mode)
         if args.command == "check":
             _print_check(args.source)
         elif args.command == "inspect":
@@ -574,19 +733,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             print(output)
         elif args.command == "ffi-build":
+            _, assembly = compilation.require_ordinary_artifacts()
             output = (
                 args.output
                 if args.output is not None
                 else Path("build") / f"lib{args.source.stem}.so"
             )
-            build_shared_library(
-                source,
+            build_shared_library_from_assembly(
+                assembly,
                 output,
                 keep_assembly=args.keep_assembly,
                 max_instructions=args.max_instructions,
                 native_policy=args.native_policy,
-                optimization=optimization,
-                mode=mode,
             )
             print(output)
         elif args.command == "run-native":

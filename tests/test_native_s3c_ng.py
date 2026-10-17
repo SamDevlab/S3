@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import ctypes
 import hashlib
+import json
+import os
 import platform
 import subprocess
 from types import SimpleNamespace
@@ -8,11 +11,26 @@ from pathlib import Path
 
 import pytest
 
+import bootstrap.s3.cli as cli
+import bootstrap.s3.s3c_ng_distribution as s3c_ng_distribution
 from bootstrap.s3.backends.x86_64 import NativeToolchain, generate_native_assembly
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
+from bootstrap.s3.diagnostics import (
+    DiagnosticCode,
+    S3Error,
+    SemanticError,
+    diagnostic_from_exception,
+)
+import bootstrap.s3.compiler_provider as compiler_provider_module
+from bootstrap.s3.compiler_provider import compile_source_set_with_provider
+from bootstrap.s3.ffi import build_shared_library_from_assembly
 from bootstrap.s3.ir import IRModule
+from bootstrap.s3.ir_emulator import execute_ir
+from bootstrap.s3.native_compiler import NativeS3CExecutable, require_s3c_ng_executable
 from bootstrap.s3.pipeline import compile_sources
+from bootstrap.s3.project_container import ProjectTooling
+from bootstrap.s3.test_framework import run_project_tests
 from bootstrap.s3.ir_serialization import serialize_ir
 from bootstrap.s3.verifier import verify_ir
 import tools.native_s3c_ng as native_s3c_ng
@@ -21,9 +39,12 @@ from tools.native_s3c_ng import (
     NativeS3CTransportError,
     build_native_s3c,
     compile_reference_b_ir,
+    compiler_source_graph_sha256,
     compiler_source_set,
     run_native_source_set,
+    write_s3c_ng_candidate_manifest,
 )
+from tools.package_s3c_ng_bootstrap import _archive as package_s3c_ng_bootstrap
 
 
 _ROOT = Path(__file__).parents[1]
@@ -37,6 +58,7 @@ def test_native_source_set_reports_process_failure_before_decoding(
         executable=tmp_path / "s3c-ng",
         entry_symbol="ng_emit_source_set",
     )
+    artifact.executable.write_bytes(b"test executable placeholder")
 
     def fail_after_partial_output(command: list[str], **kwargs) -> subprocess.CompletedProcess:
         Path(command[3]).write_bytes(b"S3NGOUT1truncated")
@@ -71,6 +93,7 @@ from decision import choose as choose_value
 fn selector() -> i64:
     return 0
 fn main() -> i64:
+    mut marker: text = text_from_static("app")
     mut total: i64 = increment(1)
     total = total + augment(2)
     total = total + choose_value(selector())
@@ -79,6 +102,7 @@ fn main() -> i64:
     "math.s3": """\
 module math
 export fn transform(value: i64) -> i64:
+    mut marker: text = text_from_static("math")
     mut result: i64 = value
     result = result + 1
     return result
@@ -86,11 +110,13 @@ export fn transform(value: i64) -> i64:
     "policy.s3": """\
 module policy
 export fn transform(value: i64) -> i64:
+    mut marker: text = text_from_static("policy")
     return value + 10
 """,
     "decision.s3": """\
 module decision
 export fn choose(value: i64) -> i64:
+    mut marker: text = text_from_static("decision")
     match value <=> 0:
         -1:
             return 1
@@ -114,6 +140,56 @@ fn classify(value: i64) -> i64:
 fn main() -> i64:
     return classify(2)
 """,
+}
+_INVALID_PROVIDER_SOURCES = {
+    "missing-module": {
+        "main.s3": "module main\nfrom absent import value\nfn main() -> i64:\n    return value()\n",
+    },
+    "missing-symbol": {
+        "main.s3": "module main\nfrom math import missing\nfn main() -> i64:\n    return missing()\n",
+        "math.s3": "module math\nexport fn present() -> i64:\n    return 1\n",
+    },
+    "wrong-arity": {
+        "main.s3": "module main\nfrom math import value\nfn main() -> i64:\n    return value()\n",
+        "math.s3": "module math\nexport fn value(argument: i64) -> i64:\n    return argument\n",
+    },
+    "wrong-argument-type": {
+        "main.s3": "module main\nfrom math import value\nfn flag() -> trit:\n    return 1\nfn main() -> i64:\n    return value(flag())\n",
+        "math.s3": "module math\nexport fn value(argument: i64) -> i64:\n    return argument\n",
+    },
+    "private-symbol": {
+        "main.s3": "module main\nfrom math import hidden\nfn main() -> i64:\n    return hidden()\n",
+        "math.s3": "module math\nfn hidden() -> i64:\n    return 1\n",
+    },
+    "duplicate-module-identity": {
+        "main.s3": "module main\nfn main() -> i64:\n    return 1\n",
+        "first.s3": "module math\nexport fn first() -> i64:\n    return 1\n",
+        "second.s3": "module math\nexport fn second() -> i64:\n    return 2\n",
+    },
+    "dependency-cycle": {
+        "main.s3": "module main\nfrom helper import value\nfn main() -> i64:\n    return value()\n",
+        "helper.s3": "module helper\nfrom main import main as entry\nexport fn value() -> i64:\n    return entry()\n",
+    },
+    "unknown-reference-field": {
+        "app.s3": "module app\nrecord TokenLike:\n    id: i64\nfn read_missing(value: &TokenLike) -> i64:\n    return value.missing\nfn main() -> i64:\n    return 0\n",
+    },
+    "wrong-bytes-builtin-type": {
+        "app.s3": "module app\nfn invalid_index(data: &bytes) -> tryte:\n    return bytes_get(data, data)\nfn main() -> i64:\n    return 0\n",
+    },
+    "wrong-i64-vector-capacity-type": {
+        "app.s3": "module app\nfn invalid_capacity(values: &vector<f64>) -> i64:\n    return i64_vector_capacity(values)\nfn main() -> i64:\n    return 0\n",
+    },
+    "wrong-resource-open-type": {
+        "app.s3": "module app\nfn main() -> i64:\n    mut handle: resource_handle = resource_open(1)\n    return 0\n",
+    },
+    "duplicate-function": {
+        "app.s3": (
+            "module app\n"
+            "fn repeated() -> i64:\n    return 1\n"
+            "fn repeated() -> i64:\n    return 2\n"
+            "fn main() -> i64:\n    return 0\n"
+        ),
+    },
 }
 
 
@@ -227,18 +303,23 @@ def _assert_native_compile(
     *,
     expected_result: int,
     tmp_path: Path,
+    entry_module: str = "app",
+    context: str = "native compile",
+    execute_native: bool = True,
 ) -> NativeSourceSetResult:
-    reference = compile_sources(sources, "O0", entry_module="app").ir
+    reference = compile_sources(sources, "O0", entry_module=entry_module).ir
     assert reference is not None
 
-    result = run_native_source_set(artifact, sources, entry_module="app")
+    result = run_native_source_set(artifact, sources, entry_module=entry_module)
     assert result.returncode == 0, result.stderr.decode(errors="replace")
     assert result.status == 0
     actual = decode_ng_ir_events(result.source, result.events)
     verify_ir(actual)
+    _assert_exact_ir_equal(actual, reference, context=context)
     assert _canonical_structure(actual) == _canonical_structure(reference)
     assert _source_location_structure(actual) == _source_location_structure(reference)
-    _assert_exact_ir_equal(actual, reference, context="native compile")
+    if not execute_native:
+        return result
 
     assembly = generate_native_assembly(generate_assembly(actual))
     executable = NativeToolchain.detect().build(
@@ -266,6 +347,394 @@ def _assert_native_outputs_equal(
 
 
 @pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG diagnostics qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint(
+    tmp_path: Path,
+) -> None:
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
+    assert artifact.entry_symbol.endswith("ng_emit_source_set_v2")
+
+    cases = (
+        (
+            "direct-self-cycle",
+            2,
+            "module app\nfrom app import main\nfn main() -> i64:\n    return 0\n",
+            {"app.s3"},
+        ),
+        (
+            "missing-module",
+            1,
+            "module app\nfrom absent import value\nfn main() -> i64:\n    return 0\n",
+            {"app.s3"},
+        ),
+        (
+            "unknown-symbol",
+            3,
+            "module app\nfrom library import missing\nfn main() -> i64:\n    return 0\n",
+            {"app.s3", "library.s3"},
+        ),
+        (
+            "private-symbol",
+            4,
+            "module app\nfrom library import hidden\nfn main() -> i64:\n    return 0\n",
+            {"app.s3", "library.s3"},
+        ),
+    )
+    for case, code_id, app_source, paths in cases:
+        sources = {"app.s3": app_source}
+        if case == "unknown-symbol":
+            sources["library.s3"] = (
+                "module library\nexport fn present() -> i64:\n    return 1\n"
+            )
+        elif case == "private-symbol":
+            sources["library.s3"] = "module library\nfn hidden() -> i64:\n    return 1\n"
+        assert set(sources) == paths
+        result = run_native_source_set(artifact, sources, entry_module="app")
+        assert result.status != 0, case
+        assert len(result.diagnostics) == 1, case
+        diagnostic = result.diagnostics[0]
+        assert (diagnostic.category_id, diagnostic.phase_id, diagnostic.code_id) == (
+            1,
+            1,
+            code_id,
+        ), case
+        if case == "direct-self-cycle":
+            assert (diagnostic.source_unit_index, diagnostic.start_byte, diagnostic.end_byte) == (
+                -1,
+                -1,
+                -1,
+            )
+        else:
+            assert diagnostic.source_unit_index == 0, case
+            start = len("module app\n".encode("utf-8"))
+            end = len(app_source.splitlines()[1].encode("utf-8")) + start
+            assert (diagnostic.start_byte, diagnostic.end_byte) == (start, end), case
+
+        with pytest.raises(S3Error) as reference_error:
+            compile_source_set_with_provider(sources, compiler="python", entry_module="app")
+        with pytest.raises(S3Error) as native_error:
+            compile_source_set_with_provider(
+                sources,
+                compiler="s3c-ng",
+                executable=artifact.executable,
+                entry_module="app",
+            )
+        expected = reference_error.value
+        actual = native_error.value
+        assert actual.diagnostic_category is expected.diagnostic_category, case
+        assert actual.diagnostic_phase is expected.diagnostic_phase, case
+        assert actual.diagnostic_code is expected.diagnostic_code, case
+        assert actual.location == expected.location, case
+
+    legacy_symbols = [
+        function.name
+        for function in compiler_ir.functions
+        if function.exported and function.name.endswith("ng_emit_source_set")
+    ]
+    assert len(legacy_symbols) == 1
+    legacy = run_native_source_set(
+        NativeS3CExecutable(artifact.executable, legacy_symbols[0]),
+        {"app.s3": "module app\nfn main() -> i64:\n    return 0\n"},
+        entry_module="app",
+    )
+    assert legacy.status == 0
+    assert legacy.diagnostics == ()
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG frontend diagnostics require Linux x86-64",
+)
+def test_native_s3c_ng_frontend_diagnostics_and_provider_parity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    executable_value = os.environ.get("S3C_NG_BOOTSTRAP_EXECUTABLE")
+    if executable_value:
+        executable = Path(executable_value)
+        require_s3c_ng_executable(executable)
+    else:
+        compiler_sources = compiler_source_set(_ROOT)
+        compiler_ir = compile_reference_b_ir(_ROOT)
+        artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+        _write_candidate_manifest(artifact, compiler_sources)
+        executable = artifact.executable
+
+    cases = (
+        (
+            "invalid-character",
+            "module app\nfn main() -> i64:\n    return \x00\n",
+            2,
+            10,
+        ),
+        (
+            "unsupported-punctuation",
+            "module app\nfn main() -> i64:\n    return @\n",
+            2,
+            10,
+        ),
+        (
+            "non-ascii-unsupported-symbol",
+            "module app\nfn main() -> i64:\n    return π\n",
+            2,
+            10,
+        ),
+        (
+            "non-ascii-3byte-symbol",
+            "module app\nfn main() -> i64:\n    return 中\n",
+            2,
+            10,
+        ),
+        (
+            "non-ascii-4byte-symbol",
+            "module app\nfn main() -> i64:\n    return 💩\n",
+            2,
+            10,
+        ),
+        (
+            "unterminated-string",
+            'module app\nfn main() -> i64:\n    return "oops\n',
+            2,
+            11,
+        ),
+        (
+            "unexpected-token",
+            "module app\nfn main() -> i64:\n    return )\n",
+            3,
+            20,
+        ),
+    )
+
+    captured: list[NativeSourceSetResult] = []
+    native_runner = run_native_source_set
+
+    def capture_native_result(*args, **kwargs) -> NativeSourceSetResult:
+        result = native_runner(*args, **kwargs)
+        captured.append(result)
+        return result
+
+    monkeypatch.setattr(
+        compiler_provider_module,
+        "run_native_source_set",
+        capture_native_result,
+    )
+
+    for case, source, phase_id, code_id in cases:
+        captured.clear()
+        sources = {"fixture.s3": source}
+        with pytest.raises(S3Error) as expected_error:
+            compile_source_set_with_provider(
+                sources,
+                compiler="python",
+                entry_module="app",
+            )
+        expected = diagnostic_from_exception(expected_error.value, file="fixture.s3")
+
+        with pytest.raises(S3Error) as actual_error:
+            compile_source_set_with_provider(
+                sources,
+                compiler="s3c-ng",
+                executable=executable,
+                entry_module="app",
+            )
+        actual = diagnostic_from_exception(actual_error.value)
+
+        assert len(captured) == 1, case
+        native_result = captured[0]
+        assert native_result.status != 0, case
+        assert len(native_result.diagnostics) == 1, case
+        record = native_result.diagnostics[0]
+        assert (
+            record.category_id,
+            record.phase_id,
+            record.code_id,
+            record.message_id,
+            record.source_unit_index,
+        ) == (2, phase_id, code_id, code_id, 0), case
+
+        source_bytes = source.encode("utf-8")
+        if case == "invalid-character":
+            start = source_bytes.index(b"\x00")
+            end = start + 1
+        elif case == "unsupported-punctuation":
+            start = source_bytes.index(b"@")
+            end = start + 1
+        elif case == "non-ascii-unsupported-symbol":
+            start = source_bytes.index("π".encode("utf-8"))
+            end = start + len("π".encode("utf-8"))
+        elif case == "non-ascii-3byte-symbol":
+            start = source_bytes.index("中".encode("utf-8"))
+            end = start + len("中".encode("utf-8"))
+        elif case == "non-ascii-4byte-symbol":
+            start = source_bytes.index("💩".encode("utf-8"))
+            end = start + len("💩".encode("utf-8"))
+        elif case == "unterminated-string":
+            start = source_bytes.index(b'"')
+            end = source_bytes.index(b"\n", start)
+        else:
+            start = source_bytes.rindex(b")")
+            end = start + 1
+        assert (record.start_byte, record.end_byte) == (start, end), case
+
+        assert actual.category is expected.category, case
+        assert actual.code is expected.code, case
+        assert actual.phase is expected.phase, case
+        assert actual.file == expected.file == "fixture.s3", case
+        assert actual.source == expected.source, case
+        assert actual_error.value.location == expected_error.value.location, case
+
+
+def _write_candidate_manifest(artifact, compiler_sources: dict[str, str]) -> None:
+    source_commit = subprocess.run(
+        ["git", "-C", str(_ROOT), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    ).stdout.strip()
+    toolchain_version = subprocess.run(
+        [artifact.toolchain.compiler, "--version"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    ).stdout.splitlines()[0]
+    write_s3c_ng_candidate_manifest(
+        artifact,
+        artifact.executable.with_suffix(".manifest.json"),
+        source_commit=source_commit,
+        source_graph_sha256=compiler_source_graph_sha256(compiler_sources),
+        toolchain_version=toolchain_version,
+        bootstrap_parent_ir_sha256=artifact.compiler_ir_sha256,
+    )
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    not os.environ.get("S3C_NG_BOOTSTRAP_EXECUTABLE"),
+    reason="clean-checkout bootstrap artifact is supplied by its dedicated CI job",
+)
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="clean S3C-NG bootstrap qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_clean_checkout_bootstraps_from_exact_head_artifact(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    executable_value = os.environ.get("S3C_NG_BOOTSTRAP_EXECUTABLE")
+    assert executable_value, "clean-checkout job must provide its pinned bootstrap artifact"
+    executable = Path(executable_value)
+    candidate = require_s3c_ng_executable(executable)
+    manifest_path = executable.with_suffix(".manifest.json")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    sources = compiler_source_set(_ROOT)
+    source_commit = subprocess.run(
+        ["git", "-C", str(_ROOT), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    ).stdout.strip()
+    source_graph_sha256 = compiler_source_graph_sha256(sources)
+    assert manifest["source_commit"] == source_commit
+    assert manifest["source_graph_sha256"] == source_graph_sha256
+    assert manifest["target"] == "linux-x86_64"
+    assert manifest["artifact_sha256"] == hashlib.sha256(executable.read_bytes()).hexdigest()
+
+    expected_package = package_s3c_ng_bootstrap(
+        executable.read_bytes(), manifest_path.read_bytes()
+    )
+    package_value = os.environ.get("S3C_NG_BOOTSTRAP_ARCHIVE")
+    if package_value:
+        packaged = Path(package_value).read_bytes()
+        assert packaged == expected_package, "workflow release candidate package must be reproducible"
+    else:
+        packaged = expected_package
+    toolchain_manifest = manifest["toolchain"]
+    assert isinstance(toolchain_manifest, dict)
+    lock_path = tmp_path / "release-lock.json"
+    lock_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "status": "PINNED",
+                "release_tag": "s3c-ng-bootstrap-ci-exact-head",
+                "asset_name": "s3c-ng-bootstrap-linux-x86_64.tar.gz",
+                "asset_sha256": hashlib.sha256(packaged).hexdigest(),
+                "artifact_sha256": manifest["artifact_sha256"],
+                "artifact_bytes": manifest["artifact_bytes"],
+                "source_commit": source_commit,
+                "source_graph_sha256": source_graph_sha256,
+                "target": "linux-x86_64",
+                "toolchain": toolchain_manifest,
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(s3c_ng_distribution, "_download", lambda _url: packaged)
+    installed_path = s3c_ng_distribution.install_s3c_ng_bootstrap(
+        lock_path=lock_path,
+        cache_root=tmp_path / "installed-bootstrap",
+    )
+    assert hashlib.sha256(installed_path.read_bytes()).hexdigest() == manifest["artifact_sha256"]
+    monkeypatch.setattr(s3c_ng_distribution, "_LOCK_PATH", lock_path)
+    monkeypatch.setenv("S3_BOOTSTRAP_CACHE", str(installed_path.parent.parent))
+    monkeypatch.delenv("S3C_NG_BOOTSTRAP_EXECUTABLE", raising=False)
+    candidate = require_s3c_ng_executable()
+    assert candidate.executable == installed_path.resolve()
+
+    generation_c = compile_source_set_with_provider(
+        sources,
+        compiler="s3c-ng",
+        executable=candidate.executable,
+        entry_module="app",
+    )
+    assert generation_c.ir is not None
+    verify_ir(generation_c.ir)
+    generation_c_sha256 = hashlib.sha256(
+        serialize_ir(generation_c.ir).encode("utf-8")
+    ).hexdigest()
+    assert generation_c_sha256 == manifest["compiler_ir_sha256"]
+
+    artifact_c = build_native_s3c(
+        generation_c.ir,
+        tmp_path / "rebuilt-generation-c",
+        label=executable.name,
+    )
+    assert artifact_c.assembly_sha256 == manifest["assembly_sha256"]
+    assert artifact_c.object_sha256 == manifest["object_sha256"]
+    assert artifact_c.executable_sha256 == manifest["artifact_sha256"]
+    generation_d = run_native_source_set(
+        NativeS3CExecutable(artifact_c.executable, candidate.entry_symbol),
+        sources,
+        entry_module="app",
+    )
+    assert generation_d.status == 0
+    generation_d_ir = decode_ng_ir_events(generation_d.source, generation_d.events)
+    verify_ir(generation_d_ir)
+    _assert_exact_ir_equal(generation_d_ir, generation_c.ir, context="clean B-to-C fixed point")
+    assert generation_d.source == generation_c.native_result.source
+    assert generation_d.events == generation_c.native_result.events
+    assert (
+        generation_d.output_envelope_sha256
+        == generation_c.native_result.output_envelope_sha256
+    )
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
 @pytest.mark.skipif(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
     reason="native S3C-NG qualification requires Linux x86-64",
@@ -336,11 +805,462 @@ export fn model_value() -> i64:
 
 
 @pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
 @pytest.mark.skipif(
     platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
     reason="native S3C-NG qualification requires Linux x86-64",
 )
-def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> None:
+def test_native_s3c_ng_compiles_bounded_stack_vm_maturity_workload(
+    tmp_path: Path,
+) -> None:
+    from tests.test_language_maturity_workloads import VM_CASES, _vm_program
+
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
+    sources = {"main.s3": _vm_program(VM_CASES)}
+
+    result = _assert_native_compile(
+        artifact,
+        sources,
+        expected_result=0,
+        entry_module="main",
+        tmp_path=tmp_path,
+    )
+    assert result.status == 0
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_matches_existing_language_maturity_workloads(
+    tmp_path: Path,
+) -> None:
+    from tests.test_language_maturity_workloads import (
+        PEBBLE_CASES,
+        _csv_program,
+        _hex_program,
+        _ordering_program,
+        _generated_pebble_cases,
+        _pebble_program,
+    )
+
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
+    workloads = (
+        (
+            "ordering-search",
+            _ordering_program((29, -4, 8, 8, 17, 0), (-4, 8, 17, 30)),
+        ),
+        (
+            "hex-encoding",
+            _hex_program(bytes((0, 83, 51, 255))),
+        ),
+        (
+            "csv-integer-parser",
+            {"main.s3": _csv_program("-12,0,25,-3", (10, 4))},
+        ),
+        (
+            "checked-i64-arithmetic",
+            {
+                "main.s3": (
+                    "fn combine(left: i64, right: i64) -> i64:\n"
+                    "    return left * 3 + right\n"
+                    "fn main() -> i64:\n"
+                    "    return combine(10, 12) - 42\n"
+                )
+            },
+        ),
+        (
+            "generic-scalar-vector-mutation",
+            {
+                "main.s3": (
+                    "fn main() -> i64:\n"
+                    "    mut values: vector<i64> = vector_new<i64>(2)\n"
+                    "    discard vector_push<i64>(&mut values, 19)\n"
+                    "    discard vector_set<i64>(&mut values, 0, 42)\n"
+                    "    mut result: i64 = vector_get<i64>(&values, 0)\n"
+                    "    result = result - vector_pop<i64>(&mut values)\n"
+                    "    return result\n"
+                )
+            },
+        ),
+        (
+            "typed-i64-vector-capacity",
+            {
+                "main.s3": (
+                    "fn main() -> i64:\n"
+                    "    mut values: vector<i64> = vector_new<i64>(8)\n"
+                    "    discard vector_push<i64>(&mut values, 42)\n"
+                    "    return i64_vector_capacity(&values) - 8\n"
+                )
+            },
+        ),
+        (
+            "typed-tryte-vector-capacity",
+            {
+                "main.s3": (
+                    "fn main() -> i64:\n"
+                    "    mut values: vector<tryte> = vector_new<tryte>(8)\n"
+                    "    return tryte_vector_capacity(&values) - 8\n"
+                )
+            },
+        ),
+        (
+            "typed-f64-vector-capacity",
+            {
+                "main.s3": (
+                    "fn main() -> i64:\n"
+                    "    mut values: vector<f64> = vector_new<f64>(8)\n"
+                    "    return f64_vector_capacity(&values) - 8\n"
+                )
+            },
+        ),
+        (
+            "pebble-compiler-canary",
+            {
+                "main.s3": _pebble_program(PEBBLE_CASES[:5])
+            },
+        ),
+        (
+            "pebble-compiler-full-canonical-ir",
+            {
+                "main.s3": _pebble_program(
+                    PEBBLE_CASES + _generated_pebble_cases()
+                )
+            },
+        ),
+    )
+
+    for name, sources in workloads:
+        work_directory = tmp_path / name
+        work_directory.mkdir()
+        result = _assert_native_compile(
+            artifact,
+            sources,
+            expected_result=0,
+            entry_module="main",
+            tmp_path=work_directory,
+            execute_native=name != "pebble-compiler-full-canonical-ir",
+        )
+        assert result.status == 0, name
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_matches_existing_single_module_examples(
+    tmp_path: Path,
+) -> None:
+    examples = (
+        "first.s3",
+        "mutable_switch.s3",
+        "mutable_value.s3",
+        "native_abi.s3",
+        "nested_calls.s3",
+        "recursive_memory.s3",
+        "recursive_sum.s3",
+        "sign.s3",
+        "simple_call.s3",
+        "static_array.s3",
+        "trit_array.s3",
+    )
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
+
+    for example in examples:
+        sources = {
+            "main.s3": (_ROOT / "examples" / example).read_text(encoding="utf-8"),
+        }
+        reference = compile_sources(sources, entry_module="main")
+        assert reference.ir is not None, example
+        expected_result = execute_ir(reference.ir)
+        assert isinstance(expected_result, int), example
+
+        result = _assert_native_compile(
+            artifact,
+            sources,
+            expected_result=expected_result,
+            entry_module="main",
+            tmp_path=tmp_path / Path(example).stem,
+            context=f"native example {example}",
+        )
+        assert result.status == 0, example
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_rejects_reference_invalid_programs_without_fallback(
+    tmp_path: Path,
+) -> None:
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
+    expected_statuses = {
+        "missing-module": -3,
+        "missing-symbol": -4,
+        "wrong-arity": -14,
+        "wrong-argument-type": -14,
+        "private-symbol": -5,
+        "duplicate-module-identity": -2,
+        "dependency-cycle": -6,
+        "unknown-reference-field": -15,
+        "wrong-bytes-builtin-type": -14,
+        "wrong-i64-vector-capacity-type": -14,
+        "wrong-resource-open-type": -14,
+        "duplicate-function": -8,
+    }
+    structured_diagnostics = {
+        "missing-module": DiagnosticCode.MODULE_NOT_FOUND,
+        "missing-symbol": DiagnosticCode.IMPORT_UNKNOWN_SYMBOL,
+        "private-symbol": DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+    }
+
+    for case, sources in _INVALID_PROVIDER_SOURCES.items():
+        entry_module = (
+            "main"
+            if case in {
+                "missing-module",
+                "missing-symbol",
+                "wrong-arity",
+                "wrong-argument-type",
+                "private-symbol",
+                "duplicate-module-identity",
+                "dependency-cycle",
+            }
+            else "app"
+        )
+        with pytest.raises(S3Error):
+            compile_sources(sources, entry_module=entry_module)
+
+        if case in structured_diagnostics:
+            with pytest.raises(SemanticError) as native_error:
+                compile_source_set_with_provider(
+                    sources,
+                    compiler="s3c-ng",
+                    executable=artifact.executable,
+                    entry_module=entry_module,
+                )
+            assert native_error.value.diagnostic_code is structured_diagnostics[case]
+        else:
+            with pytest.raises(
+                NativeS3CTransportError,
+                match=rf"rejected the source set \(status={expected_statuses[case]}\)",
+            ):
+                compile_source_set_with_provider(
+                    sources,
+                    compiler="s3c-ng",
+                    executable=artifact.executable,
+                    entry_module=entry_module,
+                )
+
+    function_lines = ["module main"]
+    for index in range(130):
+        function_lines.extend((f"fn work_{index:02d}() -> i64:", f"    return {index}"))
+    function_lines.extend(("fn main() -> i64:", "    return work_129()"))
+    _assert_native_compile(
+        artifact,
+        {"main.s3": "\n".join(function_lines) + "\n"},
+        expected_result=129,
+        tmp_path=tmp_path / "many-functions",
+        entry_module="main",
+        context="native 131-function source set",
+        execute_native=False,
+    )
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG FFI qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_ffi_build_uses_selected_compiler_and_matches_reference(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    compiler_ir = compile_reference_b_ir(_ROOT)
+    artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+    _write_candidate_manifest(artifact, compiler_source_set(_ROOT))
+
+    source = """\
+export fn add(a: i64, b: i64) -> i64:
+    return a + b
+export fn multiply(a: f64, b: f64) -> f64:
+    return a * b
+fn main() -> i64:
+    return 0
+"""
+    source_path = tmp_path / "ffi.s3"
+    source_path.write_text(source, encoding="utf-8")
+
+    def reject_python_fallback(*_args, **_kwargs):
+        pytest.fail("explicit S3C-NG CLI command fell back to compile_source")
+
+    monkeypatch.setattr(cli, "compile_source", reject_python_fallback)
+
+    ng_library = tmp_path / "libffi-ng.so"
+    assert cli.main(
+        [
+            "ffi-build",
+            str(source_path),
+            "--compiler",
+            "s3c-ng",
+            "--s3c-ng-executable",
+            str(artifact.executable),
+            "--output",
+            str(ng_library),
+        ]
+    ) == 0
+    capsys.readouterr()
+
+    test_manifest = tmp_path / "s3-test.toml"
+    test_manifest.write_text(
+        '[runner]\nmode = "hosted"\ntimeout_ms = 10000\n\n'
+        '[[test]]\nname = "ffi_source_main"\nsource = "ffi.s3"\nexpected = 0\n',
+        encoding="utf-8",
+    )
+    report_path = tmp_path / "s3-test-report.json"
+    assert cli.main(
+        [
+            "test",
+            str(test_manifest),
+            "--compiler",
+            "s3c-ng",
+            "--s3c-ng-executable",
+            str(artifact.executable),
+            "--report",
+            str(report_path),
+        ]
+    ) == 0
+    test_report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert test_report["compiler"] == "s3c-ng"
+    assert test_report["summary"]["status"] == "PASS"
+    assert test_report["summary"]["passed"] == 1
+
+    reference_library = tmp_path / "libffi-python.so"
+    reference_ir = compile_sources({"main.s3": source}, entry_module="main").ir
+    assert reference_ir is not None
+    reference_assembly = generate_assembly(reference_ir)
+    from bootstrap.s3.ffi import build_shared_library_from_assembly
+
+    build_shared_library_from_assembly(reference_assembly, reference_library)
+
+    def call_exports(path: Path) -> tuple[int, float]:
+        library = ctypes.CDLL(str(path))
+        add = getattr(library, "__s3mod_main__add")
+        multiply = getattr(library, "__s3mod_main__multiply")
+        add.argtypes = [ctypes.c_int64, ctypes.c_int64]
+        add.restype = ctypes.c_int64
+        multiply.argtypes = [ctypes.c_double, ctypes.c_double]
+        multiply.restype = ctypes.c_double
+        return (
+            add(2, 5),
+            multiply(1.5, 4.0),
+        )
+
+    ng_results = call_exports(ng_library)
+    reference_results = call_exports(reference_library)
+    assert ng_results == reference_results == (7, 6.0)
+
+    slice_source = """\
+export fn sum(xs: &[i64]) -> i64:
+    return xs[0] + xs[1]
+export fn relay(xs: &[i64]) -> i64:
+    return sum(xs)
+fn main() -> i64:
+    return 0
+"""
+    slice_source_path = tmp_path / "ffi-slices.s3"
+    slice_source_path.write_text(slice_source, encoding="utf-8")
+    ng_slice_library = tmp_path / "libffi-slices-ng.so"
+    assert cli.main(
+        [
+            "ffi-build",
+            str(slice_source_path),
+            "--compiler",
+            "s3c-ng",
+            "--s3c-ng-executable",
+            str(artifact.executable),
+            "--output",
+            str(ng_slice_library),
+        ]
+    ) == 0
+    capsys.readouterr()
+
+    slice_reference_ir = compile_sources(
+        {"main.s3": slice_source}, entry_module="main"
+    ).ir
+    assert slice_reference_ir is not None
+    slice_reference_library = tmp_path / "libffi-slices-python.so"
+    build_shared_library_from_assembly(
+        generate_assembly(slice_reference_ir), slice_reference_library
+    )
+
+    def call_slice_exports(path: Path) -> tuple[int, int]:
+        library = ctypes.CDLL(str(path))
+        total = getattr(library, "__s3mod_main__sum")
+        relay = getattr(library, "__s3mod_main__relay")
+        total.argtypes = [ctypes.POINTER(ctypes.c_int64), ctypes.c_int64]
+        total.restype = ctypes.c_int64
+        relay.argtypes = total.argtypes
+        relay.restype = ctypes.c_int64
+        values = (ctypes.c_int64 * 2)(13, 29)
+        return total(values, len(values)), relay(values, len(values))
+
+    assert call_slice_exports(ng_slice_library) == call_slice_exports(
+        slice_reference_library
+    ) == (42, 42)
+
+    mutable_slice_source = """\
+export fn bump(xs: &mut [i64]) -> i64:
+    xs[0] = xs[0] + 1
+    return xs[0]
+fn main() -> i64:
+    return 0
+"""
+    mutable_slice_path = tmp_path / "ffi-mutable-slice.s3"
+    mutable_slice_path.write_text(mutable_slice_source, encoding="utf-8")
+    rejected = cli.main(
+        [
+            "ffi-build",
+            str(mutable_slice_path),
+            "--compiler",
+            "s3c-ng",
+            "--s3c-ng-executable",
+            str(artifact.executable),
+            "--output",
+            str(tmp_path / "libffi-mutable-slice-ng.so"),
+        ]
+    )
+    assert rejected == 1
+    assert "S3C-NG rejected the source set" in capsys.readouterr().err
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG qualification requires Linux x86-64",
+)
+def test_native_s3c_ng_reaches_native_compiler_fixed_point(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     compiler_ir = compile_reference_b_ir(_ROOT)
     artifact_b = build_native_s3c(compiler_ir, tmp_path / "native-b", label="compiler")
     assert artifact_b.compiler_ir_sha256
@@ -359,6 +1279,194 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
             "    return answer(42)\n"
         ),
     }
+    compiler_sources = compiler_source_set(_ROOT)
+    _write_candidate_manifest(artifact_b, compiler_sources)
+
+    provider_output = compile_source_set_with_provider(
+        small,
+        compiler="s3c-ng",
+        executable=artifact_b.executable,
+        entry_module="app",
+    )
+    reference_output = compile_sources(small, entry_module="app")
+    assert reference_output.ir is not None
+    assert serialize_ir(provider_output.ir) == serialize_ir(reference_output.ir)
+    assert provider_output.assembly.render() == generate_assembly(reference_output.ir).render()
+
+    cli_source_path = tmp_path / "provider-cli" / "main.s3"
+    cli_source_path.parent.mkdir(parents=True, exist_ok=True)
+    cli_source_path.write_text(small["app.s3"], encoding="utf-8", newline="\n")
+
+    def reject_python_fallback(*_args, **_kwargs):
+        pytest.fail("explicit S3C-NG CLI command fell back to compile_source")
+
+    monkeypatch.setattr(cli, "compile_source", reject_python_fallback)
+
+    def run_ng_cli(*arguments: str) -> str:
+        result = cli.main(
+            [
+                *arguments,
+                "--compiler",
+                "s3c-ng",
+                "--s3c-ng-executable",
+                str(artifact_b.executable),
+                "--entry-module",
+                "app",
+            ]
+        )
+        captured = capsys.readouterr()
+        assert result == 0, f"CLI failed for {arguments}: {captured.err}"
+        assert captured.err == ""
+        return captured.out
+
+    assert "status: ok" in run_ng_cli("check", str(cli_source_path))
+    assert run_ng_cli("ir", str(cli_source_path)) == json.dumps(
+        reference_output.ir.to_dict(), indent=2
+    ) + "\n"
+    assert run_ng_cli("ir-json", str(cli_source_path)) == serialize_ir(
+        reference_output.ir
+    )
+    inspection = run_ng_cli("inspect", str(cli_source_path), "--emit", "summary")
+    assert "functions: 2" in inspection
+    assert "entry: main" in inspection
+    assert run_ng_cli("inspect", str(cli_source_path), "--emit", "ir").endswith(
+        json.dumps(reference_output.ir.to_dict(), indent=2) + "\n"
+    )
+    assert run_ng_cli("asm", str(cli_source_path)) == reference_output.assembly_text
+    assert run_ng_cli("run", str(cli_source_path)) == "program returned: 42\n"
+    expected_native_assembly = generate_native_assembly(
+        generate_assembly(reference_output.ir)
+    )
+    assert run_ng_cli("native-asm", str(cli_source_path)) == expected_native_assembly
+
+    built_executable = tmp_path / "provider-cli" / "built-program"
+    assert run_ng_cli(
+        "build", str(cli_source_path), "--output", str(built_executable)
+    ).strip() == str(built_executable)
+    built_result = NativeToolchain.detect().run(built_executable)
+    assert built_result.returncode == 0
+    assert built_result.stdout == "program returned: 42\n"
+    assert built_result.stderr == ""
+    assert run_ng_cli("run-native", str(cli_source_path)) == "program returned: 42\n"
+
+    project_root = tmp_path / "project-tooling"
+    project_source_root = project_root / "src"
+    project_source_root.mkdir(parents=True)
+    project_source = """\
+module main
+fn increment(value: i64) -> i64:
+    return value + 1
+fn main() -> i64:
+    return increment(41)
+"""
+    (project_source_root / "main.s3").write_text(
+        project_source, encoding="utf-8", newline="\n"
+    )
+    (project_root / "s3.toml").write_text(
+        "[project]\nname='promotion-project'\nversion='1'\n"
+        "entrypoint='main'\nsource_roots=['src']\nprofile='hosted'\n",
+        encoding="ascii",
+    )
+    python_project = ProjectTooling(project_root)
+    ng_project = ProjectTooling(
+        project_root, compiler="s3c-ng", executable=artifact_b.executable
+    )
+    python_project_ir = python_project.build().ir
+    ng_project_ir = ng_project.build().ir
+    assert python_project_ir is not None
+    assert ng_project_ir is not None
+    assert serialize_ir(ng_project_ir) == serialize_ir(python_project_ir)
+    assert python_project.run() == ng_project.run() == 42
+
+    project_tests = project_root / "checks"
+    for directory, name in (("z", "z_smoke"), ("a", "a_smoke")):
+        test_root = project_tests / directory
+        test_root.mkdir(parents=True)
+        (test_root / "case.s3").write_text(
+            "fn main() -> i64:\n    return 5\n", encoding="ascii"
+        )
+        manifest = (
+            '[runner]\nmode = "hosted"\n'
+            f'[[test]]\nname = "{name}"\nsource = "case.s3"\nexpected = 5\n'
+        )
+        (test_root / "s3-test.toml").write_text(manifest, encoding="ascii")
+
+    reference_discovery = run_project_tests(project_tests)
+    native_discovery = run_project_tests(
+        project_tests,
+        compiler="s3c-ng",
+        executable=artifact_b.executable,
+    )
+    expected_manifests = ["a/s3-test.toml", "z/s3-test.toml"]
+    assert (
+        reference_discovery["manifests"]
+        == native_discovery["manifests"]
+        == expected_manifests
+    )
+    assert reference_discovery["summary"] == native_discovery["summary"]
+    assert reference_discovery["summary"]["status"] == "PASS"
+    assert reference_discovery["summary"]["passed"] == 2
+    def discovered_results(report: dict[str, object]) -> list[tuple[object, ...]]:
+        return [
+            (
+                case["name"],
+                case["status"],
+                case["hosted"]["status"],
+                case["hosted"].get("value"),
+            )
+            for manifest_report in report["reports"]
+            for case in manifest_report["tests"]
+        ]
+
+    assert discovered_results(reference_discovery) == discovered_results(
+        native_discovery
+    )
+
+    filtered_reference = run_project_tests(project_tests, name_pattern="a_*")
+    filtered_native = run_project_tests(
+        project_tests,
+        name_pattern="a_*",
+        compiler="s3c-ng",
+        executable=artifact_b.executable,
+    )
+    assert filtered_reference["manifests"] == filtered_native["manifests"] == [
+        "a/s3-test.toml"
+    ]
+    assert filtered_reference["summary"] == filtered_native["summary"]
+    assert filtered_reference["summary"]["passed"] == 1
+
+    for workload_name, sources, expected_result in (
+        ("relational-match", _RELATIONAL_MATCH_SOURCES, 10),
+        ("multimodule", _MULTIMODULE_SOURCES, 16),
+    ):
+        workload_directory = tmp_path / "provider-cli" / workload_name
+        workload_directory.mkdir(parents=True)
+        for logical_path, contents in sources.items():
+            source_path = workload_directory / logical_path
+            source_path.parent.mkdir(parents=True, exist_ok=True)
+            source_path.write_text(contents, encoding="utf-8", newline="\n")
+
+        reference = compile_sources(sources, entry_module="app")
+        assert reference.ir is not None
+        assert run_ng_cli("ir-json", str(workload_directory)) == serialize_ir(
+            reference.ir
+        )
+        expected_output = f"program returned: {expected_result}\n"
+        assert run_ng_cli("run", str(workload_directory)) == expected_output
+
+        workload_executable = workload_directory / "program"
+        assert run_ng_cli(
+            "build",
+            str(workload_directory),
+            "--output",
+            str(workload_executable),
+        ).strip() == str(workload_executable)
+        workload_result = NativeToolchain.detect().run(workload_executable)
+        assert workload_result.returncode == 0
+        assert workload_result.stdout == expected_output
+        assert workload_result.stderr == ""
+        assert run_ng_cli("run-native", str(workload_directory)) == expected_output
+
     b_small = _assert_native_compile(
         artifact_b, small, expected_result=42, tmp_path=tmp_path
     )
@@ -376,7 +1484,6 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
         tmp_path=tmp_path,
     )
 
-    compiler_sources = compiler_source_set(_ROOT)
     compiler_source_bytes = sum(len(source.encode("utf-8")) for source in compiler_sources.values())
     native_b_to_c = run_native_source_set(
         artifact_b,
@@ -413,6 +1520,26 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
         expected_result=16,
         tmp_path=tmp_path,
     )
+    from tests.test_language_maturity_workloads import _ordering_program
+
+    ordering_sources = _ordering_program(
+        (29, -4, 8, 8, 17, 0),
+        (-4, 8, 17, 30),
+    )
+    b_ordering = _assert_native_compile(
+        artifact_b,
+        ordering_sources,
+        expected_result=0,
+        tmp_path=tmp_path,
+        entry_module="main",
+    )
+    c_ordering = _assert_native_compile(
+        artifact_c,
+        ordering_sources,
+        expected_result=0,
+        tmp_path=tmp_path,
+        entry_module="main",
+    )
     _assert_native_outputs_equal(
         b_small, c_small, workload="B/C small program"
     )
@@ -425,6 +1552,11 @@ def test_native_s3c_ng_reaches_native_compiler_fixed_point(tmp_path: Path) -> No
         b_multimodule,
         c_multimodule,
         workload="B/C multi-module program",
+    )
+    _assert_native_outputs_equal(
+        b_ordering,
+        c_ordering,
+        workload="B/C insertion-sort and binary-search maturity workload",
     )
 
     native_c_to_d = run_native_source_set(
