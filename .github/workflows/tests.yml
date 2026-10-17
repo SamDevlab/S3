@@ -190,6 +190,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -224,7 +226,7 @@ jobs:
       - name: Upload immutable exact-head bootstrap artifact
         uses: actions/upload-artifact@v4
         with:
-          name: s3c-ng-bootstrap-${{ github.sha }}
+          name: s3c-ng-bootstrap-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/s3c-ng-bootstrap/*
           if-no-files-found: error
           retention-days: 30
@@ -237,6 +239,8 @@ jobs:
     steps:
       - name: Check out clean repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -261,7 +265,7 @@ jobs:
       - name: Download bootstrap artifact from this exact workflow run
         uses: actions/download-artifact@v5
         with:
-          name: s3c-ng-bootstrap-${{ github.sha }}
+          name: s3c-ng-bootstrap-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/s3c-ng-bootstrap
 
       - name: Restore downloaded compiler execute permission
@@ -290,7 +294,7 @@ jobs:
       - name: Preserve provider performance characterization
         uses: actions/upload-artifact@v4
         with:
-          name: s3c-ng-provider-performance-${{ github.sha }}
+          name: s3c-ng-provider-performance-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/s3c-ng-provider-performance.json
           if-no-files-found: error
           retention-days: 90

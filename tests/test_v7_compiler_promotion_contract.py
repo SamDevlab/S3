@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import yaml
+
 from tools.characterize_s3c_ng_provider import _workloads
 
 
@@ -45,9 +47,10 @@ def test_v7_command_matrix_is_complete_and_classifies_indirect_container_run() -
     )
     assert document["default_compiler"] == "PYTHON"
     assert document["promoted_default"] is False
-    assert document["performance_characterization"]["state"] == (
-        "PENDING_EXACT_HEAD_LINUX_X86_64_RUN"
-    )
+    assert document["performance_characterization"]["state"] in {
+        "PENDING_EXACT_HEAD_LINUX_X86_64_RUN",
+        "PASS_EXACT_HEAD_LINUX_X86_64",
+    }
     assert document["performance_characterization"]["classification"] == (
         "CHARACTERIZATION_ONLY"
     )
@@ -110,3 +113,33 @@ def test_v7_performance_characterization_has_required_workload_classes() -> None
         "ir.s3",
         "modules.s3",
     }
+
+
+def test_bootstrap_evidence_uses_the_real_candidate_source_commit() -> None:
+    workflow_path = Path(__file__).parents[1] / ".github" / "workflows" / "tests.yml"
+    workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+    jobs = workflow["jobs"]
+    source_ref = "${{ github.event.pull_request.head.sha || github.sha }}"
+
+    for job_name in ("s3c-ng-bootstrap-seed", "s3c-ng-clean-bootstrap"):
+        checkout = next(
+            step for step in jobs[job_name]["steps"]
+            if step.get("uses", "").startswith("actions/checkout@")
+        )
+        assert checkout["with"]["ref"] == source_ref
+
+    seed_upload = next(
+        step for step in jobs["s3c-ng-bootstrap-seed"]["steps"]
+        if step.get("name") == "Upload immutable exact-head bootstrap artifact"
+    )
+    clean_download = next(
+        step for step in jobs["s3c-ng-clean-bootstrap"]["steps"]
+        if step.get("name") == "Download bootstrap artifact from this exact workflow run"
+    )
+    perf_upload = next(
+        step for step in jobs["s3c-ng-clean-bootstrap"]["steps"]
+        if step.get("name") == "Preserve provider performance characterization"
+    )
+    assert seed_upload["with"]["name"] == f"s3c-ng-bootstrap-{source_ref}"
+    assert clean_download["with"]["name"] == f"s3c-ng-bootstrap-{source_ref}"
+    assert perf_upload["with"]["name"] == f"s3c-ng-provider-performance-{source_ref}"
