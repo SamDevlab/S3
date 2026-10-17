@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
-
-import yaml
 
 from tools.characterize_s3c_ng_provider import _workloads
 
@@ -117,29 +116,26 @@ def test_v7_performance_characterization_has_required_workload_classes() -> None
 
 def test_bootstrap_evidence_uses_the_real_candidate_source_commit() -> None:
     workflow_path = Path(__file__).parents[1] / ".github" / "workflows" / "tests.yml"
-    workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
-    jobs = workflow["jobs"]
+    workflow = workflow_path.read_text(encoding="utf-8")
     source_ref = "${{ github.event.pull_request.head.sha || github.sha }}"
 
-    for job_name in ("s3c-ng-bootstrap-seed", "s3c-ng-clean-bootstrap"):
-        checkout = next(
-            step for step in jobs[job_name]["steps"]
-            if step.get("uses", "").startswith("actions/checkout@")
+    def job_block(job_name: str) -> str:
+        match = re.search(
+            rf"(?ms)^  {re.escape(job_name)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:|\Z)",
+            workflow,
         )
-        assert checkout["with"]["ref"] == source_ref
+        assert match is not None, job_name
+        return match.group(1)
 
-    seed_upload = next(
-        step for step in jobs["s3c-ng-bootstrap-seed"]["steps"]
-        if step.get("name") == "Upload immutable exact-head bootstrap artifact"
+    def has_indented_line(block: str, line: str) -> bool:
+        return re.search(rf"(?m)^{re.escape(line)}$", block) is not None
+
+    seed = job_block("s3c-ng-bootstrap-seed")
+    clean = job_block("s3c-ng-clean-bootstrap")
+    assert has_indented_line(seed, "          ref: " + source_ref)
+    assert has_indented_line(clean, "          ref: " + source_ref)
+    assert has_indented_line(seed, "          name: s3c-ng-bootstrap-" + source_ref)
+    assert has_indented_line(clean, "          name: s3c-ng-bootstrap-" + source_ref)
+    assert has_indented_line(
+        clean, "          name: s3c-ng-provider-performance-" + source_ref
     )
-    clean_download = next(
-        step for step in jobs["s3c-ng-clean-bootstrap"]["steps"]
-        if step.get("name") == "Download bootstrap artifact from this exact workflow run"
-    )
-    perf_upload = next(
-        step for step in jobs["s3c-ng-clean-bootstrap"]["steps"]
-        if step.get("name") == "Preserve provider performance characterization"
-    )
-    assert seed_upload["with"]["name"] == f"s3c-ng-bootstrap-{source_ref}"
-    assert clean_download["with"]["name"] == f"s3c-ng-bootstrap-{source_ref}"
-    assert perf_upload["with"]["name"] == f"s3c-ng-provider-performance-{source_ref}"
