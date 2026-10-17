@@ -15,6 +15,8 @@ from .diagnostics import (
     DiagnosticCode,
     DiagnosticPhase,
     DiagnosticSource,
+    LexError,
+    ParseError,
     SemanticError,
     SourceLocation,
 )
@@ -27,7 +29,9 @@ from .ir import (
 )
 from .lexer import SyntaxMode
 from .native_compiler import (
+    NativeDiagnosticCategory,
     NativeDiagnosticCode,
+    NativeDiagnosticPhase,
     NativeDiagnosticRecord,
     NativeS3CTransportError,
     NativeSourceSetResult,
@@ -133,7 +137,13 @@ def compile_source_set_with_provider(
                 raise NativeS3CTransportError(
                     "S3C-NG returned multiple diagnostics before multi-diagnostic formatting is qualified"
                 )
-            raise _native_semantic_error(result.diagnostics[0], sources)
+            record = result.diagnostics[0]
+            if (
+                record.category_id == NativeDiagnosticCategory.SEMANTIC
+                and record.phase_id == NativeDiagnosticPhase.SEMANTIC
+            ):
+                raise _native_semantic_error(record, sources)
+            raise _native_frontend_error(record, sources)
         raise NativeS3CTransportError(
             f"S3C-NG rejected the source set (status={result.status})"
         )
@@ -236,6 +246,80 @@ def _native_semantic_error(
         diagnostic_code=code,
         diagnostic_phase=DiagnosticPhase.SEMANTIC,
         diagnostic_context=context,
+    )
+
+
+def _native_frontend_error(
+    record: NativeDiagnosticRecord,
+    sources: Mapping[str, str],
+) -> LexError | ParseError:
+    identities = {
+        NativeDiagnosticCode.LEX_INVALID_CHARACTER: (
+            NativeDiagnosticCategory.SYNTAX,
+            NativeDiagnosticPhase.LEXING,
+            LexError,
+            DiagnosticCode.LEX_INVALID_CHARACTER,
+            "invalid character",
+        ),
+        NativeDiagnosticCode.LEX_UNTERMINATED_STRING_LITERAL: (
+            NativeDiagnosticCategory.SYNTAX,
+            NativeDiagnosticPhase.LEXING,
+            LexError,
+            DiagnosticCode.LEX_UNTERMINATED_STRING_LITERAL,
+            "unterminated string literal",
+        ),
+        NativeDiagnosticCode.PARSE_SYNTAX: (
+            NativeDiagnosticCategory.SYNTAX,
+            NativeDiagnosticPhase.PARSING,
+            ParseError,
+            DiagnosticCode.PARSE_SYNTAX,
+            "syntax error",
+        ),
+    }
+    identity = identities.get(record.code_id)
+    if (
+        identity is None
+        or record.category_id != identity[0]
+        or record.phase_id != identity[1]
+        or record.message_id != record.code_id
+    ):
+        raise NativeS3CTransportError(
+            "S3C-NG frontend diagnostic category, phase, code, or message is unknown"
+        )
+    source_index = record.source_unit_index
+    paths = sorted(sources)
+    if source_index < 0 or source_index >= len(paths):
+        raise NativeS3CTransportError(
+            "S3C-NG frontend diagnostic references an unknown source unit"
+        )
+    path = paths[source_index]
+    source_bytes = sources[path].encode("utf-8")
+    if (
+        record.start_byte < 0
+        or record.end_byte < record.start_byte
+        or record.end_byte > len(source_bytes)
+    ):
+        raise NativeS3CTransportError(
+            "S3C-NG frontend diagnostic span exceeds its source unit"
+        )
+    try:
+        prefix = source_bytes[: record.start_byte].decode("utf-8")
+        source_bytes[: record.end_byte].decode("utf-8")
+    except UnicodeError as error:
+        raise NativeS3CTransportError(
+            "S3C-NG frontend diagnostic span is not on UTF-8 boundaries"
+        ) from error
+    location = SourceLocation(
+        len(prefix),
+        prefix.count("\n") + 1,
+        len(prefix.rsplit("\n", 1)[-1]) + 1,
+    )
+    error_type = identity[2]
+    return error_type(
+        identity[4],
+        location,
+        diagnostic_code=identity[3],
+        diagnostic_context={"file": path},
     )
 
 

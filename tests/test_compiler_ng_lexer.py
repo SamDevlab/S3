@@ -309,6 +309,14 @@ fn main() -> vector<i64>:
     assert compilation.ir is not None
     actual = [int(value) for value in execute_ir(compilation.ir)]
     expected = []
+    supported_single_symbols = {
+        38,
+        91,
+        93,
+        *range(40, 48),
+        *range(58, 63),
+        *range(123, 127),
+    }
     for unit in range(256):
         is_digit = 48 <= unit <= 57
         is_alpha = 65 <= unit <= 90 or 97 <= unit <= 122
@@ -328,7 +336,7 @@ fn main() -> vector<i64>:
             expected.append(7)
         elif unit in {33, 42, 43, 45, 60, 61, 62}:
             expected.append(8)
-        elif unit < 128:
+        elif unit in supported_single_symbols:
             expected.append(9)
         else:
             expected.append(10)

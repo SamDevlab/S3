@@ -1,7 +1,7 @@
 module selfhost.compiler_ng.modules
 
-from selfhost.compiler_ng.lexer import NgToken, ng_lex_at, ng_span_fingerprint, ng_spans_equal
-from selfhost.compiler_ng.parser import NgFunction, NgImport, NgModule, NgSpan, NgAstNode, NgParameter, NgRecord, NgField, ng_parse_module_header_at, ng_parse_module_functions, ng_validate_nominal_types
+from selfhost.compiler_ng.lexer import NgToken, ng_lex_at_with_error, ng_span_fingerprint, ng_spans_equal
+from selfhost.compiler_ng.parser import NgFunction, NgImport, NgModule, NgSpan, NgAstNode, NgParameter, NgRecord, NgField, ng_parse_module_header_at, ng_parse_module_functions_with_error, ng_validate_nominal_types
 from selfhost.compiler_ng.types import NgTypeDescriptor, ng_initialize_resource_type_table, ng_initialize_type_table, ng_source_uses_resource_types
 from selfhost.compiler_ng.semantic import ng_builtin_call_kind, ng_encode_resolved_call_function, ng_function_index_for_node, ng_legacy_vector_builtin_code, ng_legacy_vector_builtin_element_type, ng_named_spans_equal, ng_resolve_semantic_nodes, ng_resolved_builtin_call_marker
 from selfhost.compiler_ng.ir import ng_emit_program_with_modules
@@ -253,6 +253,16 @@ fn ng_find_import_target(source: &bytes, modules: &vector<NgModule>, imports: &v
     mut imported: NgImport = vector_get<NgImport>(imports, import_index)
     return ng_find_module_by_name(source, modules, imported.target_start, imported.target_end)
 
+fn ng_append_diagnostic_record(diagnostics: &mut vector<i64>, category_id: i64, phase_id: i64, code_id: i64, source_index: i64, start_byte: i64, end_byte: i64, message_id: i64) -> i64:
+    discard vector_push<i64>(&mut *diagnostics, category_id)
+    discard vector_push<i64>(&mut *diagnostics, phase_id)
+    discard vector_push<i64>(&mut *diagnostics, message_id)
+    discard vector_push<i64>(&mut *diagnostics, source_index)
+    discard vector_push<i64>(&mut *diagnostics, start_byte)
+    discard vector_push<i64>(&mut *diagnostics, end_byte)
+    discard vector_push<i64>(&mut *diagnostics, code_id)
+    return 0
+
 fn ng_append_import_diagnostic(source: &bytes, modules: &vector<NgModule>, imported: NgImport, diagnostics: &mut vector<i64>, code_id: i64, message_id: i64) -> i64:
     mut module_item: NgModule = vector_get<NgModule>(modules, imported.module_index)
     mut line_start: i64 = imported.target_start
@@ -282,25 +292,11 @@ fn ng_append_import_diagnostic(source: &bytes, modules: &vector<NgModule>, impor
     local_start = line_start - module_item.source_start
     local_end = line_end - module_item.source_start
     # S3NGOUT2: category, phase, code, source-unit index, byte start/end, message id.
-    discard vector_push<i64>(&mut *diagnostics, 1)
-    discard vector_push<i64>(&mut *diagnostics, 1)
-    discard vector_push<i64>(&mut *diagnostics, code_id)
-    discard vector_push<i64>(&mut *diagnostics, source_index)
-    discard vector_push<i64>(&mut *diagnostics, local_start)
-    discard vector_push<i64>(&mut *diagnostics, local_end)
-    discard vector_push<i64>(&mut *diagnostics, message_id)
-    return 0
+    return ng_append_diagnostic_record(&mut *diagnostics, 1, 1, code_id, source_index, local_start, local_end, message_id)
 
 fn ng_append_unlocated_diagnostic(diagnostics: &mut vector<i64>, code_id: i64, message_id: i64) -> i64:
     # A negative source index and span mean the reference diagnostic has no location.
-    discard vector_push<i64>(&mut *diagnostics, 1)
-    discard vector_push<i64>(&mut *diagnostics, 1)
-    discard vector_push<i64>(&mut *diagnostics, code_id)
-    discard vector_push<i64>(&mut *diagnostics, -1)
-    discard vector_push<i64>(&mut *diagnostics, -1)
-    discard vector_push<i64>(&mut *diagnostics, -1)
-    discard vector_push<i64>(&mut *diagnostics, message_id)
-    return 0
+    return ng_append_diagnostic_record(&mut *diagnostics, 1, 1, code_id, -1, -1, -1, message_id)
 
 fn ng_order_modules(source: &bytes, modules: &vector<NgModule>, imports: &vector<NgImport>, order: &mut vector<i64>, diagnostics: &mut vector<i64>) -> i64:
     mut done: vector<i64> = vector_new<i64>(vector_len<NgModule>(modules) + 1)
@@ -953,12 +949,16 @@ export fn ng_emit_source_set_v2(units: &vector<NgSourceUnit>, entry_module: text
     mut total_source_bytes: i64 = 0
     mut pool_capacity: i64 = 0
     mut function_capacity: i64 = 0
+    mut failure_code: i64 = 0
+    mut failure_start: i64 = 0
+    mut failure_end: i64 = 0
     mut module_index: i64 = 0
     mut order_index: i64 = 0
     mut module_item: NgModule = NgModule(source_index=0, source_start=0, source_end=0, path_start=0, path_end=0, name_start=0, name_end=0, body_token_index=0, first_function=0, function_count=0, first_import=0, import_count=0)
     mut unit: NgSourceUnit = NgSourceUnit(path=text_from_static(""), contents=bytes_new(1))
     mut path_bytes: bytes = bytes_new(1)
     mut tokens: vector<NgToken> = vector_new<NgToken>(1)
+    mut frontend_failure: vector<i64> = vector_new<i64>(3)
     mut modules: vector<NgModule> = vector_new<NgModule>(unit_count + 1)
     mut imports: vector<NgImport> = vector_new<NgImport>(1)
     mut functions: vector<NgFunction> = vector_new<NgFunction>(1)
@@ -1015,9 +1015,20 @@ export fn ng_emit_source_set_v2(units: &vector<NgSourceUnit>, entry_module: text
         path_end = bytes_len(&*source)
         discard bytes_push(source, 10)
         token_base_index = vector_len<NgToken>(&tokens)
-        status = ng_lex_at(&unit.contents, &mut tokens, source_start)
+        frontend_failure = vector_new<i64>(3)
+        status = ng_lex_at_with_error(&unit.contents, &mut tokens, source_start, &mut frontend_failure)
         match status <=> 0:
             -1:
+                match vector_len<i64>(&frontend_failure) <=> 3:
+                    0:
+                        failure_code = vector_get<i64>(&frontend_failure, 0)
+                        failure_start = vector_get<i64>(&frontend_failure, 1) - source_start
+                        failure_end = vector_get<i64>(&frontend_failure, 2) - source_start
+                        discard ng_append_diagnostic_record(&mut *diagnostics, 2, 2, failure_code, source_index, failure_start, failure_end, failure_code)
+                    -1:
+                        status = status
+                    1:
+                        status = status
                 return -1
             0:
                 module_item = NgModule(source_index=source_index, source_start=source_start, source_end=source_end, path_start=path_start, path_end=path_end, name_start=0, name_end=0, body_token_index=token_base_index, first_function=0, function_count=0, first_import=0, import_count=0)
@@ -1105,9 +1116,20 @@ export fn ng_emit_source_set_v2(units: &vector<NgSourceUnit>, entry_module: text
         module_index = vector_get<i64>(&order, order_index)
         module_item = vector_get<NgModule>(&modules, module_index)
         module_item.first_function = vector_len<NgFunction>(&functions)
-        status = ng_parse_module_functions(&*source, &tokens, module_item, &mut types, &mut records, &mut fields, &mut parameters, &mut nodes, &mut functions)
+        frontend_failure = vector_new<i64>(3)
+        status = ng_parse_module_functions_with_error(&*source, &tokens, module_item, &mut types, &mut records, &mut fields, &mut parameters, &mut nodes, &mut functions, &mut frontend_failure)
         match status <=> 0:
             -1:
+                match vector_len<i64>(&frontend_failure) <=> 3:
+                    0:
+                        failure_code = vector_get<i64>(&frontend_failure, 0)
+                        failure_start = vector_get<i64>(&frontend_failure, 1) - module_item.source_start
+                        failure_end = vector_get<i64>(&frontend_failure, 2) - module_item.source_start
+                        discard ng_append_diagnostic_record(&mut *diagnostics, 2, 3, failure_code, module_item.source_index, failure_start, failure_end, failure_code)
+                    -1:
+                        status = status
+                    1:
+                        status = status
                 return status
             0:
                 module_item.function_count = vector_len<NgFunction>(&functions) - module_item.first_function

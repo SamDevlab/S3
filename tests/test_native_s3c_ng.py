@@ -16,7 +16,13 @@ import bootstrap.s3.s3c_ng_distribution as s3c_ng_distribution
 from bootstrap.s3.backends.x86_64 import NativeToolchain, generate_native_assembly
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.compiler_ng_ir_bridge import decode_ng_ir_events
-from bootstrap.s3.diagnostics import DiagnosticCode, S3Error, SemanticError
+from bootstrap.s3.diagnostics import (
+    DiagnosticCode,
+    S3Error,
+    SemanticError,
+    diagnostic_from_exception,
+)
+import bootstrap.s3.compiler_provider as compiler_provider_module
 from bootstrap.s3.compiler_provider import compile_source_set_with_provider
 from bootstrap.s3.ffi import build_shared_library_from_assembly
 from bootstrap.s3.ir import IRModule
@@ -431,6 +437,124 @@ def test_native_s3c_ng_structured_import_diagnostics_and_legacy_entrypoint(
     )
     assert legacy.status == 0
     assert legacy.diagnostics == ()
+
+
+@pytest.mark.s3_native
+@pytest.mark.s3c_ng_promotion
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="native S3C-NG frontend diagnostics require Linux x86-64",
+)
+def test_native_s3c_ng_frontend_diagnostics_and_provider_parity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    executable_value = os.environ.get("S3C_NG_BOOTSTRAP_EXECUTABLE")
+    if executable_value:
+        executable = Path(executable_value)
+        require_s3c_ng_executable(executable)
+    else:
+        compiler_sources = compiler_source_set(_ROOT)
+        compiler_ir = compile_reference_b_ir(_ROOT)
+        artifact = build_native_s3c(compiler_ir, tmp_path / "native-b", label="s3c-ng-b")
+        _write_candidate_manifest(artifact, compiler_sources)
+        executable = artifact.executable
+
+    cases = (
+        (
+            "invalid-character",
+            "module app\nfn main() -> i64:\n    return \x00\n",
+            2,
+            10,
+        ),
+        (
+            "unsupported-punctuation",
+            "module app\nfn main() -> i64:\n    return @\n",
+            2,
+            10,
+        ),
+        (
+            "unterminated-string",
+            'module app\nfn main() -> i64:\n    return "oops\n',
+            2,
+            11,
+        ),
+        (
+            "unexpected-token",
+            "module app\nfn main() -> i64:\n    return )\n",
+            3,
+            20,
+        ),
+    )
+
+    captured: list[NativeSourceSetResult] = []
+    native_runner = run_native_source_set
+
+    def capture_native_result(*args, **kwargs) -> NativeSourceSetResult:
+        result = native_runner(*args, **kwargs)
+        captured.append(result)
+        return result
+
+    monkeypatch.setattr(
+        compiler_provider_module,
+        "run_native_source_set",
+        capture_native_result,
+    )
+
+    for case, source, phase_id, code_id in cases:
+        captured.clear()
+        sources = {"fixture.s3": source}
+        with pytest.raises(S3Error) as expected_error:
+            compile_source_set_with_provider(
+                sources,
+                compiler="python",
+                entry_module="app",
+            )
+        expected = diagnostic_from_exception(expected_error.value, file="fixture.s3")
+
+        with pytest.raises(S3Error) as actual_error:
+            compile_source_set_with_provider(
+                sources,
+                compiler="s3c-ng",
+                executable=executable,
+                entry_module="app",
+            )
+        actual = diagnostic_from_exception(actual_error.value)
+
+        assert len(captured) == 1, case
+        native_result = captured[0]
+        assert native_result.status != 0, case
+        assert len(native_result.diagnostics) == 1, case
+        record = native_result.diagnostics[0]
+        assert (
+            record.category_id,
+            record.phase_id,
+            record.code_id,
+            record.message_id,
+            record.source_unit_index,
+        ) == (2, phase_id, code_id, code_id, 0), case
+
+        source_bytes = source.encode("utf-8")
+        if case == "invalid-character":
+            start = source_bytes.index(b"\x00")
+            end = start + 1
+        elif case == "unsupported-punctuation":
+            start = source_bytes.index(b"@")
+            end = start + 1
+        elif case == "unterminated-string":
+            start = source_bytes.index(b'"')
+            end = source_bytes.index(b"\n", start)
+        else:
+            start = source_bytes.rindex(b")")
+            end = start + 1
+        assert (record.start_byte, record.end_byte) == (start, end), case
+
+        assert actual.category is expected.category, case
+        assert actual.code is expected.code, case
+        assert actual.phase is expected.phase, case
+        assert actual.file == expected.file == "fixture.s3", case
+        assert actual.source == expected.source, case
+        assert actual_error.value.location == expected_error.value.location, case
 
 
 def _write_candidate_manifest(artifact, compiler_sources: dict[str, str]) -> None:

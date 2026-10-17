@@ -273,6 +273,17 @@ jobs:
           chmod u+x "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng"
           test -x "$RUNNER_TEMP/s3c-ng-bootstrap/s3c-ng"
 
+      - name: Verify V7 provider parity against exact-head bootstrap artifact
+        env:
+          S3C_NG_BOOTSTRAP_EXECUTABLE: ${{ runner.temp }}/s3c-ng-bootstrap/s3c-ng
+        run: >-
+          python -m pytest -q
+          tests/test_s3c_ng_artifact_validation_cache.py
+          tests/test_v7_native_frontend_diagnostics.py
+          tests/test_v7_differential_corpus.py
+          tests/test_v7_project_tooling_parity.py
+          tests/test_v7_cli_provider_workflows.py
+
       - name: Characterize equivalent Python and S3C-NG workloads
         env:
           S3C_NG_BOOTSTRAP_EXECUTABLE: ${{ runner.temp }}/s3c-ng-bootstrap/s3c-ng

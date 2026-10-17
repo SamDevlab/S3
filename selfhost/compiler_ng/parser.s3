@@ -2307,7 +2307,18 @@ export fn ng_validate_nominal_types(source: &bytes, types: &vector<NgTypeDescrip
                 type_index = type_index + 1
     return 0
 
+fn ng_record_parse_failure(tokens: &vector<NgToken>, cursor: &mut vector<i64>, failure: &mut vector<i64>) -> i64:
+    mut token: NgToken = ng_token_at(tokens, cursor)
+    discard vector_push<i64>(failure, 20)
+    discard vector_push<i64>(failure, token.start)
+    discard vector_push<i64>(failure, token.end)
+    return 0
+
 export fn ng_parse_module_functions(source: &bytes, tokens: &vector<NgToken>, module_item: NgModule, types: &mut vector<NgTypeDescriptor>, records: &mut vector<NgRecord>, fields: &mut vector<NgField>, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>, functions: &mut vector<NgFunction>) -> i64:
+    mut failure: vector<i64> = vector_new<i64>(3)
+    return ng_parse_module_functions_with_error(source, tokens, module_item, types, records, fields, parameters, nodes, functions, &mut failure)
+
+export fn ng_parse_module_functions_with_error(source: &bytes, tokens: &vector<NgToken>, module_item: NgModule, types: &mut vector<NgTypeDescriptor>, records: &mut vector<NgRecord>, fields: &mut vector<NgField>, parameters: &mut vector<NgParameter>, nodes: &mut vector<NgAstNode>, functions: &mut vector<NgFunction>, failure: &mut vector<i64>) -> i64:
     mut cursor: vector<i64> = vector_new<i64>(1)
     mut current: NgToken = NgToken(kind=0, start=0, end=0, indent=0)
     mut current_kind: i64 = 0
@@ -2324,6 +2335,7 @@ export fn ng_parse_module_functions(source: &bytes, tokens: &vector<NgToken>, mo
             0:
                 exported = 0
             1:
+                discard ng_record_parse_failure(tokens, &mut cursor, failure)
                 return -1
         current = ng_token_at(tokens, &mut cursor)
         match ng_token_spells(source, current, text_from_static("record"), 114):
@@ -2331,6 +2343,13 @@ export fn ng_parse_module_functions(source: &bytes, tokens: &vector<NgToken>, mo
                 status = ng_parse_record_declaration(source, tokens, &mut cursor, module_item, types, records, fields, exported)
                 match status <=> 0:
                     -1:
+                        match status <=> -1:
+                            0:
+                                discard ng_record_parse_failure(tokens, &mut cursor, failure)
+                            -1:
+                                status = status
+                            1:
+                                status = status
                         return status
                     0:
                         current_kind = ng_token_kind_at(tokens, &mut cursor)
@@ -2340,11 +2359,19 @@ export fn ng_parse_module_functions(source: &bytes, tokens: &vector<NgToken>, mo
                 status = ng_parse_function(source, tokens, &mut cursor, parameters, nodes, functions, module_item.source_index, exported, types, module_item.name_start, module_item.name_end)
                 match status <=> 0:
                     -1:
+                        match status <=> -1:
+                            0:
+                                discard ng_record_parse_failure(tokens, &mut cursor, failure)
+                            -1:
+                                status = status
+                            1:
+                                status = status
                         return status
                     0:
                         current_kind = ng_token_kind_at(tokens, &mut cursor)
                     1:
                         return status
             1:
+                discard ng_record_parse_failure(tokens, &mut cursor, failure)
                 return -1
     return 0

@@ -361,3 +361,59 @@ and remaining V7 promotion gates are still open.
   strengthened per-module static-string workload and native promotion gate
   passed in run `38594968631` on the exact head above.
 - No compiler default has been changed; no release artifact is authorized.
+
+## R2 implementation checkpoint — 2026-10-17
+
+This checkpoint records implementation and focused evidence on PR #331; it
+does not supersede the promotion gates above. The branch remains Draft and the
+work is not a release qualification.
+
+- Source branch/HEAD at test time: `feat/s3-v7-compiler-promotion-bootstrap-independence`
+  / `864a5f48c1274572c70f352d28a39d0feddeedb9`. The focused changes were
+  uncommitted at checkpoint time. The Linux x86-64 development candidate was
+  ephemeral at `/tmp/s3-v7-r2-current6/s3c-ng`, SHA-256
+  `e726901465c72b83cd5a5bd6c47fc098bd577e7cd90fbc9410df82c07801f5ce`,
+  30,097,512 bytes, source-graph SHA-256
+  `4b6dc2bf765e0e29b09d10bd729354c891e5eeab6691735f6ccbce7fdcd41b75`.
+  It is not a durable or trusted bootstrap seed.
+- A real candidate differential run selected 12 explicit cases across 12
+  feature families. All 12 matched both canonical serialized IR and hosted
+  execution, with zero failures. The report's scope is `CASE_SAMPLE_ONLY` and
+  `parity_claim=NONE_CASE_SAMPLES_ONLY`; all 18 matrix families remain
+  `PARTIAL`.
+- Four native frontend diagnostic cases matched the reference code, category,
+  phase, source unit, byte span, and host location: invalid byte, unsupported
+  punctuation, unterminated string, and unexpected token. This is focused
+  coverage, not broad invalid-program or diagnostic parity.
+- Selected Linux x86-64 tests passed 53/53 in 36.53 seconds. Four additional
+  focused native regression cases passed across the candidate-native runs.
+  Windows focused tests passed 52 with 13 Linux-only skips; `compileall` and
+  `git diff --check` passed. No full suite was run.
+- Native artifact validation now reuses a successful executable SHA-256 only
+  while executable and manifest file identities, manifest bytes, platform,
+  architecture, and IR format remain identical; every inspection still
+  validates the manifest and trusted pin. On the measured 30 MB candidate,
+  cold inspection was 91.437 ms, warm inspection median 1.751 ms, and direct
+  SHA-256 median 39.373 ms. This is a repeated-validation improvement, not a
+  compilation-speedup claim.
+- A lexer fast path classifies supported single-byte symbols once in the
+  bounded character table and avoids repeating symbol recognition at each
+  occurrence. Correctness-focused lexer and native tests passed. Same-host
+  exploratory compiler timing did not establish a reliable causal improvement:
+  the current candidate's Pebble median was 96,316.260 ms (164.982x Python),
+  versus 94,216.738 ms (160.575x) for the older artifact; the small-program
+  ratios were 8.811x and 9.406x respectively. These artifacts are different
+  source snapshots, so the comparison does not attribute changes to the lexer
+  or cache. The bounded full characterization timed out at 120 seconds during
+  self-source; memory attribution and phase-level profiling remain open.
+- CLI workflows and ProjectTooling have new focused provider-parity tests,
+  including explicit failure when the selected native candidate is unavailable.
+  The clean-bootstrap CI job now runs these tests against its exact-head
+  artifact. CI for the resulting pushed HEAD must pass naturally before any
+  promotion discussion. Python remains the reference/default; the release lock
+  remains `UNPUBLISHED`; no PR merge, tag, release, or global promotion is
+  authorized.
+
+Next engineering work remains performance/memory root-cause attribution and
+expansion of repository-derived positive and negative differential coverage.
+No family is promoted by this checkpoint.

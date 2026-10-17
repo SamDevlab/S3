@@ -10,6 +10,7 @@ import re
 import struct
 import subprocess
 import tempfile
+import threading
 import time
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -32,6 +33,9 @@ _DIAGNOSTIC_RECORD_I64S = 7
 _MAX_DIAGNOSTIC_RECORDS = 256
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 _GIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+_VALIDATED_ARTIFACT_SHA_CACHE: dict[tuple[object, ...], str] = {}
+_VALIDATED_ARTIFACT_SHA_CACHE_LOCK = threading.RLock()
+_VALIDATED_ARTIFACT_SHA_CACHE_LIMIT = 32
 
 
 class NativeS3CTransportError(S3Error):
@@ -49,10 +53,13 @@ class NativeS3CExecutable:
 
 class NativeDiagnosticCategory(IntEnum):
     SEMANTIC = 1
+    SYNTAX = 2
 
 
 class NativeDiagnosticPhase(IntEnum):
     SEMANTIC = 1
+    LEXING = 2
+    PARSING = 3
 
 
 class NativeDiagnosticCode(IntEnum):
@@ -60,6 +67,41 @@ class NativeDiagnosticCode(IntEnum):
     MODULE_CYCLE = 2
     IMPORT_UNKNOWN_SYMBOL = 3
     IMPORT_PRIVATE_SYMBOL = 4
+    LEX_INVALID_CHARACTER = 10
+    LEX_UNTERMINATED_STRING_LITERAL = 11
+    PARSE_SYNTAX = 20
+
+
+_NATIVE_DIAGNOSTIC_IDENTITIES = {
+    NativeDiagnosticCode.MODULE_NOT_FOUND: (
+        NativeDiagnosticCategory.SEMANTIC,
+        NativeDiagnosticPhase.SEMANTIC,
+    ),
+    NativeDiagnosticCode.MODULE_CYCLE: (
+        NativeDiagnosticCategory.SEMANTIC,
+        NativeDiagnosticPhase.SEMANTIC,
+    ),
+    NativeDiagnosticCode.IMPORT_UNKNOWN_SYMBOL: (
+        NativeDiagnosticCategory.SEMANTIC,
+        NativeDiagnosticPhase.SEMANTIC,
+    ),
+    NativeDiagnosticCode.IMPORT_PRIVATE_SYMBOL: (
+        NativeDiagnosticCategory.SEMANTIC,
+        NativeDiagnosticPhase.SEMANTIC,
+    ),
+    NativeDiagnosticCode.LEX_INVALID_CHARACTER: (
+        NativeDiagnosticCategory.SYNTAX,
+        NativeDiagnosticPhase.LEXING,
+    ),
+    NativeDiagnosticCode.LEX_UNTERMINATED_STRING_LITERAL: (
+        NativeDiagnosticCategory.SYNTAX,
+        NativeDiagnosticPhase.LEXING,
+    ),
+    NativeDiagnosticCode.PARSE_SYNTAX: (
+        NativeDiagnosticCategory.SYNTAX,
+        NativeDiagnosticPhase.PARSING,
+    ),
+}
 
 
 class _ExecutableArtifact(Protocol):
@@ -154,9 +196,33 @@ def inspect_s3c_ng_executable(path: Path | None = None) -> S3CNgAvailability:
         )
     manifest_path = executable.with_suffix(".manifest.json")
     try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        artifact_sha256 = _sha256_file(executable)
-        artifact_bytes = executable.stat().st_size
+        executable_identity = _artifact_file_identity(executable)
+        manifest_identity = _artifact_file_identity(manifest_path)
+        manifest_bytes = manifest_path.read_bytes()
+        if (
+            _artifact_file_identity(executable) != executable_identity
+            or _artifact_file_identity(manifest_path) != manifest_identity
+        ):
+            raise OSError("S3C-NG artifact changed while its manifest was being read")
+        manifest = json.loads(manifest_bytes.decode("utf-8"))
+        cache_key = _artifact_validation_cache_key(
+            executable,
+            manifest_path,
+            executable_identity,
+            manifest_identity,
+            manifest_bytes,
+        )
+        with _VALIDATED_ARTIFACT_SHA_CACHE_LOCK:
+            artifact_sha256 = _VALIDATED_ARTIFACT_SHA_CACHE.get(cache_key)
+        cache_hit = artifact_sha256 is not None
+        if not cache_hit:
+            artifact_sha256 = _sha256_file(executable)
+        artifact_bytes = executable_identity[3]
+        if (
+            _artifact_file_identity(executable) != executable_identity
+            or _artifact_file_identity(manifest_path) != manifest_identity
+        ):
+            raise OSError("S3C-NG artifact changed during validation")
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         return S3CNgAvailability(
             executable,
@@ -208,6 +274,23 @@ def inspect_s3c_ng_executable(path: Path | None = None) -> S3CNgAvailability:
     pinned_error = verify_default_artifact(executable)
     if pinned_error:
         return S3CNgAvailability(executable, False, pinned_error)
+    try:
+        if (
+            _artifact_file_identity(executable) != executable_identity
+            or _artifact_file_identity(manifest_path) != manifest_identity
+        ):
+            return S3CNgAvailability(
+                executable,
+                False,
+                "S3C-NG artifact changed before validation completed",
+            )
+    except OSError as error:
+        return S3CNgAvailability(executable, False, str(error))
+    if not cache_hit:
+        with _VALIDATED_ARTIFACT_SHA_CACHE_LOCK:
+            if len(_VALIDATED_ARTIFACT_SHA_CACHE) >= _VALIDATED_ARTIFACT_SHA_CACHE_LIMIT:
+                _VALIDATED_ARTIFACT_SHA_CACHE.pop(next(iter(_VALIDATED_ARTIFACT_SHA_CACHE)))
+            _VALIDATED_ARTIFACT_SHA_CACHE[cache_key] = artifact_sha256
     return S3CNgAvailability(executable, True)
 
 
@@ -375,10 +458,11 @@ def decode_output_envelope_v2(
             and record.start_byte == -1
             and record.end_byte == -1
         )
+        identity = _NATIVE_DIAGNOSTIC_IDENTITIES.get(record.code_id)
         if (
-            record.category_id != NativeDiagnosticCategory.SEMANTIC
-            or record.phase_id != NativeDiagnosticPhase.SEMANTIC
-            or record.code_id not in {code.value for code in NativeDiagnosticCode}
+            identity is None
+            or record.category_id != identity[0]
+            or record.phase_id != identity[1]
             or record.message_id != record.code_id
             or not unlocated_cycle
             and (
@@ -404,3 +488,35 @@ def _sha256_file(path: Path) -> str:
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _artifact_file_identity(path: Path) -> tuple[object, ...]:
+    resolved = path.resolve(strict=True)
+    stat = resolved.stat()
+    return (
+        str(resolved),
+        stat.st_dev,
+        stat.st_ino,
+        stat.st_size,
+        stat.st_mtime_ns,
+        stat.st_ctime_ns,
+    )
+
+
+def _artifact_validation_cache_key(
+    executable: Path,
+    manifest_path: Path,
+    executable_identity: tuple[object, ...],
+    manifest_identity: tuple[object, ...],
+    manifest_bytes: bytes,
+) -> tuple[object, ...]:
+    return (
+        str(executable.resolve(strict=True)),
+        executable_identity,
+        str(manifest_path.resolve(strict=True)),
+        manifest_identity,
+        platform.system(),
+        platform.machine().lower(),
+        NG_IR_FORMAT_VERSION,
+        manifest_bytes,
+    )

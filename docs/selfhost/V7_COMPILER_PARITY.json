@@ -247,5 +247,83 @@
     "ephemeral_package_bytes": 2669759,
     "trusted_s3c_ng_seed": "PYTHON_REFERENCE_STAGE0_PARENT; EXACT_HEAD_AND_SAME_WORKFLOW_RUN_ARTIFACT; CLEAN_CHECKOUT_B_TO_C_PASS_RUN_39040792079; EPHEMERAL_NOT_DURABLE; RELEASE_LOCK_UNPUBLISHED"
   },
-  "promoted_default": false
+  "promoted_default": false,
+  "r2_implementation_checkpoint": {
+    "date": "2026-10-17",
+    "result": "PARTIAL",
+    "pr": 331,
+    "branch": "feat/s3-v7-compiler-promotion-bootstrap-independence",
+    "source_head_at_checkpoint": "864a5f48c1274572c70f352d28a39d0feddeedb9",
+    "candidate": {
+      "target": "linux-x86_64",
+      "ephemeral": true,
+      "trusted_seed": false,
+      "path_on_build_host": "/tmp/s3-v7-r2-current6/s3c-ng",
+      "sha256": "e726901465c72b83cd5a5bd6c47fc098bd577e7cd90fbc9410df82c07801f5ce",
+      "bytes": 30097512,
+      "source_commit": "864a5f48c1274572c70f352d28a39d0feddeedb9",
+      "source_graph_sha256": "4b6dc2bf765e0e29b09d10bd729354c891e5eeab6691735f6ccbce7fdcd41b75"
+    },
+    "differential_corpus": {
+      "status": "PASS",
+      "selected": 12,
+      "passed": 12,
+      "failed": 0,
+      "families_sampled": 12,
+      "levels": ["canonical_ir", "hosted_execution"],
+      "family_claim": "NONE_CASE_SAMPLES_ONLY",
+      "all_18_feature_families": "PARTIAL"
+    },
+    "native_frontend_diagnostics": {
+      "focused_cases": 4,
+      "matched_fields": ["category", "phase", "code", "source_unit", "utf8_byte_span", "host_location"],
+      "cases": ["invalid_byte", "unsupported_punctuation", "unterminated_string", "unexpected_token"],
+      "complete_diagnostic_parity": false
+    },
+    "focused_tests": {
+      "linux_x86_64": {"passed": 53, "failed": 0, "elapsed_seconds": 36.53},
+      "additional_native_regressions": {"passed": 4, "failed": 0},
+      "windows": {"passed": 52, "skipped_linux_only": 13, "failed": 0},
+      "compileall": "PASS",
+      "diff_check": "PASS",
+      "full_suite_run": false
+    },
+    "implemented": [
+      "bounded successful native artifact SHA-256 validation cache with identity rechecks",
+      "structured native lexer/parser diagnostics mapped fail-closed to reference errors",
+      "supported-single-symbol lexer fast path",
+      "bounded differential case-sample harness for canonical IR and hosted execution",
+      "focused CLI and ProjectTooling provider workflow tests",
+      "exact-head candidate-focused tests in clean-bootstrap CI job"
+    ],
+    "performance": {
+      "repeat_validation_cache": {
+        "candidate_bytes": 30097512,
+        "cold_inspection_ms": 91.437,
+        "warm_inspection_median_ms": 1.751,
+        "direct_sha256_median_ms": 39.373,
+        "hash_calls_across_cold_plus_7_warm_inspections": 1
+      },
+      "same_host_exploratory_pebble": {
+        "current_candidate_median_ms": 96316.260,
+        "current_candidate_ratio_vs_python": 164.982,
+        "older_artifact_median_ms": 94216.738,
+        "older_artifact_ratio_vs_python": 160.575,
+        "causal_attribution": "NONE_DIFFERENT_SOURCE_SNAPSHOTS",
+        "speedup_claim": false
+      },
+      "full_characterization": "120S_TIMEOUT_DURING_SELF_SOURCE",
+      "memory_attribution": "UNAVAILABLE",
+      "microarchitecture_counters": "UNAVAILABLE_PERF_NOT_INSTALLED"
+    },
+    "promotion": {
+      "python_reference_preserved": true,
+      "default_compiler": "PYTHON",
+      "seed_release": "UNPUBLISHED",
+      "family_states_promoted": 0,
+      "pr_state": "OPEN_DRAFT",
+      "merge_authorized": false,
+      "tag_or_release_authorized": false
+    }
+  }
 }
